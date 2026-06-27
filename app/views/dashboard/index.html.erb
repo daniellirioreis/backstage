@@ -1,4 +1,107 @@
-<div class="py-5 text-center">
-  <h1 class="display-5 fw-bold">Backstage</h1>
-  <p class="lead text-muted">Sistema de gestão operacional de eventos</p>
+<div class="page-header">
+  <h1>Dashboard</h1>
+  <span style="font-size: 0.8rem; color: #71717a;"><%= l(Date.today, format: :long) %></span>
+</div>
+
+<div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 2rem;">
+  <div class="metric-card">
+    <div class="metric-label"><i class="bi bi-person"></i> Colaboradores</div>
+    <div class="metric-value"><%= @total_users %></div>
+    <div class="metric-sub">cadastrados</div>
+  </div>
+  <div class="metric-card metric-accent">
+    <div class="metric-label"><i class="bi bi-calendar-check"></i> Eventos ativos</div>
+    <div class="metric-value"><%= @active_events %></div>
+    <div class="metric-sub">em andamento</div>
+  </div>
+  <div class="metric-card metric-info">
+    <div class="metric-label"><i class="bi bi-clock"></i> Escalas hoje</div>
+    <div class="metric-value"><%= @shifts_today %></div>
+    <div class="metric-sub"><%= Date.today.strftime("%d/%m/%Y") %></div>
+  </div>
+  <div class="metric-card metric-warn">
+    <div class="metric-label"><i class="bi bi-car-front"></i> Veículos</div>
+    <div class="metric-value"><%= @total_vehicles %></div>
+    <div class="metric-sub">cadastrados</div>
+  </div>
+</div>
+
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+
+  <div>
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+      <h2 style="font-size: 0.9rem; font-weight: 600; color: #18181b; margin: 0;">Próximas escalas</h2>
+      <% if policy(Shift).index? %>
+        <%= link_to "Ver todas", shifts_path, class: "btn-secondary", style: "font-size: 0.75rem; padding: 0.25rem 0.6rem;" %>
+      <% end %>
+    </div>
+    <% if @upcoming_shifts.any? %>
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Colaborador</th>
+            <th>Setor</th>
+            <th>Data</th>
+            <th>Horário</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @upcoming_shifts.each do |shift| %>
+            <tr>
+              <td><%= shift.user.name.split.first %></td>
+              <td style="color: #71717a; font-size: 0.8rem;"><%= shift.sector.name %></td>
+              <td style="color: #71717a; font-size: 0.8rem;"><%= l(shift.date, format: :short) %></td>
+              <td style="font-size: 0.8rem; color: #52525b;">
+                <%= shift.start_time.strftime("%H:%M") %>–<%= shift.end_time.strftime("%H:%M") %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    <% else %>
+      <div class="content-card" style="text-align: center; color: #a1a1aa; font-size: 0.85rem; padding: 2rem;">
+        <i class="bi bi-clock" style="font-size: 1.5rem; display: block; margin-bottom: 0.5rem;"></i>
+        Nenhuma escala agendada
+      </div>
+    <% end %>
+  </div>
+
+  <div>
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+      <h2 style="font-size: 0.9rem; font-weight: 600; color: #18181b; margin: 0;">Eventos recentes</h2>
+      <% if policy(Event).index? %>
+        <%= link_to "Ver todos", events_path, class: "btn-secondary", style: "font-size: 0.75rem; padding: 0.25rem 0.6rem;" %>
+      <% end %>
+    </div>
+    <% if @recent_events.any? %>
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Evento</th>
+            <th>Início</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @recent_events.each do |event| %>
+            <tr>
+              <td><%= link_to event.name, event_path(event), style: "color: #18181b; text-decoration: none; font-weight: 500;" %></td>
+              <td style="color: #71717a; font-size: 0.8rem;"><%= l(event.start_date, format: :short) %></td>
+              <td>
+                <span class="badge-status badge-<%= event.status %>">
+                  <%= t("event_statuses.#{event.status}") %>
+                </span>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    <% else %>
+      <div class="content-card" style="text-align: center; color: #a1a1aa; font-size: 0.85rem; padding: 2rem;">
+        <i class="bi bi-calendar-x" style="font-size: 1.5rem; display: block; margin-bottom: 0.5rem;"></i>
+        Nenhum evento cadastrado
+      </div>
+    <% end %>
+  </div>
+
 </div>

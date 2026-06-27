@@ -1,10 +1,12 @@
-<div class="d-flex justify-content-between align-items-center mb-3">
+<div class="page-header">
   <h1><%= Role.model_name.human(count: 2) %></h1>
-  <%= link_to t("actions.new", model: Role.model_name.human), new_role_path, class: "btn btn-primary" %>
+  <%= link_to new_role_path, class: "btn-primary" do %>
+    <i class="bi bi-plus"></i> <%= t("actions.new", model: Role.model_name.human) %>
+  <% end %>
 </div>
 
-<table class="table table-hover">
-  <thead class="table-dark">
+<table class="data-table">
+  <thead>
     <tr>
       <th><%= Role.human_attribute_name(:name) %></th>
       <th><%= t("labels.permissions_count") %></th>
@@ -14,13 +16,13 @@
   <tbody>
     <% @roles.each do |role| %>
       <tr>
-        <td><%= role.name %></td>
-        <td><%= role.permissions.count %></td>
-        <td class="text-end">
-          <%= link_to t("actions.edit"), edit_role_path(role), class: "btn btn-sm btn-outline-secondary" %>
-          <%= button_to t("actions.delete"), role_path(role), method: :delete,
+        <td style="font-weight: 500;"><%= role.name %></td>
+        <td style="color: #71717a;"><%= role.permissions.count %></td>
+        <td class="td-actions">
+          <%= link_to edit_role_path(role), class: "btn-secondary" do %><i class="bi bi-pencil"></i><% end %>
+          <%= button_to role_path(role), method: :delete,
               form: { data: { turbo_confirm: t("confirms.delete") } },
-              class: "btn btn-sm btn-outline-danger" %>
+              class: "btn-danger" do %><i class="bi bi-trash"></i><% end %>
         </td>
       </tr>
     <% end %>

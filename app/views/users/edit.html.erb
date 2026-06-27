@@ -1,2 +1,4 @@
-<h1><%= t("actions.edit_model", model: User.model_name.human) %>: <%= @user.name %></h1>
+<div class="page-header">
+  <h1><%= t("actions.edit_model", model: User.model_name.human) %>: <%= @user.name %></h1>
+</div>
 <%= render "form", user: @user %>

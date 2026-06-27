@@ -1,12 +1,14 @@
-<div class="d-flex justify-content-between align-items-center mb-3">
+<div class="page-header">
   <h1><%= Sector.model_name.human(count: 2) %></h1>
   <% if policy(Sector).new? %>
-    <%= link_to t("actions.new", model: Sector.model_name.human), new_sector_path, class: "btn btn-primary" %>
+    <%= link_to new_sector_path, class: "btn-primary" do %>
+      <i class="bi bi-plus"></i> <%= t("actions.new", model: Sector.model_name.human) %>
+    <% end %>
   <% end %>
 </div>
 
-<table class="table table-hover">
-  <thead class="table-dark">
+<table class="data-table">
+  <thead>
     <tr>
       <th><%= Sector.human_attribute_name(:name) %></th>
       <th><%= Team.model_name.human %></th>
@@ -17,17 +19,17 @@
   <tbody>
     <% @sectors.each do |sector| %>
       <tr>
-        <td><%= link_to sector.name, sector_path(sector) %></td>
-        <td><%= sector.team.name %></td>
-        <td><%= sector.team.event.name %></td>
-        <td class="text-end">
+        <td><%= link_to sector.name, sector_path(sector), style: "color: #18181b; font-weight: 500; text-decoration: none;" %></td>
+        <td style="color: #71717a;"><%= sector.team.name %></td>
+        <td style="color: #71717a;"><%= sector.team.event.name %></td>
+        <td class="td-actions">
           <% if policy(sector).edit? %>
-            <%= link_to t("actions.edit"), edit_sector_path(sector), class: "btn btn-sm btn-outline-secondary" %>
+            <%= link_to edit_sector_path(sector), class: "btn-secondary" do %><i class="bi bi-pencil"></i><% end %>
           <% end %>
           <% if policy(sector).destroy? %>
-            <%= button_to t("actions.delete"), sector_path(sector), method: :delete,
+            <%= button_to sector_path(sector), method: :delete,
                 form: { data: { turbo_confirm: t("confirms.delete") } },
-                class: "btn btn-sm btn-outline-danger" %>
+                class: "btn-danger" do %><i class="bi bi-trash"></i><% end %>
           <% end %>
         </td>
       </tr>

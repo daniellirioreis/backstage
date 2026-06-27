@@ -1,34 +1,28 @@
-<div class="row justify-content-center mt-5">
-  <div class="col-md-4">
-    <div class="card shadow-sm">
-      <div class="card-body p-4">
-        <h4 class="card-title text-center mb-4">Backstage</h4>
+<div class="auth-card">
+  <div class="auth-title">Backstage</div>
+  <div class="auth-subtitle">Faça login para continuar</div>
 
-        <%= form_for(resource, as: resource_name, url: session_path(resource_name)) do |f| %>
-          <div class="mb-3">
-            <%= f.label :email, "E-mail", class: "form-label" %>
-            <%= f.email_field :email, autofocus: true, autocomplete: "email", class: "form-control" %>
-          </div>
+  <%= render "devise/shared/error_messages", resource: resource %>
 
-          <div class="mb-3">
-            <%= f.label :password, "Senha", class: "form-label" %>
-            <%= f.password_field :password, autocomplete: "current-password", class: "form-control" %>
-          </div>
-
-          <div class="mb-3 form-check">
-            <%= f.check_box :remember_me, class: "form-check-input" %>
-            <%= f.label :remember_me, "Lembrar de mim", class: "form-check-label" %>
-          </div>
-
-          <%= f.submit "Entrar", class: "btn btn-dark w-100" %>
-        <% end %>
-
-        <% if devise_mapping.recoverable? %>
-          <div class="text-center mt-3">
-            <%= link_to "Esqueceu sua senha?", new_password_path(resource_name) %>
-          </div>
-        <% end %>
-      </div>
+  <%= form_for(resource, as: resource_name, url: session_path(resource_name)) do |f| %>
+    <div class="mb-3">
+      <%= f.label :email, "E-mail", class: "form-label" %>
+      <%= f.email_field :email, autofocus: true, autocomplete: "email", class: "form-control" %>
     </div>
-  </div>
+    <div class="mb-3">
+      <%= f.label :password, "Senha", class: "form-label" %>
+      <%= f.password_field :password, autocomplete: "current-password", class: "form-control" %>
+    </div>
+    <div class="mb-4" style="display: flex; align-items: center; gap: 0.5rem;">
+      <%= f.check_box :remember_me, class: "form-check-input", style: "margin: 0;" %>
+      <%= f.label :remember_me, "Lembrar de mim", class: "form-label", style: "margin: 0; cursor: pointer;" %>
+    </div>
+    <%= f.submit "Entrar", class: "btn-primary" %>
+  <% end %>
+
+  <% if devise_mapping.recoverable? %>
+    <div style="text-align: center; margin-top: 1.25rem;">
+      <%= link_to "Esqueceu sua senha?", new_password_path(resource_name) %>
+    </div>
+  <% end %>
 </div>

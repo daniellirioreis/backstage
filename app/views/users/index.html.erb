@@ -1,12 +1,14 @@
-<div class="d-flex justify-content-between align-items-center mb-3">
+<div class="page-header">
   <h1><%= User.model_name.human(count: 2) %></h1>
   <% if policy(User).new? %>
-    <%= link_to t("actions.new", model: User.model_name.human), new_user_path, class: "btn btn-primary" %>
+    <%= link_to new_user_path, class: "btn-primary" do %>
+      <i class="bi bi-plus"></i> <%= t("actions.new", model: User.model_name.human) %>
+    <% end %>
   <% end %>
 </div>
 
-<table class="table table-hover">
-  <thead class="table-dark">
+<table class="data-table">
+  <thead>
     <tr>
       <th><%= User.human_attribute_name(:name) %></th>
       <th><%= User.human_attribute_name(:email) %></th>
@@ -19,19 +21,25 @@
   <tbody>
     <% @users.each do |user| %>
       <tr>
-        <td><%= user.name %></td>
-        <td><%= user.email %></td>
-        <td><%= user.cpf %></td>
-        <td><%= user.phone %></td>
-        <td><%= user.role&.name&.humanize || "—" %></td>
-        <td class="text-end">
+        <td style="font-weight: 500;"><%= user.name %></td>
+        <td style="color: #71717a;"><%= user.email %></td>
+        <td style="color: #71717a; font-family: monospace; font-size: 0.8rem;"><%= user.cpf %></td>
+        <td style="color: #71717a;"><%= user.phone %></td>
+        <td>
+          <% if user.role %>
+            <span class="badge-status badge-active"><%= user.role.name %></span>
+          <% else %>
+            <span style="color: #a1a1aa; font-size: 0.8rem;">—</span>
+          <% end %>
+        </td>
+        <td class="td-actions">
           <% if policy(user).edit? %>
-            <%= link_to t("actions.edit"), edit_user_path(user), class: "btn btn-sm btn-outline-secondary" %>
+            <%= link_to edit_user_path(user), class: "btn-secondary" do %><i class="bi bi-pencil"></i><% end %>
           <% end %>
           <% if policy(user).destroy? %>
-            <%= button_to t("actions.delete"), user_path(user), method: :delete,
+            <%= button_to user_path(user), method: :delete,
                 form: { data: { turbo_confirm: t("confirms.delete") } },
-                class: "btn btn-sm btn-outline-danger" %>
+                class: "btn-danger" do %><i class="bi bi-trash"></i><% end %>
           <% end %>
         </td>
       </tr>

@@ -38,7 +38,7 @@ pt-BR:
   errors:
     not_authorized: "Você não tem permissão para realizar esta ação."
     messages:
-      invalid_cpf: "deve conter exatamente 11 dígitos numéricos"
+      invalid_cpf: "inválido"
       after_start_date: "deve ser igual ou posterior à data de início"
       after_start_time: "deve ser posterior ao horário de início"
       schedule_conflict: "Colaborador já possui uma escala neste horário"
