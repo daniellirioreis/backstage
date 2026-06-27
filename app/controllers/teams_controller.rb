@@ -1,5 +1,5 @@
 class TeamsController < ApplicationController
-  before_action :set_team, only: %i[show edit update destroy]
+  before_action :set_team, only: %i[show edit update destroy credentials]
 
   def index
     authorize Team
@@ -12,6 +12,42 @@ class TeamsController < ApplicationController
 
   def show
     authorize @team
+  end
+
+  def credentials
+    authorize @team, :show?
+
+    # Collect coordinator + collaborators in order (coordinator first)
+    members = []
+    if @team.coordinator
+      members << { user: @team.coordinator, is_coordinator: true }
+    end
+    @team.users.reject { |u| u.id == @team.coordinator_id }.each do |u|
+      members << { user: u, is_coordinator: false }
+    end
+
+    # Pre-load avatars as base64
+    @members = members.map do |m|
+      user = m[:user]
+      avatar_b64 = if user.avatar.attached?
+        blob = user.avatar.blob
+        "data:#{blob.content_type};base64,#{Base64.strict_encode64(blob.download)}"
+      end
+      m.merge(avatar_base64: avatar_b64)
+    end
+
+    respond_to do |format|
+      format.pdf do
+        render pdf: "credenciais-#{@team.name.parameterize}",
+               template: "teams/credentials",
+               layout: "credential_pdf",
+               formats: [:html],
+               page_width: "100mm",
+               page_height: "150mm",
+               margin: { top: 0, bottom: 0, left: 0, right: 0 },
+               disposition: "attachment"
+      end
+    end
   end
 
   def new

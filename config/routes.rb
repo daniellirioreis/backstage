@@ -19,7 +19,9 @@ Rails.application.routes.draw do
     member { get :credential }
   end
   resources :events
-  resources :teams
+  resources :teams do
+    member { get :credentials }
+  end
   resources :sectors
   resources :shifts
   resources :vehicles
