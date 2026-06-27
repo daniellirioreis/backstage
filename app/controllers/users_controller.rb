@@ -47,6 +47,12 @@ class UsersController < ApplicationController
     respond_to do |format|
       format.html { render layout: "credential" }
       format.pdf do
+        # Embed avatar as base64 so wkhtmltopdf can render it without HTTP access
+        if @user.avatar.attached?
+          blob = @user.avatar.blob
+          @avatar_base64 = "data:#{blob.content_type};base64,#{Base64.strict_encode64(blob.download)}"
+        end
+
         render pdf: "credencial-#{@user.name.parameterize}",
                template: "users/credential_pdf",
                layout: "credential_pdf",
