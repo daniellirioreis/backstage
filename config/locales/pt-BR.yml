@@ -56,6 +56,12 @@ pt-BR:
     abbr_day_names: [Dom, Seg, Ter, Qua, Qui, Sex, Sáb]
 
   activerecord:
+    errors:
+      messages:
+        record_invalid: "A validação falhou: %{errors}"
+        taken: "já está em uso"
+        blank: "não pode ficar em branco"
+        invalid: "é inválido"
     models:
       user:
         one: "Colaborador"

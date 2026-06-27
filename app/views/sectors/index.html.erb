@@ -1,18 +1,27 @@
 <div class="page-header">
   <h1><%= Sector.model_name.human(count: 2) %></h1>
-  <% if policy(Sector).new? %>
-    <%= link_to new_sector_path, class: "btn-primary" do %>
-      <i class="bi bi-plus"></i> <%= t("actions.new", model: Sector.model_name.human) %>
+  <div style="display: flex; gap: 0.5rem; align-items: center;">
+    <%= form_with url: sectors_path, method: :get, data: { turbo: false } do |f| %>
+      <%= f.select :event_id,
+            options_from_collection_for_select(@events, :id, :name, params[:event_id]),
+            { include_blank: "Todos os eventos" },
+            class: "form-control form-select", style: "font-size: 0.82rem; padding: 0.4rem 0.75rem;",
+            onchange: "this.form.submit()" %>
     <% end %>
-  <% end %>
+    <% if policy(Sector).new? %>
+      <%= link_to new_sector_path, class: "btn-primary" do %>
+        <i class="bi bi-plus"></i> <%= t("actions.new", model: Sector.model_name.human) %>
+      <% end %>
+    <% end %>
+  </div>
 </div>
 
 <table class="data-table">
   <thead>
     <tr>
       <th><%= Sector.human_attribute_name(:name) %></th>
-      <th><%= Team.model_name.human %></th>
       <th><%= Event.model_name.human %></th>
+      <th>Equipes</th>
       <th></th>
     </tr>
   </thead>
@@ -20,17 +29,22 @@
     <% @sectors.each do |sector| %>
       <tr>
         <td><%= link_to sector.name, sector_path(sector), style: "color: #18181b; font-weight: 500; text-decoration: none;" %></td>
-        <td style="color: #71717a;"><%= sector.team.name %></td>
-        <td style="color: #71717a;"><%= sector.team.event.name %></td>
+        <td style="color: #71717a;"><%= sector.event.name %></td>
+        <td style="color: #71717a;"><%= sector.teams.size %></td>
         <td class="td-actions">
-          <% if policy(sector).edit? %>
-            <%= link_to edit_sector_path(sector), class: "btn-secondary" do %><i class="bi bi-pencil"></i><% end %>
-          <% end %>
-          <% if policy(sector).destroy? %>
-            <%= button_to sector_path(sector), method: :delete,
-                form: { data: { turbo_confirm: t("confirms.delete") } },
-                class: "btn-danger" do %><i class="bi bi-trash"></i><% end %>
-          <% end %>
+          <div style="display: flex; gap: 0.4rem; justify-content: flex-end;">
+            <% if policy(sector).show? %>
+              <%= link_to sector_path(sector), class: "btn-secondary" do %><i class="bi bi-eye"></i><% end %>
+            <% end %>
+            <% if policy(sector).edit? %>
+              <%= link_to edit_sector_path(sector), class: "btn-secondary" do %><i class="bi bi-pencil"></i><% end %>
+            <% end %>
+            <% if policy(sector).destroy? %>
+              <%= button_to sector_path(sector), method: :delete,
+                  form: { data: { turbo_confirm: t("confirms.delete") } },
+                  class: "btn-danger" do %><i class="bi bi-trash"></i><% end %>
+            <% end %>
+          </div>
         </td>
       </tr>
     <% end %>

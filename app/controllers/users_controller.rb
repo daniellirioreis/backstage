@@ -6,6 +6,24 @@ class UsersController < ApplicationController
     @users = policy_scope(User).includes(:role).order(:name)
   end
 
+  def search
+    authorize User, :index?
+    q = params[:q].to_s.strip
+    digits = q.gsub(/\D/, "")
+
+    @users = User.where("name ILIKE ? OR cpf LIKE ?", "%#{q}%", "%#{digits}%")
+                 .order(:name)
+                 .limit(10)
+
+    render json: @users.map { |u|
+      {
+        id:   u.id,
+        name: u.name,
+        cpf:  u.cpf.gsub(/(\d{3})(\d{3})(\d{3})(\d{2})/, '\1.\2.\3-\4')
+      }
+    }
+  end
+
   def show
     authorize @user
   end

@@ -7,36 +7,81 @@
   <% end %>
 </div>
 
-<table class="data-table">
-  <thead>
-    <tr>
-      <th><%= Event.human_attribute_name(:name) %></th>
-      <th><%= Event.human_attribute_name(:location) %></th>
-      <th><%= Event.human_attribute_name(:start_date) %></th>
-      <th><%= Event.human_attribute_name(:end_date) %></th>
-      <th><%= Event.human_attribute_name(:status) %></th>
-      <th></th>
-    </tr>
-  </thead>
-  <tbody>
+<% if @events.empty? %>
+  <div class="content-card" style="text-align: center; padding: 3rem; color: #a1a1aa;">
+    <i class="bi bi-calendar-event" style="font-size: 2.5rem; display: block; margin-bottom: 0.75rem;"></i>
+    <p style="margin: 0; font-size: 0.9rem;">Nenhum evento cadastrado ainda.</p>
+  </div>
+<% else %>
+  <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1rem;">
     <% @events.each do |event| %>
-      <tr>
-        <td><%= link_to event.name, event_path(event), style: "color: #18181b; font-weight: 500; text-decoration: none;" %></td>
-        <td style="color: #71717a;"><%= event.location %></td>
-        <td style="color: #71717a;"><%= l(event.start_date, format: :short) %></td>
-        <td style="color: #71717a;"><%= l(event.end_date, format: :short) %></td>
-        <td><span class="badge-status badge-<%= event.status %>"><%= t("event_statuses.#{event.status}") %></span></td>
-        <td class="td-actions">
-          <% if policy(event).edit? %>
-            <%= link_to edit_event_path(event), class: "btn-secondary" do %><i class="bi bi-pencil"></i><% end %>
+      <div class="content-card" style="padding: 0; overflow: hidden; display: flex; flex-direction: column;">
+
+        <%# Faixa de status colorida %>
+        <div style="height: 4px; background: <%= event.active? ? '#4ade80' : event.draft? ? '#d4d4d8' : '#27272a' %>;"></div>
+
+        <div style="padding: 1.25rem; display: flex; flex-direction: column; gap: 1rem; flex: 1;">
+
+          <%# Nome e badge %>
+          <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 0.5rem;">
+            <h3 style="font-size: 0.95rem; font-weight: 600; color: #18181b; margin: 0; line-height: 1.35;">
+              <%= event.name %>
+            </h3>
+            <span class="badge-status badge-<%= event.status %>" style="flex-shrink: 0;">
+              <%= t("event_statuses.#{event.status}") %>
+            </span>
+          </div>
+
+          <%# Local %>
+          <% if event.location.present? %>
+            <div style="display: flex; align-items: center; gap: 0.45rem; color: #71717a; font-size: 0.82rem;">
+              <i class="bi bi-geo-alt"></i>
+              <span><%= event.location %></span>
+            </div>
           <% end %>
-          <% if policy(event).destroy? %>
-            <%= button_to event_path(event), method: :delete,
-                form: { data: { turbo_confirm: t("confirms.delete") } },
-                class: "btn-danger" do %><i class="bi bi-trash"></i><% end %>
-          <% end %>
-        </td>
-      </tr>
+
+          <%# Datas %>
+          <div style="display: flex; align-items: center; gap: 0.45rem; color: #71717a; font-size: 0.82rem;">
+            <i class="bi bi-calendar3"></i>
+            <span><%= l(event.start_date, format: :short) %> → <%= l(event.end_date, format: :short) %></span>
+          </div>
+
+          <%# Setores e equipes %>
+          <% total_teams = event.sectors.sum { |s| s.teams.size } %>
+          <div style="display: flex; gap: 1rem;">
+            <div style="display: flex; align-items: center; gap: 0.45rem; color: #71717a; font-size: 0.82rem;">
+              <i class="bi bi-grid-3x3-gap"></i>
+              <span><%= event.sectors.size %> <%= event.sectors.size == 1 ? "setor" : "setores" %></span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 0.45rem; color: #71717a; font-size: 0.82rem;">
+              <i class="bi bi-people"></i>
+              <span><%= total_teams %> <%= total_teams == 1 ? "equipe" : "equipes" %></span>
+            </div>
+          </div>
+
+          <%# Ações %>
+          <div style="display: flex; gap: 0.5rem; border-top: 1px solid #f4f4f5; padding-top: 1rem; margin-top: auto;">
+            <% if policy(event).show? %>
+              <%= link_to event_path(event), class: "btn-secondary", style: "flex: 1; justify-content: center;" do %>
+                <i class="bi bi-eye"></i> Visualizar
+              <% end %>
+            <% end %>
+            <% if policy(event).edit? %>
+              <%= link_to edit_event_path(event), class: "btn-secondary", style: "padding: 0.4rem 0.7rem;" do %>
+                <i class="bi bi-pencil"></i>
+              <% end %>
+            <% end %>
+            <% if policy(event).destroy? %>
+              <%= button_to event_path(event), method: :delete,
+                  form: { data: { turbo_confirm: t("confirms.delete") } },
+                  class: "btn-danger", style: "padding: 0.4rem 0.7rem;" do %>
+                <i class="bi bi-trash"></i>
+              <% end %>
+            <% end %>
+          </div>
+
+        </div>
+      </div>
     <% end %>
-  </tbody>
-</table>
+  </div>
+<% end %>

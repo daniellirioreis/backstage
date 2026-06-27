@@ -1,25 +1,60 @@
-<div class="d-flex justify-content-between align-items-center mb-3">
-  <h1><%= @team.name %></h1>
-  <div class="d-flex gap-2">
-    <% if policy(@team).edit? %>
-      <%= link_to t("actions.edit"), edit_team_path(@team), class: "btn btn-outline-secondary" %>
+<div class="page-header">
+  <div style="display: flex; align-items: center; gap: 0.75rem;">
+    <%= link_to teams_path, class: "btn-secondary", style: "padding: 0.35rem 0.6rem;" do %>
+      <i class="bi bi-arrow-left"></i>
     <% end %>
-    <%= link_to t("actions.cancel"), teams_path, class: "btn btn-outline-secondary" %>
+    <div>
+      <h1 style="margin: 0;"><%= @team.name %></h1>
+      <div style="font-size: 0.82rem; color: #71717a; margin-top: 0.2rem;">
+        <i class="bi bi-grid-3x3-gap"></i> <%= @team.sector.name %> &middot;
+        <i class="bi bi-calendar-event"></i> <%= @team.sector.event.name %>
+      </div>
+    </div>
+  </div>
+  <div style="display: flex; gap: 0.5rem;">
+    <% if policy(@team).edit? %>
+      <%= link_to edit_team_path(@team), class: "btn-secondary" do %>
+        <i class="bi bi-pencil"></i> <%= t("actions.edit") %>
+      <% end %>
+    <% end %>
+    <% if policy(@team).destroy? %>
+      <%= button_to team_path(@team), method: :delete,
+          form: { data: { turbo_confirm: t("confirms.delete") } },
+          class: "btn-danger" do %>
+        <i class="bi bi-trash"></i> <%= t("actions.delete") %>
+      <% end %>
+    <% end %>
   </div>
 </div>
 
-<p><strong><%= Event.model_name.human %>:</strong> <%= link_to @team.event.name, event_path(@team.event) %></p>
-
-<div class="d-flex justify-content-between align-items-center mb-2">
-  <h2 class="h5"><%= Sector.model_name.human(count: 2) %></h2>
-  <% if policy(Sector).new? %>
-    <%= link_to t("actions.new", model: Sector.model_name.human), new_sector_path(team_id: @team.id), class: "btn btn-sm btn-primary" %>
+<div class="content-card">
+  <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem;">
+    <h2 style="font-size: 0.9rem; font-weight: 600; color: #18181b; margin: 0;">
+      <i class="bi bi-people"></i> <%= User.model_name.human(count: 2) %>
+      <span style="font-size: 0.8rem; font-weight: 400; color: #a1a1aa; margin-left: 0.25rem;">(<%= @team.users.size %>)</span>
+    </h2>
+  </div>
+  <% if @team.users.any? %>
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th><%= User.human_attribute_name(:name) %></th>
+          <th><%= User.human_attribute_name(:role) %></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @team.users.includes(:role).order(:name).each do |user| %>
+          <tr>
+            <td><%= user.name %></td>
+            <td style="color: #71717a; font-size: 0.8rem;"><%= user.role&.name&.humanize || "—" %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  <% else %>
+    <div style="text-align: center; color: #a1a1aa; font-size: 0.85rem; padding: 1.5rem;">
+      <i class="bi bi-people" style="font-size: 1.25rem; display: block; margin-bottom: 0.4rem;"></i>
+      Nenhum colaborador na equipe
+    </div>
   <% end %>
 </div>
-<ul class="list-group">
-  <% @sectors.each do |sector| %>
-    <li class="list-group-item d-flex justify-content-between">
-      <%= link_to sector.name, sector_path(sector) %>
-    </li>
-  <% end %>
-</ul>

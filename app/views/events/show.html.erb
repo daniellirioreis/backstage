@@ -1,35 +1,128 @@
-<div class="d-flex justify-content-between align-items-center mb-3">
-  <h1><%= @event.name %></h1>
-  <div class="d-flex gap-2">
-    <% if policy(@event).edit? %>
-      <%= link_to t("actions.edit"), edit_event_path(@event), class: "btn btn-outline-secondary" %>
+<%# ── Cabeçalho ──────────────────────────────────────────────────────────── %>
+<div class="page-header">
+  <div style="display: flex; align-items: center; gap: 0.75rem;">
+    <%= link_to events_path, class: "btn-secondary", style: "padding: 0.35rem 0.6rem;" do %>
+      <i class="bi bi-arrow-left"></i>
     <% end %>
-    <%= link_to t("actions.cancel"), events_path, class: "btn btn-outline-secondary" %>
+    <div>
+      <div style="display: flex; align-items: center; gap: 0.6rem;">
+        <h1 style="margin: 0;"><%= @event.name %></h1>
+        <span class="badge-status badge-<%= @event.status %>">
+          <%= t("event_statuses.#{@event.status}") %>
+        </span>
+      </div>
+      <div style="font-size: 0.82rem; color: #71717a; margin-top: 0.2rem; display: flex; gap: 1rem;">
+        <% if @event.location.present? %>
+          <span><i class="bi bi-geo-alt"></i> <%= @event.location %></span>
+        <% end %>
+        <span><i class="bi bi-calendar3"></i> <%= l(@event.start_date, format: :short) %> → <%= l(@event.end_date, format: :short) %></span>
+      </div>
+    </div>
+  </div>
+  <div style="display: flex; gap: 0.5rem;">
+    <% if policy(@event).edit? %>
+      <%= link_to edit_event_path(@event), class: "btn-secondary" do %>
+        <i class="bi bi-pencil"></i> <%= t("actions.edit") %>
+      <% end %>
+    <% end %>
+    <% if policy(@event).destroy? %>
+      <%= button_to event_path(@event), method: :delete,
+          form: { data: { turbo_confirm: t("confirms.delete") } },
+          class: "btn-danger" do %>
+        <i class="bi bi-trash"></i> <%= t("actions.delete") %>
+      <% end %>
+    <% end %>
   </div>
 </div>
 
-<dl class="row mb-4">
-  <dt class="col-sm-3"><%= Event.human_attribute_name(:location) %></dt>
-  <dd class="col-sm-9"><%= @event.location %></dd>
-  <dt class="col-sm-3"><%= Event.human_attribute_name(:start_date) %></dt>
-  <dd class="col-sm-9"><%= l(@event.start_date, format: :long) %></dd>
-  <dt class="col-sm-3"><%= Event.human_attribute_name(:end_date) %></dt>
-  <dd class="col-sm-9"><%= l(@event.end_date, format: :long) %></dd>
-  <dt class="col-sm-3"><%= Event.human_attribute_name(:status) %></dt>
-  <dd class="col-sm-9"><span class="badge <%= event_status_badge(@event) %>"><%= t("event_statuses.#{@event.status}") %></span></dd>
-</dl>
+<%# ── Métricas ────────────────────────────────────────────────────────────── %>
+<% total_teams   = @sectors.sum { |s| s.teams.size } %>
+<% total_members = @sectors.flat_map(&:teams).flat_map(&:users).uniq.size %>
 
-<div class="d-flex justify-content-between align-items-center mb-2">
-  <h2 class="h5"><%= Team.model_name.human(count: 2) %></h2>
-  <% if policy(Team).new? %>
-    <%= link_to t("actions.new", model: Team.model_name.human), new_team_path(event_id: @event.id), class: "btn btn-sm btn-primary" %>
+<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
+  <div class="metric-card">
+    <div class="metric-label"><i class="bi bi-grid-3x3-gap"></i> Setores</div>
+    <div class="metric-value"><%= @sectors.size %></div>
+  </div>
+  <div class="metric-card metric-info">
+    <div class="metric-label"><i class="bi bi-people"></i> Equipes</div>
+    <div class="metric-value"><%= total_teams %></div>
+  </div>
+  <div class="metric-card metric-accent">
+    <div class="metric-label"><i class="bi bi-person-badge"></i> Colaboradores</div>
+    <div class="metric-value"><%= total_members %></div>
+  </div>
+</div>
+
+<%# ── Setores ─────────────────────────────────────────────────────────────── %>
+<div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem;">
+  <h2 style="font-size: 1rem; font-weight: 600; color: #18181b; margin: 0;">
+    <%= Sector.model_name.human(count: 2) %>
+  </h2>
+  <% if policy(Sector).new? %>
+    <%= link_to new_sector_path(event_id: @event.id), class: "btn-primary" do %>
+      <i class="bi bi-plus"></i> <%= t("actions.new", model: Sector.model_name.human) %>
+    <% end %>
   <% end %>
 </div>
-<ul class="list-group">
-  <% @teams.each do |team| %>
-    <li class="list-group-item d-flex justify-content-between align-items-center">
-      <%= link_to team.name, team_path(team) %>
-      <span class="badge bg-secondary"><%= team.sectors.size %> <%= Sector.model_name.human(count: team.sectors.size) %></span>
-    </li>
-  <% end %>
-</ul>
+
+<% if @sectors.empty? %>
+  <div class="content-card" style="text-align: center; padding: 2.5rem; color: #a1a1aa;">
+    <i class="bi bi-grid-3x3-gap" style="font-size: 2rem; display: block; margin-bottom: 0.5rem;"></i>
+    <p style="margin: 0; font-size: 0.88rem;">Nenhum setor cadastrado para este evento.</p>
+  </div>
+<% else %>
+  <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 1rem;">
+    <% @sectors.each do |sector| %>
+      <div class="content-card" style="padding: 1.25rem; display: flex; flex-direction: column; gap: 1rem;">
+
+        <%# Nome e ações %>
+        <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 0.5rem;">
+          <h3 style="font-size: 0.92rem; font-weight: 600; color: #18181b; margin: 0;">
+            <%= sector.name %>
+          </h3>
+          <div style="display: flex; gap: 0.35rem; flex-shrink: 0;">
+            <% if policy(sector).show? %>
+              <%= link_to sector_path(sector), class: "btn-secondary", style: "padding: 0.3rem 0.55rem;" do %>
+                <i class="bi bi-eye"></i>
+              <% end %>
+            <% end %>
+            <% if policy(sector).edit? %>
+              <%= link_to edit_sector_path(sector), class: "btn-secondary", style: "padding: 0.3rem 0.55rem;" do %>
+                <i class="bi bi-pencil"></i>
+              <% end %>
+            <% end %>
+            <% if policy(sector).destroy? %>
+              <%= button_to sector_path(sector), method: :delete,
+                  form: { data: { turbo_confirm: t("confirms.delete") } },
+                  class: "btn-danger", style: "padding: 0.3rem 0.55rem;" do %>
+                <i class="bi bi-trash"></i>
+              <% end %>
+            <% end %>
+          </div>
+        </div>
+
+        <%# Equipes %>
+        <div style="border-top: 1px solid #f4f4f5; padding-top: 0.9rem;">
+          <div style="font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: #71717a; margin-bottom: 0.5rem;">
+            <i class="bi bi-people"></i> <%= sector.teams.size %> <%= sector.teams.size == 1 ? "equipe" : "equipes" %>
+          </div>
+          <% if sector.teams.any? %>
+            <div style="display: flex; flex-direction: column; gap: 0.3rem;">
+              <% sector.teams.each do |team| %>
+                <div style="display: flex; align-items: center; gap: 0.5rem; padding: 0.35rem 0; border-bottom: 1px solid #f4f4f5;">
+                  <i class="bi bi-dash" style="color: #d4d4d8; flex-shrink: 0;"></i>
+                  <%= link_to team.name, team_path(team), style: "font-size: 0.82rem; color: #3f3f46; text-decoration: none;" %>
+                  <span style="margin-left: auto; font-size: 0.75rem; color: #a1a1aa;"><%= team.users.size %> col.</span>
+                </div>
+              <% end %>
+            </div>
+          <% else %>
+            <span style="font-size: 0.8rem; color: #a1a1aa;">Nenhuma equipe</span>
+          <% end %>
+        </div>
+
+      </div>
+    <% end %>
+  </div>
+<% end %>

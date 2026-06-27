@@ -3,12 +3,12 @@ class EventsController < ApplicationController
 
   def index
     authorize Event
-    @events = policy_scope(Event).order(start_date: :desc)
+    @events = policy_scope(Event).includes(sectors: :teams).order(start_date: :desc)
   end
 
   def show
     authorize @event
-    @teams = @event.teams.includes(:sectors)
+    @sectors = @event.sectors.includes(teams: :users).order(:name)
   end
 
   def new

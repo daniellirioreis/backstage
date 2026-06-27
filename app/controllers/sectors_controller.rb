@@ -3,17 +3,22 @@ class SectorsController < ApplicationController
 
   def index
     authorize Sector
-    @sectors = policy_scope(Sector).includes(team: :event).order("events.name, teams.name, sectors.name").references(team: :event)
+    @events = Event.order(:name)
+    sectors = policy_scope(Sector).includes(:event, :teams).order("events.name, sectors.name").references(:event)
+    sectors = sectors.where(event_id: params[:event_id]) if params[:event_id].present?
+    @sectors = sectors
   end
 
   def show
     authorize @sector
+    @teams  = @sector.teams.includes(:users)
     @shifts = @sector.shifts.includes(:user).order(:date, :start_time)
   end
 
   def new
     authorize Sector
-    @sector = Sector.new(team_id: params[:team_id])
+    @sector = Sector.new(event_id: params[:event_id])
+    @events = Event.order(:name)
   end
 
   def create
@@ -22,12 +27,14 @@ class SectorsController < ApplicationController
     if @sector.save
       redirect_to sectors_path, notice: t("notices.created", model: Sector.model_name.human)
     else
+      @events = Event.order(:name)
       render :new, status: :unprocessable_entity
     end
   end
 
   def edit
     authorize @sector
+    @events = Event.order(:name)
   end
 
   def update
@@ -35,6 +42,7 @@ class SectorsController < ApplicationController
     if @sector.update(sector_params)
       redirect_to sectors_path, notice: t("notices.updated", model: Sector.model_name.human)
     else
+      @events = Event.order(:name)
       render :edit, status: :unprocessable_entity
     end
   end
@@ -52,6 +60,6 @@ class SectorsController < ApplicationController
   end
 
   def sector_params
-    params.require(:sector).permit(:name, :team_id)
+    params.require(:sector).permit(:name, :event_id)
   end
 end

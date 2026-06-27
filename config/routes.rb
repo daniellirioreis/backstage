@@ -10,7 +10,9 @@ Rails.application.routes.draw do
              }
 
   resources :roles
-  resources :users
+  resources :users do
+    collection { get :search }
+  end
   resources :events
   resources :teams
   resources :sectors

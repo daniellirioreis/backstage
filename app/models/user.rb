@@ -5,6 +5,8 @@ class User < ApplicationRecord
          :validatable
 
   belongs_to :role
+  has_many :team_memberships, dependent: :destroy
+  has_many :teams, through: :team_memberships
 
   delegate :can?, to: :role, allow_nil: true
 
@@ -33,13 +35,15 @@ class User < ApplicationRecord
 
     # Primeiro dígito verificador
     sum = 9.times.sum { |i| digits[i] * (10 - i) }
-    first = (sum % 11) % 10
+    rem = sum % 11
+    first = rem < 2 ? 0 : 11 - rem
     return errors.add(:cpf, :invalid_cpf) if first != digits[9]
 
     # Segundo dígito verificador
     sum = 9.times.sum { |i| digits[i] * (11 - i) }
     sum += digits[9] * 2
-    second = (sum % 11) % 10
+    rem = sum % 11
+    second = rem < 2 ? 0 : 11 - rem
     errors.add(:cpf, :invalid_cpf) if second != digits[10]
   end
 end
