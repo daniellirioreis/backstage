@@ -7,6 +7,7 @@ RUN apt-get update -qq && apt-get install -y \
   npm \
   curl \
   git \
+  wkhtmltopdf \
   && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /rails

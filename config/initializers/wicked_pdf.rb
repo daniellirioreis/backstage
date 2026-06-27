@@ -1,3 +1,3 @@
 WickedPdf.config = {
-  # wkhtmltopdf-binary gem provides the path automatically
+  exe_path: `which wkhtmltopdf`.strip
 }

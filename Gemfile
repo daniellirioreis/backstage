@@ -19,7 +19,6 @@ gem "pundit"
 
 # PDF
 gem "wicked_pdf"
-gem "wkhtmltopdf-binary"
 
 # Bootstrap
 gem "bootstrap", "~> 5.3"
