@@ -1,3 +1,3 @@
 WickedPdf.config = {
-  exe_path: `which wkhtmltopdf`.strip
+  exe_path: "/usr/bin/wkhtmltopdf"
 }
