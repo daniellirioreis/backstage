@@ -17,16 +17,21 @@ class TeamsController < ApplicationController
   def credentials
     authorize @team, :show?
 
-    # Collect coordinator + collaborators in order (coordinator first)
+    # Recarrega explicitamente todos os membros do banco
+    coordinator = User.includes(avatar_attachment: :blob).find_by(id: @team.coordinator_id)
+    collaborators = User.includes(avatar_attachment: :blob)
+                        .joins(:team_memberships)
+                        .where(team_memberships: { team_id: @team.id })
+                        .order(:name)
+
     members = []
-    if @team.coordinator
-      members << { user: @team.coordinator, is_coordinator: true }
-    end
-    @team.users.reject { |u| u.id == @team.coordinator_id }.each do |u|
+    members << { user: coordinator, is_coordinator: true } if coordinator
+
+    collaborators.each do |u|
+      next if u.id == @team.coordinator_id
       members << { user: u, is_coordinator: false }
     end
 
-    # Pre-load avatars as base64
     @members = members.map do |m|
       user = m[:user]
       avatar_b64 = if user.avatar.attached?
