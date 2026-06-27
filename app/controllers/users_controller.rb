@@ -50,6 +50,7 @@ class UsersController < ApplicationController
         render pdf: "credencial-#{@user.name.parameterize}",
                template: "users/credential_pdf",
                layout: "credential_pdf",
+               formats: [:html],
                page_size: "A4",
                orientation: "Portrait",
                margin: { top: 0, bottom: 0, left: 0, right: 0 },
@@ -79,7 +80,6 @@ class UsersController < ApplicationController
 
   def update
     authorize @user
-    # Não atualiza senha se os campos estiverem em branco
     params_to_update = user_params
     if params_to_update[:password].blank?
       params_to_update = params_to_update.except(:password, :password_confirmation)
