@@ -1,5 +1,5 @@
 class UsersController < ApplicationController
-  before_action :set_user, only: %i[show edit update destroy]
+  before_action :set_user, only: %i[show edit update destroy credential]
 
   def index
     authorize User
@@ -34,6 +34,28 @@ class UsersController < ApplicationController
 
   def show
     authorize @user
+  end
+
+  def credential
+    authorize @user, :show?
+    @team = @user.teams.joins(:sector)
+                 .where(sectors: { event_id: current_event&.id })
+                 .includes(:sector)
+                 .first
+    @is_coordinator = @team&.coordinator_id == @user.id
+
+    respond_to do |format|
+      format.html { render layout: "credential" }
+      format.pdf do
+        render pdf: "credencial-#{@user.name.parameterize}",
+               template: "users/credential_pdf",
+               layout: "credential_pdf",
+               page_size: "A4",
+               orientation: "Portrait",
+               margin: { top: 0, bottom: 0, left: 0, right: 0 },
+               disposition: "attachment"
+      end
+    end
   end
 
   def new
@@ -83,6 +105,6 @@ class UsersController < ApplicationController
   end
 
   def user_params
-    params.require(:user).permit(:name, :cpf, :phone, :email, :role_id, :password, :password_confirmation)
+    params.require(:user).permit(:name, :cpf, :phone, :email, :role_id, :password, :password_confirmation, :avatar, :remove_avatar)
   end
 end

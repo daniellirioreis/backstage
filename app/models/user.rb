@@ -7,6 +7,9 @@ class User < ApplicationRecord
   belongs_to :role
   has_many :team_memberships, dependent: :destroy
   has_many :teams, through: :team_memberships
+  has_one_attached :avatar
+  attr_accessor :remove_avatar
+  before_save { avatar.purge if remove_avatar == "1" }
 
   delegate :can?, to: :role, allow_nil: true
 

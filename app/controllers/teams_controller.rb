@@ -6,7 +6,7 @@ class TeamsController < ApplicationController
     @teams = policy_scope(Team)
                .joins(:sector)
                .where(sectors: { event_id: current_event.id })
-               .includes(:sector, :coordinator, users: [])
+               .includes(:sector, coordinator: { avatar_attachment: :blob }, users: { avatar_attachment: :blob })
                .order("sectors.name, teams.name")
   end
 

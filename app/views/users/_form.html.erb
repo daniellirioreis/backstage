@@ -1,7 +1,42 @@
 <div class="content-card" style="max-width: 700px;">
   <%= form_with model: user,
+      multipart: true,
       data: { controller: "user-form", action: "submit->user-form#submit" } do |f| %>
     <%= render "shared/error_messages", object: user %>
+
+    <%# Avatar %>
+    <div style="display: flex; align-items: center; gap: 1.25rem; margin-bottom: 1.5rem; padding-bottom: 1.25rem; border-bottom: 1px solid #f4f4f5;">
+      <div id="avatar-preview" style="width: 72px; height: 72px; border-radius: 50%; overflow: hidden; background: #f4f4f5; border: 1px solid #e4e4e7; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+        <% if user.avatar.attached? %>
+          <%= image_tag user.avatar, style: "width: 100%; height: 100%; object-fit: cover;" %>
+        <% else %>
+          <span style="font-size: 1.5rem; font-weight: 600; color: #a1a1aa;">
+            <%= user.name.present? ? user.name.first.upcase : "?" %>
+          </span>
+        <% end %>
+      </div>
+      <div>
+        <%= f.label :avatar, "Foto do colaborador", class: "form-label", style: "margin-bottom: 0.4rem;" %>
+        <%= f.file_field :avatar, accept: "image/*", class: "form-control",
+            style: "font-size: 0.82rem;",
+            onchange: "
+              const file = this.files[0];
+              if (file) {
+                const reader = new FileReader();
+                reader.onload = e => {
+                  document.getElementById('avatar-preview').innerHTML =
+                    '<img src=\"' + e.target.result + '\" style=\"width:100%;height:100%;object-fit:cover;\">';
+                };
+                reader.readAsDataURL(file);
+              }
+            " %>
+        <% if user.avatar.attached? %>
+          <div style="margin-top: 0.4rem; font-size: 0.75rem; color: #a1a1aa;">
+            <%= f.check_box :remove_avatar %> Remover foto atual
+          </div>
+        <% end %>
+      </div>
+    </div>
 
     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
 

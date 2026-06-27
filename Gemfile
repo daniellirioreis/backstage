@@ -17,6 +17,10 @@ gem "tzinfo-data", platforms: %i[windows jruby]
 gem "devise"
 gem "pundit"
 
+# PDF
+gem "wicked_pdf"
+gem "wkhtmltopdf-binary"
+
 # Bootstrap
 gem "bootstrap", "~> 5.3"
 gem "sassc-rails"
