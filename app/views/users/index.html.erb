@@ -1,0 +1,40 @@
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1><%= User.model_name.human(count: 2) %></h1>
+  <% if policy(User).new? %>
+    <%= link_to t("actions.new", model: User.model_name.human), new_user_path, class: "btn btn-primary" %>
+  <% end %>
+</div>
+
+<table class="table table-hover">
+  <thead class="table-dark">
+    <tr>
+      <th><%= User.human_attribute_name(:name) %></th>
+      <th><%= User.human_attribute_name(:email) %></th>
+      <th><%= User.human_attribute_name(:cpf) %></th>
+      <th><%= User.human_attribute_name(:phone) %></th>
+      <th><%= User.human_attribute_name(:role) %></th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    <% @users.each do |user| %>
+      <tr>
+        <td><%= user.name %></td>
+        <td><%= user.email %></td>
+        <td><%= user.cpf %></td>
+        <td><%= user.phone %></td>
+        <td><%= user.role&.name&.humanize || "—" %></td>
+        <td class="text-end">
+          <% if policy(user).edit? %>
+            <%= link_to t("actions.edit"), edit_user_path(user), class: "btn btn-sm btn-outline-secondary" %>
+          <% end %>
+          <% if policy(user).destroy? %>
+            <%= button_to t("actions.delete"), user_path(user), method: :delete,
+                form: { data: { turbo_confirm: t("confirms.delete") } },
+                class: "btn btn-sm btn-outline-danger" %>
+          <% end %>
+        </td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>

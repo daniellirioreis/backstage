@@ -1,0 +1,40 @@
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1><%= Event.model_name.human(count: 2) %></h1>
+  <% if policy(Event).new? %>
+    <%= link_to t("actions.new", model: Event.model_name.human), new_event_path, class: "btn btn-primary" %>
+  <% end %>
+</div>
+
+<table class="table table-hover">
+  <thead class="table-dark">
+    <tr>
+      <th><%= Event.human_attribute_name(:name) %></th>
+      <th><%= Event.human_attribute_name(:location) %></th>
+      <th><%= Event.human_attribute_name(:start_date) %></th>
+      <th><%= Event.human_attribute_name(:end_date) %></th>
+      <th><%= Event.human_attribute_name(:status) %></th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    <% @events.each do |event| %>
+      <tr>
+        <td><%= link_to event.name, event_path(event) %></td>
+        <td><%= event.location %></td>
+        <td><%= l(event.start_date, format: :short) %></td>
+        <td><%= l(event.end_date, format: :short) %></td>
+        <td><span class="badge <%= event_status_badge(event) %>"><%= t("event_statuses.#{event.status}") %></span></td>
+        <td class="text-end">
+          <% if policy(event).edit? %>
+            <%= link_to t("actions.edit"), edit_event_path(event), class: "btn btn-sm btn-outline-secondary" %>
+          <% end %>
+          <% if policy(event).destroy? %>
+            <%= button_to t("actions.delete"), event_path(event), method: :delete,
+                form: { data: { turbo_confirm: t("confirms.delete") } },
+                class: "btn btn-sm btn-outline-danger" %>
+          <% end %>
+        </td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>

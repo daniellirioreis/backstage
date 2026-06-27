@@ -1,0 +1,62 @@
+class UsersController < ApplicationController
+  before_action :set_user, only: %i[show edit update destroy]
+
+  def index
+    authorize User
+    @users = policy_scope(User).includes(:role).order(:name)
+  end
+
+  def show
+    authorize @user
+  end
+
+  def new
+    authorize User
+    @user = User.new
+  end
+
+  def create
+    authorize User
+    @user = User.new(user_params)
+    if @user.save
+      redirect_to users_path, notice: t("notices.created", model: User.model_name.human)
+    else
+      render :new, status: :unprocessable_entity
+    end
+  end
+
+  def edit
+    authorize @user
+  end
+
+  def update
+    authorize @user
+    # Não atualiza senha se os campos estiverem em branco
+    params_to_update = user_params
+    if params_to_update[:password].blank?
+      params_to_update = params_to_update.except(:password, :password_confirmation)
+    end
+
+    if @user.update(params_to_update)
+      redirect_to users_path, notice: t("notices.updated", model: User.model_name.human)
+    else
+      render :edit, status: :unprocessable_entity
+    end
+  end
+
+  def destroy
+    authorize @user
+    @user.destroy
+    redirect_to users_path, notice: t("notices.destroyed", model: User.model_name.human)
+  end
+
+  private
+
+  def set_user
+    @user = User.find(params[:id])
+  end
+
+  def user_params
+    params.require(:user).permit(:name, :cpf, :phone, :email, :role_id, :password, :password_confirmation)
+  end
+end

@@ -1,0 +1,25 @@
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1><%= @team.name %></h1>
+  <div class="d-flex gap-2">
+    <% if policy(@team).edit? %>
+      <%= link_to t("actions.edit"), edit_team_path(@team), class: "btn btn-outline-secondary" %>
+    <% end %>
+    <%= link_to t("actions.cancel"), teams_path, class: "btn btn-outline-secondary" %>
+  </div>
+</div>
+
+<p><strong><%= Event.model_name.human %>:</strong> <%= link_to @team.event.name, event_path(@team.event) %></p>
+
+<div class="d-flex justify-content-between align-items-center mb-2">
+  <h2 class="h5"><%= Sector.model_name.human(count: 2) %></h2>
+  <% if policy(Sector).new? %>
+    <%= link_to t("actions.new", model: Sector.model_name.human), new_sector_path(team_id: @team.id), class: "btn btn-sm btn-primary" %>
+  <% end %>
+</div>
+<ul class="list-group">
+  <% @sectors.each do |sector| %>
+    <li class="list-group-item d-flex justify-content-between">
+      <%= link_to sector.name, sector_path(sector) %>
+    </li>
+  <% end %>
+</ul>

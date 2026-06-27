@@ -1,0 +1,42 @@
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1><%= Shift.model_name.human(count: 2) %></h1>
+  <% if policy(Shift).new? %>
+    <%= link_to t("actions.new", model: Shift.model_name.human), new_shift_path, class: "btn btn-primary" %>
+  <% end %>
+</div>
+
+<table class="table table-hover">
+  <thead class="table-dark">
+    <tr>
+      <th><%= Shift.human_attribute_name(:date) %></th>
+      <th><%= Shift.human_attribute_name(:start_time) %></th>
+      <th><%= Shift.human_attribute_name(:end_time) %></th>
+      <th><%= User.model_name.human %></th>
+      <th><%= Sector.model_name.human %></th>
+      <th><%= Shift.human_attribute_name(:has_radio) %></th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    <% @shifts.each do |shift| %>
+      <tr>
+        <td><%= l(shift.date, format: :short) %></td>
+        <td><%= shift.start_time.strftime("%H:%M") %></td>
+        <td><%= shift.end_time.strftime("%H:%M") %></td>
+        <td><%= shift.user.name %></td>
+        <td><%= shift.sector.name %></td>
+        <td><%= shift.has_radio? ? "✓" : "—" %></td>
+        <td class="text-end">
+          <% if policy(shift).edit? %>
+            <%= link_to t("actions.edit"), edit_shift_path(shift), class: "btn btn-sm btn-outline-secondary" %>
+          <% end %>
+          <% if policy(shift).destroy? %>
+            <%= button_to t("actions.delete"), shift_path(shift), method: :delete,
+                form: { data: { turbo_confirm: t("confirms.delete") } },
+                class: "btn btn-sm btn-outline-danger" %>
+          <% end %>
+        </td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>

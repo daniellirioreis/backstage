@@ -1,0 +1,117 @@
+pt-BR:
+  nav:
+    home: "Início"
+    sign_out: "Sair"
+
+  actions:
+    new: "Novo %{model}"
+    edit_model: "Editar %{model}"
+    edit: "Editar"
+    delete: "Excluir"
+    save: "Salvar"
+    cancel: "Cancelar"
+
+  notices:
+    created: "%{model} criado com sucesso."
+    updated: "%{model} atualizado com sucesso."
+    destroyed: "%{model} excluído com sucesso."
+
+  confirms:
+    delete: "Tem certeza que deseja excluir?"
+
+  labels:
+    resource: "Recurso"
+    permissions_count: "Permissões"
+
+  permission_actions:
+    index: "Listar"
+    show: "Ver"
+    create: "Criar"
+    update: "Editar"
+    destroy: "Excluir"
+
+  event_statuses:
+    draft: "Rascunho"
+    active: "Ativo"
+    closed: "Encerrado"
+
+  errors:
+    not_authorized: "Você não tem permissão para realizar esta ação."
+    messages:
+      invalid_cpf: "deve conter exatamente 11 dígitos numéricos"
+      after_start_date: "deve ser igual ou posterior à data de início"
+      after_start_time: "deve ser posterior ao horário de início"
+      schedule_conflict: "Colaborador já possui uma escala neste horário"
+      not_saved:
+        one: "Não foi possível salvar o(a) %{resource}: 1 erro encontrado."
+        other: "Não foi possível salvar o(a) %{resource}: %{count} erros encontrados."
+
+  date:
+    formats:
+      short: "%d/%m/%Y"
+      long: "%d de %B de %Y"
+    month_names: [~, Janeiro, Fevereiro, Março, Abril, Maio, Junho, Julho, Agosto, Setembro, Outubro, Novembro, Dezembro]
+    abbr_month_names: [~, Jan, Fev, Mar, Abr, Mai, Jun, Jul, Ago, Set, Out, Nov, Dez]
+    day_names: [Domingo, Segunda-feira, Terça-feira, Quarta-feira, Quinta-feira, Sexta-feira, Sábado]
+    abbr_day_names: [Dom, Seg, Ter, Qua, Qui, Sex, Sáb]
+
+  activerecord:
+    models:
+      user:
+        one: "Colaborador"
+        other: "Colaboradores"
+      role:
+        one: "Perfil"
+        other: "Perfis"
+      permission:
+        one: "Permissão"
+        other: "Permissões"
+      event:
+        one: "Evento"
+        other: "Eventos"
+      team:
+        one: "Equipe"
+        other: "Equipes"
+      sector:
+        one: "Setor"
+        other: "Setores"
+      shift:
+        one: "Escala"
+        other: "Escalas"
+      vehicle:
+        one: "Veículo"
+        other: "Veículos"
+
+    attributes:
+      user:
+        name: "Nome"
+        cpf: "CPF"
+        phone: "Telefone"
+        email: "E-mail"
+        password: "Senha"
+        password_confirmation: "Confirmação de senha"
+        role: "Perfil"
+      role:
+        name: "Nome"
+      permission:
+        resource: "Recurso"
+        action: "Ação"
+      event:
+        name: "Nome"
+        location: "Local"
+        start_date: "Data de início"
+        end_date: "Data de fim"
+        status: "Status"
+      team:
+        name: "Nome"
+      sector:
+        name: "Nome"
+      shift:
+        date: "Data"
+        start_time: "Hora de início"
+        end_time: "Hora de fim"
+        has_radio: "Tem rádio"
+      vehicle:
+        model: "Modelo"
+        color: "Cor"
+        license_plate: "Placa"
