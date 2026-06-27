@@ -1,23 +1,33 @@
 <div class="page-header">
-  <h1>Dashboard</h1>
+  <div>
+    <h1 style="margin: 0;"><%= current_event.name %></h1>
+    <div style="font-size: 0.82rem; color: #71717a; margin-top: 0.2rem; display: flex; gap: 1rem;">
+      <% if current_event.location.present? %>
+        <span><i class="bi bi-geo-alt"></i> <%= current_event.location %></span>
+      <% end %>
+      <span><i class="bi bi-calendar3"></i> <%= l(current_event.start_date, format: :short) %> → <%= l(current_event.end_date, format: :short) %></span>
+      <span class="badge-status badge-<%= current_event.status %>"><%= t("event_statuses.#{current_event.status}") %></span>
+    </div>
+  </div>
   <span style="font-size: 0.8rem; color: #71717a;"><%= l(Date.today, format: :long) %></span>
 </div>
 
+<%# ── Métricas ────────────────────────────────────────────────────────────── %>
 <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 2rem;">
   <div class="metric-card">
-    <div class="metric-label"><i class="bi bi-person"></i> Colaboradores</div>
-    <div class="metric-value"><%= @total_users %></div>
-    <div class="metric-sub">cadastrados</div>
-  </div>
-  <div class="metric-card metric-accent">
-    <div class="metric-label"><i class="bi bi-calendar-check"></i> Eventos ativos</div>
-    <div class="metric-value"><%= @active_events %></div>
-    <div class="metric-sub">em andamento</div>
+    <div class="metric-label"><i class="bi bi-grid-3x3-gap"></i> Setores</div>
+    <div class="metric-value"><%= @total_sectors %></div>
+    <div class="metric-sub">no evento</div>
   </div>
   <div class="metric-card metric-info">
-    <div class="metric-label"><i class="bi bi-clock"></i> Escalas hoje</div>
-    <div class="metric-value"><%= @shifts_today %></div>
-    <div class="metric-sub"><%= Date.today.strftime("%d/%m/%Y") %></div>
+    <div class="metric-label"><i class="bi bi-people"></i> Equipes</div>
+    <div class="metric-value"><%= @total_teams %></div>
+    <div class="metric-sub">no evento</div>
+  </div>
+  <div class="metric-card metric-accent">
+    <div class="metric-label"><i class="bi bi-person-badge"></i> Colaboradores</div>
+    <div class="metric-value"><%= @total_members %></div>
+    <div class="metric-sub">escalados</div>
   </div>
   <div class="metric-card metric-warn">
     <div class="metric-label"><i class="bi bi-car-front"></i> Veículos</div>
@@ -26,82 +36,51 @@
   </div>
 </div>
 
-<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
-
-  <div>
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
-      <h2 style="font-size: 0.9rem; font-weight: 600; color: #18181b; margin: 0;">Próximas escalas</h2>
-      <% if policy(Shift).index? %>
-        <%= link_to "Ver todas", shifts_path, class: "btn-secondary", style: "font-size: 0.75rem; padding: 0.25rem 0.6rem;" %>
-      <% end %>
-    </div>
-    <% if @upcoming_shifts.any? %>
-      <table class="data-table">
-        <thead>
-          <tr>
-            <th>Colaborador</th>
-            <th>Setor</th>
-            <th>Data</th>
-            <th>Horário</th>
-          </tr>
-        </thead>
-        <tbody>
-          <% @upcoming_shifts.each do |shift| %>
-            <tr>
-              <td><%= shift.user.name.split.first %></td>
-              <td style="color: #71717a; font-size: 0.8rem;"><%= shift.sector.name %></td>
-              <td style="color: #71717a; font-size: 0.8rem;"><%= l(shift.date, format: :short) %></td>
-              <td style="font-size: 0.8rem; color: #52525b;">
-                <%= shift.start_time.strftime("%H:%M") %>–<%= shift.end_time.strftime("%H:%M") %>
-              </td>
-            </tr>
-          <% end %>
-        </tbody>
-      </table>
-    <% else %>
-      <div class="content-card" style="text-align: center; color: #a1a1aa; font-size: 0.85rem; padding: 2rem;">
-        <i class="bi bi-clock" style="font-size: 1.5rem; display: block; margin-bottom: 0.5rem;"></i>
-        Nenhuma escala agendada
-      </div>
-    <% end %>
-  </div>
-
-  <div>
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
-      <h2 style="font-size: 0.9rem; font-weight: 600; color: #18181b; margin: 0;">Eventos recentes</h2>
-      <% if policy(Event).index? %>
-        <%= link_to "Ver todos", events_path, class: "btn-secondary", style: "font-size: 0.75rem; padding: 0.25rem 0.6rem;" %>
-      <% end %>
-    </div>
-    <% if @recent_events.any? %>
-      <table class="data-table">
-        <thead>
-          <tr>
-            <th>Evento</th>
-            <th>Início</th>
-            <th>Status</th>
-          </tr>
-        </thead>
-        <tbody>
-          <% @recent_events.each do |event| %>
-            <tr>
-              <td><%= link_to event.name, event_path(event), style: "color: #18181b; text-decoration: none; font-weight: 500;" %></td>
-              <td style="color: #71717a; font-size: 0.8rem;"><%= l(event.start_date, format: :short) %></td>
-              <td>
-                <span class="badge-status badge-<%= event.status %>">
-                  <%= t("event_statuses.#{event.status}") %>
-                </span>
-              </td>
-            </tr>
-          <% end %>
-        </tbody>
-      </table>
-    <% else %>
-      <div class="content-card" style="text-align: center; color: #a1a1aa; font-size: 0.85rem; padding: 2rem;">
-        <i class="bi bi-calendar-x" style="font-size: 1.5rem; display: block; margin-bottom: 0.5rem;"></i>
-        Nenhum evento cadastrado
-      </div>
-    <% end %>
-  </div>
-
+<%# ── Setores e equipes ───────────────────────────────────────────────────── %>
+<div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem;">
+  <h2 style="font-size: 1rem; font-weight: 600; color: #18181b; margin: 0;">Setores do evento</h2>
+  <% if policy(Sector).index? %>
+    <%= link_to "Ver todos", sectors_path, class: "btn-secondary", style: "font-size: 0.75rem; padding: 0.25rem 0.6rem;" %>
+  <% end %>
 </div>
+
+<% if @sectors.empty? %>
+  <div class="content-card" style="text-align: center; color: #a1a1aa; font-size: 0.85rem; padding: 2rem;">
+    <i class="bi bi-grid-3x3-gap" style="font-size: 1.5rem; display: block; margin-bottom: 0.5rem;"></i>
+    Nenhum setor cadastrado para este evento.
+    <% if policy(Sector).new? %>
+      <div style="margin-top: 0.75rem;">
+        <%= link_to new_sector_path(event_id: current_event.id), class: "btn-primary" do %>
+          <i class="bi bi-plus"></i> Criar setor
+        <% end %>
+      </div>
+    <% end %>
+  </div>
+<% else %>
+  <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1rem;">
+    <% @sectors.each do |sector| %>
+      <div class="content-card" style="padding: 1.1rem; display: flex; flex-direction: column; gap: 0.75rem;">
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+          <h3 style="font-size: 0.88rem; font-weight: 600; color: #18181b; margin: 0;"><%= sector.name %></h3>
+          <span style="font-size: 0.72rem; color: #71717a;">
+            <%= sector.teams.size %> <%= sector.teams.size == 1 ? "equipe" : "equipes" %>
+          </span>
+        </div>
+
+        <% if sector.teams.any? %>
+          <div style="display: flex; flex-direction: column; gap: 0.25rem;">
+            <% sector.teams.each do |team| %>
+              <div style="display: flex; align-items: center; justify-content: space-between;
+                          padding: 0.3rem 0; border-bottom: 1px solid #f4f4f5; font-size: 0.8rem;">
+                <span style="color: #3f3f46;"><%= team.name %></span>
+                <span style="color: #a1a1aa; font-size: 0.75rem;"><%= team.users.size %> col.</span>
+              </div>
+            <% end %>
+          </div>
+        <% else %>
+          <span style="font-size: 0.78rem; color: #a1a1aa;">Sem equipes</span>
+        <% end %>
+      </div>
+    <% end %>
+  </div>
+<% end %>

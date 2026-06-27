@@ -8,12 +8,20 @@ class UsersController < ApplicationController
 
   def search
     authorize User, :index?
-    q = params[:q].to_s.strip
+    q      = params[:q].to_s.strip
     digits = q.gsub(/\D/, "")
 
-    @users = User.where("name ILIKE ? OR cpf LIKE ?", "%#{q}%", "%#{digits}%")
-                 .order(:name)
-                 .limit(10)
+    scope = if q.present?
+      if digits.present?
+        User.where("name ILIKE ? OR cpf LIKE ?", "%#{q}%", "%#{digits}%")
+      else
+        User.where("name ILIKE ?", "%#{q}%")
+      end
+    else
+      User.all
+    end
+
+    @users = scope.order(:name).limit(100)
 
     render json: @users.map { |u|
       {

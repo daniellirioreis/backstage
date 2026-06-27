@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2024_01_01_000010) do
+ActiveRecord::Schema[7.1].define(version: 2024_01_01_000011) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -78,6 +78,8 @@ ActiveRecord::Schema[7.1].define(version: 2024_01_01_000010) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.bigint "sector_id", null: false
+    t.bigint "coordinator_id"
+    t.index ["coordinator_id"], name: "index_teams_on_coordinator_id"
     t.index ["sector_id"], name: "index_teams_on_sector_id"
   end
 
@@ -115,5 +117,6 @@ ActiveRecord::Schema[7.1].define(version: 2024_01_01_000010) do
   add_foreign_key "team_memberships", "teams"
   add_foreign_key "team_memberships", "users"
   add_foreign_key "teams", "sectors"
+  add_foreign_key "teams", "users", column: "coordinator_id"
   add_foreign_key "users", "roles"
 end

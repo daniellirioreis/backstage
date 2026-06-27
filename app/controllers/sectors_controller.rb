@@ -3,10 +3,9 @@ class SectorsController < ApplicationController
 
   def index
     authorize Sector
-    @events = Event.order(:name)
-    sectors = policy_scope(Sector).includes(:event, :teams).order("events.name, sectors.name").references(:event)
-    sectors = sectors.where(event_id: params[:event_id]) if params[:event_id].present?
-    @sectors = sectors
+    @sectors = policy_scope(Sector).includes(:event, :teams)
+                                   .where(event_id: current_event.id)
+                                   .order(:name)
   end
 
   def show
@@ -17,24 +16,22 @@ class SectorsController < ApplicationController
 
   def new
     authorize Sector
-    @sector = Sector.new(event_id: params[:event_id])
-    @events = Event.order(:name)
+    @sector = Sector.new(event_id: current_event.id)
   end
 
   def create
     authorize Sector
     @sector = Sector.new(sector_params)
+    @sector.event_id = current_event.id
     if @sector.save
       redirect_to sectors_path, notice: t("notices.created", model: Sector.model_name.human)
     else
-      @events = Event.order(:name)
       render :new, status: :unprocessable_entity
     end
   end
 
   def edit
     authorize @sector
-    @events = Event.order(:name)
   end
 
   def update
@@ -42,7 +39,6 @@ class SectorsController < ApplicationController
     if @sector.update(sector_params)
       redirect_to sectors_path, notice: t("notices.updated", model: Sector.model_name.human)
     else
-      @events = Event.order(:name)
       render :edit, status: :unprocessable_entity
     end
   end

@@ -3,10 +3,11 @@ class TeamsController < ApplicationController
 
   def index
     authorize Team
-    @events = Event.order(:name)
-    teams = policy_scope(Team).includes(sector: :event, users: []).order("events.name, sectors.name, teams.name").references(sector: :event)
-    teams = teams.joins(:sector).where(sectors: { event_id: params[:event_id] }) if params[:event_id].present?
-    @events_with_teams = teams.group_by { |t| t.sector.event }
+    @teams = policy_scope(Team)
+               .joins(:sector)
+               .where(sectors: { event_id: current_event.id })
+               .includes(:sector, :coordinator, users: [])
+               .order("sectors.name, teams.name")
   end
 
   def show
@@ -15,8 +16,9 @@ class TeamsController < ApplicationController
 
   def new
     authorize Team
-    @team    = Team.new(sector_id: params[:sector_id])
-    @sectors = Sector.includes(:event).order("events.name, sectors.name").references(:event)
+    @team         = Team.new(sector_id: params[:sector_id])
+    @sectors      = Sector.where(event_id: current_event.id).order(:name)
+    @all_users    = User.order(:name)
   end
 
   def create
@@ -25,14 +27,16 @@ class TeamsController < ApplicationController
     if @team.save
       redirect_to teams_path, notice: t("notices.created", model: Team.model_name.human)
     else
-      @sectors = Sector.includes(:event).order("events.name, sectors.name").references(:event)
+      @sectors   = Sector.where(event_id: current_event.id).order(:name)
+      @all_users = User.order(:name)
       render :new, status: :unprocessable_entity
     end
   end
 
   def edit
     authorize @team
-    @sectors = Sector.includes(:event).order("events.name, sectors.name").references(:event)
+    @sectors   = Sector.where(event_id: current_event.id).order(:name)
+    @all_users = User.order(:name)
   end
 
   def update
@@ -40,7 +44,8 @@ class TeamsController < ApplicationController
     if @team.update(team_params)
       redirect_to teams_path, notice: t("notices.updated", model: Team.model_name.human)
     else
-      @sectors = Sector.includes(:event).order("events.name, sectors.name").references(:event)
+      @sectors   = Sector.where(event_id: current_event.id).order(:name)
+      @all_users = User.order(:name)
       render :edit, status: :unprocessable_entity
     end
   end
@@ -58,6 +63,6 @@ class TeamsController < ApplicationController
   end
 
   def team_params
-    params.require(:team).permit(:name, :sector_id, user_ids: [])
+    params.require(:team).permit(:name, :sector_id, :coordinator_id, user_ids: [])
   end
 end

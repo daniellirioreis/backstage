@@ -9,6 +9,10 @@ Rails.application.routes.draw do
                password: "password"
              }
 
+  get  "evento/selecionar", to: "event_session#select_event", as: :select_event
+  post "evento/selecionar", to: "event_session#set_event",    as: :set_event
+  delete "evento/limpar",   to: "event_session#clear_event",  as: :clear_event
+
   resources :roles
   resources :users do
     collection { get :search }

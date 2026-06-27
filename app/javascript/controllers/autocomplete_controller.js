@@ -6,33 +6,46 @@ export default class extends Controller {
 
   connect() {
     this.selected = []
+    this.coordinatorId = null
     this.debounceTimer = null
 
     // Carrega usuários já vinculados
     this.existingValue.forEach(u => this.#addUser(u))
 
     document.addEventListener("click", this.#closeOnOutside)
+    document.addEventListener("coordinator-changed", this.#onCoordinatorChanged)
   }
 
   disconnect() {
     document.removeEventListener("click", this.#closeOnOutside)
+    document.removeEventListener("coordinator-changed", this.#onCoordinatorChanged)
   }
 
   // ── Busca ─────────────────────────────────────────────────────────────────
 
+  focus() {
+    this.#fetch(this.inputTarget.value.trim())
+  }
+
   search() {
     clearTimeout(this.debounceTimer)
-    const q = this.inputTarget.value.trim()
-
-    if (q.length < 2) { this.#hideDropdown(); return }
-
-    this.debounceTimer = setTimeout(async () => {
-      const res   = await fetch(`${this.urlValue}?q=${encodeURIComponent(q)}`)
-      const users = await res.json()
-
-      const filtered = users.filter(u => !this.selected.find(s => s.id == u.id))
-      this.#renderDropdown(filtered)
+    this.debounceTimer = setTimeout(() => {
+      this.#fetch(this.inputTarget.value.trim())
     }, 220)
+  }
+
+  async #fetch(q) {
+    const res    = await fetch(`${this.urlValue}?q=${encodeURIComponent(q)}`)
+    const users  = await res.json()
+    const filtered = users.filter(u =>
+      !this.selected.find(s => s.id == u.id) &&
+      String(u.id) !== String(this.coordinatorId)
+    )
+    this.#renderDropdown(filtered)
+  }
+
+  #onCoordinatorChanged = (e) => {
+    this.coordinatorId = e.detail.coordinatorId
   }
 
   pick(event) {

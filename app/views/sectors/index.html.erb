@@ -1,13 +1,6 @@
 <div class="page-header">
   <h1><%= Sector.model_name.human(count: 2) %></h1>
   <div style="display: flex; gap: 0.5rem; align-items: center;">
-    <%= form_with url: sectors_path, method: :get, data: { turbo: false } do |f| %>
-      <%= f.select :event_id,
-            options_from_collection_for_select(@events, :id, :name, params[:event_id]),
-            { include_blank: "Todos os eventos" },
-            class: "form-control form-select", style: "font-size: 0.82rem; padding: 0.4rem 0.75rem;",
-            onchange: "this.form.submit()" %>
-    <% end %>
     <% if policy(Sector).new? %>
       <%= link_to new_sector_path, class: "btn-primary" do %>
         <i class="bi bi-plus"></i> <%= t("actions.new", model: Sector.model_name.human) %>
@@ -20,7 +13,6 @@
   <thead>
     <tr>
       <th><%= Sector.human_attribute_name(:name) %></th>
-      <th><%= Event.model_name.human %></th>
       <th>Equipes</th>
       <th></th>
     </tr>
@@ -29,7 +21,6 @@
     <% @sectors.each do |sector| %>
       <tr>
         <td><%= link_to sector.name, sector_path(sector), style: "color: #18181b; font-weight: 500; text-decoration: none;" %></td>
-        <td style="color: #71717a;"><%= sector.event.name %></td>
         <td style="color: #71717a;"><%= sector.teams.size %></td>
         <td class="td-actions">
           <div style="display: flex; gap: 0.4rem; justify-content: flex-end;">

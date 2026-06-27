@@ -1,105 +1,107 @@
 <div class="page-header">
   <h1><%= Team.model_name.human(count: 2) %></h1>
-  <div style="display: flex; gap: 0.5rem; align-items: center;">
-    <%= form_with url: teams_path, method: :get, data: { turbo: false } do |f| %>
-      <%= f.select :event_id,
-            options_from_collection_for_select(@events, :id, :name, params[:event_id]),
-            { include_blank: "Todos os eventos" },
-            class: "form-control form-select", style: "font-size: 0.82rem; padding: 0.4rem 0.75rem;",
-            onchange: "this.form.submit()" %>
+  <% if policy(Team).new? %>
+    <%= link_to new_team_path, class: "btn-primary" do %>
+      <i class="bi bi-plus"></i> <%= t("actions.new", model: Team.model_name.human) %>
     <% end %>
-    <% if policy(Team).new? %>
-      <%= link_to new_team_path, class: "btn-primary" do %>
-        <i class="bi bi-plus"></i> <%= t("actions.new", model: Team.model_name.human) %>
-      <% end %>
-    <% end %>
-  </div>
+  <% end %>
 </div>
 
-<% if @events_with_teams.empty? %>
+<% if @teams.empty? %>
   <div class="content-card" style="text-align: center; padding: 3rem; color: #a1a1aa;">
     <i class="bi bi-people" style="font-size: 2.5rem; display: block; margin-bottom: 0.75rem;"></i>
-    <p style="margin: 0; font-size: 0.9rem;">Nenhuma equipe cadastrada ainda.</p>
+    <p style="margin: 0; font-size: 0.9rem;">Nenhuma equipe cadastrada para este evento.</p>
   </div>
 <% else %>
-  <% @events_with_teams.each do |event, teams| %>
-    <div style="margin-bottom: 2rem;">
-      <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem;
-                  background: #fff; border: 1px solid #e4e4e7; border-radius: 10px;
-                  padding: 0.85rem 1.25rem; border-left: 4px solid <%= event.active? ? '#4ade80' : event.draft? ? '#d4d4d8' : '#27272a' %>;">
-        <i class="bi bi-calendar-event" style="font-size: 1.1rem; color: #a1a1aa;"></i>
-        <h2 style="font-size: 0.95rem; font-weight: 600; color: #18181b; margin: 0; flex: 1;"><%= event.name %></h2>
-        <span class="badge-status badge-<%= event.status %>"><%= t("event_statuses.#{event.status}") %></span>
-        <span style="font-size: 0.78rem; color: #a1a1aa; padding-left: 0.5rem; border-left: 1px solid #e4e4e7;">
-          <%= pluralize(teams.size, "equipe", "equipes") %>
-        </span>
-      </div>
+  <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1rem;">
+    <% @teams.each do |team| %>
+      <% members = team.coordinator ? team.users.reject { |u| u.id == team.coordinator_id } : team.users %>
+      <div class="content-card" style="padding: 1.25rem; display: flex; flex-direction: column; gap: 0.9rem;">
 
-      <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem;">
-        <% teams.each do |team| %>
-          <div class="content-card" style="padding: 1.25rem; display: flex; flex-direction: column; gap: 0.9rem;">
-
-            <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 0.5rem;">
-              <div>
-                <h3 style="font-size: 0.92rem; font-weight: 600; color: #18181b; margin: 0 0 0.2rem;">
-                  <%= team.name %>
-                </h3>
-                <span style="font-size: 0.75rem; color: #71717a;">
-                  <i class="bi bi-grid-3x3-gap"></i> <%= team.sector.name %>
-                </span>
-              </div>
-              <div style="display: flex; gap: 0.4rem; flex-shrink: 0;">
-                <% if policy(team).show? %>
-                  <%= link_to team_path(team), class: "btn-secondary", style: "padding: 0.3rem 0.55rem;" do %>
-                    <i class="bi bi-eye"></i>
-                  <% end %>
-                <% end %>
-                <% if policy(team).edit? %>
-                  <%= link_to edit_team_path(team), class: "btn-secondary", style: "padding: 0.3rem 0.55rem;" do %>
-                    <i class="bi bi-pencil"></i>
-                  <% end %>
-                <% end %>
-                <% if policy(team).destroy? %>
-                  <%= button_to team_path(team), method: :delete,
-                      form: { data: { turbo_confirm: t("confirms.delete") } },
-                      class: "btn-danger", style: "padding: 0.3rem 0.55rem;" do %>
-                    <i class="bi bi-trash"></i>
-                  <% end %>
-                <% end %>
-              </div>
-            </div>
-
-            <div>
-              <div style="font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: #71717a; margin-bottom: 0.5rem;">
-                <i class="bi bi-person"></i> <%= team.users.size %> <%= team.users.size == 1 ? "colaborador" : "colaboradores" %>
-              </div>
-              <% if team.users.any? %>
-                <div style="display: flex; flex-wrap: wrap; gap: 0.35rem;">
-                  <% team.users.first(5).each do |user| %>
-                    <span title="<%= user.name %>"
-                          style="display: inline-flex; align-items: center; justify-content: center;
-                                 width: 30px; height: 30px; border-radius: 50%;
-                                 background: #f4f4f5; border: 1px solid #e4e4e7;
-                                 font-size: 0.65rem; font-weight: 600; color: #52525b;">
-                      <%= user.name.split.map(&:first).first(2).join.upcase %>
-                    </span>
-                  <% end %>
-                  <% if team.users.size > 5 %>
-                    <span style="display: inline-flex; align-items: center; justify-content: center;
-                                 width: 30px; height: 30px; border-radius: 50%;
-                                 background: #18181b; font-size: 0.65rem; font-weight: 600; color: #fff;">
-                      +<%= team.users.size - 5 %>
-                    </span>
-                  <% end %>
-                </div>
-              <% else %>
-                <span style="font-size: 0.8rem; color: #a1a1aa;">Sem colaboradores</span>
+        <%# Header do card %>
+        <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 0.5rem;">
+          <div>
+            <h3 style="font-size: 0.92rem; font-weight: 600; color: #18181b; margin: 0 0 0.2rem;">
+              <%= team.name %>
+            </h3>
+            <span style="font-size: 0.75rem; color: #71717a;">
+              <i class="bi bi-grid-3x3-gap"></i> <%= team.sector.name %>
+            </span>
+          </div>
+          <div style="display: flex; gap: 0.4rem; flex-shrink: 0;">
+            <% if policy(team).show? %>
+              <%= link_to team_path(team), class: "btn-secondary", style: "padding: 0.3rem 0.55rem;" do %>
+                <i class="bi bi-eye"></i>
               <% end %>
-            </div>
+            <% end %>
+            <% if policy(team).edit? %>
+              <%= link_to edit_team_path(team), class: "btn-secondary", style: "padding: 0.3rem 0.55rem;" do %>
+                <i class="bi bi-pencil"></i>
+              <% end %>
+            <% end %>
+            <% if policy(team).destroy? %>
+              <%= button_to team_path(team), method: :delete,
+                  form: { data: { turbo_confirm: t("confirms.delete") } },
+                  class: "btn-danger", style: "padding: 0.3rem 0.55rem;" do %>
+                <i class="bi bi-trash"></i>
+              <% end %>
+            <% end %>
+          </div>
+        </div>
 
+        <%# Coordenador %>
+        <% if team.coordinator %>
+          <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 0.6rem 0.75rem; display: flex; align-items: center; gap: 0.6rem;">
+            <div style="width: 30px; height: 30px; border-radius: 50%; background: #dcfce7; border: 1px solid #86efac;
+                        display: flex; align-items: center; justify-content: center;
+                        font-size: 0.62rem; font-weight: 700; color: #15803d; flex-shrink: 0;">
+              <%= team.coordinator.name.split.map(&:first).first(2).join.upcase %>
+            </div>
+            <div style="min-width: 0;">
+              <div style="font-size: 0.68rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: #15803d; margin-bottom: 0.1rem;">
+                <i class="bi bi-star-fill"></i> Coordenador
+              </div>
+              <div style="font-size: 0.82rem; font-weight: 500; color: #18181b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                <%= team.coordinator.name %>
+              </div>
+              <div style="font-size: 0.72rem; color: #71717a; font-family: monospace;">
+                <%= team.coordinator.cpf.gsub(/(\d{3})(\d{3})(\d{3})(\d{2})/, '\1.\2.\3-\4') %>
+              </div>
+            </div>
           </div>
         <% end %>
+
+        <%# Colaboradores %>
+        <div>
+          <div style="font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: #71717a; margin-bottom: 0.5rem;">
+            <i class="bi bi-person"></i> <%= members.size %> <%= members.size == 1 ? "colaborador" : "colaboradores" %>
+          </div>
+          <% if members.any? %>
+            <div style="display: flex; flex-direction: column; gap: 0;">
+              <% members.each do |user| %>
+                <div style="display: flex; align-items: center; gap: 0.6rem; padding: 0.35rem 0; border-bottom: 1px solid #f4f4f5;">
+                  <div style="width: 26px; height: 26px; border-radius: 50%; background: #f4f4f5; border: 1px solid #e4e4e7;
+                              display: flex; align-items: center; justify-content: center;
+                              font-size: 0.6rem; font-weight: 600; color: #52525b; flex-shrink: 0;">
+                    <%= user.name.split.map(&:first).first(2).join.upcase %>
+                  </div>
+                  <div style="min-width: 0;">
+                    <div style="font-size: 0.8rem; font-weight: 500; color: #18181b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                      <%= user.name %>
+                    </div>
+                    <div style="font-size: 0.7rem; color: #a1a1aa; font-family: monospace;">
+                      <%= user.cpf.gsub(/(\d{3})(\d{3})(\d{3})(\d{2})/, '\1.\2.\3-\4') %>
+                    </div>
+                  </div>
+                </div>
+              <% end %>
+            </div>
+          <% else %>
+            <span style="font-size: 0.8rem; color: #a1a1aa;">Sem colaboradores</span>
+          <% end %>
+        </div>
+
       </div>
-    </div>
-  <% end %>
+    <% end %>
+  </div>
 <% end %>

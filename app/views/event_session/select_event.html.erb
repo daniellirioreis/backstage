@@ -1,0 +1,36 @@
+<div class="page-header">
+  <h1>Selecionar Evento</h1>
+</div>
+
+<p style="font-size: 0.88rem; color: #71717a; margin-bottom: 1.5rem;">
+  Escolha o evento em que deseja trabalhar nesta sessão.
+</p>
+
+<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem; max-width: 900px;">
+  <% @events.each do |event| %>
+    <%= form_with url: set_event_path, method: :post do |f| %>
+      <%= f.hidden_field :event_id, value: event.id %>
+      <button type="submit" style="width: 100%; text-align: left; background: none; border: none; padding: 0; cursor: pointer;">
+        <div class="content-card" style="padding: 0; overflow: hidden; transition: box-shadow 0.15s; cursor: pointer;"
+             onmouseover="this.style.boxShadow='0 4px 16px rgba(0,0,0,0.08)'"
+             onmouseout="this.style.boxShadow='none'">
+          <div style="height: 4px; background: <%= event.active? ? '#4ade80' : event.draft? ? '#d4d4d8' : '#27272a' %>;"></div>
+          <div style="padding: 1.25rem;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem;">
+              <h3 style="font-size: 0.95rem; font-weight: 600; color: #18181b; margin: 0;"><%= event.name %></h3>
+              <span class="badge-status badge-<%= event.status %>"><%= t("event_statuses.#{event.status}") %></span>
+            </div>
+            <% if event.location.present? %>
+              <div style="font-size: 0.8rem; color: #71717a; margin-bottom: 0.25rem;">
+                <i class="bi bi-geo-alt"></i> <%= event.location %>
+              </div>
+            <% end %>
+            <div style="font-size: 0.8rem; color: #71717a;">
+              <i class="bi bi-calendar3"></i> <%= l(event.start_date, format: :short) %> → <%= l(event.end_date, format: :short) %>
+            </div>
+          </div>
+        </div>
+      </button>
+    <% end %>
+  <% end %>
+</div>
