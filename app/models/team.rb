@@ -13,16 +13,11 @@ class Team < ApplicationRecord
   end
 
   validates :name, presence: true
-  validate :must_have_at_least_one_user
   validate :coordinator_unique_per_event
   validate :coordinator_not_in_collaborators
   validate :collaborators_unique_per_event
 
   private
-
-  def must_have_at_least_one_user
-    errors.add(:base, "A equipe deve ter pelo menos 1 colaborador") if users.size == 0
-  end
 
   def coordinator_not_in_collaborators
     return unless coordinator_id.present?

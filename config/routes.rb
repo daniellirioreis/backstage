@@ -26,11 +26,16 @@ Rails.application.routes.draw do
     member { get :print }
   end
   resources :teams do
-    collection { get :search }
+    collection do
+      get  :search
+      get  :import_source_teams    # AJAX: teams de um evento
+      get  :import_source_members  # AJAX: membros de uma equipe
+    end
     member do
       get  :credentials
       get  :schedule
       post :schedule
+      post :import_members
     end
   end
   resources :sectors

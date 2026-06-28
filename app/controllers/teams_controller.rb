@@ -1,5 +1,5 @@
 class TeamsController < ApplicationController
-  before_action :set_team, only: %i[show edit update destroy credentials]
+  before_action :set_team, only: %i[show edit update destroy credentials import_members]
 
   def search
     authorize Team, :index?
@@ -146,6 +146,53 @@ class TeamsController < ApplicationController
       @all_users = User.order(:name)
       render :new, status: :unprocessable_entity
     end
+  end
+
+  # AJAX: retorna JSON com equipes de um evento
+  def import_source_teams
+    authorize Team, :index?
+    event_id = params[:event_id]
+    teams = Team.joins(:sector)
+                .where(sectors: { event_id: event_id })
+                .includes(:sector)
+                .order("sectors.name, teams.name")
+    render json: teams.map { |t| { id: t.id, label: "#{t.sector.name} › #{t.name}" } }
+  end
+
+  # AJAX: retorna JSON com membros de uma equipe
+  def import_source_members
+    authorize Team, :index?
+    source_team = Team.includes(team_memberships: { user: { avatar_attachment: :blob } })
+                      .find(params[:source_team_id])
+    target_team = Team.find(params[:target_team_id])
+    existing_ids = target_team.team_memberships.pluck(:user_id)
+
+    members = source_team.team_memberships.includes(user: { avatar_attachment: :blob }).joins(:user).order("users.name")
+    render json: members.map { |tm|
+      u = tm.user
+      {
+        id:          u.id,
+        name:        u.name,
+        phone:       u.phone,
+        initials:    u.name.split.map(&:first).first(2).join.upcase,
+        avatar_url:  u.avatar.attached? ? url_for(u.avatar) : nil,
+        coordinator: u.id == source_team.coordinator_id,
+        already:     existing_ids.include?(u.id)
+      }
+    }
+  end
+
+  # POST: importa membros selecionados
+  def import_members
+    authorize @team, :edit?
+    user_ids = Array(params[:user_ids]).map(&:to_i).select { |id| id > 0 }
+    imported = 0
+    user_ids.each do |uid|
+      next if @team.team_memberships.exists?(user_id: uid)
+      @team.team_memberships.create(user_id: uid)
+      imported += 1
+    end
+    redirect_to teams_path, notice: "#{imported} colaborador(es) importado(s) para #{@team.name}."
   end
 
   def edit

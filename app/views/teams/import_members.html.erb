@@ -1,0 +1,135 @@
+<div class="page-header">
+  <div>
+    <h1>Importar Colaboradores</h1>
+    <div style="font-size: 0.78rem; color: #71717a; margin-top: 0.15rem;">
+      Equipe: <strong><%= @team.name %></strong> · <%= @team.sector.name %>
+    </div>
+  </div>
+  <%= link_to teams_path, class: "btn-secondary" do %>
+    <i class="bi bi-arrow-left"></i> Pular / Ir para equipes
+  <% end %>
+</div>
+
+<%# Pergunta inicial %>
+<div class="content-card" style="max-width: 680px; padding: 1.5rem;">
+  <div style="font-size: 1rem; font-weight: 600; color: #18181b; margin-bottom: 0.25rem;">
+    <i class="bi bi-people"></i> Deseja importar colaboradores de outra equipe?
+  </div>
+  <div style="font-size: 0.82rem; color: #71717a; margin-bottom: 1.25rem;">
+    Selecione o evento e a equipe de origem para ver os colaboradores disponíveis.
+  </div>
+
+  <%# Passo 1: selecionar evento %>
+  <%= form_with url: import_members_team_path(@team), method: :get, local: true do |f| %>
+    <div style="display: grid; grid-template-columns: 1fr auto; gap: 0.75rem; align-items: flex-end; margin-bottom: 1rem;">
+      <div>
+        <label class="form-label"><i class="bi bi-calendar-event"></i> Evento de origem</label>
+        <%= f.select :event_id,
+            options_from_collection_for_select(@other_events, :id, :name, params[:event_id]),
+            { include_blank: "— Selecione um evento —" },
+            class: "form-control form-select" %>
+      </div>
+      <button type="submit" class="btn-secondary">Ver equipes <i class="bi bi-arrow-right"></i></button>
+    </div>
+  <% end %>
+
+  <%# Passo 2: selecionar equipe (aparece após escolher evento) %>
+  <% if @source_teams.present? %>
+    <div style="border-top: 1px solid #f4f4f5; padding-top: 1rem; margin-top: 0.25rem;">
+      <%= form_with url: import_members_team_path(@team), method: :get, local: true do |f| %>
+        <input type="hidden" name="event_id" value="<%= params[:event_id] %>">
+        <div style="display: grid; grid-template-columns: 1fr auto; gap: 0.75rem; align-items: flex-end;">
+          <div>
+            <label class="form-label"><i class="bi bi-people"></i> Equipe de origem</label>
+            <%= f.select :source_team_id,
+                @source_teams.map { |t| ["#{t.sector.name} › #{t.name}", t.id] },
+                { include_blank: "— Selecione uma equipe —" },
+                class: "form-control form-select" %>
+          </div>
+          <button type="submit" class="btn-secondary">Ver colaboradores <i class="bi bi-arrow-right"></i></button>
+        </div>
+      <% end %>
+    </div>
+  <% end %>
+
+  <%# Passo 3: lista de colaboradores para importar %>
+  <% if @source_members.present? %>
+    <div style="border-top: 1px solid #f4f4f5; padding-top: 1rem; margin-top: 1rem;">
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem;">
+        <div>
+          <div style="font-size: 0.82rem; font-weight: 600; color: #18181b;">
+            <i class="bi bi-people-fill"></i> <%= @source_team.name %>
+            <span style="font-size: 0.72rem; font-weight: 400; color: #71717a;">
+              — <%= @source_members.size %> colaborador<%= @source_members.size == 1 ? "" : "es" %>
+            </span>
+          </div>
+          <div style="font-size: 0.72rem; color: #a1a1aa; margin-top: 2px;">
+            Marque quem deseja importar para <strong><%= @team.name %></strong>
+          </div>
+        </div>
+        <label style="font-size: 0.78rem; color: #71717a; cursor: pointer; display: flex; align-items: center; gap: 0.35rem;">
+          <input type="checkbox" id="select_all_import"
+                 onchange="document.querySelectorAll('.import-check').forEach(c => c.checked = this.checked)"
+                 style="width: 15px; height: 15px;">
+          Selecionar todos
+        </label>
+      </div>
+
+      <%= form_with url: import_members_team_path(@team), method: :post, local: true do |f| %>
+        <div style="display: flex; flex-direction: column; gap: 0; max-height: 340px; overflow-y: auto; border: 1px solid #e4e4e7; border-radius: 8px; margin-bottom: 1rem;">
+          <% @source_members.each do |tm| %>
+            <% user = tm.user %>
+            <% already = @existing_user_ids.include?(user.id) %>
+            <label style="display: flex; align-items: center; gap: 0.75rem; padding: 0.6rem 0.9rem; border-bottom: 1px solid #f4f4f5; cursor: <%= already ? 'default' : 'pointer' %>; background: <%= already ? '#f9fafb' : 'transparent' %>;">
+              <input type="checkbox"
+                     name="user_ids[]"
+                     value="<%= user.id %>"
+                     class="import-check"
+                     <%= "checked" unless already %>
+                     <%= "disabled" if already %>
+                     style="width: 15px; height: 15px; flex-shrink: 0;">
+
+              <div style="width: 34px; height: 34px; border-radius: 50%; overflow: hidden; background: #f4f4f5; border: 1px solid #e4e4e7; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                <% if user.avatar.attached? %>
+                  <%= image_tag user.avatar, style: "width:100%;height:100%;object-fit:cover;" %>
+                <% else %>
+                  <span style="font-size: 0.6rem; font-weight: 700; color: #52525b;">
+                    <%= user.name.split.map(&:first).first(2).join.upcase %>
+                  </span>
+                <% end %>
+              </div>
+
+              <div style="flex: 1; min-width: 0;">
+                <div style="font-size: 0.85rem; font-weight: 500; color: <%= already ? '#a1a1aa' : '#18181b' %>; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                  <%= user.name %>
+                  <% if user.id == @source_team.coordinator_id %>
+                    <span style="font-size: 0.62rem; background: #fef3c7; color: #92400e; border: 1px solid #fcd34d; border-radius: 4px; padding: 1px 5px;">Coord.</span>
+                  <% end %>
+                </div>
+                <div style="font-size: 0.72rem; color: #a1a1aa;">
+                  <%= user.phone.present? ? user.phone : user.email %>
+                </div>
+              </div>
+
+              <% if already %>
+                <span style="font-size: 0.68rem; background: #f4f4f5; border: 1px solid #e4e4e7; border-radius: 5px; padding: 1px 7px; color: #71717a; white-space: nowrap; flex-shrink: 0;">
+                  já na equipe
+                </span>
+              <% end %>
+            </label>
+          <% end %>
+        </div>
+
+        <div style="display: flex; gap: 0.5rem;">
+          <button type="submit" class="btn-primary">
+            <i class="bi bi-person-plus"></i> Importar selecionados
+          </button>
+          <%= link_to teams_path, class: "btn-secondary" do %>
+            Pular
+          <% end %>
+        </div>
+      <% end %>
+    </div>
+  <% end %>
+
+</div>
