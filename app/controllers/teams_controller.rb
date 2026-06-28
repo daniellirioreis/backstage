@@ -50,7 +50,7 @@ class TeamsController < ApplicationController
                formats: [:html],
                page_size: "A4",
                orientation: "Portrait",
-               margin: { top: 5, bottom: 5, left: 5, right: 5 },
+               margin: { top: 2, bottom: 2, left: 2, right: 2 },
                disposition: "attachment"
       end
     end
