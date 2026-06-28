@@ -121,6 +121,6 @@ class TeamsController < ApplicationController
   end
 
   def team_params
-    params.require(:team).permit(:name, :sector_id, :coordinator_id, user_ids: [])
+    params.require(:team).permit(:name, :sector_id, :coordinator_id, :radio_channel, user_ids: [])
   end
 end

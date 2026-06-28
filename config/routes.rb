@@ -20,6 +20,7 @@ Rails.application.routes.draw do
   end
   resources :events do
     resource :badge_config, only: [:edit, :update]
+    member { get :print }
   end
   resources :teams do
     member { get :credentials }

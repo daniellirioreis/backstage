@@ -16,8 +16,14 @@
       </div>
     </div>
 
-    <%# Coordenador — single autocomplete %>
-    <div class="form-label" style="margin-bottom: 0.4rem;">Coordenador</div>
+    <%# Coordenador + Canal de Rádio %>
+    <div style="display: grid; grid-template-columns: 1fr auto; gap: 1rem; align-items: start; margin-bottom: 0.4rem;">
+      <div class="form-label" style="margin: 0;">Coordenador</div>
+      <div>
+        <%= f.label :radio_channel, "Canal de Rádio", class: "form-label", style: "margin-bottom: 0.3rem; display: block;" %>
+        <%= f.text_field :radio_channel, class: "form-control", placeholder: "ex: Canal 3", style: "width: 160px;" %>
+      </div>
+    </div>
 
     <div data-controller="autocomplete-single"
          data-autocomplete-single-url-value="<%= search_users_path %>"

@@ -1,5 +1,5 @@
 class EventsController < ApplicationController
-  before_action :set_event, only: %i[show edit update destroy]
+  before_action :set_event, only: %i[show edit update destroy print]
 
   def index
     authorize Event
@@ -8,7 +8,25 @@ class EventsController < ApplicationController
 
   def show
     authorize @event
-    @sectors = @event.sectors.includes(teams: :users).order(:name)
+    @sectors = @event.sectors.includes(teams: [:users, :coordinator]).order(:name)
+  end
+
+  def print
+    authorize @event, :show?
+    @sectors = @event.sectors.includes(teams: [:coordinator, { team_memberships: :user }, :users]).order(:name)
+    respond_to do |format|
+      format.html { render layout: "print" }
+      format.pdf do
+        render pdf: "evento-#{@event.name.parameterize}",
+               template: "events/print",
+               layout: "print",
+               formats: [:html],
+               page_size: "A4",
+               orientation: "Portrait",
+               margin: { top: 10, bottom: 10, left: 10, right: 10 },
+               disposition: "attachment"
+      end
+    end
   end
 
   def new

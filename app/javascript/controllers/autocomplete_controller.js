@@ -50,7 +50,13 @@ export default class extends Controller {
 
   pick(event) {
     const item = event.currentTarget
-    this.#addUser({ id: item.dataset.id, name: item.dataset.name, cpf: item.dataset.cpf })
+    this.#addUser({
+      id: item.dataset.id,
+      name: item.dataset.name,
+      cpf: item.dataset.cpf,
+      avatar_url: item.dataset.avatarUrl || null,
+      initials: item.dataset.initials || ""
+    })
     this.inputTarget.value = ""
     this.#hideDropdown()
     this.inputTarget.focus()
@@ -66,6 +72,13 @@ export default class extends Controller {
 
   // ── Privados ──────────────────────────────────────────────────────────────
 
+  #avatarHtml(user, size = 24) {
+    if (user.avatar_url) {
+      return `<img src="${user.avatar_url}" style="width:${size}px;height:${size}px;border-radius:50%;object-fit:cover;flex-shrink:0;">`
+    }
+    return `<div style="width:${size}px;height:${size}px;border-radius:50%;background:#f4f4f5;border:1px solid #e4e4e7;display:flex;align-items:center;justify-content:center;font-size:${Math.round(size*0.38)}px;font-weight:600;color:#52525b;flex-shrink:0;">${user.initials || ""}</div>`
+  }
+
   #addUser(user) {
     if (this.selected.find(u => u.id == user.id)) return
     this.selected.push(user)
@@ -74,6 +87,7 @@ export default class extends Controller {
     const tag = document.createElement("div")
     tag.className = "autocomplete-tag"
     tag.innerHTML = `
+      ${this.#avatarHtml(user, 22)}
       <span class="autocomplete-tag-name">${user.name}</span>
       <span class="autocomplete-tag-cpf">${user.cpf}</span>
       <button type="button" class="autocomplete-tag-remove"
@@ -98,9 +112,13 @@ export default class extends Controller {
     this.dropdownTarget.innerHTML = users.map(u => `
       <div class="autocomplete-item"
            data-id="${u.id}" data-name="${u.name}" data-cpf="${u.cpf}"
+           data-avatar-url="${u.avatar_url || ""}" data-initials="${u.initials || ""}"
            data-action="click->autocomplete#pick">
-        <span class="autocomplete-item-name">${u.name}</span>
-        <span class="autocomplete-item-cpf">${u.cpf}</span>
+        ${this.#avatarHtml(u, 28)}
+        <div style="min-width:0;flex:1;">
+          <div class="autocomplete-item-name">${u.name}</div>
+          <div class="autocomplete-item-cpf">${u.cpf}</div>
+        </div>
       </div>
     `).join("")
 

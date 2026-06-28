@@ -1,0 +1,121 @@
+<style>
+  .ev-header { border-bottom: 3px solid #18181b; padding-bottom: 12px; margin-bottom: 20px; }
+  .ev-title { font-size: 1.4rem; font-weight: 800; color: #18181b; }
+  .ev-meta { font-size: 0.78rem; color: #71717a; margin-top: 4px; display: flex; gap: 1.2rem; flex-wrap: wrap; }
+
+  .sector-title {
+    font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em;
+    color: #fff; background: #18181b; padding: 4px 14px; border-radius: 4px;
+    display: inline-block; margin-bottom: 14px;
+  }
+
+  .team-block { margin-bottom: 14px; break-inside: avoid; }
+  .team-name {
+    font-size: 0.8rem; font-weight: 700; color: #18181b;
+    padding: 5px 10px; background: #f4f4f5;
+    border: 1px solid #e4e4e7; border-bottom: none;
+    border-radius: 6px 6px 0 0;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .coord-badge {
+    font-size: 0.65rem; font-weight: 600; color: #15803d;
+    background: #dcfce7; border: 1px solid #86efac;
+    border-radius: 4px; padding: 1px 6px;
+  }
+  .radio-badge {
+    display: inline-flex; align-items: center; gap: 3px;
+    background: #fef3c7; border: 1px solid #fcd34d; border-radius: 4px;
+    padding: 1px 6px; font-size: 0.63rem; font-weight: 700; color: #92400e;
+  }
+  .team-table { width: 100%; border-collapse: collapse; border: 1px solid #e4e4e7; border-radius: 0 0 6px 6px; }
+  .team-table th {
+    font-size: 0.63rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em;
+    color: #71717a; background: #fafaf9; padding: 4px 10px; text-align: left;
+    border-bottom: 1px solid #e4e4e7;
+  }
+  .team-table td { font-size: 0.73rem; color: #3f3f46; padding: 4px 10px; border-bottom: 1px solid #f4f4f5; }
+  .team-table tr:last-child td { border-bottom: none; }
+</style>
+
+<%# Página de capa — info do evento %>
+<div class="a4-page">
+  <div class="ev-header">
+    <div class="ev-title"><%= @event.name %></div>
+    <div class="ev-meta">
+      <% if @event.location.present? %>
+        <span><i class="bi bi-geo-alt"></i> <%= @event.location %></span>
+      <% end %>
+      <span><i class="bi bi-calendar3"></i> <%= l(@event.start_date, format: :long) %> → <%= l(@event.end_date, format: :long) %></span>
+      <span><i class="bi bi-grid-3x3-gap"></i> <%= @sectors.size %> setores</span>
+      <span><i class="bi bi-people"></i> <%= @sectors.sum { |s| s.teams.size } %> equipes</span>
+    </div>
+  </div>
+
+  <%# Resumo dos setores na capa %>
+  <% @sectors.reject { |s| s.teams.empty? }.each do |sector| %>
+    <div style="display: flex; align-items: center; gap: 0.5rem; padding: 6px 0; border-bottom: 1px solid #f4f4f5; font-size: 0.8rem;">
+      <span style="font-weight: 600; color: #18181b; flex: 1;"><%= sector.name %></span>
+      <span style="color: #71717a;"><%= sector.teams.size %> equipe<%= sector.teams.size == 1 ? "" : "s" %></span>
+      <span style="color: #a1a1aa; font-size: 0.72rem;"><%= sector.teams.sum { |t| t.users.size } %> colaboradores</span>
+    </div>
+  <% end %>
+</div>
+
+<%# Uma página por setor %>
+<% @sectors.each do |sector| %>
+  <% next if sector.teams.empty? %>
+  <div class="a4-page">
+    <div class="ev-header" style="border-bottom-color: #e4e4e7;">
+      <div style="font-size: 0.72rem; color: #a1a1aa; text-transform: uppercase; letter-spacing: 0.06em;"><%= @event.name %></div>
+      <div class="ev-title" style="font-size: 1.2rem;"><%= sector.name %></div>
+      <div class="ev-meta">
+        <span><%= sector.teams.size %> equipe<%= sector.teams.size == 1 ? "" : "s" %></span>
+        <span><%= sector.teams.sum { |t| t.users.reject { |u| u.id == t.coordinator_id }.size } %> colaboradores</span>
+      </div>
+    </div>
+
+    <% sector.teams.each do |team| %>
+      <% members = team.users.reject { |u| u.id == team.coordinator_id } %>
+      <div class="team-block">
+        <div class="team-name">
+          <%= team.name %>
+          <span style="margin-left: auto; font-size: 0.65rem; font-weight: 400; color: #71717a;"><%= members.size %> colaborador<%= members.size == 1 ? "" : "es" %></span>
+        </div>
+        <% if team.coordinator %>
+          <div style="font-size: 0.72rem; color: #3f3f46; background: #fafaf9; border: 1px solid #e4e4e7; border-top: none; padding: 4px 10px; display: flex; align-items: center; gap: 1rem;">
+            <span><strong>Coordenador(a):</strong> <%= team.coordinator.name.split.first(2).join(" ") %></span>
+            <% if team.radio_channel.present? %>
+              <span><strong>Canal rádio:</strong> <%= team.radio_channel %></span>
+            <% end %>
+          </div>
+        <% end %>
+        <table class="team-table">
+          <thead>
+            <tr><th style="width:28px;">#</th><th>Nome</th><th>CPF</th><th>Cód. Credencial</th><th style="width: 200px;">Assinatura</th></tr>
+          </thead>
+          <tbody>
+            <% members.each_with_index do |u, i| %>
+              <% membership = team.team_memberships.find { |m| m.user_id == u.id } %>
+              <tr>
+                <td style="color: #a1a1aa;"><%= i + 1 %></td>
+                <td><%= u.name %></td>
+                <td style="font-family: monospace; font-size: 0.68rem; color: #71717a;"><%= u.cpf.gsub(/(\d{3})(\d{3})(\d{3})(\d{2})/, '\1.\2.\3-\4') %></td>
+                <td style="font-family: monospace; font-size: 0.68rem; color: #71717a;"><%= membership&.full_credential_code %></td>
+                <td style="border-bottom: 1px solid #a1a1aa; height: 40px;"></td>
+              </tr>
+            <% end %>
+            <% if members.empty? %>
+              <tr><td colspan="3" style="color: #a1a1aa; font-style: italic;">Sem colaboradores</td></tr>
+            <% end %>
+          </tbody>
+        </table>
+        <% if team.coordinator %>
+          <div style="margin-top: 8px; display: flex; align-items: flex-end; gap: 8px; font-size: 0.72rem; color: #3f3f46;">
+            <strong style="white-space: nowrap;">Assinatura do(a) Coordenador(a):</strong>
+            <div style="flex: 1; border-bottom: 1px solid #a1a1aa; min-width: 200px; height: 28px;"></div>
+          </div>
+        <% end %>
+      </div>
+    <% end %>
+  </div>
+<% end %>

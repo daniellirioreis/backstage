@@ -477,8 +477,8 @@ body {
   &:hover { background: #f9f9f9; }
 }
 
-.autocomplete-item-name { font-size: 0.85rem; font-weight: 500; color: #18181b; flex: 1; }
-.autocomplete-item-cpf  { font-size: 0.78rem; color: #71717a; font-family: monospace; }
+.autocomplete-item-name { font-size: 0.85rem; font-weight: 500; color: #18181b; }
+.autocomplete-item-cpf  { font-size: 0.75rem; color: #a1a1aa; font-family: monospace; margin-top: 1px; }
 
 // ── Field errors (client-side) ───────────────────────────────────────────────
 .field-error {

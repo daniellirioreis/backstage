@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2024_01_01_000018) do
+ActiveRecord::Schema[7.1].define(version: 2024_01_01_000019) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -131,6 +131,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_01_01_000018) do
     t.bigint "sector_id", null: false
     t.bigint "coordinator_id"
     t.string "coordinator_credential_code"
+    t.string "radio_channel"
     t.index ["coordinator_credential_code"], name: "index_teams_on_coordinator_credential_code", unique: true
     t.index ["coordinator_id"], name: "index_teams_on_coordinator_id"
     t.index ["sector_id"], name: "index_teams_on_sector_id"

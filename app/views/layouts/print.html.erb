@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title><%= @event.name %> · Backstage</title>
+    <%= csrf_meta_tags %>
+    <%= csp_meta_tag %>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <style>
+      * { box-sizing: border-box; margin: 0; padding: 0; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+      body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #3a3a3a; min-height: 100vh; }
+
+      .toolbar {
+        position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+        background: #1a1a1a; border-bottom: 1px solid #2a2a2a;
+        padding: 0.6rem 1.5rem; display: flex; align-items: center; gap: 0.75rem;
+      }
+      .toolbar-title { color: #a1a1aa; font-size: 0.82rem; flex: 1; }
+      .toolbar-title strong { color: #f4f4f5; }
+      .btn-back { background: #27272a; color: #a1a1aa; border: 1px solid #3f3f46; border-radius: 7px; padding: 0.4rem 1rem; font-size: 0.82rem; font-weight: 500; display: inline-flex; align-items: center; gap: 0.4rem; text-decoration: none; }
+      .btn-print { background: #4ade80; color: #0d0d0d; border: none; border-radius: 7px; padding: 0.4rem 1rem; font-size: 0.82rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 0.4rem; }
+
+      .pages-wrapper { padding: 80px 0 40px; display: flex; flex-direction: column; align-items: center; gap: 24px; }
+
+      .a4-page {
+        width: 210mm; min-height: 297mm; background: white;
+        box-shadow: 0 4px 24px rgba(0,0,0,0.4);
+        padding: 16mm 14mm;
+      }
+
+      @page { size: A4 portrait; margin: 0; }
+      @media print {
+        body { background: white !important; }
+        .toolbar { display: none !important; }
+        .pages-wrapper { padding: 0 !important; gap: 0 !important; align-items: stretch !important; }
+        .a4-page {
+          box-shadow: none !important;
+          width: 100% !important;
+          min-height: 100vh !important;
+          page-break-after: always !important;
+          break-after: page !important;
+          padding: 14mm 12mm !important;
+        }
+        .a4-page:last-child { page-break-after: auto !important; break-after: auto !important; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="toolbar">
+      <%= link_to event_path(@event), class: "btn-back" do %>
+        <i class="bi bi-arrow-left"></i> Voltar
+      <% end %>
+      <span class="toolbar-title">Impressão · <strong><%= @event.name %></strong></span>
+      <button class="btn-print" onclick="window.print()">
+        <i class="bi bi-printer"></i> Imprimir
+      </button>
+    </div>
+    <div class="pages-wrapper">
+      <%= yield %>
+    </div>
+  </body>
+</html>
