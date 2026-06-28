@@ -1,10 +1,20 @@
 <div class="page-header">
   <h1><%= Shift.model_name.human(count: 2) %></h1>
-  <% if policy(Shift).new? %>
-    <%= link_to new_shift_path, class: "btn-primary" do %>
-      <i class="bi bi-plus"></i> <%= t("actions.new", model: Shift.model_name.human) %>
+  <div style="display: flex; gap: 0.5rem;">
+    <% if policy(Shift).timeline? %>
+      <%= link_to timeline_shifts_path, class: "btn-secondary" do %>
+        <i class="bi bi-bar-chart-steps"></i> Timeline
+      <% end %>
     <% end %>
-  <% end %>
+    <%= link_to print_shifts_path, class: "btn-secondary" do %>
+      <i class="bi bi-printer"></i> Imprimir Escala
+    <% end %>
+    <% if policy(Shift).new? %>
+      <%= link_to new_shift_path, class: "btn-primary" do %>
+        <i class="bi bi-plus"></i> <%= t("actions.new", model: Shift.model_name.human) %>
+      <% end %>
+    <% end %>
+  </div>
 </div>
 
 <% if @shifts_by_team.empty? %>

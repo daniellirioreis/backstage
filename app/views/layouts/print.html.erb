@@ -48,10 +48,10 @@
   </head>
   <body>
     <div class="toolbar">
-      <%= link_to event_path(@event), class: "btn-back" do %>
+      <%= link_to (@print_back_path || (@event ? event_path(@event) : "/")), class: "btn-back" do %>
         <i class="bi bi-arrow-left"></i> Voltar
       <% end %>
-      <span class="toolbar-title">Impressão · <strong><%= @event.name %></strong></span>
+      <span class="toolbar-title">Impressão · <strong><%= @print_title || @event&.name %></strong></span>
       <button class="btn-print" onclick="window.print()">
         <i class="bi bi-printer"></i> Imprimir
       </button>

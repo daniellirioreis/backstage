@@ -4,6 +4,8 @@ class ShiftsController < ApplicationController
   def index
     authorize Shift
     shifts = policy_scope(Shift)
+               .joins(:sector)
+               .where(sectors: { event_id: current_event.id })
                .includes(:user, { team: [:coordinator, :sector] }, :sector)
                .order(:date, :start_time)
     @shifts_by_team = shifts.group_by(&:team)
@@ -18,6 +20,59 @@ class ShiftsController < ApplicationController
         @credential_map[[team.id, team.coordinator_id]] ||= team.coordinator_full_credential_code
       end
     end
+  end
+
+  def timeline
+    authorize Shift, :timeline?
+    @event = current_event
+
+    # Data selecionada (default: primeiro dia do evento ou hoje)
+    @date = params[:date].present? ? Date.parse(params[:date]) : (@event&.start_date || Date.today)
+
+    # Turnos do dia (inclui multi-dia: date <= @date <= end_date)
+    shifts = policy_scope(Shift)
+               .includes(:user, { team: [:coordinator, :sector] })
+               .where("date <= ? AND (end_date IS NULL OR end_date >= ?)", @date, @date)
+               .order(:start_time)
+
+    # Agrupa por setor → equipe → lista de turnos
+    @sectors_data = shifts.group_by { |s| s.team&.sector }.reject { |s, _| s.nil? }.sort_by { |s, _| s.name }
+    @sectors_data = @sectors_data.map do |sector, sector_shifts|
+      teams_data = sector_shifts.group_by(&:team).sort_by { |t, _| t.name }
+      [sector, teams_data]
+    end
+
+    # Datas disponíveis para o seletor
+    @available_dates = if @event
+      (@event.start_date..@event.end_date).to_a
+    else
+      Shift.distinct.pluck(:date).sort
+    end
+  end
+
+  def print
+    authorize Shift, :index?
+    @event = current_event
+    shifts = policy_scope(Shift)
+               .joins(:sector)
+               .where(sectors: { event_id: @event.id })
+               .includes(:user, { team: [:coordinator, :sector] }, :sector)
+               .order(:date, :start_time)
+    @shifts_by_team = shifts.group_by(&:team).reject { |team, _| team.nil? }
+
+    team_ids = @shifts_by_team.keys.map(&:id)
+    memberships = TeamMembership.where(team_id: team_ids)
+    @credential_map = memberships.each_with_object({}) do |tm, h|
+      h[[tm.team_id, tm.user_id]] = tm.full_credential_code
+    end
+    @shifts_by_team.keys.each do |team|
+      if team.coordinator_id.present? && team.coordinator_full_credential_code.present?
+        @credential_map[[team.id, team.coordinator_id]] ||= team.coordinator_full_credential_code
+      end
+    end
+    @print_back_path = shifts_path
+    @print_title = "Escalas · #{@event&.name}"
+    render layout: "print"
   end
 
   def show

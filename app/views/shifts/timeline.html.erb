@@ -1,0 +1,287 @@
+<div class="page-header">
+  <div style="display:flex; align-items:center; gap:0.75rem;">
+    <%= link_to shifts_path, class:"btn-secondary", style:"padding:0.35rem 0.6rem;" do %>
+      <i class="bi bi-arrow-left"></i>
+    <% end %>
+    <h1>Timeline da Escala</h1>
+  </div>
+  <div style="display:flex; gap:0.5rem; align-items:center;">
+    <%= link_to print_shifts_path, class:"btn-secondary" do %>
+      <i class="bi bi-printer"></i> Imprimir
+    <% end %>
+    <%= link_to new_shift_path, class:"btn-primary" do %>
+      <i class="bi bi-plus"></i> Nova Escala
+    <% end %>
+  </div>
+</div>
+
+<%# Seletor de data %>
+<div class="content-card" style="margin-bottom:1.25rem; padding:1rem 1.25rem;">
+  <div style="display:flex; align-items:center; gap:1rem; flex-wrap:wrap;">
+    <span style="font-size:0.82rem; font-weight:600; color:#71717a; white-space:nowrap;">
+      <i class="bi bi-calendar3"></i> Data:
+    </span>
+    <div style="display:flex; gap:0.4rem; flex-wrap:wrap;">
+      <% @available_dates.each do |d| %>
+        <%= link_to l(d, format: :short), timeline_shifts_path(date: d),
+            style: "font-size:0.78rem; padding:0.25rem 0.65rem; border-radius:6px; border:1px solid #{d == @date ? '#18181b' : '#e4e4e7'}; background:#{d == @date ? '#18181b' : 'transparent'}; color:#{d == @date ? '#fff' : '#3f3f46'}; text-decoration:none; white-space:nowrap;" %>
+      <% end %>
+    </div>
+    <% if @event %>
+      <span style="font-size:0.75rem; color:#a1a1aa; margin-left:auto;">
+        <%= @event.name %> · <%= l(@event.start_date, format: :short) %> → <%= l(@event.end_date, format: :short) %>
+      </span>
+    <% end %>
+  </div>
+</div>
+
+<% if @sectors_data.empty? %>
+  <div class="content-card" style="text-align:center; padding:3rem; color:#a1a1aa;">
+    <i class="bi bi-calendar-x" style="font-size:2rem; display:block; margin-bottom:0.5rem;"></i>
+    <p style="margin:0; font-size:0.88rem;">Nenhuma escala cadastrada para <%= l(@date, format: :long) %>.</p>
+  </div>
+<% else %>
+
+<div class="content-card" style="padding:0; overflow-x:auto;">
+
+  <%# Cabeçalho de horas %>
+  <div style="display:flex; border-bottom:1.5px solid #18181b; background:#fafaf9; min-width:700px;">
+    <div style="width:160px; flex-shrink:0; padding:0.5rem 1rem; font-size:0.65rem; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color:#a1a1aa; border-right:1px solid #e4e4e7;">
+      Setor
+    </div>
+    <div style="flex:1; position:relative; height:32px;">
+      <% (0..23).each do |h| %>
+        <div style="position:absolute; left:<%= (h / 24.0 * 100).round(2) %>%; top:0; bottom:0; display:flex; align-items:center;">
+          <span style="font-size:0.62rem; font-weight:600; color:#a1a1aa; padding-left:3px; white-space:nowrap;"><%= "%02d" % h %>h</span>
+        </div>
+        <% if h > 0 %>
+          <div style="position:absolute; left:<%= (h / 24.0 * 100).round(2) %>%; top:0; bottom:0; border-left:1px solid #e4e4e7;"></div>
+        <% end %>
+      <% end %>
+    </div>
+  </div>
+
+  <%# Uma linha por setor %>
+  <% @sectors_data.each_with_index do |(sector, teams_data), sidx| %>
+    <% color = timeline_colors[sidx % timeline_colors.size] %>
+
+    <%# Detecta sobreposições para empilhar verticalmente %>
+    <%
+      # Cada equipe vira uma "faixa" vertical dentro da linha
+      # Agrupa equipes que se sobrepõem em sub-linhas (lanes)
+      lanes = []
+      teams_data.each do |(team, team_shifts)|
+        time_groups = team_shifts.group_by { |s| [s.start_time.strftime("%H:%M"), s.end_time.strftime("%H:%M")] }
+        time_groups.each do |(times, group_shifts)|
+          start_min = group_shifts.first.start_time.hour * 60 + group_shifts.first.start_time.min
+          end_t     = group_shifts.first.end_time
+          overnight = end_t < group_shifts.first.start_time
+          end_min   = overnight ? 1440 : (end_t.hour * 60 + end_t.min)
+
+          bar = { team: team, times: times, group_shifts: group_shifts,
+                  start_min: start_min, end_min: end_min, overnight: overnight }
+
+          # Tenta colocar na primeira lane sem sobreposição
+          placed = false
+          lanes.each do |lane|
+            if lane.none? { |b| b[:start_min] < bar[:end_min] && bar[:start_min] < b[:end_min] }
+              lane << bar
+              placed = true
+              break
+            end
+          end
+          lanes << [bar] unless placed
+        end
+      end
+      row_height = [lanes.size * 36 + 8, 44].max
+    %>
+
+    <div style="display:flex; border-bottom:1px solid #e4e4e7; min-width:700px; min-height:<%= row_height %>px;" class="timeline-row">
+
+      <%# Nome do setor %>
+      <div style="width:160px; flex-shrink:0; border-right:1px solid #e4e4e7; display:flex; align-items:center; padding:0 1rem; background:#fafaf9; min-height:<%= row_height %>px;">
+        <div style="display:flex; align-items:center; gap:0.4rem;">
+          <span style="width:8px; height:8px; border-radius:50%; background:<%= color %>; flex-shrink:0;"></span>
+          <span style="font-size:0.78rem; font-weight:600; color:#3f3f46;"><%= sector.name %></span>
+        </div>
+      </div>
+
+      <%# Área de barras %>
+      <div style="flex:1; position:relative; min-height:<%= row_height %>px;">
+        <%# Linhas verticais de hora %>
+        <% (1..23).each do |h| %>
+          <div style="position:absolute; left:<%= (h / 24.0 * 100).round(2) %>%; top:0; bottom:0; border-left:1px solid #f4f4f5;"></div>
+        <% end %>
+
+        <%# Barras posicionadas por lane %>
+        <% lanes.each_with_index do |lane, lane_idx| %>
+          <% bar_top = lane_idx * 36 + 6 %>
+          <% lane.each do |bar| %>
+            <% left  = timeline_bar_left(bar[:group_shifts].first.start_time) %>
+            <% width = bar[:overnight] ? (100.0 - left).round(2) : timeline_bar_width(bar[:group_shifts].first.start_time, bar[:group_shifts].first.end_time) %>
+
+            <%
+              coord = bar[:team].coordinator
+              coord_name    = coord&.name.to_s
+              coord_initials = coord_name.split.map(&:first).first(2).join.upcase
+              coord_avatar  = coord&.avatar&.attached? ? url_for(coord.avatar) : nil
+            %>
+            <div class="tl-bar"
+                 data-team="<%= bar[:team].name %>"
+                 data-hours="<%= bar[:times][0] %>–<%= bar[:times][1] %><%= bar[:overnight] ? ' +1' : '' %>"
+                 data-members="<%= bar[:group_shifts].map { |s| s.user.name }.join('||') %>"
+                 data-coord-name="<%= coord_name %>"
+                 data-coord-initials="<%= coord_initials %>"
+                 data-coord-avatar="<%= coord_avatar %>"
+                 style="position:absolute; left:<%= left %>%; width:<%= [width, 100.0 - left].min %>%; top:<%= bar_top %>px; height:28px; background:<%= color %>; border-radius:5px; opacity:0.88; display:flex; align-items:center; padding:0 8px; overflow:hidden; min-width:4px; cursor:default;">
+              <% if width > 4 %>
+                <div style="display:flex; align-items:center; gap:5px; overflow:hidden; pointer-events:none; width:100%;">
+                  <%# Avatar do coordenador %>
+                  <% if coord %>
+                    <div style="width:20px; height:20px; border-radius:50%; overflow:hidden; border:1.5px solid rgba(255,255,255,0.5); flex-shrink:0; background:rgba(0,0,0,0.2); display:flex; align-items:center; justify-content:center; font-size:0.45rem; font-weight:700; color:#fff;">
+                      <% if coord.avatar.attached? %>
+                        <%= image_tag coord.avatar, style:"width:100%;height:100%;object-fit:cover;" %>
+                      <% else %>
+                        <%= coord_initials %>
+                      <% end %>
+                    </div>
+                  <% end %>
+                  <%# Nome da equipe + horário %>
+                  <span style="font-size:0.68rem; color:#fff; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; line-height:1.2; flex:1; min-width:0;">
+                    <%= bar[:team].name %>
+                    <span style="opacity:0.75; font-weight:400;"> <%= bar[:times][0] %>–<%= bar[:times][1] %><% if bar[:overnight] %> +1<% end %></span>
+                  </span>
+                  <%# Contador de colaboradores %>
+                  <span style="opacity:0.85; font-weight:500; background:rgba(0,0,0,0.18); border-radius:3px; padding:0 4px; font-size:0.6rem; color:#fff; white-space:nowrap; flex-shrink:0;">
+                    <i class="bi bi-people-fill" style="font-family:'bootstrap-icons'; font-size:0.55rem;"></i> <%= bar[:group_shifts].size %>
+                  </span>
+                </div>
+              <% end %>
+            </div>
+
+            <% if bar[:overnight] %>
+              <% end_w = timeline_bar_width(Time.parse("00:00"), bar[:group_shifts].first.end_time) %>
+              <div style="position:absolute; left:0; width:<%= end_w %>%; top:<%= bar_top %>px; height:28px; background:<%= color %>; border-radius:5px; opacity:0.45; min-width:4px; pointer-events:none;"></div>
+            <% end %>
+          <% end %>
+        <% end %>
+
+        <% if @date == Date.today %>
+          <div class="now-line" style="position:absolute; top:0; bottom:0; border-left:2px solid #ef4444; z-index:5; pointer-events:none;"></div>
+        <% end %>
+      </div>
+
+    </div>
+  <% end %>
+
+</div>
+
+<%# Legenda %>
+<div style="display:flex; gap:1rem; flex-wrap:wrap; margin-top:1rem; align-items:center;">
+  <span style="font-size:0.72rem; color:#a1a1aa; font-weight:600;">Setores:</span>
+  <% @sectors_data.each_with_index do |(sector, _), sidx| %>
+    <div style="display:flex; align-items:center; gap:0.35rem;">
+      <span style="width:10px; height:10px; border-radius:50%; background:<%= timeline_colors[sidx % timeline_colors.size] %>; flex-shrink:0;"></span>
+      <span style="font-size:0.72rem; color:#52525b;"><%= sector.name %></span>
+    </div>
+  <% end %>
+  <% if @date == Date.today %>
+    <div style="display:flex; align-items:center; gap:0.35rem; margin-left:auto;">
+      <span style="width:12px; height:2px; background:#ef4444;"></span>
+      <span style="font-size:0.72rem; color:#a1a1aa;">agora</span>
+    </div>
+  <% end %>
+</div>
+
+<div id="tl-tooltip" style="display:none; position:fixed; z-index:9999; background:#fff; border:1px solid #e4e4e7; border-radius:8px; padding:8px 12px; box-shadow:0 4px 16px rgba(0,0,0,0.14); pointer-events:none; min-width:160px; max-width:260px;"></div>
+
+<style>
+  .tl-bar:hover { opacity: 1 !important; }
+</style>
+
+<script>
+  (function() {
+    function initTimeline() {
+      <% if @date == Date.today %>
+      var now = new Date();
+      var pct = ((now.getHours() * 60 + now.getMinutes()) / 1440 * 100).toFixed(2);
+      document.querySelectorAll('.now-line').forEach(function(el) { el.style.left = pct + '%'; });
+      <% end %>
+
+      var tip = document.getElementById('tl-tooltip');
+      if (!tip) return;
+      var currentBar = null;
+
+      function positionTip(e) {
+        var x = e.clientX + 14;
+        var y = e.clientY - 10;
+        if (x + 280 > window.innerWidth) x = e.clientX - 280;
+        if (y < 8) y = e.clientY + 20;
+        tip.style.left = x + 'px';
+        tip.style.top  = y + 'px';
+      }
+
+      function showTip(bar, e) {
+        var team      = bar.getAttribute('data-team') || '';
+        var hours     = bar.getAttribute('data-hours') || '';
+        var raw       = bar.getAttribute('data-members') || '';
+        var members   = raw ? raw.split('||') : [];
+        var coordName = bar.getAttribute('data-coord-name') || '';
+        var coordInit = bar.getAttribute('data-coord-initials') || '';
+        var coordAvtr = bar.getAttribute('data-coord-avatar') || '';
+
+        // Cabeçalho: nome da equipe + horário
+        var html = '<div style="font-size:0.72rem;font-weight:700;color:#18181b;margin-bottom:6px;padding-bottom:6px;border-bottom:1px solid #e4e4e7;">'
+                 + team + '&nbsp;<span style="font-weight:400;color:#71717a;">' + hours + '</span></div>';
+
+        // Coordenador
+        if (coordName) {
+          var avatarHtml = coordAvtr
+            ? '<img src="' + coordAvtr + '" style="width:22px;height:22px;border-radius:50%;object-fit:cover;border:1px solid #86efac;flex-shrink:0;">'
+            : '<div style="width:22px;height:22px;border-radius:50%;background:#dcfce7;border:1px solid #86efac;display:flex;align-items:center;justify-content:center;font-size:0.5rem;font-weight:700;color:#15803d;flex-shrink:0;">' + coordInit + '</div>';
+          html += '<div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;padding-bottom:6px;border-bottom:1px solid #f4f4f5;">'
+                + avatarHtml
+                + '<div>'
+                + '<div style="font-size:0.62rem;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:#a1a1aa;line-height:1;">Coordenador(a)</div>'
+                + '<div style="font-size:0.72rem;font-weight:600;color:#15803d;">' + coordName + '</div>'
+                + '</div></div>';
+        }
+
+        // Colaboradores
+        if (members.length) {
+          html += '<div style="font-size:0.62rem;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:#a1a1aa;margin-bottom:3px;">Colaboradores</div>';
+          members.forEach(function(name) {
+            html += '<div style="font-size:0.7rem;color:#3f3f46;padding:2px 0;display:flex;align-items:center;gap:5px;">'
+                  + '<span style="width:5px;height:5px;border-radius:50%;background:#d4d4d8;flex-shrink:0;"></span>'
+                  + name + '</div>';
+          });
+        }
+
+        tip.innerHTML = html;
+        tip.style.display = 'block';
+        positionTip(e);
+      }
+
+      // Event delegation — um único listener no documento
+      document.addEventListener('mousemove', function(e) {
+        var bar = e.target.closest ? e.target.closest('.tl-bar') : null;
+        if (bar) {
+          if (bar !== currentBar) { currentBar = bar; showTip(bar, e); }
+          else { positionTip(e); }
+        } else {
+          if (currentBar) { currentBar = null; tip.style.display = 'none'; }
+        }
+      });
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initTimeline);
+    } else {
+      initTimeline();
+    }
+    // Compatibilidade com Turbo
+    document.addEventListener('turbo:load', initTimeline);
+  })();
+</script>
+
+<% end %>

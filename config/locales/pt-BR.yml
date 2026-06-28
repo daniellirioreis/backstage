@@ -29,6 +29,7 @@ pt-BR:
     create: "Criar"
     update: "Editar"
     destroy: "Excluir"
+    timeline: "Timeline"
 
   badge_config:
     configure: "Configurar Credencial"

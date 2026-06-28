@@ -1,0 +1,161 @@
+<style>
+  * { box-sizing: border-box; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+
+  .doc-header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid #18181b;
+  }
+  .doc-title { font-size: 1rem; font-weight: 800; color: #18181b; text-transform: uppercase; letter-spacing: 0.04em; }
+  .doc-event { font-size: 0.75rem; color: #71717a; margin-top: 2px; }
+  .doc-date { font-size: 0.68rem; color: #a1a1aa; }
+
+  .team-title {
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: #18181b;
+    margin-bottom: 2px;
+  }
+  .team-meta {
+    font-size: 0.68rem;
+    color: #71717a;
+    margin-bottom: 12px;
+  }
+
+  .date-group { break-inside: avoid; margin-bottom: 16px; }
+
+  .date-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #18181b;
+    margin-bottom: 6px;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.75rem;
+  }
+  th {
+    font-size: 0.62rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #71717a;
+    border-bottom: 1.5px solid #18181b;
+    padding: 4px 8px;
+    text-align: left;
+  }
+  td {
+    padding: 7px 8px;
+    border-bottom: 1px solid #e4e4e7;
+    color: #18181b;
+    vertical-align: bottom;
+  }
+  tr { break-inside: avoid; }
+
+  .sig-line {
+    display: block;
+    border-bottom: 1px solid #a1a1aa;
+    width: 100%;
+    height: 20px;
+  }
+  .mono { font-family: monospace; color: #a1a1aa; font-size: 0.68rem; }
+
+  .coord-sig {
+    break-inside: avoid;
+    margin-top: 28px;
+  }
+</style>
+
+<% @shifts_by_team.each do |team, shifts| %>
+  <div class="a4-page">
+
+    <%# Cabeçalho do documento %>
+    <div class="doc-header">
+      <div>
+        <div class="doc-title">Escala de Turnos</div>
+        <div class="doc-event">
+          <%= @event&.name %>
+          <% if @event&.start_date %>
+            · <%= l(@event.start_date, format: :short) %> → <%= l(@event.end_date, format: :short) %>
+          <% end %>
+        </div>
+        <% if @event&.location.present? %>
+          <div style="font-size: 0.72rem; color: #a1a1aa; margin-top: 2px;"><%= @event.location %></div>
+        <% end %>
+      </div>
+      <div class="doc-date">Impresso em <%= l(Date.today, format: :long) %></div>
+    </div>
+
+    <%# Identificação da equipe %>
+    <div class="team-title"><span style="font-weight: 400; color: #71717a;">Equipe:</span> <%= team.name %></div>
+    <div class="team-meta"><span style="font-weight: 600; color: #71717a;">Setor:</span> <%= team.sector.name %></div>
+
+    <%# Tabelas por data %>
+    <% shifts.group_by(&:date).each do |date, day_shifts| %>
+      <div class="date-group">
+        <div class="date-label">
+          <%= l(date, format: :long) %>
+          <% end_dates = day_shifts.map(&:end_date).compact.select { |d| d > date } %>
+          <% if end_dates.any? %>
+            <span style="font-weight: 400; color: #71717a;"> → <%= l(end_dates.max, format: :long) %></span>
+          <% end %>
+        </div>
+
+        <table>
+          <thead>
+            <tr>
+              <th>Colaborador</th>
+              <th style="width: 110px; text-align: center;">Horário</th>
+              <th style="width: 60%;">Assinatura</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% day_shifts.each do |shift| %>
+              <tr>
+                <td>
+                  <%= shift.user.name %>
+                  <% if team.coordinator_id == shift.user_id %>
+                    <span style="font-size: 0.6rem; color: #92400e;">(coord.)</span>
+                  <% end %>
+                  <% code = @credential_map[[shift.team_id, shift.user_id]] %>
+                  <% if code.present? %>
+                    <br><span class="mono"><%= code %></span>
+                  <% end %>
+                  <% if shift.user.phone.present? %>
+                    <br><span class="mono"><%= format_phone(shift.user.phone) %></span>
+                  <% end %>
+                </td>
+                <td class="mono" style="text-align: center;">
+                  <%= shift.start_time.strftime("%H:%M") %> → <%= shift.end_time.strftime("%H:%M") %>
+                  <% if shift.overnight? %><span style="font-size: 0.6rem;"> +1</span><% end %>
+                </td>
+                <td><span class="sig-line"></span></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    <% end %>
+
+    <%# Assinatura do coordenador — uma vez por equipe, após todas as tabelas %>
+    <div class="coord-sig">
+      <span class="sig-line" style="width: 260px;"></span>
+      <% if team.coordinator %>
+        <div style="margin-top: 6px;">
+          <div style="font-size: 0.75rem; font-weight: 600; color: #18181b;"><%= team.coordinator.name %></div>
+          <div style="font-size: 0.68rem; font-family: monospace; color: #71717a;"><%= team.coordinator.cpf.to_s.gsub(/(\d{3})(\d{3})(\d{3})(\d{2})/, '\1.\2.\3-\4') %></div>
+        </div>
+      <% else %>
+        <div style="font-size: 0.68rem; color: #71717a; margin-top: 4px;">Coordenador(a)</div>
+      <% end %>
+    </div>
+
+  </div>
+<% end %>

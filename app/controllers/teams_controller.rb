@@ -16,11 +16,14 @@ class TeamsController < ApplicationController
 
   def index
     authorize Team
-    @teams = policy_scope(Team)
-               .joins(:sector)
-               .where(sectors: { event_id: current_event.id })
-               .includes(:sector, coordinator: { avatar_attachment: :blob }, users: { avatar_attachment: :blob })
-               .order("sectors.name, teams.name")
+    @sectors = Sector.where(event_id: current_event.id).order(:name)
+    scope = policy_scope(Team)
+              .joins(:sector)
+              .where(sectors: { event_id: current_event.id })
+              .includes(:sector, coordinator: { avatar_attachment: :blob }, users: { avatar_attachment: :blob })
+              .order("sectors.name, teams.name")
+    scope = scope.where(sector_id: params[:sector_id]) if params[:sector_id].present?
+    @teams = scope
     @teams_with_shifts = Shift.where(team_id: @teams.map(&:id)).distinct.pluck(:team_id).to_set
   end
 

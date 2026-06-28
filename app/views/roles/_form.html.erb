@@ -16,10 +16,15 @@
             <% Permission::ACTIONS.each do |action| %>
               <th class="text-center"><%= t("permission_actions.#{action}") %></th>
             <% end %>
+            <% max_extra = Permission::EXTRA_ACTIONS.values.map(&:size).max || 0 %>
+            <% max_extra.times do |i| %>
+              <th class="text-center" style="color:#a1a1aa; font-size:0.8rem;">Extras</th>
+            <% end %>
           </tr>
         </thead>
         <tbody>
           <% Permission::RESOURCES.each do |resource| %>
+            <% all_actions = Permission::ACTIONS + (Permission::EXTRA_ACTIONS[resource] || []) %>
             <tr>
               <td class="fw-medium">
                 <%= t("activerecord.models.#{resource.singularize}", count: 2, default: resource.humanize) %>
@@ -31,6 +36,24 @@
                   <%= check_box_tag "role[permission_keys][]", value, checked,
                       id: "perm_#{resource}_#{action}" %>
                 </td>
+              <% end %>
+              <%# Ações extras específicas do recurso %>
+              <% (Permission::EXTRA_ACTIONS[resource] || []).each do |action| %>
+                <td class="text-center" title="<%= t("permission_actions.#{action}", default: action.humanize) %>">
+                  <% value = "#{resource}:#{action}" %>
+                  <% checked = role.permissions.any? { |p| p.resource == resource && p.action == action } %>
+                  <%= check_box_tag "role[permission_keys][]", value, checked,
+                      id: "perm_#{resource}_#{action}" %>
+                  <div style="font-size:0.6rem; color:#a1a1aa; margin-top:1px;">
+                    <%= t("permission_actions.#{action}", default: action.humanize) %>
+                  </div>
+                </td>
+              <% end %>
+              <%# Células vazias para recursos sem ações extras %>
+              <% max_extra = Permission::EXTRA_ACTIONS.values.map(&:size).max || 0 %>
+              <% extra_count = (Permission::EXTRA_ACTIONS[resource] || []).size %>
+              <% (max_extra - extra_count).times do %>
+                <td></td>
               <% end %>
             </tr>
           <% end %>

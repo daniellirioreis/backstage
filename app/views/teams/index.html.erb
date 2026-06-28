@@ -7,6 +7,26 @@
   <% end %>
 </div>
 
+<%# Filtro de setor %>
+<div class="content-card" style="margin-bottom: 1rem; padding: 0.75rem 1rem;">
+  <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+    <span style="font-size: 0.78rem; font-weight: 600; color: #71717a; white-space: nowrap;">
+      <i class="bi bi-grid-3x3-gap"></i> Setor:
+    </span>
+    <%= link_to "Todos", teams_path,
+        style: "font-size: 0.78rem; padding: 0.25rem 0.65rem; border-radius: 6px; border: 1px solid #{params[:sector_id].blank? ? '#18181b' : '#e4e4e7'}; background: #{params[:sector_id].blank? ? '#18181b' : 'transparent'}; color: #{params[:sector_id].blank? ? '#fff' : '#3f3f46'}; text-decoration: none; white-space: nowrap;" %>
+    <% @sectors.each do |sector| %>
+      <%= link_to sector.name, teams_path(sector_id: sector.id),
+          style: "font-size: 0.78rem; padding: 0.25rem 0.65rem; border-radius: 6px; border: 1px solid #{params[:sector_id].to_s == sector.id.to_s ? '#18181b' : '#e4e4e7'}; background: #{params[:sector_id].to_s == sector.id.to_s ? '#18181b' : 'transparent'}; color: #{params[:sector_id].to_s == sector.id.to_s ? '#fff' : '#3f3f46'}; text-decoration: none; white-space: nowrap;" %>
+    <% end %>
+    <% if params[:sector_id].present? %>
+      <span style="font-size: 0.75rem; color: #a1a1aa; margin-left: auto;">
+        <%= @teams.size %> equipe<%= @teams.size == 1 ? "" : "s" %>
+      </span>
+    <% end %>
+  </div>
+</div>
+
 <% if @teams.empty? %>
   <div class="content-card" style="text-align: center; padding: 3rem; color: #a1a1aa;">
     <i class="bi bi-people" style="font-size: 2.5rem; display: block; margin-bottom: 0.75rem;"></i>

@@ -31,7 +31,12 @@ Rails.application.routes.draw do
     end
   end
   resources :sectors
-  resources :shifts
+  resources :shifts do
+    collection do
+      get :print
+      get :timeline
+    end
+  end
   resources :vehicles
 
   root "dashboard#index"

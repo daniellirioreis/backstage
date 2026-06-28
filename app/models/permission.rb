@@ -7,4 +7,9 @@ class Permission < ApplicationRecord
 
   RESOURCES = %w[users roles events teams sectors shifts vehicles badge_configs].freeze
   ACTIONS   = %w[index show create update destroy].freeze
+
+  # Ações extras por recurso (além das padrão)
+  EXTRA_ACTIONS = {
+    "shifts" => %w[timeline]
+  }.freeze
 end
