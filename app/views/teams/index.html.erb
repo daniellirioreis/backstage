@@ -49,6 +49,17 @@
                 </div>
               <% end %>
             </div>
+            <div style="margin-top: 0.4rem;">
+              <% if @teams_with_shifts.include?(team.id) %>
+                <span style="display: inline-flex; align-items: center; gap: 0.25rem; background: #dcfce7; border: 1px solid #86efac; border-radius: 5px; padding: 1px 7px; font-size: 0.65rem; font-weight: 600; color: #15803d;">
+                  <i class="bi bi-calendar-check" style="font-size: 0.6rem;"></i> Escala definida
+                </span>
+              <% else %>
+                <span style="display: inline-flex; align-items: center; gap: 0.25rem; background: #fef2f2; border: 1px solid #fca5a5; border-radius: 5px; padding: 1px 7px; font-size: 0.65rem; font-weight: 600; color: #dc2626;">
+                  <i class="bi bi-calendar-x" style="font-size: 0.6rem;"></i> Sem escala
+                </span>
+              <% end %>
+            </div>
           </div>
           <div style="display: flex; gap: 0.4rem; flex-shrink: 0;">
             <% if policy(team).show? %>

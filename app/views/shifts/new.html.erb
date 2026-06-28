@@ -1,4 +1,188 @@
 <div class="page-header">
-  <h1><%= t("actions.new", model: Shift.model_name.human) %></h1>
+  <h1>Nova Escala</h1>
 </div>
-<%= render "form", shift: @shift %>
+
+<%= form_with url: new_shift_path, method: :get, local: true do |f| %>
+  <div class="content-card" style="margin-bottom: 1rem;">
+    <h3 style="font-size: 0.82rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: #71717a; margin: 0 0 1rem;">
+      <i class="bi bi-calendar3"></i> Período
+    </h3>
+    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; align-items: flex-end;">
+      <div>
+        <label class="form-label">
+          Data início <span style="color: #ef4444;">*</span>
+          <% if @event %>
+            <span style="font-weight: 400; color: #a1a1aa;">(<%= l(@event.start_date, format: :short) %> → <%= l(@event.end_date, format: :short) %>)</span>
+          <% end %>
+        </label>
+        <input type="date" name="date" value="<%= params[:date] %>" class="form-control" required
+               <% if @event %> min="<%= @event.start_date %>" max="<%= @event.end_date %>" <% end %>>
+      </div>
+      <div>
+        <label class="form-label">Data fim <span style="color: #a1a1aa; font-weight: 400;">(opcional)</span></label>
+        <input type="date" name="end_date" value="<%= params[:end_date] %>" class="form-control"
+               <% if @event %> min="<%= @event.start_date %>" max="<%= @event.end_date %>" <% end %>>
+      </div>
+      <div>
+        <label class="form-label">Equipe <span style="color: #ef4444;">*</span></label>
+
+        <% selected_team = @teams.find { |t| t.id.to_s == params[:team_id].to_s } %>
+        <div data-controller="team-autocomplete"
+             data-team-autocomplete-url-value="<%= search_teams_path %>"
+             data-team-autocomplete-existing-value="<%= selected_team ? { id: selected_team.id, name: selected_team.name, sector: selected_team.sector.name }.to_json : '{}'.to_json %>"
+             style="position: relative;">
+
+          <div data-team-autocomplete-target="selected"></div>
+
+          <input type="text"
+                 data-team-autocomplete-target="input"
+                 data-action="input->team-autocomplete#search"
+                 class="form-control"
+                 placeholder="Buscar equipe por nome ou setor..."
+                 autocomplete="off"
+                 <%= "style='display:none'" if selected_team %>>
+
+          <div data-team-autocomplete-target="dropdown" class="autocomplete-dropdown" style="display: none;"></div>
+
+          <input type="hidden"
+                 data-team-autocomplete-target="hidden"
+                 name="team_id"
+                 value="<%= params[:team_id] %>">
+        </div>
+      </div>
+    </div>
+  </div>
+<% end %>
+
+<% if @selected_team.present? %>
+  <% if @team_has_shifts %>
+    <div style="background: #fef3c7; border: 1px solid #fcd34d; border-radius: 8px; padding: 1rem 1.25rem; display: flex; align-items: flex-start; gap: 0.75rem;">
+      <i class="bi bi-exclamation-triangle-fill" style="color: #f59e0b; font-size: 1.1rem; flex-shrink: 0; margin-top: 1px;"></i>
+      <div>
+        <div style="font-weight: 600; color: #92400e; font-size: 0.88rem;">Esta equipe já possui escala definida</div>
+        <div style="font-size: 0.82rem; color: #92400e; margin-top: 0.2rem;">
+          Para alterar, acesse a
+          <%= link_to "página da equipe", team_path(@selected_team), style: "color: #92400e; font-weight: 600;" %>
+          ou a
+          <%= link_to "listagem de escalas", shifts_path, style: "color: #92400e; font-weight: 600;" %>
+          e edite os turnos existentes.
+        </div>
+      </div>
+    </div>
+  <% else %>
+  <%= form_with url: shifts_path, method: :post, local: true do |f| %>
+    <input type="hidden" name="team_id" value="<%= @selected_team.id %>">
+
+    <div class="content-card" style="margin-bottom: 1rem;">
+      <h3 style="font-size: 0.82rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: #71717a; margin: 0 0 1rem;">
+        <i class="bi bi-calendar3"></i> Período
+      </h3>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+        <div>
+          <label class="form-label">
+            Data início <span style="color: #ef4444;">*</span>
+            <% if @event %>
+              <span style="font-weight: 400; color: #a1a1aa;">(<%= l(@event.start_date, format: :short) %> → <%= l(@event.end_date, format: :short) %>)</span>
+            <% end %>
+          </label>
+          <input type="date" name="date" value="<%= params[:date] %>" class="form-control" required
+                 <% if @event %> min="<%= @event.start_date %>" max="<%= @event.end_date %>" <% end %>>
+        </div>
+        <div>
+          <label class="form-label">Data fim <span style="color: #a1a1aa; font-weight: 400;">(opcional)</span></label>
+          <input type="date" name="end_date" value="<%= params[:end_date] %>" class="form-control"
+                 <% if @event %> min="<%= @event.start_date %>" max="<%= @event.end_date %>" <% end %>>
+        </div>
+      </div>
+    </div>
+
+    <div class="content-card" style="margin-bottom: 1.5rem;">
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem;">
+        <h3 style="font-size: 0.82rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: #71717a; margin: 0;">
+          <i class="bi bi-people"></i> Colaboradores — <strong style="color: #18181b;"><%= @selected_team.name %></strong>
+        </h3>
+        <div style="display: flex; gap: 0.5rem; align-items: center;">
+          <label style="font-size: 0.78rem; color: #71717a; margin: 0;">Horário padrão:</label>
+          <input type="time" id="bulk_start"
+                 style="font-size: 0.82rem; padding: 0.3rem 0.5rem; border: 1px solid #e4e4e7; border-radius: 6px; color: #18181b;"
+                 oninput="document.querySelectorAll('.col-start').forEach(i=>i.value=this.value)">
+          <span style="color: #a1a1aa;">→</span>
+          <input type="time" id="bulk_end"
+                 style="font-size: 0.82rem; padding: 0.3rem 0.5rem; border: 1px solid #e4e4e7; border-radius: 6px; color: #18181b;"
+                 oninput="document.querySelectorAll('.col-end').forEach(i=>i.value=this.value)">
+          <span style="font-size: 0.72rem; color: #a1a1aa;">(aplica a todos)</span>
+        </div>
+      </div>
+
+      <% if @team_members.empty? %>
+        <div style="text-align: center; color: #a1a1aa; font-size: 0.85rem; padding: 1.5rem;">
+          Nenhum colaborador nesta equipe.
+        </div>
+      <% else %>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th style="width: 36px;">
+                <input type="checkbox" id="check_all" checked
+                       style="width: 15px; height: 15px; cursor: pointer;"
+                       onchange="document.querySelectorAll('.member-check').forEach(c=>c.checked=this.checked)">
+              </th>
+              <th>Colaborador</th>
+              <th style="width: 130px;">Hora início</th>
+              <th style="width: 130px;">Hora fim</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @team_members.each do |tm| %>
+              <tr>
+                <td>
+                  <input type="checkbox" name="members[<%= tm.user_id %>][selected]" value="1"
+                         class="member-check" checked
+                         style="width: 15px; height: 15px; cursor: pointer;">
+                </td>
+                <td>
+                  <div style="display: flex; align-items: center; gap: 0.6rem;">
+                    <div style="width: 30px; height: 30px; border-radius: 50%; overflow: hidden; background: #f4f4f5; border: 1px solid #e4e4e7; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                      <% if tm.user.avatar.attached? %>
+                        <%= image_tag tm.user.avatar, style: "width:100%;height:100%;object-fit:cover;" %>
+                      <% else %>
+                        <span style="font-size: 0.58rem; font-weight: 700; color: #52525b;">
+                          <%= tm.user.name.split.map(&:first).first(2).join.upcase %>
+                        </span>
+                      <% end %>
+                    </div>
+                    <div>
+                      <div style="font-size: 0.85rem; font-weight: 500; color: #18181b;">
+                        <%= tm.user.name %>
+                        <% if tm.user_id == @selected_team.coordinator_id %>
+                          <span style="font-size: 0.62rem; background: #fef3c7; color: #92400e; border: 1px solid #fcd34d; border-radius: 4px; padding: 1px 5px;">Coord.</span>
+                        <% end %>
+                      </div>
+                      <div style="font-size: 0.72rem; color: #a1a1aa;"><%= tm.user.phone %></div>
+                    </div>
+                  </div>
+                </td>
+                <td>
+                  <input type="time" name="members[<%= tm.user_id %>][start_time]"
+                         class="col-start form-control" style="padding: 0.3rem 0.5rem; font-size: 0.82rem;">
+                </td>
+                <td>
+                  <input type="time" name="members[<%= tm.user_id %>][end_time]"
+                         class="col-end form-control" style="padding: 0.3rem 0.5rem; font-size: 0.82rem;">
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      <% end %>
+    </div>
+
+    <div style="display: flex; gap: 0.5rem;">
+      <button type="submit" class="btn-primary">
+        <i class="bi bi-calendar-check"></i> Salvar Escala
+      </button>
+      <%= link_to "Cancelar", shifts_path, class: "btn-secondary" %>
+    </div>
+  <% end %>
+  <% end %>
+<% end %>

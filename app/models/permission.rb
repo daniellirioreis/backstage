@@ -5,6 +5,6 @@ class Permission < ApplicationRecord
   validates :action, presence: true
   validates :action, uniqueness: { scope: [ :role_id, :resource ] }
 
-  RESOURCES = %w[users roles events teams sectors shifts vehicles].freeze
+  RESOURCES = %w[users roles events teams sectors shifts vehicles badge_configs].freeze
   ACTIONS   = %w[index show create update destroy].freeze
 end

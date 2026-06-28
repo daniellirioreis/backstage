@@ -3,7 +3,23 @@ class UsersController < ApplicationController
 
   def index
     authorize User
-    @users = policy_scope(User).includes(:role).order(:name)
+    @roles = Role.order(:name)
+    scope  = policy_scope(User).includes(:role, :avatar_attachment)
+
+    if params[:q].present?
+      q      = params[:q].strip
+      digits = q.gsub(/\D/, "")
+      scope  = if digits.length >= 3
+        scope.where("name ILIKE ? OR cpf LIKE ?", "%#{q}%", "%#{digits}%")
+      else
+        scope.where("name ILIKE ?", "%#{q}%")
+      end
+    end
+
+    scope = scope.where(role_id: params[:role_id]) if params[:role_id].present?
+
+    @users = scope.order(:name)
+    @total = @users.size
   end
 
   def search

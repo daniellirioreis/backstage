@@ -23,7 +23,12 @@ Rails.application.routes.draw do
     member { get :print }
   end
   resources :teams do
-    member { get :credentials }
+    collection { get :search }
+    member do
+      get  :credentials
+      get  :schedule
+      post :schedule
+    end
   end
   resources :sectors
   resources :shifts

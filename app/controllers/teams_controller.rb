@@ -1,6 +1,19 @@
 class TeamsController < ApplicationController
   before_action :set_team, only: %i[show edit update destroy credentials]
 
+  def search
+    authorize Team, :index?
+    q     = params[:q].to_s.strip
+    scope = Team.joins(:sector)
+                .where(sectors: { event_id: current_event&.id })
+                .includes(:sector)
+    scope = scope.where("teams.name ILIKE ? OR sectors.name ILIKE ?", "%#{q}%", "%#{q}%") if q.present?
+    teams = scope.order("sectors.name, teams.name").limit(50)
+    render json: teams.map { |t|
+      { id: t.id, name: t.name, sector: t.sector.name, label: "#{t.sector.name} › #{t.name}" }
+    }
+  end
+
   def index
     authorize Team
     @teams = policy_scope(Team)
@@ -8,6 +21,7 @@ class TeamsController < ApplicationController
                .where(sectors: { event_id: current_event.id })
                .includes(:sector, coordinator: { avatar_attachment: :blob }, users: { avatar_attachment: :blob })
                .order("sectors.name, teams.name")
+    @teams_with_shifts = Shift.where(team_id: @teams.map(&:id)).distinct.pluck(:team_id).to_set
   end
 
   def show
@@ -16,6 +30,46 @@ class TeamsController < ApplicationController
                                  .includes(user: [:role, { avatar_attachment: :blob }])
                                  .joins(:user)
                                  .order("users.name")
+    @shifts_by_date = if Shift.column_names.include?("team_id")
+      Shift.where(team_id: @team.id).includes(:user).order(:date, :start_time).group_by(&:date)
+    else
+      {}
+    end
+  end
+
+  def schedule
+    authorize @team, :show?
+
+    if request.post?
+      date        = params[:date].presence
+      end_date    = params[:end_date].presence
+      start_time  = params[:start_time].presence
+      end_time    = params[:end_time].presence
+      user_ids    = Array(params[:user_ids]).map(&:to_i).select { |id| id > 0 }
+
+      if date.blank? || start_time.blank? || end_time.blank? || user_ids.empty?
+        flash.now[:alert] = "Preencha data, horários e selecione ao menos um colaborador."
+        @memberships = load_team_memberships
+        render :schedule and return
+      end
+
+      created = 0
+      user_ids.each do |uid|
+        shift = Shift.new(
+          user_id:    uid,
+          sector_id:  @team.sector_id,
+          date:       date,
+          end_date:   end_date,
+          start_time: start_time,
+          end_time:   end_time,
+        )
+        created += 1 if shift.save
+      end
+
+      redirect_to team_path(@team), notice: "#{created} turno(s) criado(s) com sucesso."
+    else
+      @memberships = load_team_memberships
+    end
   end
 
   def credentials
@@ -118,6 +172,13 @@ class TeamsController < ApplicationController
 
   def set_team
     @team = Team.includes(:users, sector: :event).find(params[:id])
+  end
+
+  def load_team_memberships
+    TeamMembership.where(team_id: @team.id)
+                  .includes(user: [:role, { avatar_attachment: :blob }])
+                  .joins(:user)
+                  .order("users.name")
   end
 
   def team_params

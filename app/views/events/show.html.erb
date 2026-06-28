@@ -69,44 +69,50 @@
 <% coordinators = @sectors.flat_map(&:teams).select(&:coordinator).map { |t| { team: t, user: t.coordinator } } %>
 <% if coordinators.any? %>
   <div class="content-card" style="margin-bottom: 2rem;">
-    <h2 style="font-size: 0.9rem; font-weight: 600; color: #18181b; margin: 0 0 1rem;">
+    <h2 style="font-size: 0.9rem; font-weight: 600; color: #18181b; margin: 0 0 0.75rem;">
       <i class="bi bi-star-fill" style="color: #f59e0b;"></i> Coordenadores
     </h2>
-    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 0.75rem;">
-      <% coordinators.each do |c| %>
-        <div style="display: flex; align-items: center; gap: 0.75rem; padding: 0.65rem 0.85rem; background: #fafaf9; border: 1px solid #e7e5e4; border-radius: 10px;">
-          <%# Avatar %>
-          <div style="width: 36px; height: 36px; border-radius: 50%; overflow: hidden; background: #fef3c7; border: 2px solid #fcd34d; display: flex; align-items: center; justify-content: center; font-size: 0.65rem; font-weight: 700; color: #92400e; flex-shrink: 0;">
-            <% if c[:user].avatar.attached? %>
-              <%= image_tag c[:user].avatar, style: "width: 100%; height: 100%; object-fit: cover;" %>
-            <% else %>
-              <%= c[:user].name.split.map(&:first).first(2).join.upcase %>
-            <% end %>
-          </div>
-          <%# Info %>
-          <div style="min-width: 0; flex: 1;">
-            <div style="font-size: 0.82rem; font-weight: 600; color: #18181b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-              <%= c[:user].name.split.first(2).join(" ") %>
-            </div>
-            <div style="font-size: 0.72rem; color: #71717a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-              <%= c[:team].name %>
-            </div>
-            <% if c[:team].coordinator_full_credential_code.present? %>
-              <div style="font-size: 0.7rem; margin-top: 2px; display: flex; align-items: center; gap: 0.3rem;">
-                <span style="font-weight: 700; color: #71717a;">Cod. Credencial</span>
-                <span style="font-family: monospace; color: #71717a;"><%= c[:team].coordinator_full_credential_code %></span>
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Nome</th>
+          <th>Equipe</th>
+          <th>Canal Rádio</th>
+          <th>Cód. Credencial</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% coordinators.each do |c| %>
+          <tr>
+            <td>
+              <div style="display: flex; align-items: center; gap: 0.6rem;">
+                <div style="width: 28px; height: 28px; border-radius: 50%; overflow: hidden; background: #fef3c7; border: 2px solid #fcd34d; display: flex; align-items: center; justify-content: center; font-size: 0.55rem; font-weight: 700; color: #92400e; flex-shrink: 0;">
+                  <% if c[:user].avatar.attached? %>
+                    <%= image_tag c[:user].avatar, style: "width: 100%; height: 100%; object-fit: cover;" %>
+                  <% else %>
+                    <%= c[:user].name.split.map(&:first).first(2).join.upcase %>
+                  <% end %>
+                </div>
+                <span style="font-weight: 500; color: #18181b;"><%= c[:user].name %></span>
               </div>
-            <% end %>
-          </div>
-          <%# Canal de rádio %>
-          <% if c[:team].radio_channel.present? %>
-            <span style="display: inline-flex; align-items: center; gap: 0.2rem; background: #fef3c7; border: 1px solid #fcd34d; border-radius: 5px; padding: 2px 6px; font-size: 0.68rem; font-weight: 600; color: #92400e; white-space: nowrap; flex-shrink: 0;">
-              <i class="bi bi-broadcast" style="font-size: 0.6rem;"></i> <%= c[:team].radio_channel %>
-            </span>
-          <% end %>
-        </div>
-      <% end %>
-    </div>
+            </td>
+            <td style="color: #71717a; font-size: 0.82rem;"><%= c[:team].name %></td>
+            <td>
+              <% if c[:team].radio_channel.present? %>
+                <span style="display: inline-flex; align-items: center; gap: 0.25rem; background: #fef3c7; border: 1px solid #fcd34d; border-radius: 5px; padding: 1px 7px; font-size: 0.7rem; font-weight: 600; color: #92400e;">
+                  <i class="bi bi-broadcast"></i> <%= c[:team].radio_channel %>
+                </span>
+              <% else %>
+                <span style="color: #a1a1aa;">—</span>
+              <% end %>
+            </td>
+            <td style="font-family: monospace; font-size: 0.78rem; color: #71717a;">
+              <%= c[:team].coordinator_full_credential_code || "—" %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
   </div>
 <% end %>
 
@@ -190,7 +196,18 @@
                       </div>
                     <% end %>
                   </div>
-                  <span style="flex-shrink: 0; font-size: 0.75rem; color: #a1a1aa;"><%= team.users.size %> col.</span>
+                  <div style="flex-shrink: 0; display: flex; flex-direction: column; align-items: flex-end; gap: 0.2rem;">
+                    <span style="font-size: 0.75rem; color: #a1a1aa;"><%= team.users.size %> col.</span>
+                    <% if @teams_with_shifts.include?(team.id) %>
+                      <span style="display: inline-flex; align-items: center; gap: 0.2rem; background: #dcfce7; border: 1px solid #86efac; border-radius: 5px; padding: 1px 6px; font-size: 0.6rem; font-weight: 600; color: #15803d; white-space: nowrap;">
+                        <i class="bi bi-calendar-check" style="font-size: 0.55rem;"></i> Escala definida
+                      </span>
+                    <% else %>
+                      <span style="display: inline-flex; align-items: center; gap: 0.2rem; background: #fef2f2; border: 1px solid #fca5a5; border-radius: 5px; padding: 1px 6px; font-size: 0.6rem; font-weight: 600; color: #dc2626; white-space: nowrap;">
+                        <i class="bi bi-calendar-x" style="font-size: 0.55rem;"></i> Sem escala
+                      </span>
+                    <% end %>
+                  </div>
                 </div>
               <% end %>
             </div>

@@ -1,11 +1,47 @@
 <div class="page-header">
-  <h1><%= User.model_name.human(count: 2) %></h1>
+  <div>
+    <h1 style="margin: 0;"><%= User.model_name.human(count: 2) %></h1>
+    <div style="font-size: 0.8rem; color: #a1a1aa; margin-top: 0.2rem;"><%= @total %> encontrado<%= @total == 1 ? "" : "s" %></div>
+  </div>
   <% if policy(User).new? %>
     <%= link_to new_user_path, class: "btn-primary" do %>
       <i class="bi bi-plus"></i> <%= t("actions.new", model: User.model_name.human) %>
     <% end %>
   <% end %>
 </div>
+
+<%# ── Filtros ────────────────────────────────────────────────────────────── %>
+<%= form_with url: users_path, method: :get, local: true, style: "margin-bottom: 1.25rem;" do |f| %>
+  <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: flex-end;">
+
+    <%# Busca %>
+    <div style="flex: 1; min-width: 200px;">
+      <label style="display: block; font-size: 0.72rem; font-weight: 600; color: #71717a; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.3rem;">Buscar</label>
+      <%= f.text_field :q, value: params[:q], placeholder: "Nome ou CPF…",
+          class: "form-control", style: "margin: 0;" %>
+    </div>
+
+    <%# Perfil %>
+    <div style="min-width: 160px;">
+      <label style="display: block; font-size: 0.72rem; font-weight: 600; color: #71717a; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.3rem;">Perfil</label>
+      <%= f.select :role_id,
+          options_from_collection_for_select(@roles, :id, :name, params[:role_id]),
+          { include_blank: "Todos" },
+          class: "form-control", style: "margin: 0;" %>
+    </div>
+
+    <%# Botões %>
+    <div style="display: flex; gap: 0.5rem; padding-bottom: 1px;">
+      <%= f.submit "Filtrar", class: "btn-primary" %>
+      <% if params[:q].present? || params[:role_id].present? %>
+        <%= link_to users_path, class: "btn-secondary" do %>
+          <i class="bi bi-x"></i> Limpar
+        <% end %>
+      <% end %>
+    </div>
+
+  </div>
+<% end %>
 
 <table class="data-table">
   <thead>

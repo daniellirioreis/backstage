@@ -9,6 +9,8 @@ class EventsController < ApplicationController
   def show
     authorize @event
     @sectors = @event.sectors.includes(teams: [:users, :coordinator]).order(:name)
+    all_team_ids = @sectors.flat_map { |s| s.teams.map(&:id) }
+    @teams_with_shifts = Shift.where(team_id: all_team_ids).distinct.pluck(:team_id).to_set
   end
 
   def print

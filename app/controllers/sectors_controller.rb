@@ -10,8 +10,7 @@ class SectorsController < ApplicationController
 
   def show
     authorize @sector
-    @teams  = @sector.teams.includes(:users)
-    @shifts = @sector.shifts.includes(:user).order(:date, :start_time)
+    @sector = Sector.includes(:event, teams: [:coordinator, :users]).find(params[:id])
   end
 
   def new

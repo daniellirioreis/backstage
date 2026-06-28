@@ -93,6 +93,9 @@ pt-BR:
       vehicle:
         one: "Veículo"
         other: "Veículos"
+      badge_config:
+        one: "Config. de Credencial"
+        other: "Config. de Credenciais"
 
     attributes:
       user:
@@ -124,7 +127,6 @@ pt-BR:
         date: "Data"
         start_time: "Hora de início"
         end_time: "Hora de fim"
-        has_radio: "Tem rádio"
       vehicle:
         model: "Modelo"
         color: "Cor"

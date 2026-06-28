@@ -3,7 +3,21 @@ class ShiftsController < ApplicationController
 
   def index
     authorize Shift
-    @shifts = policy_scope(Shift).includes(:user, sector: { team: :event }).order(:date, :start_time)
+    shifts = policy_scope(Shift)
+               .includes(:user, { team: [:coordinator, :sector] }, :sector)
+               .order(:date, :start_time)
+    @shifts_by_team = shifts.group_by(&:team)
+
+    team_ids = @shifts_by_team.keys.compact.map(&:id)
+    memberships = TeamMembership.where(team_id: team_ids)
+    @credential_map = memberships.each_with_object({}) do |tm, h|
+      h[[tm.team_id, tm.user_id]] = tm.full_credential_code
+    end
+    @shifts_by_team.keys.compact.each do |team|
+      if team.coordinator_id.present? && team.coordinator_full_credential_code.present?
+        @credential_map[[team.id, team.coordinator_id]] ||= team.coordinator_full_credential_code
+      end
+    end
   end
 
   def show
@@ -12,28 +26,79 @@ class ShiftsController < ApplicationController
 
   def new
     authorize Shift
-    @shift = Shift.new(sector_id: params[:sector_id])
+    @shift      = Shift.new
+    @event      = current_event
+    @teams = Team.joins(:sector)
+                 .where(sectors: { event_id: @event&.id })
+                 .includes(:sector)
+                 .order("sectors.name, teams.name")
+
+    if params[:team_id].present?
+      @selected_team    = Team.includes(sector: :event).find_by(id: params[:team_id])
+      @team_has_shifts  = Shift.where(team_id: @selected_team.id).exists?
+      @team_members     = TeamMembership.where(team_id: @selected_team.id)
+                                        .includes(user: { avatar_attachment: :blob })
+                                        .joins(:user)
+                                        .order("users.name")
+    end
   end
 
   def create
     authorize Shift
-    @shift = Shift.new(shift_params)
-    if @shift.save
-      redirect_to shifts_path, notice: t("notices.created", model: Shift.model_name.human)
-    else
-      render :new, status: :unprocessable_entity
+    team = Team.find_by(id: params[:team_id])
+
+    if team && Shift.where(team_id: team.id).exists?
+      redirect_to new_shift_path(team_id: team.id),
+        alert: "Esta equipe já possui escala definida. Edite os turnos existentes."
+      return
     end
+
+    members   = params[:members].to_unsafe_h rescue {}
+    date      = params[:date]
+    end_date  = params[:end_date].presence
+
+    created = 0
+    errors  = []
+
+    members.each do |user_id, data|
+      next unless data[:selected] == "1"
+      next if data[:start_time].blank? || data[:end_time].blank?
+
+      shift = Shift.new(
+        user_id:    user_id,
+        sector_id:  team&.sector_id,
+        team_id:    team&.id,
+        date:       date,
+        end_date:   end_date,
+        start_time: data[:start_time],
+        end_time:   data[:end_time],
+      )
+
+      if shift.save
+        created += 1
+      else
+        errors << "#{User.find_by(id: user_id)&.name}: #{shift.errors.full_messages.join(', ')}"
+      end
+    end
+
+    if errors.any?
+      flash[:alert] = "Alguns turnos não foram salvos: #{errors.join(' | ')}"
+    end
+
+    redirect_to shifts_path, notice: "#{created} turno(s) criado(s) com sucesso."
   end
 
   def edit
     authorize @shift
+    load_form_data
   end
 
   def update
     authorize @shift
     if @shift.update(shift_params)
-      redirect_to shifts_path, notice: t("notices.updated", model: Shift.model_name.human)
+      redirect_back_or_to shifts_path, notice: t("notices.updated", model: Shift.model_name.human)
     else
+      load_form_data
       render :edit, status: :unprocessable_entity
     end
   end
@@ -50,7 +115,14 @@ class ShiftsController < ApplicationController
     @shift = Shift.find(params[:id])
   end
 
+  def load_form_data
+    event_id    = current_event&.id
+    @teams      = Team.joins(:sector).where(sectors: { event_id: event_id }).includes(:sector).order("sectors.name, teams.name")
+    @sectors    = Sector.where(event_id: event_id).order(:name)
+    @all_users  = User.order(:name)
+  end
+
   def shift_params
-    params.require(:shift).permit(:date, :start_time, :end_time, :has_radio, :user_id, :sector_id)
+    params.require(:shift).permit(:date, :end_date, :start_time, :end_time, :user_id, :sector_id, :team_id)
   end
 end

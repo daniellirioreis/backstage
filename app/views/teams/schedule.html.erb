@@ -1,0 +1,111 @@
+<div class="page-header">
+  <div style="display: flex; align-items: center; gap: 0.75rem;">
+    <%= link_to team_path(@team), class: "btn-secondary", style: "padding: 0.35rem 0.6rem;" do %>
+      <i class="bi bi-arrow-left"></i>
+    <% end %>
+    <div>
+      <h1 style="margin: 0;">Adicionar Escala</h1>
+      <div style="font-size: 0.82rem; color: #71717a; margin-top: 0.2rem;">
+        <i class="bi bi-people"></i> <%= @team.name %> &middot;
+        <i class="bi bi-grid-3x3-gap"></i> <%= @team.sector.name %>
+      </div>
+    </div>
+  </div>
+</div>
+
+<%= form_with url: schedule_team_path(@team), method: :post, local: true do |f| %>
+  <%# ── Período ──────────────────────────────────────────────────────────── %>
+  <div class="content-card" style="margin-bottom: 1rem;">
+    <h3 style="font-size: 0.82rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: #71717a; margin: 0 0 1rem;">
+      <i class="bi bi-clock"></i> Período do turno
+    </h3>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+      <div>
+        <label class="form-label">Data início <span style="color: #ef4444;">*</span></label>
+        <input type="date" name="date" class="form-control" required>
+      </div>
+      <div>
+        <label class="form-label">
+          Data fim
+          <span style="font-weight: 400; color: #a1a1aa;">(multi-dia)</span>
+        </label>
+        <input type="date" name="end_date" class="form-control">
+      </div>
+      <div>
+        <label class="form-label">Hora início <span style="color: #ef4444;">*</span></label>
+        <input type="time" name="start_time" class="form-control" required>
+      </div>
+      <div>
+        <label class="form-label">
+          Hora fim <span style="color: #ef4444;">*</span>
+          <span style="font-weight: 400; color: #a1a1aa;">(overnight ok)</span>
+        </label>
+        <input type="time" name="end_time" class="form-control" required>
+      </div>
+    </div>
+
+  </div>
+
+  <%# ── Colaboradores ───────────────────────────────────────────────────── %>
+  <div class="content-card" style="margin-bottom: 1.5rem;">
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem;">
+      <h3 style="font-size: 0.82rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: #71717a; margin: 0;">
+        <i class="bi bi-people"></i> Colaboradores (<%= @memberships.size %>)
+      </h3>
+      <div style="display: flex; gap: 0.75rem;">
+        <a href="#" onclick="document.querySelectorAll('.member-check').forEach(c=>c.checked=true); return false;"
+           style="font-size: 0.78rem; color: #3b82f6; text-decoration: none;">Marcar todos</a>
+        <a href="#" onclick="document.querySelectorAll('.member-check').forEach(c=>c.checked=false); return false;"
+           style="font-size: 0.78rem; color: #71717a; text-decoration: none;">Desmarcar todos</a>
+      </div>
+    </div>
+
+    <% if @memberships.empty? %>
+      <div style="text-align: center; color: #a1a1aa; font-size: 0.85rem; padding: 1.5rem;">
+        Nenhum colaborador na equipe
+      </div>
+    <% else %>
+      <div style="display: flex; flex-direction: column; gap: 0.35rem;">
+        <% @memberships.each do |tm| %>
+          <label style="display: flex; align-items: center; gap: 0.75rem; padding: 0.6rem 0.75rem; border-radius: 8px; border: 1px solid #e4e4e7; cursor: pointer; transition: background 0.1s;"
+                 onmouseover="this.style.background='#fafafa'" onmouseout="this.style.background='white'">
+            <input type="checkbox" name="user_ids[]" value="<%= tm.user_id %>"
+                   class="member-check" checked
+                   style="width: 16px; height: 16px; cursor: pointer; flex-shrink: 0;">
+
+            <%# Avatar %>
+            <div style="width: 34px; height: 34px; border-radius: 50%; overflow: hidden; background: #f4f4f5; border: 1px solid #e4e4e7; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+              <% if tm.user.avatar.attached? %>
+                <%= image_tag tm.user.avatar, style: "width: 100%; height: 100%; object-fit: cover;" %>
+              <% else %>
+                <span style="font-size: 0.6rem; font-weight: 700; color: #52525b;">
+                  <%= tm.user.name.split.map(&:first).first(2).join.upcase %>
+                </span>
+              <% end %>
+            </div>
+
+            <div style="flex: 1; min-width: 0;">
+              <div style="font-size: 0.88rem; font-weight: 500; color: #18181b;">
+                <%= tm.user.name %>
+                <% if tm.user_id == @team.coordinator_id %>
+                  <span style="font-size: 0.65rem; background: #fef3c7; color: #92400e; border: 1px solid #fcd34d; border-radius: 4px; padding: 1px 5px; margin-left: 4px;">Coordenador</span>
+                <% end %>
+              </div>
+              <div style="font-size: 0.75rem; color: #a1a1aa;"><%= tm.user.phone %></div>
+            </div>
+          </label>
+        <% end %>
+      </div>
+    <% end %>
+  </div>
+
+  <div style="display: flex; gap: 0.5rem;">
+    <button type="submit" class="btn-primary">
+      <i class="bi bi-calendar-plus"></i> Criar Turnos
+    </button>
+    <%= link_to team_path(@team), class: "btn-secondary" do %>
+      <%= t("actions.cancel") %>
+    <% end %>
+  </div>
+<% end %>
