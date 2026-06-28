@@ -102,27 +102,30 @@ class ShiftsController < ApplicationController
     authorize Shift
     team = Team.find_by(id: params[:team_id])
 
-    if team && Shift.where(team_id: team.id).exists?
-      redirect_to new_shift_path(team_id: team.id),
-        alert: "Esta equipe já possui escala definida. Edite os turnos existentes."
-      return
+    unless team
+      redirect_to new_shift_path, alert: "Selecione uma equipe." and return
     end
 
-    members   = params[:members].to_unsafe_h rescue {}
-    date      = params[:date]
-    end_date  = params[:end_date].presence
+    members  = params[:members].to_unsafe_h rescue {}
+    date     = params[:date]
+    end_date = params[:end_date].presence
 
-    created = 0
-    errors  = []
+    created  = 0
+    failures = []   # [{ name:, messages: [] }]
+    skipped  = []   # nomes sem horário
 
     members.each do |user_id, data|
       next unless data[:selected] == "1"
-      next if data[:start_time].blank? || data[:end_time].blank?
+
+      if data[:start_time].blank? || data[:end_time].blank?
+        skipped << User.find_by(id: user_id)&.name
+        next
+      end
 
       shift = Shift.new(
         user_id:    user_id,
-        sector_id:  team&.sector_id,
-        team_id:    team&.id,
+        sector_id:  team.sector_id,
+        team_id:    team.id,
         date:       date,
         end_date:   end_date,
         start_time: data[:start_time],
@@ -132,15 +135,33 @@ class ShiftsController < ApplicationController
       if shift.save
         created += 1
       else
-        errors << "#{User.find_by(id: user_id)&.name}: #{shift.errors.full_messages.join(', ')}"
+        failures << { name: User.find_by(id: user_id)&.name, messages: shift.errors.full_messages }
       end
     end
 
-    if errors.any?
-      flash[:alert] = "Alguns turnos não foram salvos: #{errors.join(' | ')}"
+    if failures.any?
+      # Re-renderiza o formulário mantendo os dados preenchidos
+      @event           = current_event
+      @teams           = Team.joins(:sector).where(sectors: { event_id: @event&.id }).includes(:sector).order("sectors.name, teams.name")
+      @selected_team   = team
+      @team_has_shifts = created > 0  # alguns já foram salvos
+      @team_members    = TeamMembership.where(team_id: team.id)
+                                       .includes(user: { avatar_attachment: :blob })
+                                       .joins(:user)
+                                       .order("users.name")
+      @submitted_members = members     # preserva horários digitados
+      @shift_errors      = failures    # erros por colaborador
+      @shift_created     = created
+      @shift_skipped     = skipped
+      render :new, status: :unprocessable_entity
+    elsif created == 0
+      redirect_to new_shift_path(date: date, end_date: end_date, team_id: team.id),
+        alert: "Nenhum turno foi salvo.#{skipped.any? ? " Sem horário: #{skipped.join(', ')}." : ''}"
+    else
+      msg = "#{created} turno(s) criado(s) com sucesso."
+      msg += " Sem horário (ignorados): #{skipped.join(', ')}." if skipped.any?
+      redirect_to shifts_path, notice: msg
     end
-
-    redirect_to shifts_path, notice: "#{created} turno(s) criado(s) com sucesso."
   end
 
   def edit
