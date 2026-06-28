@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2024_01_01_000012) do
+ActiveRecord::Schema[7.1].define(version: 2024_01_01_000013) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -40,6 +40,19 @@ ActiveRecord::Schema[7.1].define(version: 2024_01_01_000012) do
     t.bigint "blob_id", null: false
     t.string "variation_digest", null: false
     t.index ["blob_id", "variation_digest"], name: "index_active_storage_variant_records_uniqueness", unique: true
+  end
+
+  create_table "badge_configs", force: :cascade do |t|
+    t.bigint "event_id", null: false
+    t.integer "photo_size", default: 115
+    t.integer "name_font_size", default: 20
+    t.integer "role_chip_font_size", default: 13
+    t.integer "team_info_font_size", default: 12
+    t.integer "event_name_font_size", default: 14
+    t.integer "event_date_font_size", default: 6
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["event_id"], name: "index_badge_configs_on_event_id"
   end
 
   create_table "events", force: :cascade do |t|
@@ -140,6 +153,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_01_01_000012) do
 
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
+  add_foreign_key "badge_configs", "events"
   add_foreign_key "permissions", "roles"
   add_foreign_key "sectors", "events"
   add_foreign_key "shifts", "sectors"

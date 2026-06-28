@@ -20,6 +20,9 @@ gem "pundit"
 # PDF
 gem "wicked_pdf"
 
+# QR Code
+gem "rqrcode"
+
 # Bootstrap
 gem "bootstrap", "~> 5.3"
 gem "sassc-rails"
