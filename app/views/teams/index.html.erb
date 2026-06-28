@@ -7,6 +7,15 @@
   <% end %>
 </div>
 
+<%# Campo de busca %>
+<div class="content-card" style="margin-bottom: 0.75rem; padding: 0.6rem 1rem; display: flex; align-items: center; gap: 0.6rem;">
+  <i class="bi bi-search" style="color: #a1a1aa; font-size: 0.9rem; flex-shrink: 0;"></i>
+  <input id="teams-search" type="text" placeholder="Buscar colaborador, coordenador ou equipe..."
+    autocomplete="off" style="flex: 1; border: none; outline: none; font-size: 0.85rem; color: #18181b; background: transparent;">
+  <span id="teams-search-count" style="font-size: 0.75rem; color: #a1a1aa; white-space: nowrap; display: none;"></span>
+  <button id="teams-search-clear" type="button" style="background: none; border: none; cursor: pointer; color: #a1a1aa; padding: 0; font-size: 1rem; line-height: 1; display: none;">×</button>
+</div>
+
 <%# Filtro de setor %>
 <div class="content-card" style="margin-bottom: 1rem; padding: 0.75rem 1rem;">
   <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
@@ -36,7 +45,8 @@
   <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1rem;">
     <% @teams.each do |team| %>
       <% memberships = team.team_memberships.reject { |tm| tm.user_id == team.coordinator_id } %>
-      <div class="content-card" style="padding: 1.25rem; display: flex; flex-direction: column; gap: 0.9rem;">
+      <% search_text = ([team.name, team.sector.name, team.coordinator&.name] + memberships.map { |tm| tm.user.name }).compact.join(" ").downcase %>
+      <div class="content-card team-card" data-search="<%= search_text %>" style="padding: 1.25rem; display: flex; flex-direction: column; gap: 0.9rem;">
 
         <%# Header do card: nome da equipe + coordenador + ações %>
         <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 0.5rem;">
@@ -114,7 +124,7 @@
             <div style="display: flex; flex-direction: column; gap: 0; max-height: 180px; overflow-y: auto;">
               <% memberships.each do |tm| %>
                 <% user = tm.user %>
-                <div style="display: flex; align-items: center; gap: 0.6rem; padding: 0.35rem 0; border-bottom: 1px solid #f4f4f5;">
+                <div class="member-row" data-member-name="<%= user.name.downcase %>" style="display: flex; align-items: center; gap: 0.6rem; padding: 0.35rem 0; border-bottom: 1px solid #f4f4f5;">
                   <div style="width: 28px; height: 28px; border-radius: 50%; overflow: hidden; background: #f4f4f5; border: 1px solid #e4e4e7; display: flex; align-items: center; justify-content: center; font-size: 0.6rem; font-weight: 600; color: #52525b; flex-shrink: 0;">
                     <% if user.avatar.attached? %>
                       <%= image_tag user.avatar, style: "width: 100%; height: 100%; object-fit: cover;" %>
@@ -148,3 +158,53 @@
     <% end %>
   </div>
 <% end %>
+
+<script>
+(function() {
+  var input    = document.getElementById("teams-search");
+  var countEl  = document.getElementById("teams-search-count");
+  var clearBtn = document.getElementById("teams-search-clear");
+  if (!input) return;
+
+  function applySearch() {
+    var q = input.value.trim().toLowerCase();
+    var cards = document.querySelectorAll(".team-card");
+    var visible = 0;
+
+    cards.forEach(function(card) {
+      var searchText = card.getAttribute("data-search") || "";
+      var memberRows = card.querySelectorAll(".member-row");
+
+      if (!q) {
+        card.style.display = "";
+        memberRows.forEach(function(r) { r.style.display = ""; r.style.background = ""; });
+        visible++;
+        return;
+      }
+
+      if (searchText.indexOf(q) === -1) { card.style.display = "none"; return; }
+
+      card.style.display = "";
+      visible++;
+
+      // Destaca membros que coincidem; mantém os outros visíveis mas sem destaque
+      memberRows.forEach(function(r) {
+        var name = r.getAttribute("data-member-name") || "";
+        r.style.background = name.indexOf(q) !== -1 ? "#f0fdf4" : "";
+      });
+    });
+
+    if (q) {
+      countEl.textContent  = visible + (visible === 1 ? " equipe" : " equipes");
+      countEl.style.display = "";
+      clearBtn.style.display = "";
+    } else {
+      countEl.style.display  = "none";
+      clearBtn.style.display = "none";
+    }
+  }
+
+  input.addEventListener("input", applySearch);
+  clearBtn.addEventListener("click", function() { input.value = ""; applySearch(); input.focus(); });
+})();
+</script>

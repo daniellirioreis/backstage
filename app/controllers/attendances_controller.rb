@@ -14,8 +14,8 @@ class AttendancesController < ApplicationController
     authorize :attendance, :scan?
     code = params[:code].to_s.strip.upcase
 
-    membership      = TeamMembership.find_by(credential_code: code)
-    team_from_coord = Team.find_by(coordinator_credential_code: code) unless membership
+    membership      = TeamMembership.includes(user: { avatar_attachment: :blob }).find_by(credential_code: code)
+    team_from_coord = Team.includes(coordinator: { avatar_attachment: :blob }).find_by(coordinator_credential_code: code) unless membership
 
     user = membership&.user || team_from_coord&.coordinator
     team = membership&.team || team_from_coord
@@ -26,6 +26,8 @@ class AttendancesController < ApplicationController
 
     attendance = Attendance.find_by(user: user, event: @event)
 
+    avatar_url = user.avatar.attached? ? url_for(user.avatar) : nil
+
     if attendance
       return render json: {
         status:          :already_checked_in,
@@ -33,7 +35,8 @@ class AttendancesController < ApplicationController
         user_name:       user.name,
         team_name:       attendance.team&.name,
         checked_in_at:   I18n.l(attendance.checked_in_at, format: :short),
-        avatar_initials: user.name.split.map(&:first).first(2).join.upcase
+        avatar_initials: user.name.split.map(&:first).first(2).join.upcase,
+        avatar_url:      avatar_url
       }
     end
 
@@ -51,7 +54,8 @@ class AttendancesController < ApplicationController
       user_name:       user.name,
       team_name:       team&.name,
       checked_in_at:   I18n.l(attendance.checked_in_at, format: :short),
-      avatar_initials: user.name.split.map(&:first).first(2).join.upcase
+      avatar_initials: user.name.split.map(&:first).first(2).join.upcase,
+      avatar_url:      avatar_url
     }
   rescue => e
     Rails.logger.error "[check_in] #{e.class}: #{e.message}\n#{e.backtrace&.first(5)&.join("\n")}"

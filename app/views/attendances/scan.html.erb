@@ -43,9 +43,13 @@
   #scan-feedback.error { background: #450a0a; border-top: 2px solid #ef4444; }
 
   .fb-avatar {
-    width: 48px; height: 48px; border-radius: 50%; background: #27272a;
+    width: 54px; height: 54px; border-radius: 50%; background: #27272a;
     display: flex; align-items: center; justify-content: center;
-    font-size: 1rem; font-weight: 700; color: #fafafa; flex-shrink: 0;
+    font-size: 1.1rem; font-weight: 700; color: #fafafa; flex-shrink: 0;
+    overflow: hidden; border: 2px solid rgba(255,255,255,0.15);
+  }
+  .fb-avatar img {
+    width: 100%; height: 100%; object-fit: cover; border-radius: 50%;
   }
   .fb-name  { font-size: 1rem; font-weight: 700; color: #fafafa; }
   .fb-team  { font-size: 0.78rem; color: #a1a1aa; margin-top: 2px; }
@@ -226,7 +230,8 @@
         data.avatar_initials || "?",
         data.user_name || "—",
         data.team_name || "",
-        data.message
+        data.message,
+        data.avatar_url || null
       );
       addRecent(isDupe ? "dupe" : isErr ? "error" : "ok", data.user_name, data.team_name, data.checked_in_at);
       const delay = onDone ? 1500 : 2500;
@@ -239,12 +244,17 @@
     });
   }
 
-  function showFeedback(type, initials, name, team, msg) {
+  function showFeedback(type, initials, name, team, msg, avatarUrl) {
     feedback.className = "show " + type;
-    document.getElementById("fb-avatar").textContent = initials;
-    document.getElementById("fb-name").textContent   = name;
-    document.getElementById("fb-team").textContent   = team;
-    document.getElementById("fb-msg").textContent    = msg;
+    const av = document.getElementById("fb-avatar");
+    if (avatarUrl) {
+      av.innerHTML = `<img src="${avatarUrl}" alt="${initials}">`;
+    } else {
+      av.textContent = initials;
+    }
+    document.getElementById("fb-name").textContent = name;
+    document.getElementById("fb-team").textContent = team;
+    document.getElementById("fb-msg").textContent  = msg;
   }
 
   function hideFeedback() {
