@@ -1,0 +1,268 @@
+<style>
+  #scan-overlay {
+    position: fixed; inset: 0; background: #09090b; z-index: 1000;
+    display: flex; flex-direction: column; align-items: center; overflow: hidden;
+  }
+  #scan-header {
+    width: 100%; padding: 1rem 1.25rem; display: flex; align-items: center;
+    justify-content: space-between; background: #09090b; z-index: 10; flex-shrink: 0;
+  }
+  #scan-header .title { color: #fafafa; font-size: 0.95rem; font-weight: 700; }
+  #scan-header .event { color: #71717a; font-size: 0.75rem; margin-top: 2px; }
+  #scan-close { color: #71717a; text-decoration: none; font-size: 0.8rem; }
+  #scan-close:hover { color: #fafafa; }
+
+  #video-wrapper {
+    position: relative; width: 100%; max-width: 480px; flex: 1;
+    display: flex; align-items: center; justify-content: center;
+  }
+  #qr-video { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+  #scan-frame {
+    position: absolute; width: 220px; height: 220px;
+    border: 2px solid #4ade80; border-radius: 12px;
+    box-shadow: 0 0 0 9999px rgba(0,0,0,0.55);
+    pointer-events: none;
+  }
+  #scan-line {
+    position: absolute; top: 0; left: 0; right: 0; height: 2px;
+    background: #4ade80; opacity: 0.8;
+    animation: scanline 2s linear infinite;
+  }
+  @keyframes scanline { 0%{top:0} 50%{top:100%} 100%{top:0} }
+
+  #scan-feedback {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    padding: 1.25rem; transform: translateY(100%);
+    transition: transform 0.25s ease; z-index: 20;
+    display: flex; align-items: center; gap: 1rem;
+  }
+  #scan-feedback.show { transform: translateY(0); }
+  #scan-feedback.ok    { background: #14532d; border-top: 2px solid #4ade80; }
+  #scan-feedback.dupe  { background: #1c1917; border-top: 2px solid #f59e0b; }
+  #scan-feedback.error { background: #450a0a; border-top: 2px solid #ef4444; }
+
+  .fb-avatar {
+    width: 48px; height: 48px; border-radius: 50%; background: #27272a;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1rem; font-weight: 700; color: #fafafa; flex-shrink: 0;
+  }
+  .fb-name  { font-size: 1rem; font-weight: 700; color: #fafafa; }
+  .fb-team  { font-size: 0.78rem; color: #a1a1aa; margin-top: 2px; }
+  .fb-msg   { font-size: 0.75rem; margin-top: 4px; }
+  .ok   .fb-msg { color: #4ade80; }
+  .dupe .fb-msg { color: #f59e0b; }
+  .error .fb-msg { color: #ef4444; }
+
+  #scan-counter {
+    position: absolute; top: 1rem; right: 1rem;
+    background: rgba(0,0,0,0.6); border-radius: 20px;
+    padding: 4px 12px; color: #fafafa; font-size: 0.75rem;
+    z-index: 5; pointer-events: none;
+  }
+
+  #recent-list {
+    width: 100%; max-width: 480px; background: #09090b;
+    flex-shrink: 0; max-height: 180px; overflow-y: auto;
+  }
+  .recent-item {
+    display: flex; align-items: center; gap: 0.75rem;
+    padding: 0.6rem 1rem; border-bottom: 1px solid #1a1a1a;
+  }
+  .recent-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .recent-dot.ok   { background: #4ade80; }
+  .recent-dot.dupe { background: #f59e0b; }
+  .recent-name { font-size: 0.8rem; color: #fafafa; font-weight: 600; }
+  .recent-team { font-size: 0.7rem; color: #71717a; }
+  .recent-time { font-size: 0.68rem; color: #52525b; margin-left: auto; flex-shrink: 0; }
+
+  #manual-input-bar {
+    width: 100%; max-width: 480px; background: #09090b;
+    padding: 0.75rem 1rem; flex-shrink: 0;
+    border-top: 1px solid #1a1a1a;
+    display: flex; gap: 0.5rem; align-items: center;
+  }
+  #manual-code-input {
+    flex: 1; background: #18181b; border: 1px solid #3f3f46; border-radius: 8px;
+    color: #fafafa; font-family: monospace; font-size: 0.85rem; letter-spacing: 0.06em;
+    padding: 0.5rem 0.75rem; outline: none; text-transform: uppercase;
+  }
+  #manual-code-input::placeholder { color: #52525b; text-transform: none; }
+  #manual-code-input:focus { border-color: #4ade80; }
+  #manual-submit-btn {
+    background: #15803d; border: none; border-radius: 8px;
+    color: #fafafa; font-size: 0.85rem; font-weight: 600;
+    padding: 0.5rem 1rem; cursor: pointer; white-space: nowrap;
+    transition: background 0.15s;
+  }
+  #manual-submit-btn:hover { background: #16a34a; }
+  #manual-submit-btn:disabled { background: #27272a; color: #52525b; cursor: default; }
+</style>
+
+<div id="scan-overlay">
+  <div id="scan-header">
+    <div>
+      <div class="title"><i class="bi bi-qr-code-scan"></i> Check-in</div>
+      <div class="event"><%= @event.name %></div>
+    </div>
+    <%= link_to root_path, id: "scan-close", onclick: "stopCamera && stopCamera()" do %>
+      <i class="bi bi-x-lg"></i> Fechar
+    <% end %>
+  </div>
+
+  <div id="video-wrapper">
+    <video id="qr-video" playsinline muted></video>
+    <div id="scan-frame"><div id="scan-line"></div></div>
+    <div id="scan-counter">0 registros</div>
+  </div>
+
+  <div id="recent-list"></div>
+
+  <div id="manual-input-bar">
+    <input id="manual-code-input" type="text" placeholder="Digite o código (ex: BOO-XXXXXXXX)" maxlength="20" autocomplete="off" autocorrect="off" spellcheck="false">
+    <button id="manual-submit-btn" type="button">
+      <i class="bi bi-check-lg"></i> OK
+    </button>
+  </div>
+
+  <div id="scan-feedback">
+    <div class="fb-avatar" id="fb-avatar"></div>
+    <div>
+      <div class="fb-name" id="fb-name"></div>
+      <div class="fb-team" id="fb-team"></div>
+      <div class="fb-msg"  id="fb-msg"></div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+<script>
+(function() {
+  const video    = document.getElementById("qr-video");
+  const feedback = document.getElementById("scan-feedback");
+  const counter  = document.getElementById("scan-counter");
+  const recent   = document.getElementById("recent-list");
+  const checkInUrl = "<%= check_in_attendances_path %>";
+  const csrfToken  = "<%= form_authenticity_token %>";
+
+  let scanning = true;
+  let total    = 0;
+  let lastCode = null;
+  let canvas, ctx;
+
+  let activeStream = null;
+
+  window.stopCamera = function() {
+    if (activeStream) {
+      activeStream.getTracks().forEach(t => t.stop());
+      activeStream = null;
+    }
+  };
+
+  navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
+    .then(stream => {
+      activeStream   = stream;
+      video.srcObject = stream;
+      video.play();
+      canvas = document.createElement("canvas");
+      ctx    = canvas.getContext("2d", { willReadFrequently: true });
+      requestAnimationFrame(tick);
+    })
+    .catch(() => showFeedback("error", "?", "Sem câmera", "Permita acesso à câmera"));
+
+  document.addEventListener("turbo:before-visit", stopCamera, { once: true });
+  document.addEventListener("visibilitychange", () => { if (document.hidden) stopCamera(); });
+  window.addEventListener("pagehide", stopCamera);
+
+  // Manual code input
+  const manualInput = document.getElementById("manual-code-input");
+  const manualBtn   = document.getElementById("manual-submit-btn");
+
+  function submitManual() {
+    const code = manualInput.value.trim().toUpperCase();
+    if (!code) return;
+    manualBtn.disabled = true;
+    doCheckIn(code, () => {
+      manualInput.value = "";
+      manualBtn.disabled = false;
+      manualInput.focus();
+    });
+  }
+
+  manualBtn.addEventListener("click", submitManual);
+  manualInput.addEventListener("keydown", (e) => { if (e.key === "Enter") submitManual(); });
+
+  function tick() {
+    if (video.readyState === video.HAVE_ENOUGH_DATA) {
+      canvas.width  = video.videoWidth;
+      canvas.height = video.videoHeight;
+      ctx.drawImage(video, 0, 0);
+      const img = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const qr  = jsQR(img.data, img.width, img.height, { inversionAttempts: "attemptBoth" });
+      if (qr && qr.data && scanning && qr.data !== lastCode) {
+        lastCode = qr.data;
+        scanning = false;
+        doCheckIn(qr.data);
+      }
+    }
+    requestAnimationFrame(tick);
+  }
+
+  function doCheckIn(code, onDone) {
+    if (!code || code.trim() === "") { scanning = true; lastCode = null; return; }
+    fetch(checkInUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-CSRF-Token": csrfToken },
+      body: JSON.stringify({ code })
+    })
+    .then(r => r.json().catch(() => { throw new Error("HTTP " + r.status); }))
+    .then(data => {
+      const isDupe = data.status === "already_checked_in";
+      const isErr  = data.status === "not_found";
+      if (!isErr) total++;
+      counter.textContent = total + (total === 1 ? " registro" : " registros");
+      showFeedback(
+        isErr ? "error" : isDupe ? "dupe" : "ok",
+        data.avatar_initials || "?",
+        data.user_name || "—",
+        data.team_name || "",
+        data.message
+      );
+      addRecent(isDupe ? "dupe" : isErr ? "error" : "ok", data.user_name, data.team_name, data.checked_in_at);
+      const delay = onDone ? 1500 : 2500;
+      setTimeout(() => { hideFeedback(); scanning = true; lastCode = null; if (onDone) onDone(); }, delay);
+    })
+    .catch((err) => {
+      showFeedback("error", "!", "Erro: " + (err.message || "conexão"), "", "Tente novamente");
+      const delay = onDone ? 1500 : 2000;
+      setTimeout(() => { hideFeedback(); scanning = true; lastCode = null; if (onDone) onDone(); }, delay);
+    });
+  }
+
+  function showFeedback(type, initials, name, team, msg) {
+    feedback.className = "show " + type;
+    document.getElementById("fb-avatar").textContent = initials;
+    document.getElementById("fb-name").textContent   = name;
+    document.getElementById("fb-team").textContent   = team;
+    document.getElementById("fb-msg").textContent    = msg;
+  }
+
+  function hideFeedback() {
+    feedback.className = "";
+  }
+
+  function addRecent(type, name, team, time) {
+    if (!name) return;
+    const item = document.createElement("div");
+    item.className = "recent-item";
+    item.innerHTML = `
+      <div class="recent-dot ${type}"></div>
+      <div>
+        <div class="recent-name">${name}</div>
+        <div class="recent-team">${team || ""}</div>
+      </div>
+      <div class="recent-time">${time || ""}</div>`;
+    recent.prepend(item);
+  }
+})();
+</script>

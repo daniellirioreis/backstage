@@ -1,0 +1,137 @@
+<div class="page-header">
+  <div>
+    <h1 style="margin:0;">Check-ins Realizados</h1>
+    <div style="font-size:0.78rem; color:#71717a; margin-top:0.15rem;"><%= @event.name %></div>
+  </div>
+  <% if policy(:attendance).scan? %>
+    <%= link_to scan_attendances_path, class: "btn-primary" do %>
+      <i class="bi bi-qr-code-scan"></i> Escanear
+    <% end %>
+  <% end %>
+</div>
+
+<%# Estatísticas %>
+<div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:0.75rem; margin-bottom:1.25rem;">
+  <div class="content-card" style="padding:1rem 1.25rem; text-align:center;">
+    <div style="font-size:2rem; font-weight:800; color:#16a34a; line-height:1;"><%= @attendances.size %></div>
+    <div style="font-size:0.72rem; color:#71717a; margin-top:3px;">check-in<%= @attendances.size == 1 ? "" : "s" %> realizados</div>
+  </div>
+  <div class="content-card" style="padding:1rem 1.25rem; text-align:center;">
+    <div style="font-size:2rem; font-weight:800; color:#18181b; line-height:1;"><%= @total_collaborators %></div>
+    <div style="font-size:0.72rem; color:#71717a; margin-top:3px;">colaboradores no evento</div>
+  </div>
+  <div class="content-card" style="padding:1rem 1.25rem; text-align:center;">
+    <% pct = @total_collaborators > 0 ? (@attendances.size * 100.0 / @total_collaborators).round : 0 %>
+    <div style="font-size:2rem; font-weight:800; color:<%= pct >= 80 ? '#16a34a' : pct >= 50 ? '#d97706' : '#dc2626' %>; line-height:1;"><%= pct %>%</div>
+    <div style="font-size:0.72rem; color:#71717a; margin-top:3px;">de presença</div>
+  </div>
+  <% if @attendances.any? %>
+    <div class="content-card" style="padding:1rem 1.25rem; text-align:center;">
+      <div style="font-size:1.1rem; font-weight:700; color:#18181b; line-height:1.2;"><%= l(@attendances.last.checked_in_at, format: :short) %></div>
+      <div style="font-size:0.72rem; color:#71717a; margin-top:3px;">primeiro check-in</div>
+    </div>
+  <% end %>
+</div>
+
+<%# Barra de progresso %>
+<% if @total_collaborators > 0 %>
+  <div class="content-card" style="padding:0.75rem 1.25rem; margin-bottom:1rem;">
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:0.4rem;">
+      <span style="font-size:0.72rem; font-weight:600; color:#71717a;">Progresso de check-in</span>
+      <span style="font-size:0.72rem; color:#71717a;"><%= @attendances.size %> / <%= @total_collaborators %></span>
+    </div>
+    <div style="background:#f4f4f5; border-radius:999px; height:8px; overflow:hidden;">
+      <div style="background:#16a34a; height:100%; border-radius:999px; width:<%= [pct, 100].min %>%; transition:width 0.4s;"></div>
+    </div>
+  </div>
+<% end %>
+
+<%# Filtro por setor %>
+<% if @sectors.any? %>
+  <div class="content-card" style="margin-bottom:1rem; padding:0.75rem 1rem;">
+    <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
+      <span style="font-size:0.78rem; font-weight:600; color:#71717a; white-space:nowrap;">
+        <i class="bi bi-grid-3x3-gap"></i> Setor:
+      </span>
+      <%= link_to "Todos", attendances_path,
+          style: "font-size:0.78rem; padding:0.25rem 0.65rem; border-radius:6px; border:1px solid #{params[:sector_id].blank? ? '#18181b' : '#e4e4e7'}; background:#{params[:sector_id].blank? ? '#18181b' : 'transparent'}; color:#{params[:sector_id].blank? ? '#fff' : '#3f3f46'}; text-decoration:none; white-space:nowrap;" %>
+      <% @sectors.each do |sector| %>
+        <%= link_to sector.name, attendances_path(sector_id: sector.id),
+            style: "font-size:0.78rem; padding:0.25rem 0.65rem; border-radius:6px; border:1px solid #{params[:sector_id].to_s == sector.id.to_s ? '#18181b' : '#e4e4e7'}; background:#{params[:sector_id].to_s == sector.id.to_s ? '#18181b' : 'transparent'}; color:#{params[:sector_id].to_s == sector.id.to_s ? '#fff' : '#3f3f46'}; text-decoration:none; white-space:nowrap;" %>
+      <% end %>
+    </div>
+  </div>
+<% end %>
+
+<%# Lista de presenças %>
+<% if @attendances.empty? %>
+  <div class="content-card" style="text-align:center; padding:3rem; color:#a1a1aa;">
+    <i class="bi bi-qr-code" style="font-size:2rem; display:block; margin-bottom:0.5rem;"></i>
+    <p style="margin:0; font-size:0.88rem;">Nenhum check-in registrado ainda.</p>
+  </div>
+<% else %>
+  <div style="display:flex; flex-direction:column; gap:0.5rem;">
+    <% @attendances.each_with_index do |att, idx| %>
+      <% credential_code = @credential_codes[att.user_id] %>
+      <div class="content-card" style="padding:0.9rem 1.1rem; display:flex; align-items:center; gap:1rem;">
+
+        <%# Número de ordem %>
+        <div style="width:28px; text-align:center; font-size:0.7rem; font-weight:700; color:#a1a1aa; flex-shrink:0;">
+          <%= idx + 1 %>
+        </div>
+
+        <%# Avatar %>
+        <div style="width:42px; height:42px; border-radius:50%; background:#f4f4f5; border:2px solid #16a34a; display:flex; align-items:center; justify-content:center; font-size:0.75rem; font-weight:700; color:#52525b; flex-shrink:0; overflow:hidden;">
+          <% if att.user.avatar.attached? %>
+            <%= image_tag att.user.avatar, style:"width:100%;height:100%;object-fit:cover;" %>
+          <% else %>
+            <%= att.user.name.split.map(&:first).first(2).join.upcase %>
+          <% end %>
+        </div>
+
+        <%# Nome + equipe + setor %>
+        <div style="min-width:0; flex:1;">
+          <div style="font-size:0.88rem; font-weight:600; color:#18181b; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+            <%= att.user.name %>
+          </div>
+          <div style="display:flex; align-items:center; gap:0.4rem; flex-wrap:wrap; margin-top:2px;">
+            <% if att.team %>
+              <span style="font-size:0.7rem; color:#71717a;">
+                <i class="bi bi-grid-3x3-gap" style="font-size:0.6rem;"></i> <%= att.team.sector&.name %>
+              </span>
+              <span style="color:#d4d4d8; font-size:0.65rem;">·</span>
+              <span style="font-size:0.7rem; color:#71717a;"><%= att.team.name %></span>
+            <% end %>
+            <% if credential_code.present? %>
+              <span style="color:#d4d4d8; font-size:0.65rem;">·</span>
+              <span style="font-size:0.68rem; font-family:monospace; color:#71717a; letter-spacing:0.04em;"><%= credential_code %></span>
+            <% end %>
+          </div>
+        </div>
+
+        <%# Horário de check-in %>
+        <div style="text-align:right; flex-shrink:0;">
+          <div style="display:inline-flex; align-items:center; gap:0.35rem; background:#dcfce7; border:1px solid #86efac; border-radius:6px; padding:3px 10px;">
+            <i class="bi bi-check-circle-fill" style="color:#16a34a; font-size:0.7rem;"></i>
+            <span style="font-size:0.75rem; font-weight:600; color:#15803d;"><%= l(att.checked_in_at, format: :short) %></span>
+          </div>
+          <% if att.checked_in_by %>
+            <div style="font-size:0.65rem; color:#a1a1aa; margin-top:3px;">por <%= att.checked_in_by.name.split.first %></div>
+          <% end %>
+        </div>
+
+        <%# Cancelar entrada %>
+        <% if policy(att).destroy? %>
+          <%= button_to attendance_path(att), method: :delete,
+              form: { data: { turbo_confirm: "Cancelar entrada de #{att.user.name}?" } },
+              class: "btn-danger",
+              style: "padding:0.3rem 0.55rem; flex-shrink:0;",
+              title: "Cancelar entrada" do %>
+            <i class="bi bi-x-lg"></i>
+          <% end %>
+        <% end %>
+
+      </div>
+    <% end %>
+  </div>
+<% end %>

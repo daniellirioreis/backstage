@@ -35,7 +35,7 @@
 <% else %>
   <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1rem;">
     <% @teams.each do |team| %>
-      <% members = team.coordinator ? team.users.reject { |u| u.id == team.coordinator_id } : team.users %>
+      <% memberships = team.team_memberships.reject { |tm| tm.user_id == team.coordinator_id } %>
       <div class="content-card" style="padding: 1.25rem; display: flex; flex-direction: column; gap: 0.9rem;">
 
         <%# Header do card: nome da equipe + coordenador + ações %>
@@ -108,11 +108,12 @@
         <%# Colaboradores %>
         <div>
           <div style="font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: #71717a; margin-bottom: 0.5rem;">
-            <i class="bi bi-person"></i> <%= members.size %> <%= members.size == 1 ? "colaborador" : "colaboradores" %>
+            <i class="bi bi-person"></i> <%= memberships.size %> <%= memberships.size == 1 ? "colaborador" : "colaboradores" %>
           </div>
-          <% if members.any? %>
+          <% if memberships.any? %>
             <div style="display: flex; flex-direction: column; gap: 0; max-height: 180px; overflow-y: auto;">
-              <% members.each do |user| %>
+              <% memberships.each do |tm| %>
+                <% user = tm.user %>
                 <div style="display: flex; align-items: center; gap: 0.6rem; padding: 0.35rem 0; border-bottom: 1px solid #f4f4f5;">
                   <div style="width: 28px; height: 28px; border-radius: 50%; overflow: hidden; background: #f4f4f5; border: 1px solid #e4e4e7; display: flex; align-items: center; justify-content: center; font-size: 0.6rem; font-weight: 600; color: #52525b; flex-shrink: 0;">
                     <% if user.avatar.attached? %>
@@ -125,9 +126,11 @@
                     <div style="font-size: 0.8rem; font-weight: 500; color: #18181b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
                       <%= user.name %>
                     </div>
-                    <div style="font-size: 0.7rem; color: #a1a1aa; font-family: monospace;">
-                      <%= user.cpf.gsub(/(\d{3})(\d{3})(\d{3})(\d{2})/, '\1.\2.\3-\4') %>
-                    </div>
+                    <% if tm.credential_code.present? %>
+                      <div style="font-size: 0.68rem; color: #71717a; font-family: monospace; letter-spacing: 0.04em;">
+                        <%= tm.credential_code %>
+                      </div>
+                    <% end %>
                   </div>
                   <%= link_to credential_user_path(user, format: :pdf), title: "Baixar credencial",
                       style: "color: #a1a1aa; font-size: 0.95rem; flex-shrink: 0; line-height: 1; text-decoration: none;" do %>

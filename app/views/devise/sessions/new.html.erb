@@ -1,5 +1,7 @@
 <div class="auth-card">
-  <div class="auth-title">Backstage</div>
+  <div style="display:flex; flex-direction:column; align-items:center; margin-bottom:1.75rem;">
+    <%= render "shared/logo", size: :lg, stacked: true, dark: true %>
+  </div>
   <div class="auth-subtitle">Faça login para continuar</div>
 
   <%= render "devise/shared/error_messages", resource: resource %>

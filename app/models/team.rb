@@ -7,10 +7,9 @@ class Team < ApplicationRecord
 
   before_save :generate_coordinator_credential_code, if: :coordinator_id_changed?
 
+  # coordinator_credential_code já armazena o código completo: "BOO-XXXXXXXX"
   def coordinator_full_credential_code
-    return nil unless coordinator_id.present?
-    event_code = sector&.event&.code.presence || "EVT"
-    "#{event_code.upcase}-#{coordinator_credential_code}"
+    coordinator_credential_code
   end
 
   validates :name, presence: true
@@ -49,8 +48,10 @@ class Team < ApplicationRecord
 
   def generate_coordinator_credential_code
     return if coordinator_id.blank?
+    event_code = sector&.event&.code.presence || "EVT"
     loop do
-      self.coordinator_credential_code = SecureRandom.alphanumeric(8).upcase
+      raw = SecureRandom.alphanumeric(8).upcase
+      self.coordinator_credential_code = "#{event_code.upcase}-#{raw}"
       break unless Team.exists?(coordinator_credential_code: coordinator_credential_code)
     end
   end

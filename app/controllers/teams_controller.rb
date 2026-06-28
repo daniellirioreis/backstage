@@ -20,7 +20,7 @@ class TeamsController < ApplicationController
     scope = policy_scope(Team)
               .joins(:sector)
               .where(sectors: { event_id: current_event.id })
-              .includes(:sector, coordinator: { avatar_attachment: :blob }, users: { avatar_attachment: :blob })
+              .includes(:sector, coordinator: { avatar_attachment: :blob }, team_memberships: { user: { avatar_attachment: :blob } })
               .order("sectors.name, teams.name")
     scope = scope.where(sector_id: params[:sector_id]) if params[:sector_id].present?
     @teams = scope

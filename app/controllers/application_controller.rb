@@ -46,7 +46,11 @@ class ApplicationController < ActionController::Base
   end
 
   def user_not_authorized
-    flash[:alert] = t("errors.not_authorized")
-    redirect_back(fallback_location: root_path)
+    if request.format.json?
+      render json: { status: :error, message: t("errors.not_authorized") }, status: :forbidden
+    else
+      flash[:alert] = t("errors.not_authorized")
+      redirect_back(fallback_location: root_path)
+    end
   end
 end

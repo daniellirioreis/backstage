@@ -66,10 +66,12 @@ class UsersController < ApplicationController
     @badge_config   = @event&.badge_config || BadgeConfig.defaults
 
     if @is_coordinator
-      @credential_code = @team&.coordinator_full_credential_code
+      @credential_code     = @team&.coordinator_full_credential_code
+      @credential_qr_code  = @team&.coordinator_credential_code
     else
-      membership = TeamMembership.find_by(team: @team, user: @user)
-      @credential_code = membership&.full_credential_code
+      membership           = TeamMembership.find_by(team: @team, user: @user)
+      @credential_code     = membership&.full_credential_code
+      @credential_qr_code  = membership&.credential_code
     end
 
     respond_to do |format|

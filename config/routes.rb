@@ -42,5 +42,12 @@ Rails.application.routes.draw do
   end
   resources :vehicles
 
+  resources :attendances, only: [:index, :destroy] do
+    collection do
+      get  :scan
+      post :check_in
+    end
+  end
+
   root "dashboard#index"
 end

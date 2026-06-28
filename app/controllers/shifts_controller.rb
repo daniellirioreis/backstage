@@ -29,10 +29,12 @@ class ShiftsController < ApplicationController
     # Data selecionada (default: primeiro dia do evento ou hoje)
     @date = params[:date].present? ? Date.parse(params[:date]) : (@event&.start_date || Date.today)
 
-    # Turnos do dia (inclui multi-dia: date <= @date <= end_date)
+    # Turnos do dia filtrados pelo evento atual
     shifts = policy_scope(Shift)
+               .joins(team: :sector)
+               .where(sectors: { event_id: @event&.id })
                .includes(:user, { team: [:coordinator, :sector] })
-               .where("date <= ? AND (end_date IS NULL OR end_date >= ?)", @date, @date)
+               .where("shifts.date <= ? AND (shifts.end_date IS NULL OR shifts.end_date >= ?)", @date, @date)
                .order(:start_time)
 
     # Agrupa por setor → equipe → lista de turnos
@@ -41,6 +43,9 @@ class ShiftsController < ApplicationController
       teams_data = sector_shifts.group_by(&:team).sort_by { |t, _| t.name }
       [sector, teams_data]
     end
+
+    # IDs dos colaboradores que já fizeram check-in neste evento
+    @checked_in_ids = @event ? Attendance.where(event: @event).pluck(:user_id).to_set : Set.new
 
     # Datas disponíveis para o seletor
     @available_dates = if @event

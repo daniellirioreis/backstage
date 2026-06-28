@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="turbo-cache-control" content="no-cache">
     <title>Backstage</title>
+    <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
     <%= csrf_meta_tags %>
     <%= csp_meta_tag %>
     <%= stylesheet_link_tag "application", "data-turbo-track": "reload" %>
@@ -16,7 +17,10 @@
   <body>
     <% if user_signed_in? %>
       <aside class="sidebar">
-        <div class="sidebar-brand">Backstage</div>
+        <div class="sidebar-brand" style="display:flex; align-items:center; gap:0.75rem; padding:1rem 1.25rem;">
+          <%= render "shared/logo", size: :sm, stacked: false %>
+          <span style="font-size:0.85rem; font-weight:700; letter-spacing:0.08em; color:#f4f4f5;">Backstage</span>
+        </div>
 
         <nav>
           <% unless current_user.role&.collaborator? %>
@@ -54,6 +58,18 @@
           <% if policy(Vehicle).index? %>
             <%= link_to vehicles_path, class: "sidebar-link #{controller_name == 'vehicles' ? 'active' : ''}" do %>
               <i class="bi bi-car-front"></i> <%= Vehicle.model_name.human(count: 2) %>
+            <% end %>
+          <% end %>
+
+          <% if policy(:attendance).index? %>
+            <%= link_to attendances_path, class: "sidebar-link #{controller_name == 'attendances' && action_name != 'scan' ? 'active' : ''}" do %>
+              <i class="bi bi-person-check"></i> Check-ins Realizados
+            <% end %>
+          <% end %>
+
+          <% if policy(:attendance).scan? %>
+            <%= link_to scan_attendances_path, class: "sidebar-link #{controller_name == 'attendances' && action_name == 'scan' ? 'active' : ''}" do %>
+              <i class="bi bi-qr-code-scan"></i> Check-in
             <% end %>
           <% end %>
 

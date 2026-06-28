@@ -1,0 +1,55 @@
+<%
+  dark    = local_assigns[:dark] || false
+  size    = local_assigns[:size] || :md
+  stacked = local_assigns[:stacked] != false
+  hex_w   = size == :sm ? 36 : (size == :lg ? 72 : 52)
+  hex_h   = size == :sm ? 42 : (size == :lg ? 84 : 60)
+  b_size  = size == :sm ? 18 : (size == :lg ? 38 : 26)
+  name_sz = size == :sm ? 13 : (size == :lg ? 22 : 18)
+  sub_sz  = size == :sm ? 6  : (size == :lg ? 9  : 8)
+  gap     = size == :sm ? 6  : (size == :lg ? 12 : 10)
+  total_h = hex_h + gap + (stacked ? (name_sz + 4 + sub_sz + 6) : 0)
+%>
+<svg xmlns="http://www.w3.org/2000/svg"
+     viewBox="0 0 <%= hex_w %> <%= total_h %>"
+     width="<%= hex_w %>" height="<%= total_h %>"
+     role="img" aria-label="Backstage">
+  <title>Backstage</title>
+  <%
+    hw = hex_w / 2.0
+    hh = hex_h / 2.0
+    cx = hw
+    cy = hh
+    r  = hw - 1
+    pts = (0..5).map { |i| a = Math::PI/180*(60*i - 30); [cx + r*Math.cos(a), cy + r*Math.sin(a)] }
+    pts_s = pts.map { |x,y| "#{x.round(2)},#{y.round(2)}" }.join(" ")
+    ri = r - 3
+    pts_i = (0..5).map { |i| a = Math::PI/180*(60*i - 30); [cx + ri*Math.cos(a), cy + ri*Math.sin(a)] }
+    pts_is = pts_i.map { |x,y| "#{x.round(2)},#{y.round(2)}" }.join(" ")
+  %>
+  <polygon points="<%= pts_s %>" fill="#18181b"/>
+  <polygon points="<%= pts_is %>" fill="none" stroke="#4ade80" stroke-width="1.2"/>
+  <text x="<%= cx %>" y="<%= cy + b_size * 0.38 %>"
+        text-anchor="middle"
+        font-family="Georgia, serif"
+        font-size="<%= b_size %>"
+        font-weight="700"
+        fill="#fafafa"><%= "B" %></text>
+  <% if stacked %>
+    <text x="<%= cx %>" y="<%= hex_h + gap + name_sz %>"
+          text-anchor="middle"
+          font-family="Georgia, serif"
+          font-size="<%= name_sz %>"
+          font-weight="700"
+          fill="<%= dark ? '#fafafa' : '#18181b' %>">Backstage</text>
+    <line x1="<%= cx - hex_w * 0.45 %>" y1="<%= hex_h + gap + name_sz + 3 %>"
+          x2="<%= cx + hex_w * 0.45 %>" y2="<%= hex_h + gap + name_sz + 3 %>"
+          stroke="<%= dark ? '#3f3f46' : '#d4d4d8' %>" stroke-width="0.8"/>
+    <text x="<%= cx %>" y="<%= hex_h + gap + name_sz + 3 + sub_sz + 3 %>"
+          text-anchor="middle"
+          font-family="Arial, sans-serif"
+          font-size="<%= sub_sz %>"
+          letter-spacing="2"
+          fill="<%= dark ? '#71717a' : '#a1a1aa' %>">GESTÃO DE EVENTOS</text>
+  <% end %>
+</svg>

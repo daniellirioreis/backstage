@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2024_01_01_000023) do
+ActiveRecord::Schema[7.1].define(version: 2024_01_01_000024) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -40,6 +40,21 @@ ActiveRecord::Schema[7.1].define(version: 2024_01_01_000023) do
     t.bigint "blob_id", null: false
     t.string "variation_digest", null: false
     t.index ["blob_id", "variation_digest"], name: "index_active_storage_variant_records_uniqueness", unique: true
+  end
+
+  create_table "attendances", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.bigint "event_id", null: false
+    t.bigint "team_id"
+    t.bigint "checked_in_by_id"
+    t.datetime "checked_in_at", default: -> { "CURRENT_TIMESTAMP" }, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["checked_in_by_id"], name: "index_attendances_on_checked_in_by_id"
+    t.index ["event_id"], name: "index_attendances_on_event_id"
+    t.index ["team_id"], name: "index_attendances_on_team_id"
+    t.index ["user_id", "event_id"], name: "index_attendances_on_user_id_and_event_id", unique: true
+    t.index ["user_id"], name: "index_attendances_on_user_id"
   end
 
   create_table "badge_configs", force: :cascade do |t|
@@ -169,6 +184,10 @@ ActiveRecord::Schema[7.1].define(version: 2024_01_01_000023) do
 
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
+  add_foreign_key "attendances", "events"
+  add_foreign_key "attendances", "teams"
+  add_foreign_key "attendances", "users"
+  add_foreign_key "attendances", "users", column: "checked_in_by_id"
   add_foreign_key "badge_configs", "events"
   add_foreign_key "permissions", "roles"
   add_foreign_key "sectors", "events"

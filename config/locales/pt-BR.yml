@@ -32,6 +32,7 @@ pt-BR:
     timeline: "Timeline"
     print: "Imprimir"
     my_schedule: "Minha Escala"
+    scan: "Registrar Check-in (QR)"
 
   badge_config:
     configure: "Configurar Credencial"
@@ -62,6 +63,12 @@ pt-BR:
     abbr_month_names: [~, Jan, Fev, Mar, Abr, Mai, Jun, Jul, Ago, Set, Out, Nov, Dez]
     day_names: [Domingo, Segunda-feira, Terça-feira, Quarta-feira, Quinta-feira, Sexta-feira, Sábado]
     abbr_day_names: [Dom, Seg, Ter, Qua, Qui, Sex, Sáb]
+
+  time:
+    formats:
+      short: "%d/%m %H:%M"
+      long: "%d de %B de %Y, %H:%M"
+      time_only: "%H:%M"
 
   activerecord:
     errors:
@@ -99,6 +106,9 @@ pt-BR:
       badge_config:
         one: "Config. de Credencial"
         other: "Config. de Credenciais"
+      attendance:
+        one: "Check-in Realizado"
+        other: "Check-ins Realizados"
 
     attributes:
       user:

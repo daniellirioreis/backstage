@@ -131,10 +131,11 @@
             <div class="tl-bar"
                  data-team="<%= bar[:team].name %>"
                  data-hours="<%= bar[:times][0] %>–<%= bar[:times][1] %><%= bar[:overnight] ? ' +1' : '' %>"
-                 data-members="<%= bar[:group_shifts].map { |s| s.user.name }.join('||') %>"
+                 data-members="<%= bar[:group_shifts].map { |s| "#{s.user.name}::#{s.user_id}" }.join('||') %>"
                  data-coord-name="<%= coord_name %>"
                  data-coord-initials="<%= coord_initials %>"
                  data-coord-avatar="<%= coord_avatar %>"
+                 data-coord-checked="<%= coord && @checked_in_ids.include?(coord.id) %>"
                  style="position:absolute; left:<%= left %>%; width:<%= [width, 100.0 - left].min %>%; top:<%= bar_top %>px; height:28px; background:<%= color %>; border-radius:5px; opacity:0.88; display:flex; align-items:center; padding:0 8px; overflow:hidden; min-width:4px; cursor:default;">
               <% if width > 4 %>
                 <div style="display:flex; align-items:center; gap:5px; overflow:hidden; pointer-events:none; width:100%;">
@@ -195,10 +196,24 @@
   <% end %>
 </div>
 
-<div id="tl-tooltip" style="display:none; position:fixed; z-index:9999; background:#fff; border:1px solid #e4e4e7; border-radius:8px; padding:8px 12px; box-shadow:0 4px 16px rgba(0,0,0,0.14); pointer-events:none; min-width:160px; max-width:260px;"></div>
+<div id="tl-popover" style="display:none; position:fixed; z-index:9999; background:#fff; border:1px solid #e4e4e7; border-radius:10px; box-shadow:0 8px 24px rgba(0,0,0,0.14); width:280px; max-height:420px; display:none; flex-direction:column; overflow:hidden;">
+  <div id="tl-popover-header" style="padding:10px 12px 8px; border-bottom:1px solid #e4e4e7; flex-shrink:0; display:flex; align-items:flex-start; justify-content:space-between; gap:8px;">
+    <div>
+      <div id="tl-popover-team" style="font-size:0.8rem;font-weight:700;color:#18181b;"></div>
+      <div id="tl-popover-hours" style="font-size:0.72rem;color:#71717a;margin-top:1px;"></div>
+    </div>
+    <button id="tl-popover-close" style="background:none;border:none;cursor:pointer;color:#a1a1aa;font-size:1rem;line-height:1;padding:0;flex-shrink:0;" title="Fechar">×</button>
+  </div>
+  <div id="tl-popover-search-wrap" style="padding:7px 10px 6px; border-bottom:1px solid #f4f4f5; flex-shrink:0;">
+    <input id="tl-popover-search" type="text" placeholder="Buscar colaborador..." autocomplete="off" style="width:100%; box-sizing:border-box; font-size:0.75rem; padding:5px 8px; border:1px solid #e4e4e7; border-radius:6px; outline:none; color:#18181b; background:#fafafa;">
+  </div>
+  <div id="tl-popover-body" style="overflow-y:auto; flex:1; padding:8px 12px;"></div>
+</div>
 
 <style>
-  .tl-bar:hover { opacity: 1 !important; }
+  .tl-bar { cursor: pointer; }
+  .tl-bar:hover { opacity: 1 !important; filter: brightness(1.08); }
+  .tl-bar.active-popover { opacity: 1 !important; outline: 2px solid rgba(255,255,255,0.7); outline-offset: 1px; }
 </style>
 
 <script>
@@ -210,70 +225,122 @@
       document.querySelectorAll('.now-line').forEach(function(el) { el.style.left = pct + '%'; });
       <% end %>
 
-      var tip = document.getElementById('tl-tooltip');
-      if (!tip) return;
-      var currentBar = null;
+      var checkedIds = new Set(<%= raw @checked_in_ids.to_a.to_json %>);
+      var pop = document.getElementById('tl-popover');
+      if (!pop) return;
+      var popBody   = document.getElementById('tl-popover-body');
+      var popTeam   = document.getElementById('tl-popover-team');
+      var popHours  = document.getElementById('tl-popover-hours');
+      var popClose  = document.getElementById('tl-popover-close');
+      var popSearch = document.getElementById('tl-popover-search');
+      var activeBar = null;
+      var allMembers = [];   // cache dos membros do popover atual
 
-      function positionTip(e) {
-        var x = e.clientX + 14;
-        var y = e.clientY - 10;
-        if (x + 280 > window.innerWidth) x = e.clientX - 280;
-        if (y < 8) y = e.clientY + 20;
-        tip.style.left = x + 'px';
-        tip.style.top  = y + 'px';
-      }
+      function renderMembers(filter) {
+        var q = (filter || '').toLowerCase().trim();
+        var filtered = q ? allMembers.filter(function(e) { return e.split('::')[0].toLowerCase().indexOf(q) !== -1; }) : allMembers;
 
-      function showTip(bar, e) {
-        var team      = bar.getAttribute('data-team') || '';
-        var hours     = bar.getAttribute('data-hours') || '';
-        var raw       = bar.getAttribute('data-members') || '';
-        var members   = raw ? raw.split('||') : [];
-        var coordName = bar.getAttribute('data-coord-name') || '';
-        var coordInit = bar.getAttribute('data-coord-initials') || '';
-        var coordAvtr = bar.getAttribute('data-coord-avatar') || '';
-
-        // Cabeçalho: nome da equipe + horário
-        var html = '<div style="font-size:0.72rem;font-weight:700;color:#18181b;margin-bottom:6px;padding-bottom:6px;border-bottom:1px solid #e4e4e7;">'
-                 + team + '&nbsp;<span style="font-weight:400;color:#71717a;">' + hours + '</span></div>';
-
-        // Coordenador
-        if (coordName) {
-          var avatarHtml = coordAvtr
-            ? '<img src="' + coordAvtr + '" style="width:22px;height:22px;border-radius:50%;object-fit:cover;border:1px solid #86efac;flex-shrink:0;">'
-            : '<div style="width:22px;height:22px;border-radius:50%;background:#dcfce7;border:1px solid #86efac;display:flex;align-items:center;justify-content:center;font-size:0.5rem;font-weight:700;color:#15803d;flex-shrink:0;">' + coordInit + '</div>';
-          html += '<div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;padding-bottom:6px;border-bottom:1px solid #f4f4f5;">'
-                + avatarHtml
-                + '<div>'
-                + '<div style="font-size:0.62rem;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:#a1a1aa;line-height:1;">Coordenador(a)</div>'
-                + '<div style="font-size:0.72rem;font-weight:600;color:#15803d;">' + coordName + '</div>'
-                + '</div></div>';
-        }
-
-        // Colaboradores
-        if (members.length) {
-          html += '<div style="font-size:0.62rem;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:#a1a1aa;margin-bottom:3px;">Colaboradores</div>';
-          members.forEach(function(name) {
-            html += '<div style="font-size:0.7rem;color:#3f3f46;padding:2px 0;display:flex;align-items:center;gap:5px;">'
-                  + '<span style="width:5px;height:5px;border-radius:50%;background:#d4d4d8;flex-shrink:0;"></span>'
+        var html = '';
+        if (filtered.length === 0) {
+          html = '<div style="font-size:0.75rem;color:#a1a1aa;text-align:center;padding:8px 0;">Nenhum resultado</div>';
+        } else {
+          var checkedCount = filtered.filter(function(e) { return checkedIds.has(parseInt(e.split('::')[1], 10)); }).length;
+          html += '<div style="font-size:0.62rem;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:#a1a1aa;margin-bottom:4px;">'
+               + 'Colaboradores <span style="font-weight:400;color:#a1a1aa;">(' + checkedCount + '/' + filtered.length + ' check-in)</span></div>';
+          filtered.forEach(function(entry) {
+            var parts   = entry.split('::');
+            var name    = parts[0];
+            var userId  = parts[1];
+            var checked = checkedIds.has(parseInt(userId, 10));
+            html += '<div style="font-size:0.75rem;color:' + (checked ? '#15803d' : '#3f3f46') + ';padding:3px 0;display:flex;align-items:center;gap:6px;">'
+                  + (checked
+                      ? '<span style="width:16px;height:16px;border-radius:50%;background:#dcfce7;border:1px solid #86efac;display:flex;align-items:center;justify-content:center;font-size:0.6rem;color:#16a34a;flex-shrink:0;">✓</span>'
+                      : '<span style="width:6px;height:6px;border-radius:50%;background:#d4d4d8;flex-shrink:0;margin-left:5px;"></span>')
                   + name + '</div>';
           });
         }
-
-        tip.innerHTML = html;
-        tip.style.display = 'block';
-        positionTip(e);
+        popBody.innerHTML = html;
       }
 
-      // Event delegation — um único listener no documento
-      document.addEventListener('mousemove', function(e) {
-        var bar = e.target.closest ? e.target.closest('.tl-bar') : null;
-        if (bar) {
-          if (bar !== currentBar) { currentBar = bar; showTip(bar, e); }
-          else { positionTip(e); }
-        } else {
-          if (currentBar) { currentBar = null; tip.style.display = 'none'; }
+      popSearch.addEventListener('input', function() { renderMembers(popSearch.value); });
+      popSearch.addEventListener('click', function(e) { e.stopPropagation(); });
+
+      function closePopover() {
+        pop.style.display = 'none';
+        popSearch.value = '';
+        allMembers = [];
+        if (activeBar) { activeBar.classList.remove('active-popover'); activeBar = null; }
+      }
+
+      function positionPopover(bar) {
+        var rect = bar.getBoundingClientRect();
+        var x = rect.left;
+        var y = rect.bottom + 6;
+        // Ajuste horizontal se sair da janela
+        if (x + 280 > window.innerWidth - 8) x = window.innerWidth - 288;
+        if (x < 8) x = 8;
+        // Ajuste vertical: abre para cima se não couber abaixo
+        pop.style.left = x + 'px';
+        pop.style.top  = y + 'px';
+      }
+
+      function openPopover(bar) {
+        if (activeBar === bar) { closePopover(); return; }
+        if (activeBar) activeBar.classList.remove('active-popover');
+        activeBar = bar;
+        bar.classList.add('active-popover');
+
+        var team         = bar.getAttribute('data-team') || '';
+        var hours        = bar.getAttribute('data-hours') || '';
+        var raw          = bar.getAttribute('data-members') || '';
+        var members      = raw ? raw.split('||').sort(function(a, b) { return a.split('::')[0].localeCompare(b.split('::')[0], 'pt-BR'); }) : [];
+        var coordName    = bar.getAttribute('data-coord-name') || '';
+        var coordInit    = bar.getAttribute('data-coord-initials') || '';
+        var coordAvtr    = bar.getAttribute('data-coord-avatar') || '';
+        var coordChecked = bar.getAttribute('data-coord-checked') === 'true';
+
+        popTeam.textContent  = team;
+        popHours.textContent = hours;
+        popSearch.value = '';
+
+        var html = '';
+
+        // Coordenador
+        if (coordName) {
+          var borderColor = coordChecked ? '#86efac' : '#e4e4e7';
+          var avatarHtml  = coordAvtr
+            ? '<img src="' + coordAvtr + '" style="width:26px;height:26px;border-radius:50%;object-fit:cover;border:1.5px solid ' + borderColor + ';flex-shrink:0;">'
+            : '<div style="width:26px;height:26px;border-radius:50%;background:' + (coordChecked ? '#dcfce7' : '#f4f4f5') + ';border:1px solid ' + borderColor + ';display:flex;align-items:center;justify-content:center;font-size:0.55rem;font-weight:700;color:' + (coordChecked ? '#15803d' : '#71717a') + ';flex-shrink:0;">' + coordInit + '</div>';
+          var checkBadge  = coordChecked
+            ? '<span style="margin-left:auto;background:#dcfce7;border-radius:4px;padding:1px 6px;font-size:0.6rem;font-weight:600;color:#15803d;white-space:nowrap;">✓ check-in</span>'
+            : '';
+          html += '<div style="font-size:0.62rem;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:#a1a1aa;margin-bottom:4px;">Coordenador(a)</div>'
+               + '<div style="display:flex;align-items:center;gap:7px;padding:5px 0 7px;border-bottom:1px solid #f4f4f5;margin-bottom:6px;">'
+               + avatarHtml
+               + '<span style="font-size:0.78rem;font-weight:600;color:' + (coordChecked ? '#15803d' : '#18181b') + ';flex:1;min-width:0;">' + coordName + '</span>'
+               + checkBadge + '</div>';
         }
+
+        popBody.innerHTML = html;
+
+        // Colaboradores — armazenados em allMembers para busca
+        allMembers = members;
+        if (members.length) renderMembers('');
+        pop.style.display = 'flex';
+        positionPopover(bar);
+      }
+
+      popClose.addEventListener('click', function(e) { e.stopPropagation(); closePopover(); });
+
+      // Clique nas barras
+      document.addEventListener('click', function(e) {
+        var bar = e.target.closest ? e.target.closest('.tl-bar') : null;
+        if (bar) { e.stopPropagation(); openPopover(bar); return; }
+        if (!e.target.closest('#tl-popover')) closePopover();
       });
+
+      // Fechar ao navegar
+      document.addEventListener('turbo:before-visit', closePopover);
     }
 
     if (document.readyState === 'loading') {
