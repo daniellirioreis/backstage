@@ -17,7 +17,7 @@
 
   <%# ── Formulário de configuração ──────────────────────────────────────── %>
   <div>
-    <%= form_with model: [@event, @badge_config], url: event_badge_config_path(@event) do |f| %>
+    <%= form_with model: [@event, @badge_config], url: event_badge_config_path(@event), method: :patch do |f| %>
 
       <div class="content-card" style="padding: 1.5rem; display: flex; flex-direction: column; gap: 1.25rem;">
 

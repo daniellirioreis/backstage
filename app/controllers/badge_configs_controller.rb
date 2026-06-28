@@ -8,7 +8,8 @@ class BadgeConfigsController < ApplicationController
 
   def update
     authorize @badge_config
-    if @badge_config.update(badge_config_params)
+    @badge_config.assign_attributes(badge_config_params)
+    if @badge_config.save
       redirect_to edit_event_badge_config_path(@event), notice: "Configuração do crachá salva!"
     else
       render :edit, status: :unprocessable_entity
