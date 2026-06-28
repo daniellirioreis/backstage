@@ -45,12 +45,12 @@ class TeamsController < ApplicationController
       format.html { render layout: "credentials_preview" }
       format.pdf do
         render pdf: "credenciais-#{@team.name.parameterize}",
-               template: "teams/credentials",
+               template: "teams/credentials_pdf",
                layout: "credential_pdf",
                formats: [:html],
-               page_width: "100mm",
-               page_height: "150mm",
-               margin: { top: 0, bottom: 0, left: 0, right: 0 },
+               page_size: "A4",
+               orientation: "Portrait",
+               margin: { top: 5, bottom: 5, left: 5, right: 5 },
                disposition: "attachment"
       end
     end
