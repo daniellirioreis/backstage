@@ -42,6 +42,7 @@ class TeamsController < ApplicationController
     end
 
     respond_to do |format|
+      format.html { render layout: "credentials_preview" }
       format.pdf do
         render pdf: "credenciais-#{@team.name.parameterize}",
                template: "teams/credentials",
