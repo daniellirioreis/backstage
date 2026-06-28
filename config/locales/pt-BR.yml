@@ -30,6 +30,11 @@ pt-BR:
     update: "Editar"
     destroy: "Excluir"
 
+  badge_config:
+    configure: "Configurar Credencial"
+    title: "Configurar Credencial"
+    saved: "Configuração da credencial salva!"
+
   event_statuses:
     draft: "Rascunho"
     active: "Ativo"

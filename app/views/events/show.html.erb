@@ -22,7 +22,7 @@
   <div style="display: flex; gap: 0.5rem;">
     <% if policy(@event).edit? %>
       <%= link_to edit_event_badge_config_path(@event), class: "btn-secondary" do %>
-        <i class="bi bi-person-badge"></i> Configurar Crachá
+        <i class="bi bi-person-badge"></i> <%= t("badge_config.configure") %>
       <% end %>
       <%= link_to edit_event_path(@event), class: "btn-secondary" do %>
         <i class="bi bi-pencil"></i> <%= t("actions.edit") %>
