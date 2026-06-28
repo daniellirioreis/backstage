@@ -10,6 +10,7 @@ class Permission < ApplicationRecord
 
   # Ações extras por recurso (além das padrão)
   EXTRA_ACTIONS = {
-    "shifts" => %w[timeline]
+    "shifts" => %w[timeline print],
+    "events" => %w[print]
   }.freeze
 end

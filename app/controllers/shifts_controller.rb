@@ -51,7 +51,7 @@ class ShiftsController < ApplicationController
   end
 
   def print
-    authorize Shift, :index?
+    authorize Shift, :print?
     @event = current_event
     shifts = policy_scope(Shift)
                .joins(:sector)

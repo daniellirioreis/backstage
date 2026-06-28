@@ -30,6 +30,7 @@ pt-BR:
     update: "Editar"
     destroy: "Excluir"
     timeline: "Timeline"
+    print: "Imprimir"
 
   badge_config:
     configure: "Configurar Credencial"

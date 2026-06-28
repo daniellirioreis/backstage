@@ -3,6 +3,8 @@ class EventPolicy < ApplicationPolicy
     def resolve = scope.all
   end
 
+  def print? = can?("print")
+
   private
 
   def resource_name = "events"

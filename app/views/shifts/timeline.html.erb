@@ -6,8 +6,10 @@
     <h1>Timeline da Escala</h1>
   </div>
   <div style="display:flex; gap:0.5rem; align-items:center;">
-    <%= link_to print_shifts_path, class:"btn-secondary" do %>
-      <i class="bi bi-printer"></i> Imprimir
+    <% if policy(Shift).print? %>
+      <%= link_to print_shifts_path, class:"btn-secondary" do %>
+        <i class="bi bi-printer"></i> Imprimir
+      <% end %>
     <% end %>
     <%= link_to new_shift_path, class:"btn-primary" do %>
       <i class="bi bi-plus"></i> Nova Escala

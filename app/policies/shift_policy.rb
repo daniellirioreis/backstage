@@ -4,7 +4,7 @@ class ShiftPolicy < ApplicationPolicy
   end
 
   def timeline? = can?("timeline")
-  def print?    = can?("index")
+  def print?    = can?("print")
 
   private
 

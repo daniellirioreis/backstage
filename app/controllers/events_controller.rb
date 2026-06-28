@@ -14,7 +14,7 @@ class EventsController < ApplicationController
   end
 
   def print
-    authorize @event, :show?
+    authorize @event, :print?
     @sectors = @event.sectors.includes(teams: [:coordinator, { team_memberships: :user }, :users]).order(:name)
     respond_to do |format|
       format.html { render layout: "print" }

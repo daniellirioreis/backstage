@@ -20,8 +20,10 @@
     </div>
   </div>
   <div style="display: flex; gap: 0.5rem;">
-    <%= link_to print_event_path(@event), class: "btn-secondary" do %>
-      <i class="bi bi-printer"></i> Imprimir
+    <% if policy(@event).print? %>
+      <%= link_to print_event_path(@event), class: "btn-secondary" do %>
+        <i class="bi bi-printer"></i> Imprimir
+      <% end %>
     <% end %>
     <% if policy(@event).edit? %>
       <%= link_to edit_event_badge_config_path(@event), class: "btn-secondary" do %>
