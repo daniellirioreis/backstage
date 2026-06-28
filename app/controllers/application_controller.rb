@@ -35,7 +35,14 @@ class ApplicationController < ActionController::Base
   def skip_event_check?
     devise_controller? ||
       controller_name == "event_session" ||
-      controller_name == "events"
+      controller_name == "events" ||
+      (controller_name == "users" && action_name.in?(%w[my_schedule credential]))
+  end
+
+  def after_sign_in_path_for(resource)
+    return super if resource.admin?
+    return my_schedule_user_path(resource) if resource.role&.collaborator?
+    super
   end
 
   def user_not_authorized

@@ -31,6 +31,7 @@ pt-BR:
     destroy: "Excluir"
     timeline: "Timeline"
     print: "Imprimir"
+    my_schedule: "Minha Escala"
 
   badge_config:
     configure: "Configurar Credencial"

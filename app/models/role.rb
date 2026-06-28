@@ -7,4 +7,5 @@ class Role < ApplicationRecord
   def can?(resource, action)
     permissions.exists?(resource: resource.to_s, action: action.to_s)
   end
+
 end

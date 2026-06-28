@@ -5,7 +5,9 @@ class UserPolicy < ApplicationPolicy
   def create?  = can?("create")
   def edit?    = can?("update")
   def update?  = can?("update")
-  def destroy? = can?("destroy") && record != user  # não pode excluir a si mesmo
+  def destroy?     = can?("destroy") && record != user
+  def credential?  = user.present? && (user.admin? || user == record || can?("show"))
+  def my_schedule? = user.present? && (user.admin? || user == record || can?("my_schedule"))
 
   class Scope < ApplicationPolicy::Scope
     def resolve = scope.all

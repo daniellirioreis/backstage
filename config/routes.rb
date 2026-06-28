@@ -16,7 +16,10 @@ Rails.application.routes.draw do
   resources :roles
   resources :users do
     collection { get :search }
-    member { get :credential }
+    member do
+      get :credential
+      get :my_schedule
+    end
   end
   resources :events do
     resource :badge_config, only: [:edit, :update]

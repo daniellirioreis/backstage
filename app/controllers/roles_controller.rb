@@ -53,7 +53,7 @@ class RolesController < ApplicationController
   end
 
   def role_params
-    params.require(:role).permit(:name)
+    params.require(:role).permit(:name, :collaborator)
   end
 
   def sync_permissions(role)

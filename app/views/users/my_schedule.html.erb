@@ -1,0 +1,160 @@
+<div class="page-header">
+  <div style="display:flex; align-items:center; gap:0.75rem;">
+    <%= link_to users_path, class:"btn-secondary", style:"padding:0.35rem 0.6rem;" do %>
+      <i class="bi bi-arrow-left"></i>
+    <% end %>
+    <div>
+      <h1 style="margin:0;"><%= t("permission_actions.my_schedule") %></h1>
+      <div style="font-size:0.78rem; color:#71717a; margin-top:0.1rem;"><%= @user.name %></div>
+    </div>
+  </div>
+</div>
+
+<%# Cabeçalho do colaborador %>
+<div class="content-card" style="margin-bottom:1.5rem; padding:1.25rem; display:flex; align-items:center; gap:1rem; flex-wrap:wrap;">
+  <div style="width:48px; height:48px; border-radius:50%; overflow:hidden; background:#f4f4f5; border:2px solid #e4e4e7; display:flex; align-items:center; justify-content:center; font-size:0.95rem; font-weight:700; color:#52525b; flex-shrink:0;">
+    <% if @user.avatar.attached? %>
+      <%= image_tag @user.avatar, style:"width:100%;height:100%;object-fit:cover;" %>
+    <% else %>
+      <%= @user.name.split.map(&:first).first(2).join.upcase %>
+    <% end %>
+  </div>
+  <div style="flex:1; min-width:0;">
+    <div style="font-size:0.95rem; font-weight:700; color:#18181b;"><%= @user.name %></div>
+    <div style="font-size:0.75rem; color:#71717a; margin-top:0.1rem;">
+      <span style="font-family:monospace;"><%= @user.cpf.gsub(/(\d{3})(\d{3})(\d{3})(\d{2})/, '\1.\2.\3-\4') %></span>
+      <% if @user.role %>
+        <span style="margin-left:0.5rem; background:#f4f4f5; border-radius:4px; padding:1px 7px; font-size:0.68rem; font-weight:600; color:#52525b;">
+          <%= @user.role.name %>
+        </span>
+      <% end %>
+    </div>
+  </div>
+  <% total = @shifts_by_event.values.flatten.size %>
+  <% if total > 0 %>
+    <div style="text-align:right; flex-shrink:0;">
+      <div style="font-size:1.4rem; font-weight:800; color:#18181b; line-height:1;"><%= total %></div>
+      <div style="font-size:0.68rem; color:#a1a1aa;">turno<%= total == 1 ? "" : "s" %> · <%= @shifts_by_event.size %> evento<%= @shifts_by_event.size == 1 ? "" : "s" %></div>
+    </div>
+  <% end %>
+</div>
+
+<% if @shifts_by_event.empty? %>
+  <div class="content-card" style="text-align:center; padding:3rem; color:#a1a1aa;">
+    <i class="bi bi-calendar-x" style="font-size:2rem; display:block; margin-bottom:0.5rem;"></i>
+    <p style="margin:0; font-size:0.88rem;">Nenhuma escala cadastrada para <%= @user.name.split.first %>.</p>
+  </div>
+<% else %>
+  <% @shifts_by_event.each do |event, shifts| %>
+    <%
+      event_team   = shifts.map(&:team).compact.first
+      is_coord     = event_team&.coordinator_id == @user.id
+      total_hours  = shifts.sum { |s| s.overnight? ? (1440 - (s.start_time.hour*60+s.start_time.min) + (s.end_time.hour*60+s.end_time.min)) : ((s.end_time.hour*60+s.end_time.min) - (s.start_time.hour*60+s.start_time.min)) } / 60.0
+    %>
+
+    <div class="content-card" style="margin-bottom:1.5rem; padding:0; overflow:hidden;">
+
+      <%# Topo do cartão — evento %>
+      <div style="background:#18181b; padding:1rem 1.25rem; display:flex; align-items:center; justify-content:space-between; gap:1rem; flex-wrap:wrap;">
+        <div>
+          <div style="font-size:0.95rem; font-weight:700; color:#fff;">
+            <i class="bi bi-calendar-event" style="font-size:0.8rem; opacity:0.7;"></i>
+            <%= event.name %>
+          </div>
+          <div style="font-size:0.72rem; color:#a1a1aa; margin-top:0.2rem;">
+            <%= l(event.start_date, format: :short) %> → <%= l(event.end_date, format: :short) %>
+            <% if event.location.present? %>
+              <span style="margin:0 0.35rem; opacity:0.5;">·</span>
+              <i class="bi bi-geo-alt" style="font-size:0.6rem;"></i> <%= event.location %>
+            <% end %>
+          </div>
+        </div>
+        <% if current_user == @user || policy(@user).show? %>
+          <%= link_to credential_user_path(@user, format: :pdf, event_id: event.id),
+              class:"btn-secondary",
+              style:"padding:0.3rem 0.75rem; font-size:0.75rem; white-space:nowrap; background:#fff; color:#18181b; border-color:#fff;" do %>
+            <i class="bi bi-person-badge"></i> Credencial
+          <% end %>
+        <% end %>
+      </div>
+
+      <%# Info da equipe %>
+      <% if event_team %>
+        <div style="background:#f4f4f5; border-bottom:1px solid #e4e4e7; padding:0.6rem 1.25rem; display:flex; align-items:center; gap:0.5rem; font-size:0.78rem; color:#52525b;">
+          <i class="bi bi-people" style="font-size:0.75rem; color:#71717a;"></i>
+          <span style="font-weight:600;"><%= event_team.name %></span>
+          <% if event_team.sector %>
+            <span style="color:#d4d4d8;">·</span>
+            <span style="color:#71717a;"><%= event_team.sector.name %></span>
+          <% end %>
+          <% if is_coord %>
+            <span style="background:#fef3c7; color:#92400e; border:1px solid #fcd34d; border-radius:4px; padding:0px 6px; font-size:0.62rem; font-weight:700; margin-left:0.25rem;">
+              <i class="bi bi-star-fill" style="font-size:0.5rem;"></i> Coordenador
+            </span>
+          <% end %>
+          <span style="margin-left:auto; color:#71717a; font-size:0.72rem;">
+            <%= shifts.size %> turno<%= shifts.size == 1 ? "" : "s" %>
+            · <%= total_hours.round(1) %> h total
+          </span>
+        </div>
+      <% end %>
+
+      <%# Lista de turnos %>
+      <div style="padding:0.5rem 0;">
+        <% shifts.sort_by { |s| [s.date, s.start_time] }.each_with_index do |shift, idx| %>
+          <%
+            duration_min = shift.overnight? \
+              ? (1440 - (shift.start_time.hour*60+shift.start_time.min) + (shift.end_time.hour*60+shift.end_time.min)) \
+              : ((shift.end_time.hour*60+shift.end_time.min) - (shift.start_time.hour*60+shift.start_time.min))
+            duration_h   = duration_min / 60
+            duration_m   = duration_min % 60
+          %>
+          <div style="display:flex; align-items:center; gap:1rem; padding:0.65rem 1.25rem; border-bottom:<%= idx < shifts.size - 1 ? '1px solid #f4f4f5' : 'none' %>;">
+
+            <%# Data %>
+            <div style="text-align:center; flex-shrink:0; width:36px;">
+              <div style="font-size:1rem; font-weight:800; color:#18181b; line-height:1;">
+                <%= shift.date.day %>
+              </div>
+              <div style="font-size:0.62rem; color:#71717a; text-transform:uppercase; letter-spacing:0.04em;">
+                <%= I18n.l(shift.date, format: "%b") %>
+              </div>
+              <div style="font-size:0.6rem; color:#a1a1aa;">
+                <%= I18n.l(shift.date, format: "%a") %>
+              </div>
+            </div>
+
+            <div style="width:1px; height:36px; background:#e4e4e7; flex-shrink:0;"></div>
+
+            <%# Horário %>
+            <div style="flex:1; min-width:0;">
+              <div style="font-size:0.88rem; font-weight:600; color:#18181b;">
+                <%= shift.start_time.strftime("%H:%M") %> → <%= shift.end_time.strftime("%H:%M") %>
+                <% if shift.overnight? %>
+                  <span style="font-size:0.65rem; color:#a1a1aa; font-weight:400;">+1 dia</span>
+                <% end %>
+                <% if shift.end_date.present? && shift.end_date != shift.date %>
+                  <span style="font-size:0.65rem; color:#a1a1aa; font-weight:400;">até <%= l(shift.end_date, format: :short) %></span>
+                <% end %>
+              </div>
+              <% if shift.team && shift.team != event_team %>
+                <div style="font-size:0.7rem; color:#71717a; margin-top:0.1rem;">
+                  <i class="bi bi-people" style="font-size:0.6rem;"></i> <%= shift.team.name %>
+                </div>
+              <% end %>
+            </div>
+
+            <%# Duração %>
+            <div style="text-align:right; flex-shrink:0;">
+              <span style="font-size:0.78rem; font-weight:600; color:#52525b; background:#f4f4f5; border-radius:6px; padding:2px 8px;">
+                <%= duration_h > 0 ? "#{duration_h}h" : "" %><%= duration_m > 0 ? "#{duration_m}min" : "" %>
+              </span>
+            </div>
+
+          </div>
+        <% end %>
+      </div>
+
+    </div>
+  <% end %>
+<% end %>

@@ -1,5 +1,5 @@
 class UsersController < ApplicationController
-  before_action :set_user, only: %i[show edit update destroy credential]
+  before_action :set_user, only: %i[show edit update destroy credential my_schedule]
 
   def index
     authorize User
@@ -55,13 +55,15 @@ class UsersController < ApplicationController
   end
 
   def credential
-    authorize @user, :show?
+    authorize @user, :credential?
+    event_id = params[:event_id].presence || current_event&.id
+    @event   = event_id ? Event.find_by(id: event_id) : current_event
     @team = @user.teams.joins(:sector)
-                 .where(sectors: { event_id: current_event&.id })
+                 .where(sectors: { event_id: event_id })
                  .includes(:sector)
                  .first
     @is_coordinator = @team&.coordinator_id == @user.id
-    @badge_config   = current_event&.badge_config || BadgeConfig.defaults
+    @badge_config   = @event&.badge_config || BadgeConfig.defaults
 
     if @is_coordinator
       @credential_code = @team&.coordinator_full_credential_code
@@ -88,6 +90,19 @@ class UsersController < ApplicationController
                disposition: "attachment"
       end
     end
+  end
+
+  def my_schedule
+    authorize @user, :my_schedule?
+
+    shifts = Shift.joins(sector: :event)
+                  .where(user_id: @user.id)
+                  .includes({ team: [:sector, :coordinator] }, sector: :event)
+                  .order("events.start_date, shifts.date, shifts.start_time")
+
+    @shifts_by_event = shifts.group_by { |s| s.sector.event }
+                             .sort_by { |ev, _| ev.start_date }
+                             .to_h
   end
 
   def new
