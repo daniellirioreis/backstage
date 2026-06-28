@@ -30,7 +30,7 @@
           </div>
           <div style="display: flex; gap: 0.4rem; flex-shrink: 0;">
             <% if policy(team).show? %>
-              <%= link_to credentials_team_path(team), class: "btn-secondary", style: "padding: 0.3rem 0.55rem;", title: "Baixar credenciais da equipe" do %>
+              <%= link_to credentials_team_path(team, format: :pdf), class: "btn-secondary", style: "padding: 0.3rem 0.55rem;", title: "Baixar credenciais da equipe" do %>
                 <i class="bi bi-file-earmark-pdf"></i>
               <% end %>
               <%= link_to team_path(team), class: "btn-secondary", style: "padding: 0.3rem 0.55rem;" do %>
