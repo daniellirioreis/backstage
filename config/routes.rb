@@ -36,8 +36,10 @@ Rails.application.routes.draw do
   resources :sectors
   resources :shifts do
     collection do
-      get :print
-      get :timeline
+      get   :print
+      get   :timeline
+      get   :edit_team
+      patch :update_team
     end
   end
   resources :vehicles

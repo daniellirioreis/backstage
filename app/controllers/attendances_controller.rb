@@ -24,14 +24,55 @@ class AttendancesController < ApplicationController
       return render json: { status: :not_found, message: "Credencial não encontrada (#{code})" }, status: :unprocessable_entity
     end
 
-    attendance = Attendance.find_by(user: user, event: @event)
-
     avatar_url = user.avatar.attached? ? url_for(user.avatar) : nil
+
+    # Verifica escala do colaborador para hoje
+    today       = Date.today
+    now_minutes = Time.current.hour * 60 + Time.current.min
+
+    shifts_today = Shift.joins(:sector)
+                        .where(sectors: { event_id: @event.id }, user_id: user.id)
+                        .where("shifts.date <= ? AND (shifts.end_date IS NULL OR shifts.end_date >= ?)", today, today)
+
+    unless shifts_today.exists?
+      return render json: {
+        status:    :no_shift_today,
+        message:   "#{user.name.split.first} não tem escala cadastrada para hoje (#{I18n.l(today, format: :short)})",
+        user_name: user.name,
+        team_name: team&.name,
+        avatar_initials: user.name.split.map(&:first).first(2).join.upcase,
+        avatar_url: avatar_url
+      }, status: :unprocessable_entity
+    end
+
+    in_schedule = shifts_today.any? do |s|
+      s_min = s.start_time.hour * 60 + s.start_time.min
+      e_min = s.end_time.hour   * 60 + s.end_time.min
+      if e_min < s_min # overnight
+        now_minutes >= s_min || now_minutes < e_min
+      else
+        now_minutes >= s_min && now_minutes < e_min
+      end
+    end
+
+    unless in_schedule
+      ranges = shifts_today.map { |s| "#{s.start_time.strftime('%H:%M')}–#{s.end_time.strftime('%H:%M')}" }.join(", ")
+      return render json: {
+        status:    :out_of_schedule,
+        message:   "Fora do horário de escala (#{ranges})",
+        user_name: user.name,
+        team_name: team&.name,
+        avatar_initials: user.name.split.map(&:first).first(2).join.upcase,
+        avatar_url: avatar_url
+      }, status: :unprocessable_entity
+    end
+
+    attendance = Attendance.find_by(user: user, event: @event, checked_in_date: today)
 
     if attendance
       return render json: {
         status:          :already_checked_in,
-        message:         "Já registrado às #{I18n.l(attendance.checked_in_at, format: :short)}",
+        message:         "Já registrado hoje às #{I18n.l(attendance.checked_in_at, format: :time_only)}",
         user_name:       user.name,
         team_name:       attendance.team&.name,
         checked_in_at:   I18n.l(attendance.checked_in_at, format: :short),
@@ -41,11 +82,12 @@ class AttendancesController < ApplicationController
     end
 
     attendance = Attendance.create!(
-      user:           user,
-      event:          @event,
-      team:           team,
-      checked_in_by:  current_user,
-      checked_in_at:  Time.current
+      user:            user,
+      event:           @event,
+      team:            team,
+      checked_in_by:   current_user,
+      checked_in_at:   Time.current,
+      checked_in_date: today
     )
 
     render json: {

@@ -57,9 +57,16 @@
               <h2 style="font-size: 1rem; font-weight: 700; color: #71717a; margin: 0;">Sem equipe</h2>
             <% end %>
           </div>
-          <span style="background: #f4f4f5; border-radius: 20px; padding: 0.2rem 0.65rem; font-size: 0.72rem; font-weight: 600; color: #71717a;">
-            <%= shifts.size %> turno<%= shifts.size == 1 ? "" : "s" %>
-          </span>
+          <div style="display: flex; align-items: center; gap: 0.5rem;">
+            <span style="background: #f4f4f5; border-radius: 20px; padding: 0.2rem 0.65rem; font-size: 0.72rem; font-weight: 600; color: #71717a;">
+              <%= shifts.size %> turno<%= shifts.size == 1 ? "" : "s" %>
+            </span>
+            <% if team && policy(shifts.first).edit? %>
+              <%= link_to edit_team_shifts_path(team_id: team.id), class: "btn-secondary", style: "padding: 0.25rem 0.55rem; font-size: 0.78rem;", title: "Editar escala da equipe" do %>
+                <i class="bi bi-pencil"></i> Editar
+              <% end %>
+            <% end %>
+          </div>
         </div>
 
         <%# Lista de turnos agrupada por data %>

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2024_01_01_000024) do
+ActiveRecord::Schema[7.1].define(version: 2026_06_28_000001) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -50,10 +50,11 @@ ActiveRecord::Schema[7.1].define(version: 2024_01_01_000024) do
     t.datetime "checked_in_at", default: -> { "CURRENT_TIMESTAMP" }, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.date "checked_in_date", null: false
     t.index ["checked_in_by_id"], name: "index_attendances_on_checked_in_by_id"
     t.index ["event_id"], name: "index_attendances_on_event_id"
     t.index ["team_id"], name: "index_attendances_on_team_id"
-    t.index ["user_id", "event_id"], name: "index_attendances_on_user_id_and_event_id", unique: true
+    t.index ["user_id", "event_id", "checked_in_date"], name: "index_attendances_unique_per_day", unique: true
     t.index ["user_id"], name: "index_attendances_on_user_id"
   end
 

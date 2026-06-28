@@ -169,6 +169,100 @@ class ShiftsController < ApplicationController
     end
   end
 
+  def edit_team
+    authorize Shift, :edit?
+    @event = current_event
+    team_id = params[:team_id]
+    @selected_team = Team.includes(sector: :event).find(team_id)
+
+    @team_members = TeamMembership
+      .where(team_id: @selected_team.id)
+      .includes(user: { avatar_attachment: :blob })
+      .joins(:user)
+      .order("users.name")
+
+    # Carrega os shifts existentes da equipe (qualquer data)
+    existing = Shift.where(team_id: @selected_team.id)
+    @existing_shifts = existing.index_by(&:user_id)
+
+    # Data de referência: a do primeiro turno encontrado
+    first = existing.order(:date).first
+    @ref_date     = first&.date
+    @ref_end_date = first&.end_date
+  end
+
+  def update_team
+    authorize Shift, :edit?
+    @event = current_event
+    @selected_team = Team.includes(sector: :event).find(params[:team_id])
+
+    date     = params[:date]
+    end_date = params[:end_date].presence
+    members  = params[:members].to_unsafe_h rescue {}
+
+    updated  = 0
+    created  = 0
+    failures = []
+    skipped  = []
+
+    members.each do |user_id, data|
+      next unless data[:selected] == "1"
+
+      if data[:start_time].blank? || data[:end_time].blank?
+        skipped << User.find_by(id: user_id)&.name
+        next
+      end
+
+      existing = Shift.find_by(team_id: @selected_team.id, user_id: user_id)
+
+      attrs = {
+        user_id:    user_id,
+        sector_id:  @selected_team.sector_id,
+        team_id:    @selected_team.id,
+        date:       date,
+        end_date:   end_date,
+        start_time: data[:start_time],
+        end_time:   data[:end_time]
+      }
+
+      if existing
+        # Desabilita validação de conflito consigo mesmo
+        if existing.update(attrs.except(:user_id, :sector_id, :team_id))
+          updated += 1
+        else
+          failures << { name: User.find_by(id: user_id)&.name, messages: existing.errors.full_messages }
+        end
+      else
+        shift = Shift.new(attrs)
+        if shift.save
+          created += 1
+        else
+          failures << { name: User.find_by(id: user_id)&.name, messages: shift.errors.full_messages }
+        end
+      end
+    end
+
+    if failures.any?
+      @team_members = TeamMembership
+        .where(team_id: @selected_team.id)
+        .includes(user: { avatar_attachment: :blob })
+        .joins(:user)
+        .order("users.name")
+      @existing_shifts = Shift.where(team_id: @selected_team.id).index_by(&:user_id)
+      @ref_date     = date
+      @ref_end_date = end_date
+      @submitted_members = members
+      @update_errors = failures
+      render :edit_team, status: :unprocessable_entity
+    else
+      parts = []
+      parts << "#{updated} atualizado(s)" if updated > 0
+      parts << "#{created} criado(s)"     if created > 0
+      parts << "Sem horário (ignorados): #{skipped.join(', ')}." if skipped.any?
+      redirect_to shifts_path, notice: "Escala salva — #{parts.join(', ')}."
+    end
+  end
+
   def edit
     authorize @shift
     load_form_data

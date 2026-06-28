@@ -221,25 +221,28 @@
     })
     .then(r => r.json().catch(() => { throw new Error("HTTP " + r.status); }))
     .then(data => {
-      const isDupe = data.status === "already_checked_in";
-      const isErr  = data.status === "not_found";
-      if (!isErr) total++;
+      const isDupe    = data.status === "already_checked_in";
+      const isErr     = data.status === "not_found";
+      const isWarn    = data.status === "no_shift_today" || data.status === "out_of_schedule";
+      const isOk      = data.status === "ok";
+      if (isOk) total++;
       counter.textContent = total + (total === 1 ? " registro" : " registros");
+      const type = isErr ? "error" : (isDupe || isWarn) ? "dupe" : "ok";
       showFeedback(
-        isErr ? "error" : isDupe ? "dupe" : "ok",
+        type,
         data.avatar_initials || "?",
         data.user_name || "—",
         data.team_name || "",
         data.message,
         data.avatar_url || null
       );
-      addRecent(isDupe ? "dupe" : isErr ? "error" : "ok", data.user_name, data.team_name, data.checked_in_at);
-      const delay = onDone ? 1500 : 2500;
+      addRecent(isOk ? "ok" : isErr ? "error" : "dupe", data.user_name, data.team_name, data.checked_in_at);
+      const delay = isOk ? (onDone ? 1500 : 2500) : (onDone ? 3000 : 5000);
       setTimeout(() => { hideFeedback(); scanning = true; lastCode = null; if (onDone) onDone(); }, delay);
     })
     .catch((err) => {
       showFeedback("error", "!", "Erro: " + (err.message || "conexão"), "", "Tente novamente");
-      const delay = onDone ? 1500 : 2000;
+      const delay = onDone ? 3000 : 5000;
       setTimeout(() => { hideFeedback(); scanning = true; lastCode = null; if (onDone) onDone(); }, delay);
     });
   }
