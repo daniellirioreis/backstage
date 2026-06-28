@@ -1,0 +1,197 @@
+<%# ── Cabeçalho ──────────────────────────────────────────────────────────── %>
+<div class="page-header">
+  <div style="display: flex; align-items: center; gap: 0.75rem;">
+    <%= link_to event_path(@event), class: "btn-secondary", style: "padding: 0.35rem 0.6rem;" do %>
+      <i class="bi bi-arrow-left"></i>
+    <% end %>
+    <div>
+      <h1 style="margin: 0; font-size: 1.1rem;">Configurar Crachá</h1>
+      <div style="font-size: 0.82rem; color: #71717a; margin-top: 0.1rem;">
+        <i class="bi bi-calendar3"></i> <%= @event.name %>
+      </div>
+    </div>
+  </div>
+</div>
+
+<% if notice.present? %>
+  <div class="alert alert-success" style="margin-bottom: 1rem;">
+    <i class="bi bi-check-circle"></i> <%= notice %>
+  </div>
+<% end %>
+
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; align-items: start;">
+
+  <%# ── Formulário de configuração ──────────────────────────────────────── %>
+  <div>
+    <%= form_with model: [@event, @badge_config], url: event_badge_config_path(@event) do |f| %>
+
+      <div class="content-card" style="padding: 1.5rem; display: flex; flex-direction: column; gap: 1.25rem;">
+
+        <h2 style="font-size: 0.9rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: #71717a; margin: 0;">Foto</h2>
+
+        <div class="badge-config-field">
+          <%= f.label :photo_size, "Tamanho da foto" %>
+          <div style="display: flex; align-items: center; gap: 0.75rem;">
+            <%= f.range_field :photo_size, min: 40, max: 160, step: 1,
+                data: { target: "photo_size", preview: "badge-photo-size" } %>
+            <span class="range-val" id="val-photo-size"><%= @badge_config.photo_size %>px</span>
+          </div>
+        </div>
+
+        <h2 style="font-size: 0.9rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: #71717a; margin: 0; border-top: 1px solid #f4f4f5; padding-top: 1rem;">Tipografia</h2>
+
+        <div class="badge-config-field">
+          <%= f.label :name_font_size, "Fonte do nome" %>
+          <div style="display: flex; align-items: center; gap: 0.75rem;">
+            <%= f.range_field :name_font_size, min: 10, max: 36, step: 1,
+                data: { preview: "badge-name-size" } %>
+            <span class="range-val" id="val-name-size"><%= @badge_config.name_font_size %>px</span>
+          </div>
+        </div>
+
+        <div class="badge-config-field">
+          <%= f.label :role_chip_font_size, "Fonte do cargo (badge)" %>
+          <div style="display: flex; align-items: center; gap: 0.75rem;">
+            <%= f.range_field :role_chip_font_size, min: 6, max: 20, step: 1,
+                data: { preview: "badge-chip-size" } %>
+            <span class="range-val" id="val-chip-size"><%= @badge_config.role_chip_font_size %>px</span>
+          </div>
+        </div>
+
+        <div class="badge-config-field">
+          <%= f.label :team_info_font_size, "Fonte da equipe / setor" %>
+          <div style="display: flex; align-items: center; gap: 0.75rem;">
+            <%= f.range_field :team_info_font_size, min: 6, max: 20, step: 1,
+                data: { preview: "badge-team-size" } %>
+            <span class="range-val" id="val-team-size"><%= @badge_config.team_info_font_size %>px</span>
+          </div>
+        </div>
+
+        <h2 style="font-size: 0.9rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: #71717a; margin: 0; border-top: 1px solid #f4f4f5; padding-top: 1rem;">Cabeçalho</h2>
+
+        <div class="badge-config-field">
+          <%= f.label :event_name_font_size, "Fonte do nome do evento" %>
+          <div style="display: flex; align-items: center; gap: 0.75rem;">
+            <%= f.range_field :event_name_font_size, min: 6, max: 20, step: 1,
+                data: { preview: "badge-event-name-size" } %>
+            <span class="range-val" id="val-event-name-size"><%= @badge_config.event_name_font_size %>px</span>
+          </div>
+        </div>
+
+        <div class="badge-config-field">
+          <%= f.label :event_date_font_size, "Fonte da data / local" %>
+          <div style="display: flex; align-items: center; gap: 0.75rem;">
+            <%= f.range_field :event_date_font_size, min: 4, max: 14, step: 1,
+                data: { preview: "badge-event-date-size" } %>
+            <span class="range-val" id="val-event-date-size"><%= @badge_config.event_date_font_size %>px</span>
+          </div>
+        </div>
+
+      </div>
+
+      <div style="margin-top: 1rem; display: flex; justify-content: flex-end;">
+        <%= f.submit "Salvar configuração", class: "btn-primary" %>
+      </div>
+
+    <% end %>
+  </div>
+
+  <%# ── Prévia ao vivo ───────────────────────────────────────────────────── %>
+  <div style="position: sticky; top: 1.5rem;">
+    <div style="font-size: 0.82rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: #71717a; margin-bottom: 0.75rem;">
+      <i class="bi bi-eye"></i> Prévia
+    </div>
+
+    <div style="background: #e4e4e7; border-radius: 12px; padding: 2rem; display: flex; justify-content: center;">
+      <div id="badge-preview" style="width: 240px; font-family: Arial, Helvetica, sans-serif; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.3);">
+
+        <div style="height: 4px; background: #4ade80;"></div>
+
+        <div style="background: #0d0d0d; padding: 8px 11px 7px; display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid #4ade80;">
+          <span style="font-size: 7px; font-weight: 800; letter-spacing: 0.2em; text-transform: uppercase; color: #f4f4f5;">Backstage</span>
+          <div>
+            <div id="prev-event-name" style="font-size: <%= @badge_config.event_name_font_size %>px; font-weight: 700; color: #4ade80; text-transform: uppercase; text-align: right;"><%= @event.name %></div>
+            <div id="prev-event-date" style="font-size: <%= @badge_config.event_date_font_size %>px; color: #52525b; margin-top: 1px; text-align: right;"><%= l(@event.start_date, format: :short) %> a <%= l(@event.end_date, format: :short) %><%= @event.location.present? ? " · #{@event.location}" : "" %></div>
+          </div>
+        </div>
+
+        <div style="background: #f5f5f4; padding: 14px 12px 10px; text-align: center;">
+          <div id="prev-photo" style="width: <%= @badge_config.photo_size %>px; height: <%= @badge_config.photo_size %>px; border-radius: 50%; border: 2px solid #0d0d0d; background: #e4e4e7; margin: 0 auto 8px; display: flex; align-items: center; justify-content: center;">
+            <span id="prev-initials" style="font-size: <%= (@badge_config.photo_size * 0.3).round %>px; font-weight: 700; color: #a1a1aa;">CB</span>
+          </div>
+          <div id="prev-name" style="font-size: <%= @badge_config.name_font_size %>px; font-weight: 800; color: #18181b; margin: 0 0 6px;">Cleide Barbosa</div>
+          <div id="prev-chip" style="display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: <%= @badge_config.role_chip_font_size %>px; font-weight: 700; text-transform: uppercase; color: #fff; background: #15803d; margin-bottom: 6px;">Coordenador</div>
+          <div id="prev-team" style="font-size: <%= @badge_config.team_info_font_size %>px; color: #52525b; margin-bottom: 2px;"><strong>Bilheteria</strong> · Equipe Bilheteria</div>
+          <div style="font-size: 8px; color: #a1a1aa; font-family: monospace;">068.314.286-06</div>
+          <div style="height: 1px; background: #e4e4e7; margin: 8px 0 0;"></div>
+        </div>
+
+        <div style="background: #0d0d0d; padding: 8px 11px; display: flex; align-items: center; justify-content: space-between;">
+          <svg width="26" height="26" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+            <rect width="48" height="48" fill="#0d0d0d"/>
+            <rect x="4" y="4" width="16" height="16" fill="none" stroke="#4ade80" stroke-width="2"/>
+            <rect x="7" y="7" width="10" height="10" fill="#4ade80"/>
+            <rect x="28" y="4" width="16" height="16" fill="none" stroke="#4ade80" stroke-width="2"/>
+            <rect x="31" y="7" width="10" height="10" fill="#4ade80"/>
+            <rect x="4" y="28" width="16" height="16" fill="none" stroke="#4ade80" stroke-width="2"/>
+            <rect x="7" y="31" width="10" height="10" fill="#4ade80"/>
+            <rect x="28" y="28" width="4" height="4" fill="#4ade80"/>
+            <rect x="34" y="28" width="4" height="4" fill="#4ade80"/>
+            <rect x="40" y="28" width="4" height="4" fill="#4ade80"/>
+            <rect x="28" y="34" width="4" height="4" fill="#4ade80"/>
+            <rect x="34" y="34" width="4" height="4" fill="#4ade80"/>
+            <rect x="28" y="40" width="4" height="4" fill="#4ade80"/>
+            <rect x="40" y="40" width="4" height="4" fill="#4ade80"/>
+            <rect x="34" y="40" width="4" height="4" fill="#4ade80"/>
+            <rect x="40" y="34" width="4" height="4" fill="#4ade80"/>
+          </svg>
+          <div style="text-align: right;">
+            <span style="font-size: 6px; color: #3f3f46; text-transform: uppercase; letter-spacing: 0.06em; display: block;">ID Credencial</span>
+            <span style="font-size: 8px; color: #a1a1aa; font-family: monospace; display: block;">#BBY0047</span>
+            <span style="font-size: 6px; color: #3f3f46; text-transform: uppercase; letter-spacing: 0.06em; display: block; margin-top: 2px;">Acesso</span>
+            <span style="font-size: 8px; color: #a1a1aa; font-family: monospace; display: block;">Todos os dias</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<style>
+  .badge-config-field { display: flex; flex-direction: column; gap: 0.4rem; }
+  .badge-config-field label { font-size: 0.82rem; font-weight: 600; color: #3f3f46; }
+  .range-val { font-size: 0.82rem; font-weight: 600; color: #18181b; min-width: 36px; text-align: right; }
+</style>
+
+<script>
+  const mappings = [
+    { inputName: "badge_config[photo_size]",           valId: "val-photo-size",           prevId: "prev-photo",      prop: "photoSize" },
+    { inputName: "badge_config[name_font_size]",       valId: "val-name-size",            prevId: "prev-name",       prop: "nameFontSize" },
+    { inputName: "badge_config[role_chip_font_size]",  valId: "val-chip-size",            prevId: "prev-chip",       prop: "chipFontSize" },
+    { inputName: "badge_config[team_info_font_size]",  valId: "val-team-size",            prevId: "prev-team",       prop: "teamFontSize" },
+    { inputName: "badge_config[event_name_font_size]", valId: "val-event-name-size",      prevId: "prev-event-name", prop: "eventNameFontSize" },
+    { inputName: "badge_config[event_date_font_size]", valId: "val-event-date-size",      prevId: "prev-event-date", prop: "eventDateFontSize" },
+  ];
+
+  mappings.forEach(({ inputName, valId, prevId, prop }) => {
+    const input = document.querySelector(`input[name="${inputName}"]`);
+    const valEl = document.getElementById(valId);
+    const prevEl = document.getElementById(prevId);
+    if (!input) return;
+
+    input.addEventListener("input", () => {
+      const v = parseInt(input.value);
+      valEl.textContent = v + "px";
+
+      if (prop === "photoSize") {
+        prevEl.style.width  = v + "px";
+        prevEl.style.height = v + "px";
+        document.getElementById("prev-initials").style.fontSize = Math.round(v * 0.3) + "px";
+      } else {
+        prevEl.style.fontSize = v + "px";
+      }
+    });
+  });
+</script>

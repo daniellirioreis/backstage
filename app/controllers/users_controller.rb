@@ -43,6 +43,7 @@ class UsersController < ApplicationController
                  .includes(:sector)
                  .first
     @is_coordinator = @team&.coordinator_id == @user.id
+    @badge_config   = current_event&.badge_config || BadgeConfig.defaults
 
     respond_to do |format|
       format.html { render layout: "credential" }

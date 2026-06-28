@@ -1,6 +1,7 @@
 class Event < ApplicationRecord
   has_many :sectors, dependent: :destroy
   has_many :teams, through: :sectors
+  has_one :badge_config, dependent: :destroy
 
   enum :status, { draft: "draft", active: "active", closed: "closed" }, validate: true
 

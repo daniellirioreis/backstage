@@ -32,6 +32,8 @@ class TeamsController < ApplicationController
       members << { user: u, is_coordinator: false }
     end
 
+    @badge_config = @team.sector.event.badge_config || BadgeConfig.defaults
+
     @members = members.map do |m|
       user = m[:user]
       avatar_b64 = if user.avatar.attached?

@@ -18,7 +18,9 @@ Rails.application.routes.draw do
     collection { get :search }
     member { get :credential }
   end
-  resources :events
+  resources :events do
+    resource :badge_config, only: [:edit, :update]
+  end
   resources :teams do
     member { get :credentials }
   end
