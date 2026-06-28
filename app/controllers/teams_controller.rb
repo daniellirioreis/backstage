@@ -12,27 +12,41 @@ class TeamsController < ApplicationController
 
   def show
     authorize @team
+    @memberships = TeamMembership.where(team_id: @team.id)
+                                 .includes(user: [:role, { avatar_attachment: :blob }])
+                                 .joins(:user)
+                                 .order("users.name")
   end
 
   def credentials
     authorize @team, :show?
 
     # Recarrega explicitamente todos os membros do banco
+    event      = @team.sector.event
     coordinator = User.includes(avatar_attachment: :blob).find_by(id: @team.coordinator_id)
-    collaborators = User.includes(avatar_attachment: :blob)
-                        .joins(:team_memberships)
-                        .where(team_memberships: { team_id: @team.id })
-                        .order(:name)
+    memberships = TeamMembership.where(team_id: @team.id)
+                                .includes(user: { avatar_attachment: :blob })
+                                .order("users.name")
 
     members = []
-    members << { user: coordinator, is_coordinator: true } if coordinator
-
-    collaborators.each do |u|
-      next if u.id == @team.coordinator_id
-      members << { user: u, is_coordinator: false }
+    if coordinator
+      members << {
+        user: coordinator,
+        is_coordinator: true,
+        credential_code: @team.coordinator_full_credential_code
+      }
     end
 
-    @badge_config = @team.sector.event.badge_config || BadgeConfig.defaults
+    memberships.each do |tm|
+      next if tm.user_id == @team.coordinator_id
+      members << {
+        user: tm.user,
+        is_coordinator: false,
+        credential_code: tm.full_credential_code
+      }
+    end
+
+    @badge_config = event.badge_config || BadgeConfig.defaults
 
     @members = members.map do |m|
       user = m[:user]

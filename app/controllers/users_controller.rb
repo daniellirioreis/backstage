@@ -45,6 +45,13 @@ class UsersController < ApplicationController
     @is_coordinator = @team&.coordinator_id == @user.id
     @badge_config   = current_event&.badge_config || BadgeConfig.defaults
 
+    if @is_coordinator
+      @credential_code = @team&.coordinator_full_credential_code
+    else
+      membership = TeamMembership.find_by(team: @team, user: @user)
+      @credential_code = membership&.full_credential_code
+    end
+
     respond_to do |format|
       format.html { render layout: "credential" }
       format.pdf do
@@ -58,7 +65,7 @@ class UsersController < ApplicationController
                template: "users/credential_pdf",
                layout: "credential_pdf",
                formats: [:html],
-               page_width: "100mm", page_height: "150mm",
+               page_width: "80mm", page_height: "123.5mm",
                margin: { top: 0, bottom: 0, left: 0, right: 0 },
                disposition: "attachment"
       end

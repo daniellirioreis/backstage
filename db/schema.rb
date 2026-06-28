@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2024_01_01_000013) do
+ActiveRecord::Schema[7.1].define(version: 2024_01_01_000018) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -52,6 +52,13 @@ ActiveRecord::Schema[7.1].define(version: 2024_01_01_000013) do
     t.integer "event_date_font_size", default: 6
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "event_name_color", default: "#4ade80"
+    t.string "header_footer_color", default: "#0d0d0d"
+    t.string "body_color", default: "#f5f5f4"
+    t.string "name_color", default: "#18181b"
+    t.string "team_info_color", default: "#52525b"
+    t.integer "credential_code_font_size", default: 8
+    t.string "credential_code_color", default: "#a1a1aa"
     t.index ["event_id"], name: "index_badge_configs_on_event_id"
   end
 
@@ -63,6 +70,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_01_01_000013) do
     t.string "status", default: "draft", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "code"
   end
 
   create_table "permissions", force: :cascade do |t|
@@ -109,6 +117,8 @@ ActiveRecord::Schema[7.1].define(version: 2024_01_01_000013) do
     t.bigint "user_id", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "credential_code"
+    t.index ["credential_code"], name: "index_team_memberships_on_credential_code", unique: true
     t.index ["team_id", "user_id"], name: "index_team_memberships_on_team_id_and_user_id", unique: true
     t.index ["team_id"], name: "index_team_memberships_on_team_id"
     t.index ["user_id"], name: "index_team_memberships_on_user_id"
@@ -120,6 +130,8 @@ ActiveRecord::Schema[7.1].define(version: 2024_01_01_000013) do
     t.datetime "updated_at", null: false
     t.bigint "sector_id", null: false
     t.bigint "coordinator_id"
+    t.string "coordinator_credential_code"
+    t.index ["coordinator_credential_code"], name: "index_teams_on_coordinator_credential_code", unique: true
     t.index ["coordinator_id"], name: "index_teams_on_coordinator_id"
     t.index ["sector_id"], name: "index_teams_on_sector_id"
   end

@@ -5,6 +5,14 @@ class Team < ApplicationRecord
   has_many :team_memberships, dependent: :destroy
   has_many :users, through: :team_memberships
 
+  before_save :generate_coordinator_credential_code, if: :coordinator_id_changed?
+
+  def coordinator_full_credential_code
+    return nil unless coordinator_id.present?
+    event_code = sector&.event&.code.presence || "EVT"
+    "#{event_code.upcase}-#{coordinator_credential_code}"
+  end
+
   validates :name, presence: true
   validate :must_have_at_least_one_user
   validate :coordinator_unique_per_event
@@ -36,6 +44,14 @@ class Team < ApplicationRecord
     if duplicates.any?
       names = User.where(id: duplicates).pluck(:name).join(", ")
       errors.add(:base, "#{names} já #{duplicates.size == 1 ? 'está' : 'estão'} em outra equipe neste evento")
+    end
+  end
+
+  def generate_coordinator_credential_code
+    return if coordinator_id.blank?
+    loop do
+      self.coordinator_credential_code = SecureRandom.alphanumeric(8).upcase
+      break unless Team.exists?(coordinator_credential_code: coordinator_credential_code)
     end
   end
 

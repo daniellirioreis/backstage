@@ -21,63 +21,108 @@
 
       <div class="content-card" style="padding: 1.5rem; display: flex; flex-direction: column; gap: 1.25rem;">
 
-        <h2 style="font-size: 0.9rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: #71717a; margin: 0;">Foto</h2>
+        <%# ── Cabeçalho ── %>
+        <h2 class="cfg-section">Cabeçalho</h2>
 
         <div class="badge-config-field">
-          <%= f.label :photo_size, "Tamanho da foto" %>
-          <div style="display: flex; align-items: center; gap: 0.75rem;">
-            <%= f.range_field :photo_size, min: 40, max: 160, step: 1,
-                data: { target: "photo_size", preview: "badge-photo-size" } %>
+          <label>Fundo do cabeçalho e rodapé</label>
+          <div class="cfg-color-row">
+            <%= f.color_field :header_footer_color, value: @badge_config.header_footer_color, id: "input-header-footer-color", class: "cfg-color-input" %>
+            <span id="val-header-footer-color" class="cfg-hex"><%= @badge_config.header_footer_color %></span>
+          </div>
+        </div>
+
+        <div class="badge-config-field">
+          <label>Nome do evento</label>
+          <div class="cfg-row">
+            <div class="cfg-slider-wrap">
+              <%= f.range_field :event_name_font_size, min: 6, max: 20, step: 1 %>
+              <span class="range-val" id="val-event-name-size"><%= @badge_config.event_name_font_size %>px</span>
+            </div>
+            <div class="cfg-color-row">
+              <%= f.color_field :event_name_color, value: @badge_config.event_name_color, id: "input-event-name-color", class: "cfg-color-input" %>
+              <span id="val-event-name-color" class="cfg-hex"><%= @badge_config.event_name_color %></span>
+            </div>
+          </div>
+        </div>
+
+        <div class="badge-config-field">
+          <label>Data / local <span class="cfg-hint">(mesma cor do nome do evento)</span></label>
+          <div class="cfg-slider-wrap">
+            <%= f.range_field :event_date_font_size, min: 4, max: 14, step: 1 %>
+            <span class="range-val" id="val-event-date-size"><%= @badge_config.event_date_font_size %>px</span>
+          </div>
+        </div>
+
+        <%# ── Corpo ── %>
+        <h2 class="cfg-section" style="border-top: 1px solid #f4f4f5; padding-top: 1rem;">Corpo</h2>
+
+        <div class="badge-config-field">
+          <label>Fundo da credencial</label>
+          <div class="cfg-color-row">
+            <%= f.color_field :body_color, value: @badge_config.body_color, id: "input-body-color", class: "cfg-color-input" %>
+            <span id="val-body-color" class="cfg-hex"><%= @badge_config.body_color %></span>
+          </div>
+        </div>
+
+        <div class="badge-config-field">
+          <label>Foto</label>
+          <div class="cfg-slider-wrap">
+            <%= f.range_field :photo_size, min: 40, max: 160, step: 1, data: { target: "photo_size" } %>
             <span class="range-val" id="val-photo-size"><%= @badge_config.photo_size %>px</span>
           </div>
         </div>
 
-        <h2 style="font-size: 0.9rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: #71717a; margin: 0; border-top: 1px solid #f4f4f5; padding-top: 1rem;">Tipografia</h2>
-
         <div class="badge-config-field">
-          <%= f.label :name_font_size, "Fonte do nome" %>
-          <div style="display: flex; align-items: center; gap: 0.75rem;">
-            <%= f.range_field :name_font_size, min: 10, max: 36, step: 1,
-                data: { preview: "badge-name-size" } %>
-            <span class="range-val" id="val-name-size"><%= @badge_config.name_font_size %>px</span>
+          <label>Nome do colaborador</label>
+          <div class="cfg-row">
+            <div class="cfg-slider-wrap">
+              <%= f.range_field :name_font_size, min: 10, max: 36, step: 1 %>
+              <span class="range-val" id="val-name-size"><%= @badge_config.name_font_size %>px</span>
+            </div>
+            <div class="cfg-color-row">
+              <%= f.color_field :name_color, value: @badge_config.name_color, id: "input-name-color", class: "cfg-color-input" %>
+              <span id="val-name-color" class="cfg-hex"><%= @badge_config.name_color %></span>
+            </div>
           </div>
         </div>
 
         <div class="badge-config-field">
-          <%= f.label :role_chip_font_size, "Fonte do cargo (badge)" %>
-          <div style="display: flex; align-items: center; gap: 0.75rem;">
-            <%= f.range_field :role_chip_font_size, min: 6, max: 20, step: 1,
-                data: { preview: "badge-chip-size" } %>
+          <label>Cargo</label>
+          <div class="cfg-slider-wrap">
+            <%= f.range_field :role_chip_font_size, min: 6, max: 20, step: 1 %>
             <span class="range-val" id="val-chip-size"><%= @badge_config.role_chip_font_size %>px</span>
           </div>
         </div>
 
         <div class="badge-config-field">
-          <%= f.label :team_info_font_size, "Fonte da equipe / setor" %>
-          <div style="display: flex; align-items: center; gap: 0.75rem;">
-            <%= f.range_field :team_info_font_size, min: 6, max: 20, step: 1,
-                data: { preview: "badge-team-size" } %>
-            <span class="range-val" id="val-team-size"><%= @badge_config.team_info_font_size %>px</span>
+          <label>Equipe / setor</label>
+          <div class="cfg-row">
+            <div class="cfg-slider-wrap">
+              <%= f.range_field :team_info_font_size, min: 6, max: 20, step: 1 %>
+              <span class="range-val" id="val-team-size"><%= @badge_config.team_info_font_size %>px</span>
+            </div>
+            <div class="cfg-color-row">
+              <%= f.color_field :team_info_color, value: @badge_config.team_info_color, id: "input-team-info-color", class: "cfg-color-input" %>
+              <span id="val-team-info-color" class="cfg-hex"><%= @badge_config.team_info_color %></span>
+            </div>
           </div>
         </div>
 
-        <h2 style="font-size: 0.9rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: #71717a; margin: 0; border-top: 1px solid #f4f4f5; padding-top: 1rem;">Cabeçalho</h2>
+        <%# ── Rodapé ── %>
+        <h2 class="cfg-section" style="border-top: 1px solid #f4f4f5; padding-top: 1rem;">Código da Credencial</h2>
 
         <div class="badge-config-field">
-          <%= f.label :event_name_font_size, "Fonte do nome do evento" %>
-          <div style="display: flex; align-items: center; gap: 0.75rem;">
-            <%= f.range_field :event_name_font_size, min: 6, max: 20, step: 1,
-                data: { preview: "badge-event-name-size" } %>
-            <span class="range-val" id="val-event-name-size"><%= @badge_config.event_name_font_size %>px</span>
-          </div>
-        </div>
-
-        <div class="badge-config-field">
-          <%= f.label :event_date_font_size, "Fonte da data / local" %>
-          <div style="display: flex; align-items: center; gap: 0.75rem;">
-            <%= f.range_field :event_date_font_size, min: 4, max: 14, step: 1,
-                data: { preview: "badge-event-date-size" } %>
-            <span class="range-val" id="val-event-date-size"><%= @badge_config.event_date_font_size %>px</span>
+          <label>Fonte do código</label>
+          <div class="cfg-row">
+            <div class="cfg-slider-wrap">
+              <%= f.range_field :credential_code_font_size, min: 5, max: 14, step: 1 %>
+              <span class="range-val" id="val-credential-code-size"><%= @badge_config.credential_code_font_size %>px</span>
+            </div>
+            <div class="cfg-color-row">
+              <%= f.color_field :credential_code_color, value: @badge_config.credential_code_color, id: "input-credential-code-color", class: "cfg-color-input" %>
+              <span id="val-credential-code-color" class="cfg-hex"><%= @badge_config.credential_code_color %></span>
+            </div>
           </div>
         </div>
 
@@ -99,49 +144,49 @@
     <div style="background: #e4e4e7; border-radius: 12px; padding: 2rem; display: flex; justify-content: center;">
       <div id="badge-preview" style="width: 240px; font-family: Arial, Helvetica, sans-serif; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.3);">
 
-        <div style="height: 4px; background: #4ade80;"></div>
+        <div id="prev-accent-bar" style="height: 4px; background: <%= @badge_config.event_name_color %>;"></div>
 
-        <div style="background: #0d0d0d; padding: 8px 11px 7px; display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid #4ade80;">
+        <div id="prev-header" style="background: <%= @badge_config.header_footer_color %>; padding: 8px 11px 7px; display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid <%= @badge_config.event_name_color %>;">
           <span style="font-size: 7px; font-weight: 800; letter-spacing: 0.2em; text-transform: uppercase; color: #f4f4f5;">Backstage</span>
           <div>
-            <div id="prev-event-name" style="font-size: <%= @badge_config.event_name_font_size %>px; font-weight: 700; color: #4ade80; text-transform: uppercase; text-align: right;"><%= @event.name %></div>
-            <div id="prev-event-date" style="font-size: <%= @badge_config.event_date_font_size %>px; color: #52525b; margin-top: 1px; text-align: right;"><%= l(@event.start_date, format: :short) %> a <%= l(@event.end_date, format: :short) %><%= @event.location.present? ? " · #{@event.location}" : "" %></div>
+            <div id="prev-event-name" style="font-size: <%= @badge_config.event_name_font_size %>px; font-weight: 700; color: <%= @badge_config.event_name_color %>; text-transform: uppercase; text-align: right;"><%= @event.name %></div>
+            <div id="prev-event-date" style="font-size: <%= @badge_config.event_date_font_size %>px; color: <%= @badge_config.event_name_color %>; margin-top: 1px; text-align: right;"><%= l(@event.start_date, format: :short) %> a <%= l(@event.end_date, format: :short) %><%= @event.location.present? ? " · #{@event.location}" : "" %></div>
           </div>
         </div>
 
-        <div style="background: #f5f5f4; padding: 14px 12px 10px; text-align: center;">
+        <div id="prev-body" style="background: <%= @badge_config.body_color %>; padding: 14px 12px 10px; text-align: center;">
           <div id="prev-photo" style="width: <%= @badge_config.photo_size %>px; height: <%= @badge_config.photo_size %>px; border-radius: 50%; border: 2px solid #0d0d0d; background: #e4e4e7; margin: 0 auto 8px; display: flex; align-items: center; justify-content: center;">
             <span id="prev-initials" style="font-size: <%= (@badge_config.photo_size * 0.3).round %>px; font-weight: 700; color: #a1a1aa;">CB</span>
           </div>
-          <div id="prev-name" style="font-size: <%= @badge_config.name_font_size %>px; font-weight: 800; color: #18181b; margin: 0 0 6px;">Cleide Barbosa</div>
+          <div id="prev-name" style="font-size: <%= @badge_config.name_font_size %>px; font-weight: 800; color: <%= @badge_config.name_color %>; margin: 0 0 6px;">Cleide Barbosa</div>
           <div id="prev-chip" style="display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: <%= @badge_config.role_chip_font_size %>px; font-weight: 700; text-transform: uppercase; color: #fff; background: #15803d; margin-bottom: 6px;">Coordenador</div>
-          <div id="prev-team" style="font-size: <%= @badge_config.team_info_font_size %>px; color: #52525b; margin-bottom: 2px;"><strong>Bilheteria</strong> · Equipe Bilheteria</div>
+          <div id="prev-team" style="font-size: <%= @badge_config.team_info_font_size %>px; color: <%= @badge_config.team_info_color %>; margin-bottom: 2px;"><strong>Bilheteria</strong> · Equipe Bilheteria</div>
           <div style="font-size: 8px; color: #a1a1aa; font-family: monospace;">068.314.286-06</div>
           <div style="height: 1px; background: #e4e4e7; margin: 8px 0 0;"></div>
         </div>
 
-        <div style="background: #0d0d0d; padding: 8px 11px; display: flex; align-items: center; justify-content: space-between;">
-          <svg width="26" height="26" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
-            <rect width="48" height="48" fill="#0d0d0d"/>
-            <rect x="4" y="4" width="16" height="16" fill="none" stroke="#4ade80" stroke-width="2"/>
-            <rect x="7" y="7" width="10" height="10" fill="#4ade80"/>
-            <rect x="28" y="4" width="16" height="16" fill="none" stroke="#4ade80" stroke-width="2"/>
-            <rect x="31" y="7" width="10" height="10" fill="#4ade80"/>
-            <rect x="4" y="28" width="16" height="16" fill="none" stroke="#4ade80" stroke-width="2"/>
-            <rect x="7" y="31" width="10" height="10" fill="#4ade80"/>
-            <rect x="28" y="28" width="4" height="4" fill="#4ade80"/>
-            <rect x="34" y="28" width="4" height="4" fill="#4ade80"/>
-            <rect x="40" y="28" width="4" height="4" fill="#4ade80"/>
-            <rect x="28" y="34" width="4" height="4" fill="#4ade80"/>
-            <rect x="34" y="34" width="4" height="4" fill="#4ade80"/>
-            <rect x="28" y="40" width="4" height="4" fill="#4ade80"/>
-            <rect x="40" y="40" width="4" height="4" fill="#4ade80"/>
-            <rect x="34" y="40" width="4" height="4" fill="#4ade80"/>
-            <rect x="40" y="34" width="4" height="4" fill="#4ade80"/>
+        <div id="prev-footer" style="background: <%= @badge_config.header_footer_color %>; padding: 8px 11px; display: flex; align-items: center; justify-content: space-between;">
+          <svg id="prev-qr" width="26" height="26" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+            <rect width="48" height="48" fill="<%= @badge_config.header_footer_color %>"/>
+            <rect x="4" y="4" width="16" height="16" fill="none" stroke="<%= @badge_config.event_name_color %>" stroke-width="2"/>
+            <rect x="7" y="7" width="10" height="10" fill="<%= @badge_config.event_name_color %>"/>
+            <rect x="28" y="4" width="16" height="16" fill="none" stroke="<%= @badge_config.event_name_color %>" stroke-width="2"/>
+            <rect x="31" y="7" width="10" height="10" fill="<%= @badge_config.event_name_color %>"/>
+            <rect x="4" y="28" width="16" height="16" fill="none" stroke="<%= @badge_config.event_name_color %>" stroke-width="2"/>
+            <rect x="7" y="31" width="10" height="10" fill="<%= @badge_config.event_name_color %>"/>
+            <rect x="28" y="28" width="4" height="4" fill="<%= @badge_config.event_name_color %>"/>
+            <rect x="34" y="28" width="4" height="4" fill="<%= @badge_config.event_name_color %>"/>
+            <rect x="40" y="28" width="4" height="4" fill="<%= @badge_config.event_name_color %>"/>
+            <rect x="28" y="34" width="4" height="4" fill="<%= @badge_config.event_name_color %>"/>
+            <rect x="34" y="34" width="4" height="4" fill="<%= @badge_config.event_name_color %>"/>
+            <rect x="28" y="40" width="4" height="4" fill="<%= @badge_config.event_name_color %>"/>
+            <rect x="40" y="40" width="4" height="4" fill="<%= @badge_config.event_name_color %>"/>
+            <rect x="34" y="40" width="4" height="4" fill="<%= @badge_config.event_name_color %>"/>
+            <rect x="40" y="34" width="4" height="4" fill="<%= @badge_config.event_name_color %>"/>
           </svg>
           <div style="text-align: right;">
-            <span style="font-size: 6px; color: #3f3f46; text-transform: uppercase; letter-spacing: 0.06em; display: block;">ID Credencial</span>
-            <span style="font-size: 8px; color: #a1a1aa; font-family: monospace; display: block;">#BBY0047</span>
+            <span style="font-size: 6px; color: #3f3f46; text-transform: uppercase; letter-spacing: 0.06em; display: block;">Credencial</span>
+            <span id="prev-credential-code" style="font-size: <%= @badge_config.credential_code_font_size %>px; color: <%= @badge_config.credential_code_color %>; font-family: monospace; font-weight: 700; display: block; letter-spacing: 0.04em;">BBY26-A3X9KL2M</span>
             <span style="font-size: 6px; color: #3f3f46; text-transform: uppercase; letter-spacing: 0.06em; display: block; margin-top: 2px;">Acesso</span>
             <span style="font-size: 8px; color: #a1a1aa; font-family: monospace; display: block;">Todos os dias</span>
           </div>
@@ -156,36 +201,123 @@
 <style>
   .badge-config-field { display: flex; flex-direction: column; gap: 0.4rem; }
   .badge-config-field label { font-size: 0.82rem; font-weight: 600; color: #3f3f46; }
-  .range-val { font-size: 0.82rem; font-weight: 600; color: #18181b; min-width: 36px; text-align: right; }
+  .cfg-section { font-size: 0.9rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: #71717a; margin: 0; }
+  .cfg-hint { font-size: 0.72rem; font-weight: 400; color: #a1a1aa; text-transform: none; letter-spacing: 0; }
+  .cfg-row { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
+  .cfg-slider-wrap { display: flex; align-items: center; gap: 0.5rem; flex: 1; min-width: 0; }
+  .cfg-slider-wrap input[type=range] { flex: 1; min-width: 0; }
+  .cfg-color-row { display: flex; align-items: center; gap: 0.5rem; flex-shrink: 0; }
+  .cfg-color-input { width: 36px; height: 30px; border: none; border-radius: 6px; cursor: pointer; padding: 2px; }
+  .cfg-hex { font-size: 0.78rem; font-weight: 600; color: #18181b; font-family: monospace; }
+  .range-val { font-size: 0.82rem; font-weight: 600; color: #18181b; min-width: 34px; text-align: right; flex-shrink: 0; }
 </style>
 
 <script>
-  const mappings = [
-    { inputName: "badge_config[photo_size]",           valId: "val-photo-size",           prevId: "prev-photo",      prop: "photoSize" },
-    { inputName: "badge_config[name_font_size]",       valId: "val-name-size",            prevId: "prev-name",       prop: "nameFontSize" },
-    { inputName: "badge_config[role_chip_font_size]",  valId: "val-chip-size",            prevId: "prev-chip",       prop: "chipFontSize" },
-    { inputName: "badge_config[team_info_font_size]",  valId: "val-team-size",            prevId: "prev-team",       prop: "teamFontSize" },
-    { inputName: "badge_config[event_name_font_size]", valId: "val-event-name-size",      prevId: "prev-event-name", prop: "eventNameFontSize" },
-    { inputName: "badge_config[event_date_font_size]", valId: "val-event-date-size",      prevId: "prev-event-date", prop: "eventDateFontSize" },
-  ];
+  function initBadgePreview() {
+    // Sliders de tamanho
+    const sliders = [
+      { name: "badge_config[photo_size]",                valId: "val-photo-size",           prevId: "prev-photo",           prop: "photoSize"  },
+      { name: "badge_config[event_name_font_size]",      valId: "val-event-name-size",      prevId: "prev-event-name",      prop: "fontSize"   },
+      { name: "badge_config[event_date_font_size]",      valId: "val-event-date-size",      prevId: "prev-event-date",      prop: "fontSize"   },
+      { name: "badge_config[name_font_size]",            valId: "val-name-size",            prevId: "prev-name",            prop: "fontSize"   },
+      { name: "badge_config[role_chip_font_size]",       valId: "val-chip-size",            prevId: "prev-chip",            prop: "fontSize"   },
+      { name: "badge_config[team_info_font_size]",       valId: "val-team-size",            prevId: "prev-team",            prop: "fontSize"   },
+      { name: "badge_config[credential_code_font_size]", valId: "val-credential-code-size", prevId: "prev-credential-code", prop: "fontSize"   },
+    ];
 
-  mappings.forEach(({ inputName, valId, prevId, prop }) => {
-    const input = document.querySelector(`input[name="${inputName}"]`);
-    const valEl = document.getElementById(valId);
-    const prevEl = document.getElementById(prevId);
-    if (!input) return;
+    sliders.forEach(({ name, valId, prevId, prop }) => {
+      const input = document.querySelector(`input[name="${name}"]`);
+      const valEl = document.getElementById(valId);
+      const prevEl = document.getElementById(prevId);
+      if (!input || !valEl || !prevEl) return;
 
-    input.addEventListener("input", () => {
-      const v = parseInt(input.value);
-      valEl.textContent = v + "px";
-
-      if (prop === "photoSize") {
-        prevEl.style.width  = v + "px";
-        prevEl.style.height = v + "px";
-        document.getElementById("prev-initials").style.fontSize = Math.round(v * 0.3) + "px";
-      } else {
-        prevEl.style.fontSize = v + "px";
-      }
+      input.addEventListener("input", () => {
+        const v = parseInt(input.value);
+        valEl.textContent = v + "px";
+        if (prop === "photoSize") {
+          prevEl.style.width  = v + "px";
+          prevEl.style.height = v + "px";
+          const initials = document.getElementById("prev-initials");
+          if (initials) initials.style.fontSize = Math.round(v * 0.3) + "px";
+        } else {
+          prevEl.style.fontSize = v + "px";
+        }
+      });
     });
-  });
+
+    // Color pickers
+    function applyEventNameColor(color) {
+      const valEl = document.getElementById("val-event-name-color");
+      if (valEl) valEl.textContent = color;
+      ["prev-event-name", "prev-event-date"].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.style.color = color;
+      });
+      const bar = document.getElementById("prev-accent-bar");
+      if (bar) bar.style.background = color;
+      const header = document.getElementById("prev-header");
+      if (header) header.style.borderBottom = "2px solid " + color;
+      document.querySelectorAll("#prev-qr rect").forEach((el, i) => {
+        if (i === 0) return; // fundo
+        if (el.getAttribute("fill") !== "none") el.setAttribute("fill", color);
+        if (el.getAttribute("stroke")) el.setAttribute("stroke", color);
+      });
+    }
+
+    function applyHeaderFooterColor(color) {
+      const valEl = document.getElementById("val-header-footer-color");
+      if (valEl) valEl.textContent = color;
+      ["prev-header", "prev-footer"].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.style.background = color;
+      });
+      const qrBg = document.querySelector("#prev-qr rect:first-child");
+      if (qrBg) qrBg.setAttribute("fill", color);
+    }
+
+    function applyBodyColor(color) {
+      const valEl = document.getElementById("val-body-color");
+      if (valEl) valEl.textContent = color;
+      const body = document.getElementById("prev-body");
+      if (body) body.style.background = color;
+    }
+
+    function applyNameColor(color) {
+      const valEl = document.getElementById("val-name-color");
+      if (valEl) valEl.textContent = color;
+      const el = document.getElementById("prev-name");
+      if (el) el.style.color = color;
+    }
+
+    function applyTeamInfoColor(color) {
+      const valEl = document.getElementById("val-team-info-color");
+      if (valEl) valEl.textContent = color;
+      const el = document.getElementById("prev-team");
+      if (el) el.style.color = color;
+    }
+
+    function applyCredentialCodeColor(color) {
+      const valEl = document.getElementById("val-credential-code-color");
+      if (valEl) valEl.textContent = color;
+      const el = document.getElementById("prev-credential-code");
+      if (el) el.style.color = color;
+    }
+
+    const colorMap = {
+      "input-event-name-color":      applyEventNameColor,
+      "input-header-footer-color":   applyHeaderFooterColor,
+      "input-body-color":            applyBodyColor,
+      "input-name-color":            applyNameColor,
+      "input-team-info-color":       applyTeamInfoColor,
+      "input-credential-code-color": applyCredentialCodeColor,
+    };
+
+    Object.entries(colorMap).forEach(([id, fn]) => {
+      const el = document.getElementById(id);
+      if (el) el.addEventListener("input", e => fn(e.target.value));
+    });
+  }
+
+  // Funciona tanto no carregamento normal quanto após navegação Turbo
+  document.addEventListener("turbo:load", initBadgePreview);
 </script>

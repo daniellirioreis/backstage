@@ -6,6 +6,7 @@ class Event < ApplicationRecord
   enum :status, { draft: "draft", active: "active", closed: "closed" }, validate: true
 
   validates :name, presence: true
+  validates :code, format: { with: /\A[A-Z0-9]{2,10}\z/i, message: "deve ter 2 a 10 letras/números" }, allow_blank: true
   validates :start_date, presence: true
   validates :end_date, presence: true
   validate :end_date_after_start_date
