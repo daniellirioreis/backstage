@@ -178,16 +178,15 @@ end %>
             <td>
               <% if @event_functions.any? %>
                 <%= form_with url: set_function_team_path(@team, membership_id: tm.id), method: :patch, local: true, style: "display:inline;" do |f| %>
-                  <select name="event_function_id" onchange="this.form.submit()"
-                          class="form-control form-select"
-                          style="font-size:0.78rem;padding:0.2rem 0.5rem;height:auto;width:auto;min-width:160px;display:inline-block;">
-                    <option value="">— Sem função —</option>
-                    <% @event_functions.each do |ef| %>
-                      <option value="<%= ef.id %>" <%= "selected" if tm.event_function_id == ef.id %>>
-                        <%= ef.name %> · R$<%= format('%.2f', ef.hourly_rate) %>/h
-                      </option>
-                    <% end %>
-                  </select>
+                  <%= select_tag :event_function_id,
+                        options_for_select(
+                          @event_functions.map { |ef| ["#{ef.name} · R$#{format('%.2f', ef.hourly_rate)}/h", ef.id] },
+                          tm.event_function_id
+                        ),
+                        include_blank: "— Sem função —",
+                        onchange: "this.form.submit()",
+                        class: "form-control form-select",
+                        style: "font-size:0.78rem;padding:0.2rem 0.5rem;height:auto;width:auto;min-width:160px;display:inline-block;" %>
                 <% end %>
               <% elsif tm.event_function.present? %>
                 <span style="font-size:0.8rem;color:#16a34a;font-weight:500;"><%= tm.event_function.name %></span>
