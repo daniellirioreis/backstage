@@ -1,11 +1,10 @@
 import { Controller } from "@hotwired/stimulus"
-import TomSelect from "../tom_select_shim"
 
 export default class extends Controller {
   static values = { url: String, existing: Array }
 
   connect() {
-    this.ts = new TomSelect(this.element, {
+    this.ts = new window.TomSelect(this.element, {
       valueField: "id",
       labelField: "name",
       searchField: ["name", "cpf"],

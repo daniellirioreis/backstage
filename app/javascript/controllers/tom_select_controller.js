@@ -1,9 +1,8 @@
 import { Controller } from "@hotwired/stimulus"
-import TomSelect from "../tom_select_shim"
 
 export default class extends Controller {
   connect() {
-    this.tomSelect = new TomSelect(this.element, {
+    this.tomSelect = new window.TomSelect(this.element, {
       placeholder: this.element.dataset.placeholder || "— Selecione —",
       allowEmptyOption: true,
       maxOptions: null,

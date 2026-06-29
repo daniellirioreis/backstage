@@ -1,9 +1,8 @@
 import { Controller } from "@hotwired/stimulus"
-import TomSelect from "../tom_select_shim"
 
 export default class extends Controller {
   connect() {
-    this.ts = new TomSelect(this.element, {
+    this.ts = new window.TomSelect(this.element, {
       placeholder:  "Buscar equipe...",
       searchField:  ["text"],   // busca no texto do option
       sortField:    "text",
