@@ -77,11 +77,11 @@
           <% popover_members = [] %>
           <% if team.coordinator %>
             <% u = team.coordinator %>
-            <% popover_members << { name: u.name, initials: u.name.split.map(&:first).first(2).join.upcase, avatar_url: (url_for(u.avatar) if u.avatar.attached?), coordinator: true, credential: team.coordinator_full_credential_code } %>
+            <% popover_members << { name: u.name, initials: u.name.split.map(&:first).first(2).join.upcase, avatar_url: (url_for(u.avatar) if u.avatar.attached?), coordinator: true, credential: team.coordinator_full_credential_code, function: nil } %>
           <% end %>
           <% memberships.each do |tm| %>
             <% u = tm.user %>
-            <% popover_members << { name: u.name, initials: u.name.split.map(&:first).first(2).join.upcase, avatar_url: (url_for(u.avatar) if u.avatar.attached?), coordinator: false, credential: tm.full_credential_code } %>
+            <% popover_members << { name: u.name, initials: u.name.split.map(&:first).first(2).join.upcase, avatar_url: (url_for(u.avatar) if u.avatar.attached?), coordinator: false, credential: tm.full_credential_code, function: tm.event_function&.name } %>
           <% end %>
 
           <%# Nome + coordenador %>
@@ -236,7 +236,7 @@
 </script>
 
 <%# ─── Popover de membros ────────────────────────────────────────────── %>
-<div id="team-popover" style="display:none; position:fixed; z-index:999; background:#fff; border:1px solid #e4e4e7; border-radius:10px; box-shadow:0 8px 24px rgba(0,0,0,0.12); width:360px; padding:0; overflow:hidden;">
+<div id="team-popover" style="display:none; position:fixed; z-index:999; background:#fff; border:1px solid #e4e4e7; border-radius:10px; box-shadow:0 8px 24px rgba(0,0,0,0.12); width:460px; padding:0; overflow:hidden;">
   <div id="team-popover-header" style="padding:0.65rem 0.9rem; background:#f9fafb; border-bottom:1px solid #e4e4e7;">
     <div style="font-size:0.85rem; font-weight:700; color:#18181b;" id="team-popover-title"></div>
     <a id="team-popover-link" href="#" style="font-size:0.72rem; color:#71717a; text-decoration:none;">
@@ -279,12 +279,15 @@
         var badge = m.coordinator
           ? '<span style="font-size:0.6rem;background:#fef3c7;color:#92400e;border:1px solid #fcd34d;border-radius:3px;padding:0 4px;margin-left:4px;">Coord.</span>'
           : '';
+        var fnBadge = m.function
+          ? '<span style="font-size:0.6rem;color:#7c3aed;font-weight:600;background:#f5f3ff;border:1px solid #ddd6fe;border-radius:3px;padding:0 4px;margin-left:4px;">' + m.function + '</span>'
+          : '';
         var credential = m.credential
           ? '<span style="font-family:monospace;font-size:0.72rem;font-weight:700;background:#f4f4f5;color:#18181b;padding:1px 6px;border-radius:4px;white-space:nowrap;flex-shrink:0;">' + m.credential + '</span>'
           : '<span style="font-size:0.7rem;color:#d4d4d8;">sem código</span>';
         return '<div style="display:flex;align-items:center;gap:0.6rem;padding:0.45rem 0.9rem;">'
           + '<div style="width:30px;height:30px;border-radius:50%;overflow:hidden;background:' + bg + ';display:flex;align-items:center;justify-content:center;font-size:0.55rem;font-weight:700;color:' + color + ';flex-shrink:0;">' + avatar + '</div>'
-          + '<div style="flex:1;min-width:0;font-size:0.8rem;font-weight:500;color:#18181b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + m.name + badge + '</div>'
+          + '<div style="flex:1;min-width:0;font-size:0.8rem;font-weight:500;color:#18181b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + m.name + badge + fnBadge + '</div>'
           + credential
           + '</div>';
       }).join('<div style="height:1px;background:#f4f4f5;margin:0 0.9rem;"></div>');

@@ -119,7 +119,7 @@ class ShiftsController < ApplicationController
       end
     end
 
-    members  = params[:members].to_unsafe_h rescue {}
+    members  = params[:members] || {}
     date     = params[:date]
     end_date = params[:end_date].presence
 
@@ -211,7 +211,7 @@ class ShiftsController < ApplicationController
 
     date     = params[:date]
     end_date = params[:end_date].presence
-    members  = params[:members].to_unsafe_h rescue {}
+    members  = params[:members] || {}
 
     updated  = 0
     created  = 0

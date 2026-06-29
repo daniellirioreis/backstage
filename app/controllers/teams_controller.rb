@@ -20,7 +20,7 @@ class TeamsController < ApplicationController
     scope = policy_scope(Team)
               .joins(:sector)
               .where(sectors: { event_id: current_event.id })
-              .includes(:sector, coordinator: { avatar_attachment: :blob }, team_memberships: { user: { avatar_attachment: :blob } })
+              .includes(:sector, coordinator: { avatar_attachment: :blob }, team_memberships: [:event_function, { user: { avatar_attachment: :blob } }])
               .order("sectors.name, teams.name")
     scope = scope.where(sector_id: params[:sector_id]) if params[:sector_id].present?
     @teams = scope
@@ -83,7 +83,8 @@ class TeamsController < ApplicationController
     event      = @team.sector.event
     coordinator = User.includes(avatar_attachment: :blob).find_by(id: @team.coordinator_id)
     memberships = TeamMembership.where(team_id: @team.id)
-                                .includes(user: { avatar_attachment: :blob })
+                                .includes(:event_function, user: { avatar_attachment: :blob })
+                                .joins(:user)
                                 .order("users.name")
 
     members = []
@@ -100,7 +101,8 @@ class TeamsController < ApplicationController
       members << {
         user: tm.user,
         is_coordinator: false,
-        credential_code: tm.full_credential_code
+        credential_code: tm.full_credential_code,
+        function_name: tm.event_function&.name
       }
     end
 

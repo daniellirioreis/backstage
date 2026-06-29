@@ -68,10 +68,12 @@ class UsersController < ApplicationController
     if @is_coordinator
       @credential_code     = @team&.coordinator_full_credential_code
       @credential_qr_code  = @team&.coordinator_credential_code
+      @function_name       = nil
     else
-      membership           = TeamMembership.find_by(team: @team, user: @user)
+      membership           = TeamMembership.includes(:event_function).find_by(team: @team, user: @user)
       @credential_code     = membership&.full_credential_code
       @credential_qr_code  = membership&.credential_code
+      @function_name       = membership&.event_function&.name
     end
 
     respond_to do |format|
