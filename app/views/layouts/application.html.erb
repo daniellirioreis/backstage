@@ -74,6 +74,12 @@
             <% end %>
           <% end %>
 
+          <% if policy(:report).fechamento? %>
+            <%= link_to reports_fechamento_path, class: "sidebar-link #{controller_path == 'reports/fechamento' ? 'active' : ''}" do %>
+              <i class="bi bi-receipt"></i> Fechamento
+            <% end %>
+          <% end %>
+
           <% if policy(User).index? || current_user.admin? %>
             <div class="sidebar-section">Administração</div>
           <% end %>

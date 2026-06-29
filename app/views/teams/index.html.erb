@@ -115,6 +115,13 @@
                   <i class="bi bi-broadcast" style="font-size: 0.6rem;"></i> <%= team.radio_channel %>
                 </span>
               <% end %>
+              <%# Contagem por função %>
+              <% fn_counts = memberships.group_by { |tm| tm.event_function&.name }.sort_by { |name, _| name.to_s } %>
+              <% fn_counts.each do |fn_name, fms| %>
+                <span style="display:inline-flex;align-items:center;gap:0.2rem;background:#f5f3ff;border:1px solid #ddd6fe;border-radius:4px;padding:1px 6px;font-size:0.67rem;font-weight:600;color:#6d28d9;">
+                  <%= fms.size %> <%= fn_name || "s/ função" %>
+                </span>
+              <% end %>
               <% if @teams_with_shifts.include?(team.id) %>
                 <span onclick="openShiftModal('<%= edit_team_shifts_path(team_id: team.id, modal: 1) %>')"
                       style="display: inline-flex; align-items: center; gap: 0.2rem; background: #f0fdf4; border: 1px solid #86efac; border-radius: 4px; padding: 1px 6px; font-size: 0.68rem; font-weight: 600; color: #15803d; cursor: pointer;">

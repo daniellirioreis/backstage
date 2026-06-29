@@ -58,5 +58,8 @@ Rails.application.routes.draw do
     end
   end
 
+  get "reports/fechamento",       to: "reports/fechamento#index", as: :reports_fechamento
+  get "reports/fechamento/print", to: "reports/fechamento#print", as: :reports_fechamento_print
+
   root "dashboard#index"
 end

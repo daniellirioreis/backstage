@@ -33,6 +33,7 @@ pt-BR:
     print: "Imprimir"
     my_schedule: "Minha Escala"
     scan: "Registrar Check-in (QR)"
+    fechamento: "Relatório de Fechamento"
 
   badge_config:
     configure: "Configurar Credencial"
@@ -109,6 +110,9 @@ pt-BR:
       attendance:
         one: "Check-in Realizado"
         other: "Check-ins Realizados"
+      report:
+        one: "Relatório"
+        other: "Relatórios"
 
     attributes:
       user:

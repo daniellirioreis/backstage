@@ -1,0 +1,146 @@
+<div class="page-header">
+  <div>
+    <h1>Relatório de Fechamento</h1>
+    <div style="font-size:0.78rem;color:#71717a;margin-top:0.15rem;">
+      <i class="bi bi-calendar-event" style="font-size:0.7rem;"></i> <%= @event.name %>
+    </div>
+  </div>
+  <div style="display:flex;gap:0.5rem;">
+    <%= link_to reports_fechamento_print_path, class: "btn-secondary" do %>
+      <i class="bi bi-printer"></i> Imprimir PDF
+    <% end %>
+  </div>
+</div>
+
+<% if @rows.empty? %>
+  <div class="content-card" style="text-align:center;padding:3rem;color:#a1a1aa;">
+    <i class="bi bi-clipboard-x" style="font-size:2rem;display:block;margin-bottom:0.75rem;"></i>
+    <p style="margin:0;font-size:0.9rem;">Nenhum turno cadastrado para este evento.</p>
+  </div>
+<% else %>
+
+<%# Resumo por função %>
+<% by_function = @rows.group_by { |r| r[:function_name] }.sort_by { |fn, _| fn } %>
+<div class="content-card" style="margin-bottom:1rem;padding:1rem 1.25rem;">
+  <div style="font-size:0.75rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#71717a;margin-bottom:0.75rem;">
+    <i class="bi bi-bar-chart-fill"></i> Resumo por Função
+  </div>
+  <div style="display:flex;flex-wrap:wrap;gap:0.75rem;">
+    <% by_function.each do |fn_name, fn_rows| %>
+      <% fn_hours = fn_rows.sum { |r| r[:total_hours] } %>
+      <% fn_total = fn_rows.sum { |r| r[:total_value] } %>
+      <div style="background:#f9fafb;border:1px solid #e4e4e7;border-radius:8px;padding:0.6rem 1rem;min-width:160px;">
+        <div style="font-size:0.72rem;font-weight:700;color:#7c3aed;margin-bottom:0.25rem;"><%= fn_name %></div>
+        <div style="font-size:0.78rem;color:#3f3f46;"><%= fn_rows.size %> pessoa<%= fn_rows.size == 1 ? "" : "s" %> · <%= "%.1f" % fn_hours %>h</div>
+        <div style="font-size:0.85rem;font-weight:700;color:#18181b;margin-top:0.1rem;">R$ <%= "%.2f" % fn_total %></div>
+      </div>
+    <% end %>
+    <div style="background:#18181b;border-radius:8px;padding:0.6rem 1rem;min-width:160px;">
+      <div style="font-size:0.72rem;font-weight:700;color:#a1a1aa;margin-bottom:0.25rem;">TOTAL GERAL</div>
+      <div style="font-size:0.78rem;color:#d4d4d8;"><%= @rows.size %> pessoas · <%= "%.1f" % @rows.sum { |r| r[:total_hours] } %>h</div>
+      <div style="font-size:0.85rem;font-weight:700;color:#fff;margin-top:0.1rem;">R$ <%= "%.2f" % @grand_total %></div>
+    </div>
+  </div>
+</div>
+
+<%# Tabela detalhada %>
+<div class="content-card" style="padding:0;overflow:hidden;">
+  <table class="data-table" style="width:100%;">
+    <thead>
+      <tr>
+        <th>Colaborador</th>
+        <th>Função</th>
+        <th style="text-align:center;">Turnos</th>
+        <th style="text-align:right;">Total Horas</th>
+        <th style="text-align:right;">Valor/h</th>
+        <th style="text-align:right;">Total</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @rows.each do |row| %>
+        <tr>
+          <%# Colaborador %>
+          <td>
+            <div style="font-size:0.85rem;font-weight:600;color:#18181b;"><%= row[:user].name %></div>
+            <div style="font-size:0.72rem;color:#a1a1aa;"><%= row[:user].cpf.gsub(/(\d{3})(\d{3})(\d{3})(\d{2})/, '\1.\2.\3-\4') %></div>
+          </td>
+
+          <%# Função %>
+          <td>
+            <span style="font-size:0.75rem;font-weight:600;color:#7c3aed;background:#f5f3ff;border:1px solid #ddd6fe;border-radius:4px;padding:2px 7px;">
+              <%= row[:function_name] %>
+            </span>
+          </td>
+
+          <%# Turnos (datas) %>
+          <td style="text-align:center;">
+            <div style="display:flex;flex-direction:column;gap:2px;align-items:center;">
+              <% row[:shifts].sort_by(&:date).each do |s| %>
+                <span style="font-size:0.7rem;color:#52525b;white-space:nowrap;">
+                  <%= l(s.date, format: :short) %>
+                  <% if s.end_date && s.end_date != s.date %>→ <%= l(s.end_date, format: :short) %><% end %>
+                  <span style="color:#a1a1aa;">
+                    <%= s.start_time.strftime("%H:%M") %>–<%= s.end_time.strftime("%H:%M") %>
+                  </span>
+                </span>
+              <% end %>
+            </div>
+          </td>
+
+          <%# Total horas %>
+          <td style="text-align:right;">
+            <span style="font-size:0.85rem;font-weight:600;color:#18181b;">
+              <%= "%.1f" % row[:total_hours] %>h
+            </span>
+          </td>
+
+          <%# Valor/h %>
+          <td style="text-align:right;">
+            <span style="font-size:0.82rem;color:#52525b;">
+              <% if row[:hourly_rate] > 0 %>
+                R$ <%= "%.2f" % row[:hourly_rate] %>
+              <% else %>
+                <span style="color:#d4d4d8;">—</span>
+              <% end %>
+            </span>
+          </td>
+
+          <%# Total %>
+          <td style="text-align:right;">
+            <% if row[:total_value] > 0 %>
+              <span style="font-size:0.9rem;font-weight:700;color:#15803d;">
+                R$ <%= "%.2f" % row[:total_value] %>
+              </span>
+            <% else %>
+              <span style="color:#d4d4d8;font-size:0.82rem;">—</span>
+            <% end %>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+    <tfoot>
+      <tr style="background:#f9fafb;border-top:2px solid #18181b;">
+        <td colspan="3" style="font-size:0.82rem;font-weight:700;color:#18181b;padding:0.75rem 1rem;">
+          Total — <%= @rows.size %> colaboradore<%= @rows.size == 1 ? "" : "s" %>
+        </td>
+        <td style="text-align:right;font-size:0.85rem;font-weight:700;color:#18181b;">
+          <%= "%.1f" % @rows.sum { |r| r[:total_hours] } %>h
+        </td>
+        <td></td>
+        <td style="text-align:right;font-size:0.95rem;font-weight:700;color:#15803d;">
+          R$ <%= "%.2f" % @grand_total %>
+        </td>
+      </tr>
+    </tfoot>
+  </table>
+</div>
+
+<% end %>
+
+<style>
+@media print {
+  .page-header button, .sidebar, nav { display: none !important; }
+  body { background: #fff !important; }
+  .content-card { box-shadow: none !important; border: 1px solid #e4e4e7 !important; }
+}
+</style>
