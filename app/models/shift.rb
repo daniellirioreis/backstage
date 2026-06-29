@@ -11,7 +11,6 @@ class Shift < ApplicationRecord
   validate :end_time_not_equal_start_time
   validate :date_within_event
   validate :no_schedule_conflict
-  validate :team_without_existing_shifts, on: :create
 
   # Retorna todas as datas cobertas pelo turno (suporte a turnos multi-dia)
   def dates
@@ -60,14 +59,6 @@ class Shift < ApplicationRecord
     end
   end
 
-  # Impede criar escala para equipe que já possui
-  def team_without_existing_shifts
-    return if team_id.blank?
-    if Shift.where(team_id: team_id).exists?
-      errors.add(:base, "Esta equipe já possui escala definida")
-    end
-  end
-
   # Detecta conflito de horário para o mesmo colaborador
   # Considera turnos multi-dia, turnos overnight e turnos de outros eventos
   def no_schedule_conflict
@@ -80,6 +71,7 @@ class Shift < ApplicationRecord
     candidates = Shift.joins(sector: :event)
                       .where(user_id: user_id)
                       .where.not(id: id)
+                      .then { |q| team_id.present? ? q.where.not(team_id: team_id) : q }
                       .where(
                         "shifts.date <= ? AND COALESCE(shifts.end_date, shifts.date) >= ?",
                         my_end_date, date

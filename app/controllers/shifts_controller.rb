@@ -97,7 +97,7 @@ class ShiftsController < ApplicationController
       @selected_team    = Team.includes(sector: :event).find_by(id: params[:team_id])
       @team_has_shifts  = Shift.where(team_id: @selected_team.id).exists?
       @team_members     = TeamMembership.where(team_id: @selected_team.id)
-                                        .includes(user: { avatar_attachment: :blob })
+                                        .includes(:event_function, user: { avatar_attachment: :blob })
                                         .joins(:user)
                                         .order("users.name")
     end
@@ -109,6 +109,14 @@ class ShiftsController < ApplicationController
 
     unless team
       redirect_to new_shift_path, alert: "Selecione uma equipe." and return
+    end
+
+    if Shift.where(team_id: team.id).exists?
+      if params[:modal] == "1"
+        render html: "<script>alert('\"#{team.name}\" já possui escala definida.'); window.parent.closeShiftModal(); window.parent.location.reload();</script>".html_safe, layout: false and return
+      else
+        redirect_to new_shift_path(team_id: team.id), alert: "\"#{team.name}\" já possui escala definida." and return
+      end
     end
 
     members  = params[:members].to_unsafe_h rescue {}
@@ -160,12 +168,17 @@ class ShiftsController < ApplicationController
       @shift_skipped     = skipped
       render :new, status: :unprocessable_entity
     elsif created == 0
-      redirect_to new_shift_path(date: date, end_date: end_date, team_id: team.id),
+      redirect_to new_shift_path(date: date, end_date: end_date, team_id: team.id, modal: params[:modal]),
         alert: "Nenhum turno foi salvo.#{skipped.any? ? " Sem horário: #{skipped.join(', ')}." : ''}"
     else
-      msg = "#{created} turno(s) criado(s) com sucesso."
+      msg = "Escala de \"#{team.name}\" salva — #{created} turno(s) criado(s) com sucesso."
       msg += " Sem horário (ignorados): #{skipped.join(', ')}." if skipped.any?
-      redirect_to shifts_path, notice: msg
+      if params[:modal] == "1"
+        msg_enc = CGI.escape(msg)
+        render html: "<script>window.parent.closeShiftModal(); window.parent.location.href='#{teams_path}?notice=#{msg_enc}';</script>".html_safe, layout: false
+      else
+        redirect_to shifts_path, notice: msg
+      end
     end
   end
 
@@ -259,7 +272,12 @@ class ShiftsController < ApplicationController
       parts << "#{updated} atualizado(s)" if updated > 0
       parts << "#{created} criado(s)"     if created > 0
       parts << "Sem horário (ignorados): #{skipped.join(', ')}." if skipped.any?
-      redirect_to shifts_path, notice: "Escala salva — #{parts.join(', ')}."
+      if params[:modal] == "1"
+        msg_enc = CGI.escape("Escala de \"#{@selected_team.name}\" salva — #{parts.join(', ')}.")
+        render html: "<script>window.parent.closeShiftModal(); window.parent.location.href='#{teams_path}?notice=#{msg_enc}';</script>".html_safe, layout: false
+      else
+        redirect_to shifts_path, notice: "Escala de \"#{@selected_team.name}\" salva — #{parts.join(', ')}."
+      end
     end
   end
 

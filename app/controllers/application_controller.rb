@@ -4,6 +4,8 @@ class ApplicationController < ActionController::Base
   before_action :authenticate_user!
   before_action :require_current_event!
 
+  layout :resolve_layout
+
   helper_method :current_event
 
   rescue_from Pundit::NotAuthorizedError, with: :user_not_authorized
@@ -30,6 +32,10 @@ class ApplicationController < ActionController::Base
     unless current_event
       redirect_to select_event_path, alert: "Selecione um evento para continuar."
     end
+  end
+
+  def resolve_layout
+    params[:modal] == "1" ? "modal" : "application"
   end
 
   def skip_event_check?

@@ -25,8 +25,9 @@
   </div>
 <% end %>
 
-<%= form_with url: update_team_shifts_path, method: :patch, local: true do |f| %>
+<%= form_with url: update_team_shifts_path, method: :patch, local: true, data: { turbo: false } do |f| %>
   <input type="hidden" name="team_id" value="<%= @selected_team.id %>">
+  <%= hidden_field_tag :modal, params[:modal] if params[:modal].present? %>
 
   <%# Período %>
   <div class="content-card" style="margin-bottom: 1rem;">
@@ -163,6 +164,10 @@
     <button type="submit" class="btn-primary">
       <i class="bi bi-calendar-check"></i> Salvar Alterações
     </button>
-    <%= link_to "Cancelar", shifts_path, class: "btn-secondary" %>
+    <% if params[:modal] == "1" %>
+      <button type="button" class="btn-secondary" onclick="window.parent.closeShiftModal()">Cancelar</button>
+    <% else %>
+      <%= link_to "Cancelar", shifts_path, class: "btn-secondary" %>
+    <% end %>
   </div>
 <% end %>

@@ -38,21 +38,21 @@
             <% end %>
           <% end %>
 
-          <% if policy(Team).index? %>
-            <%= link_to teams_path, class: "sidebar-link #{controller_name == 'teams' ? 'active' : ''}" do %>
-              <i class="bi bi-people"></i> <%= Team.model_name.human(count: 2) %>
-            <% end %>
-          <% end %>
-
           <% if policy(Sector).index? %>
             <%= link_to sectors_path, class: "sidebar-link #{controller_name == 'sectors' ? 'active' : ''}" do %>
               <i class="bi bi-diagram-3"></i> <%= Sector.model_name.human(count: 2) %>
             <% end %>
           <% end %>
 
+          <% if policy(Team).index? %>
+            <%= link_to teams_path, class: "sidebar-link #{controller_name == 'teams' ? 'active' : ''}" do %>
+              <i class="bi bi-people"></i> <%= Team.model_name.human(count: 2) %>
+            <% end %>
+          <% end %>
+
           <% if policy(Shift).index? %>
-            <%= link_to shifts_path, class: "sidebar-link #{controller_name == 'shifts' ? 'active' : ''}" do %>
-              <i class="bi bi-clock"></i> <%= Shift.model_name.human(count: 2) %>
+            <%= link_to timeline_shifts_path, class: "sidebar-link #{controller_name == 'shifts' && action_name == 'timeline' ? 'active' : ''}" do %>
+              <i class="bi bi-calendar-range"></i> Timeline
             <% end %>
           <% end %>
 
