@@ -61,9 +61,9 @@
       <div id="memberships-rows">
         <% team.team_memberships.each do |tm| %>
           <%= f.fields_for :team_memberships, tm do |ff| %>
+            <% current_fn = @event_functions.find { |ef| ef.id == ff.object.event_function_id } %>
             <div class="membership-row" style="display:grid;grid-template-columns:1fr 180px 36px;gap:0.5rem;align-items:center;padding:0.5rem 0.75rem;border-bottom:1px solid #f4f4f5;">
               <% if tm.persisted? && tm.user %>
-                <%# Membro existente: mostra nome + hidden user_id %>
                 <div style="display:flex;align-items:center;gap:0.5rem;">
                   <div style="width:26px;height:26px;border-radius:50%;background:#f4f4f5;border:1px solid #e4e4e7;display:flex;align-items:center;justify-content:center;font-size:0.5rem;font-weight:700;color:#52525b;flex-shrink:0;overflow:hidden;">
                     <% if tm.user.avatar.attached? %>
@@ -76,7 +76,6 @@
                   <%= ff.hidden_field :user_id %>
                 </div>
               <% else %>
-                <%# Nova linha: autocomplete de usuário %>
                 <div style="position:relative;" data-controller="autocomplete-single"
                      data-autocomplete-single-url-value="<%= search_users_path %>"
                      data-autocomplete-single-param-value="team[team_memberships_attributes][NEW_IDX][user_id]"
@@ -94,16 +93,18 @@
                 </div>
               <% end %>
 
-              <%# Função %>
+              <%# Função — autocomplete client-side %>
               <% if @event_functions&.any? %>
-                <%= ff.select :event_function_id,
-                    options_for_select(
-                      @event_functions.map { |ef| ["#{ef.name} · R$#{format('%.2f', ef.hourly_rate)}/h", ef.id] },
-                      ff.object.event_function_id
-                    ),
-                    { include_blank: "— Função —" },
-                    class: "form-control form-select",
-                    style: "font-size:0.78rem;padding:0.25rem 0.4rem;height:auto;" %>
+                <div style="position:relative;" class="fn-ac-wrapper">
+                  <input type="text"
+                         class="form-control fn-ac-input"
+                         placeholder="Buscar função..."
+                         autocomplete="off"
+                         value="<%= current_fn ? "#{current_fn.name} · R$#{format('%.2f', current_fn.hourly_rate)}/h" : "" %>"
+                         style="font-size:0.82rem;">
+                  <div class="fn-ac-dropdown" style="display:none;position:absolute;z-index:200;width:100%;background:#fff;border:1px solid #e4e4e7;border-radius:6px;box-shadow:0 4px 12px rgba(0,0,0,0.08);max-height:180px;overflow-y:auto;top:100%;left:0;margin-top:2px;"></div>
+                  <%= ff.hidden_field :event_function_id, class: "fn-ac-hidden" %>
+                </div>
               <% else %>
                 <span style="font-size:0.72rem;color:#a1a1aa;">sem funções</span>
                 <%= ff.hidden_field :event_function_id %>
@@ -143,15 +144,18 @@
           <input type="hidden" class="member-user-id-input">
         </div>
         <% if @event_functions&.any? %>
-          <select class="form-control form-select member-function-select" style="font-size:0.78rem;padding:0.25rem 0.4rem;height:auto;">
-            <option value="">— Função —</option>
-            <% @event_functions.each do |ef| %>
-              <option value="<%= ef.id %>"><%= ef.name %> · R$<%= format('%.2f', ef.hourly_rate) %>/h</option>
-            <% end %>
-          </select>
+          <div style="position:relative;" class="fn-ac-wrapper">
+            <input type="text"
+                   class="form-control fn-ac-input"
+                   placeholder="Buscar função..."
+                   autocomplete="off"
+                   style="font-size:0.82rem;">
+            <div class="fn-ac-dropdown" style="display:none;position:absolute;z-index:200;width:100%;background:#fff;border:1px solid #e4e4e7;border-radius:6px;box-shadow:0 4px 12px rgba(0,0,0,0.08);max-height:180px;overflow-y:auto;top:100%;left:0;margin-top:2px;"></div>
+            <input type="hidden" class="fn-ac-hidden">
+          </div>
         <% else %>
           <span style="font-size:0.72rem;color:#a1a1aa;">sem funções</span>
-          <input type="hidden" class="member-function-select" value="">
+          <input type="hidden" class="fn-ac-hidden" value="">
         <% end %>
         <div style="display:flex;justify-content:center;">
           <button type="button" onclick="this.closest('.membership-row').remove()"
@@ -175,7 +179,69 @@
 
 <script>
 (function() {
-  var newIdx = Date.now();
+  // Lista de funções disponíveis (client-side, não precisa de request)
+  var FN_LIST = <%= raw(@event_functions.map { |ef| { id: ef.id, label: "#{ef.name} · R$#{format('%.2f', ef.hourly_rate)}/h" } }.to_json) %>;
+
+  // ── Autocomplete de função ─────────────────────────────────────────────────
+  function initFnAutocomplete(wrapper, hiddenInput) {
+    var input    = wrapper.querySelector(".fn-ac-input");
+    var dropdown = wrapper.querySelector(".fn-ac-dropdown");
+    if (!input || !dropdown) return;
+
+    function renderList(items) {
+      if (!items.length) {
+        dropdown.innerHTML = '<div style="padding:0.5rem 0.75rem;font-size:0.82rem;color:#a1a1aa;">Nenhuma função encontrada</div>';
+      } else {
+        dropdown.innerHTML = items.map(function(fn) {
+          return '<div class="fn-option" data-id="' + fn.id + '" data-label="' + fn.label + '" ' +
+            'style="padding:0.45rem 0.75rem;cursor:pointer;font-size:0.82rem;color:#18181b;" ' +
+            'onmouseover="this.style.background=\'#f4f4f5\'" onmouseout="this.style.background=\'\'">' +
+            fn.label + '</div>';
+        }).join('');
+      }
+      dropdown.style.display = 'block';
+
+      dropdown.querySelectorAll('.fn-option').forEach(function(opt) {
+        opt.addEventListener('mousedown', function(e) {
+          e.preventDefault();
+          input.value        = this.dataset.label;
+          hiddenInput.value  = this.dataset.id;
+          dropdown.style.display = 'none';
+        });
+      });
+    }
+
+    input.addEventListener('focus', function() {
+      renderList(FN_LIST);
+    });
+
+    input.addEventListener('input', function() {
+      var q = this.value.trim().toLowerCase();
+      var filtered = q.length === 0
+        ? FN_LIST
+        : FN_LIST.filter(function(fn) { return fn.label.toLowerCase().includes(q); });
+      renderList(filtered);
+      if (!q) hiddenInput.value = '';
+    });
+
+    input.addEventListener('blur', function() {
+      setTimeout(function() { dropdown.style.display = 'none'; }, 150);
+    });
+
+    // Limpa hidden se o texto for apagado manualmente
+    input.addEventListener('change', function() {
+      if (!this.value.trim()) hiddenInput.value = '';
+    });
+  }
+
+  // Inicializa autocomplete de função em todas as linhas existentes
+  document.querySelectorAll('.fn-ac-wrapper').forEach(function(wrapper) {
+    var hidden = wrapper.querySelector('.fn-ac-hidden');
+    initFnAutocomplete(wrapper, hidden);
+  });
+
+  // ── Autocomplete de colaborador ────────────────────────────────────────────
+  var newIdx    = Date.now();
   var searchUrl = "<%= search_users_path %>";
 
   window.addMemberRow = function() {
@@ -183,26 +249,26 @@
     var row = tpl.querySelector(".membership-row");
     var idx = newIdx++;
 
-    // nomear os inputs com o índice correto
     var searchInput   = row.querySelector(".member-search-input");
     var userIdInput   = row.querySelector(".member-user-id-input");
-    var functionInput = row.querySelector(".member-function-select");
-    var dropdown      = row.querySelector(".member-dropdown");
+    var fnWrapper     = row.querySelector(".fn-ac-wrapper");
+    var fnHidden      = row.querySelector(".fn-ac-hidden");
+    var memberDropdown = row.querySelector(".member-dropdown");
 
-    userIdInput.name   = "team[team_memberships_attributes][" + idx + "][user_id]";
-    if (functionInput) functionInput.name = "team[team_memberships_attributes][" + idx + "][event_function_id]";
+    userIdInput.name = "team[team_memberships_attributes][" + idx + "][user_id]";
+    if (fnHidden) fnHidden.name = "team[team_memberships_attributes][" + idx + "][event_function_id]";
 
-    // autocomplete simples no campo de busca
+    // Autocomplete de colaborador
     var timer;
     searchInput.addEventListener("input", function() {
       clearTimeout(timer);
       var q = this.value.trim();
-      if (q.length < 2) { dropdown.style.display = "none"; return; }
+      if (q.length < 2) { memberDropdown.style.display = "none"; return; }
       timer = setTimeout(function() {
         fetch(searchUrl + "?q=" + encodeURIComponent(q))
           .then(function(r) { return r.json(); })
           .then(function(users) {
-            dropdown.innerHTML = users.length
+            memberDropdown.innerHTML = users.length
               ? users.map(function(u) {
                   return '<div class="member-option" data-id="' + u.id + '" data-name="' + u.name + '" ' +
                     'style="padding:0.5rem 0.75rem;cursor:pointer;font-size:0.82rem;color:#18181b;" ' +
@@ -210,13 +276,13 @@
                     u.name + ' <span style="color:#a1a1aa;font-size:0.72rem;">' + (u.cpf || '') + '</span></div>';
                 }).join("")
               : '<div style="padding:0.5rem 0.75rem;font-size:0.82rem;color:#a1a1aa;">Nenhum resultado</div>';
-            dropdown.style.display = "block";
-            dropdown.querySelectorAll(".member-option").forEach(function(opt) {
+            memberDropdown.style.display = "block";
+            memberDropdown.querySelectorAll(".member-option").forEach(function(opt) {
               opt.addEventListener("mousedown", function(e) {
                 e.preventDefault();
                 searchInput.value  = this.dataset.name;
                 userIdInput.value  = this.dataset.id;
-                dropdown.style.display = "none";
+                memberDropdown.style.display = "none";
               });
             });
           });
@@ -224,8 +290,11 @@
     });
 
     searchInput.addEventListener("blur", function() {
-      setTimeout(function() { dropdown.style.display = "none"; }, 150);
+      setTimeout(function() { memberDropdown.style.display = "none"; }, 150);
     });
+
+    // Autocomplete de função na nova linha
+    if (fnWrapper && fnHidden) initFnAutocomplete(fnWrapper, fnHidden);
 
     document.getElementById("memberships-rows").appendChild(row);
     searchInput.focus();
@@ -235,8 +304,8 @@
     var row = btn.closest(".membership-row");
     var cb  = row.querySelector(".destroy-cb");
     cb.checked = !cb.checked;
-    row.style.opacity  = cb.checked ? "0.4" : "1";
-    btn.innerHTML      = cb.checked ? '<i class="bi bi-arrow-counterclockwise"></i>' : '<i class="bi bi-x"></i>';
+    row.style.opacity = cb.checked ? "0.4" : "1";
+    btn.innerHTML     = cb.checked ? '<i class="bi bi-arrow-counterclockwise"></i>' : '<i class="bi bi-x"></i>';
   };
 })();
 </script>
