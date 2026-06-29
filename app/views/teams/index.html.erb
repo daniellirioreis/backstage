@@ -122,19 +122,6 @@
             <% end %>
           </div>
 
-          <%# Badge escala %>
-          <div style="flex-shrink: 0; width: 100px; text-align: center;">
-            <% if @teams_with_shifts.include?(team.id) %>
-              <span style="display: inline-flex; align-items: center; gap: 0.2rem; background: #dcfce7; border: 1px solid #86efac; border-radius: 5px; padding: 2px 8px; font-size: 0.65rem; font-weight: 600; color: #15803d;">
-                <i class="bi bi-calendar-check"></i> Escala
-              </span>
-            <% else %>
-              <span style="display: inline-flex; align-items: center; gap: 0.2rem; background: #f4f4f5; border: 1px solid #e4e4e7; border-radius: 5px; padding: 2px 8px; font-size: 0.65rem; font-weight: 500; color: #a1a1aa;">
-                <i class="bi bi-calendar-x"></i> Sem escala
-              </span>
-            <% end %>
-          </div>
-
           <%# Ações %>
           <div style="display: flex; gap: 0.35rem; flex-shrink: 0;">
             <% if policy(team).show? %>
