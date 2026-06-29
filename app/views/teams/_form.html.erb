@@ -100,7 +100,7 @@
                          class="form-control fn-ac-input"
                          placeholder="Buscar função..."
                          autocomplete="off"
-                         value="<%= current_fn ? "#{current_fn.name} · R$#{format('%.2f', current_fn.hourly_rate)}/h" : "" %>"
+                         value=""
                          style="font-size:0.82rem;">
                   <div class="fn-ac-dropdown" style="display:none;position:absolute;z-index:200;width:100%;background:#fff;border:1px solid #e4e4e7;border-radius:6px;box-shadow:0 4px 12px rgba(0,0,0,0.08);max-height:180px;overflow-y:auto;top:100%;left:0;margin-top:2px;"></div>
                   <%= ff.hidden_field :event_function_id, class: "fn-ac-hidden" %>
@@ -270,10 +270,15 @@
           .then(function(users) {
             memberDropdown.innerHTML = users.length
               ? users.map(function(u) {
+                  var avatar = u.avatar_url
+                    ? '<img src="' + u.avatar_url + '" style="width:28px;height:28px;border-radius:50%;object-fit:cover;flex-shrink:0;">'
+                    : '<div style="width:28px;height:28px;border-radius:50%;background:#f4f4f5;border:1px solid #e4e4e7;display:flex;align-items:center;justify-content:center;font-size:0.55rem;font-weight:700;color:#52525b;flex-shrink:0;">' + (u.initials || '') + '</div>';
                   return '<div class="member-option" data-id="' + u.id + '" data-name="' + u.name + '" ' +
-                    'style="padding:0.5rem 0.75rem;cursor:pointer;font-size:0.82rem;color:#18181b;" ' +
+                    'style="display:flex;align-items:center;gap:0.6rem;padding:0.45rem 0.75rem;cursor:pointer;" ' +
                     'onmouseover="this.style.background=\'#f4f4f5\'" onmouseout="this.style.background=\'\'">' +
-                    u.name + ' <span style="color:#a1a1aa;font-size:0.72rem;">' + (u.cpf || '') + '</span></div>';
+                    avatar +
+                    '<div><div style="font-size:0.82rem;font-weight:500;color:#18181b;">' + u.name + '</div>' +
+                    '<div style="font-size:0.72rem;color:#a1a1aa;font-family:monospace;">' + (u.cpf || '') + '</div></div></div>';
                 }).join("")
               : '<div style="padding:0.5rem 0.75rem;font-size:0.82rem;color:#a1a1aa;">Nenhum resultado</div>';
             memberDropdown.style.display = "block";
