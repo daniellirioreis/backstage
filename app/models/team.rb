@@ -25,7 +25,7 @@ class Team < ApplicationRecord
 
   def coordinator_not_in_collaborators
     return unless coordinator_id.present?
-    if users.map(&:id).include?(coordinator_id)
+    if active_membership_user_ids.include?(coordinator_id)
       errors.add(:coordinator_id, "não pode ser também um colaborador da equipe")
     end
   end
@@ -38,11 +38,16 @@ class Team < ApplicationRecord
                                         .where.not(team_id: id)
                                         .pluck(:user_id)
 
-    duplicates = users.map(&:id) & other_team_user_ids
+    duplicates = active_membership_user_ids & other_team_user_ids
     if duplicates.any?
       names = User.where(id: duplicates).pluck(:name).join(", ")
       errors.add(:base, "#{names} já #{duplicates.size == 1 ? 'está' : 'estão'} em outra equipe neste evento")
     end
+  end
+
+  # Retorna IDs dos membros que NÃO estão marcados para remoção
+  def active_membership_user_ids
+    team_memberships.reject(&:marked_for_destruction?).map(&:user_id)
   end
 
   def generate_coordinator_credential_code
