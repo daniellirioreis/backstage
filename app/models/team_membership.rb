@@ -1,6 +1,7 @@
 class TeamMembership < ApplicationRecord
   belongs_to :team
   belongs_to :user
+  belongs_to :event_function, optional: true
 
   before_create :generate_credential_code
 

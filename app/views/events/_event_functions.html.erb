@@ -1,0 +1,126 @@
+<%# Partial: funções e valores por hora do evento %>
+<%# Requer: @event já salvo (tem id) %>
+
+<div id="funcoes" style="margin-bottom: 2rem;">
+  <div class="content-card" style="padding: 1.25rem; max-width: 700px;">
+    <h2 style="font-size: 0.95rem; font-weight: 700; color: #18181b; margin: 0 0 1rem;">
+      <i class="bi bi-briefcase"></i> Funções e Valores por Hora
+    </h2>
+
+    <%# Tabela de funções existentes %>
+    <% if @event.event_functions.any? %>
+      <table class="data-table" style="margin-bottom: 1.25rem;">
+        <thead>
+          <tr>
+            <th>Função</th>
+            <th>Valor/hora</th>
+            <th style="width: 80px;"></th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @event.event_functions.order(:name).each do |ef| %>
+            <tr>
+              <td style="font-weight: 500;"><%= ef.name %></td>
+              <td style="color: #16a34a; font-weight: 600;">R$ <%= format('%.2f', ef.hourly_rate) %>/h</td>
+              <td>
+                <% if policy(ef).destroy? %>
+                  <div style="display: flex; gap: 0.35rem; justify-content: flex-end;">
+                    <button onclick="openEditFunction(<%= ef.id %>, '<%= j ef.name %>', '<%= ef.hourly_rate %>')"
+                            class="btn-secondary" style="padding: 0.2rem 0.5rem; font-size: 0.75rem;">
+                      <i class="bi bi-pencil"></i>
+                    </button>
+                    <%= button_to event_event_function_path(@event, ef), method: :delete,
+                        form: { data: { turbo_confirm: "Remover a função \"#{ef.name}\"?" } },
+                        class: "btn-danger", style: "padding: 0.2rem 0.5rem; font-size: 0.75rem;" do %>
+                      <i class="bi bi-trash"></i>
+                    <% end %>
+                  </div>
+                <% end %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    <% else %>
+      <p style="font-size: 0.85rem; color: #a1a1aa; margin: 0 0 1.25rem;">Nenhuma função cadastrada ainda.</p>
+    <% end %>
+
+    <%# Formulário multi-linha %>
+    <% if policy(EventFunction).create? %>
+      <div style="border-top: 1px solid #f4f4f5; padding-top: 1rem;">
+        <div style="font-size: 0.8rem; font-weight: 600; color: #18181b; margin-bottom: 0.75rem;">
+          <i class="bi bi-plus-circle"></i> Adicionar Funções
+        </div>
+        <%= form_with url: event_event_functions_path(@event), method: :post, local: true, id: "fn-bulk-form" do %>
+          <div id="fn-rows">
+            <div class="fn-row" style="display:flex;gap:0.6rem;align-items:center;margin-bottom:0.5rem;">
+              <input type="text" name="functions[0][name]" class="form-control"
+                     placeholder="Nome da função" style="width:280px;flex-shrink:0;">
+              <div style="position:relative;width:160px;">
+                <span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:#71717a;font-size:0.82rem;pointer-events:none;">R$</span>
+                <input type="number" name="functions[0][hourly_rate]" class="form-control"
+                       placeholder="0,00" step="0.01" min="0" style="padding-left:28px;">
+              </div>
+              <button type="button" onclick="removeFnRow(this)" class="btn-danger"
+                      style="padding:0.3rem 0.55rem;font-size:0.8rem;flex-shrink:0;">
+                <i class="bi bi-x"></i>
+              </button>
+            </div>
+          </div>
+          <div style="display:flex;gap:0.5rem;margin-top:0.25rem;">
+            <button type="button" onclick="addFnRow()" class="btn-secondary" style="font-size:0.82rem;">
+              <i class="bi bi-plus"></i> Mais uma linha
+            </button>
+            <button type="submit" class="btn-primary" style="font-size:0.82rem;">
+              <i class="bi bi-check-lg"></i> Salvar funções
+            </button>
+          </div>
+        <% end %>
+      </div>
+    <% end %>
+  </div>
+</div>
+
+<script>
+(function() {
+  var count = 1;
+
+  window.addFnRow = function() {
+    var i = count++;
+    var div = document.createElement("div");
+    div.className = "fn-row";
+    div.style.cssText = "display:flex;gap:0.6rem;align-items:center;margin-bottom:0.5rem;";
+    div.innerHTML =
+      '<input type="text" name="functions[' + i + '][name]" class="form-control" placeholder="Nome da função" style="width:280px;flex-shrink:0;">' +
+      '<div style="position:relative;width:160px;">' +
+        '<span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:#71717a;font-size:0.82rem;pointer-events:none;">R$</span>' +
+        '<input type="number" name="functions[' + i + '][hourly_rate]" class="form-control" placeholder="0,00" step="0.01" min="0" style="padding-left:28px;">' +
+      '</div>' +
+      '<button type="button" onclick="removeFnRow(this)" class="btn-danger" style="padding:0.3rem 0.55rem;font-size:0.8rem;flex-shrink:0;"><i class="bi bi-x"></i></button>';
+    document.getElementById("fn-rows").appendChild(div);
+    div.querySelector("input[type=text]").focus();
+  };
+
+  window.removeFnRow = function(btn) {
+    var rows = document.querySelectorAll(".fn-row");
+    if (rows.length > 1) btn.closest(".fn-row").remove();
+  };
+
+  window.openEditFunction = function(id, name, rate) {
+    var newName = prompt("Nome da função:", name);
+    if (newName === null) return;
+    var newRate = prompt("Valor por hora (R$):", rate);
+    if (newRate === null) return;
+    var form = document.createElement("form");
+    form.method = "post";
+    form.action = "<%= defined?(@event) ? event_event_functions_path(@event) : '' %>/" + id;
+    form.innerHTML =
+      '<input name="_method" value="patch" type="hidden">' +
+      '<input name="authenticity_token" value="<%= form_authenticity_token %>" type="hidden">' +
+      '<input name="event_function[name]" value="' + newName.replace(/"/g, '&quot;') + '" type="hidden">' +
+      '<input name="event_function[hourly_rate]" value="' + newRate + '" type="hidden">';
+    document.body.appendChild(form);
+    form.submit();
+  };
+})();
+</script>

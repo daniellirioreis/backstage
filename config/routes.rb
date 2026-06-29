@@ -22,7 +22,8 @@ Rails.application.routes.draw do
     end
   end
   resources :events do
-    resource :badge_config, only: [:edit, :update]
+    resource  :badge_config, only: [:edit, :update]
+    resources :event_functions, only: [:create, :update, :destroy]
     member { get :print }
   end
   resources :teams do
@@ -32,10 +33,11 @@ Rails.application.routes.draw do
       get  :import_source_members  # AJAX: membros de uma equipe
     end
     member do
-      get  :credentials
-      get  :schedule
-      post :schedule
-      post :import_members
+      get   :credentials
+      get   :schedule
+      post  :schedule
+      post  :import_members
+      patch :set_function
     end
   end
   resources :sectors

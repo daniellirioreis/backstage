@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_06_28_000001) do
+ActiveRecord::Schema[7.1].define(version: 2026_06_28_000002) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -78,6 +78,16 @@ ActiveRecord::Schema[7.1].define(version: 2026_06_28_000001) do
     t.index ["event_id"], name: "index_badge_configs_on_event_id"
   end
 
+  create_table "event_functions", force: :cascade do |t|
+    t.bigint "event_id", null: false
+    t.string "name", null: false
+    t.decimal "hourly_rate", precision: 8, scale: 2, default: "0.0", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["event_id", "name"], name: "index_event_functions_on_event_id_and_name", unique: true
+    t.index ["event_id"], name: "index_event_functions_on_event_id"
+  end
+
   create_table "events", force: :cascade do |t|
     t.string "name", null: false
     t.string "location"
@@ -137,7 +147,9 @@ ActiveRecord::Schema[7.1].define(version: 2026_06_28_000001) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.string "credential_code"
+    t.bigint "event_function_id"
     t.index ["credential_code"], name: "index_team_memberships_on_credential_code", unique: true
+    t.index ["event_function_id"], name: "index_team_memberships_on_event_function_id"
     t.index ["team_id", "user_id"], name: "index_team_memberships_on_team_id_and_user_id", unique: true
     t.index ["team_id"], name: "index_team_memberships_on_team_id"
     t.index ["user_id"], name: "index_team_memberships_on_user_id"
@@ -190,11 +202,13 @@ ActiveRecord::Schema[7.1].define(version: 2026_06_28_000001) do
   add_foreign_key "attendances", "users"
   add_foreign_key "attendances", "users", column: "checked_in_by_id"
   add_foreign_key "badge_configs", "events"
+  add_foreign_key "event_functions", "events"
   add_foreign_key "permissions", "roles"
   add_foreign_key "sectors", "events"
   add_foreign_key "shifts", "sectors"
   add_foreign_key "shifts", "teams"
   add_foreign_key "shifts", "users"
+  add_foreign_key "team_memberships", "event_functions"
   add_foreign_key "team_memberships", "teams"
   add_foreign_key "team_memberships", "users"
   add_foreign_key "teams", "sectors"

@@ -5,6 +5,10 @@ class Team < ApplicationRecord
   has_many :team_memberships, dependent: :destroy
   has_many :users, through: :team_memberships
 
+  accepts_nested_attributes_for :team_memberships,
+                                reject_if: proc { |a| a["user_id"].blank? },
+                                allow_destroy: true
+
   before_save :generate_coordinator_credential_code, if: :coordinator_id_changed?
 
   # coordinator_credential_code já armazena o código completo: "BOO-XXXXXXXX"

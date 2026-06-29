@@ -29,57 +29,211 @@
          data-autocomplete-single-url-value="<%= search_users_path %>"
          data-autocomplete-single-param-value="team[coordinator_id]"
          data-autocomplete-single-existing-value="<%= team.coordinator ? { id: team.coordinator.id, name: team.coordinator.name, cpf: team.coordinator.cpf.gsub(/(\d{3})(\d{3})(\d{3})(\d{2})/, '\1.\2.\3-\4') }.to_json : '{}'.to_json %>"
-         style="position: relative; margin-bottom: 1.25rem;">
-
+         style="position: relative; margin-bottom: 1.5rem;">
       <div data-autocomplete-single-target="selected"></div>
-
       <input type="text"
              data-autocomplete-single-target="input"
              data-action="input->autocomplete-single#search"
              class="form-control"
              placeholder="Buscar por nome ou CPF..."
              autocomplete="off">
-
       <div data-autocomplete-single-target="dropdown" class="autocomplete-dropdown" style="display: none;"></div>
-
       <input type="hidden"
              data-autocomplete-single-target="hidden"
              name="team[coordinator_id]"
              value="<%= team.coordinator_id %>">
     </div>
 
-    <%# Colaboradores — multi autocomplete %>
-    <div class="form-label" style="margin-bottom: 0.4rem;"><%= User.model_name.human(count: 2) %></div>
-
-    <div data-controller="autocomplete"
-         data-autocomplete-url-value="<%= search_users_path %>"
-         data-autocomplete-param-value="team[user_ids][]"
-         data-autocomplete-existing-value="<%= team.users.map { |u| { id: u.id, name: u.name, cpf: u.cpf.gsub(/(\d{3})(\d{3})(\d{3})(\d{2})/, '\1.\2.\3-\4') } }.to_json %>"
-         style="position: relative;">
-
-      <div data-autocomplete-target="tags" class="autocomplete-tags"></div>
-
-      <input type="text"
-             data-autocomplete-target="input"
-             data-action="input->autocomplete#search"
-             class="form-control"
-             placeholder="Buscar por nome ou CPF..."
-             autocomplete="off"
-             style="margin-top: 0.5rem;">
-
-      <div data-autocomplete-target="dropdown" class="autocomplete-dropdown" style="display: none;"></div>
-
-      <p data-autocomplete-target="empty"
-         style="font-size: 0.8rem; color: #a1a1aa; margin: 0.5rem 0 0; display: <%= team.users.any? ? 'none' : 'block' %>;">
-        Nenhum colaborador adicionado.
-      </p>
-
-      <%= hidden_field_tag "team[user_ids][]", "" %>
+    <%# ── Colaboradores (nested fields) ─────────────────────────────────── %>
+    <div class="form-label" style="margin-bottom: 0.75rem;">
+      <i class="bi bi-people"></i> Colaboradores
     </div>
 
-    <div style="display: flex; gap: 0.75rem; border-top: 1px solid #f4f4f5; padding-top: 1.25rem; margin-top: 1.25rem;">
+    <div id="memberships-fields" style="border:1px solid #e4e4e7;border-radius:8px;overflow:hidden;margin-bottom:0.75rem;">
+
+      <%# Cabeçalho %>
+      <div style="display:grid;grid-template-columns:1fr 180px 36px;gap:0.5rem;padding:0.4rem 0.75rem;background:#f9fafb;border-bottom:1px solid #e4e4e7;">
+        <span style="font-size:0.72rem;font-weight:600;color:#71717a;text-transform:uppercase;letter-spacing:0.05em;">Colaborador</span>
+        <span style="font-size:0.72rem;font-weight:600;color:#71717a;text-transform:uppercase;letter-spacing:0.05em;"><%= @event_functions.any? ? "Função" : "" %></span>
+        <span></span>
+      </div>
+
+      <div id="memberships-rows">
+        <% team.team_memberships.each do |tm| %>
+          <%= f.fields_for :team_memberships, tm do |ff| %>
+            <div class="membership-row" style="display:grid;grid-template-columns:1fr 180px 36px;gap:0.5rem;align-items:center;padding:0.5rem 0.75rem;border-bottom:1px solid #f4f4f5;">
+              <% if tm.persisted? && tm.user %>
+                <%# Membro existente: mostra nome + hidden user_id %>
+                <div style="display:flex;align-items:center;gap:0.5rem;">
+                  <div style="width:26px;height:26px;border-radius:50%;background:#f4f4f5;border:1px solid #e4e4e7;display:flex;align-items:center;justify-content:center;font-size:0.5rem;font-weight:700;color:#52525b;flex-shrink:0;overflow:hidden;">
+                    <% if tm.user.avatar.attached? %>
+                      <%= image_tag tm.user.avatar, style: "width:100%;height:100%;object-fit:cover;" %>
+                    <% else %>
+                      <%= tm.user.name.split.map(&:first).first(2).join.upcase %>
+                    <% end %>
+                  </div>
+                  <span style="font-size:0.85rem;font-weight:500;color:#18181b;"><%= tm.user.name %></span>
+                  <%= ff.hidden_field :user_id %>
+                </div>
+              <% else %>
+                <%# Nova linha: autocomplete de usuário %>
+                <div style="position:relative;" data-controller="autocomplete-single"
+                     data-autocomplete-single-url-value="<%= search_users_path %>"
+                     data-autocomplete-single-param-value="team[team_memberships_attributes][NEW_IDX][user_id]"
+                     data-autocomplete-single-existing-value="{}">
+                  <div data-autocomplete-single-target="selected"></div>
+                  <input type="text"
+                         data-autocomplete-single-target="input"
+                         data-action="input->autocomplete-single#search"
+                         class="form-control"
+                         placeholder="Buscar colaborador..."
+                         autocomplete="off"
+                         style="font-size:0.82rem;">
+                  <div data-autocomplete-single-target="dropdown" class="autocomplete-dropdown" style="display:none;"></div>
+                  <%= ff.hidden_field :user_id, data: { "autocomplete-single-target": "hidden" } %>
+                </div>
+              <% end %>
+
+              <%# Função %>
+              <% if @event_functions&.any? %>
+                <%= ff.select :event_function_id,
+                    @event_functions.map { |ef| ["#{ef.name} · R$#{format('%.2f', ef.hourly_rate)}/h", ef.id] },
+                    { include_blank: "— Função —" },
+                    class: "form-control form-select",
+                    style: "font-size:0.78rem;padding:0.25rem 0.4rem;height:auto;" %>
+              <% else %>
+                <span style="font-size:0.72rem;color:#a1a1aa;">sem funções</span>
+                <%= ff.hidden_field :event_function_id %>
+              <% end %>
+
+              <%# Remover %>
+              <div style="display:flex;justify-content:center;">
+                <% if tm.persisted? %>
+                  <%= ff.check_box :_destroy, { style: "display:none;", class: "destroy-cb" }, "1", "0" %>
+                  <button type="button" onclick="toggleDestroy(this)"
+                          class="btn-danger" style="padding:0.25rem 0.45rem;font-size:0.75rem;width:30px;">
+                    <i class="bi bi-x"></i>
+                  </button>
+                <% else %>
+                  <button type="button" onclick="this.closest('.membership-row').remove()"
+                          class="btn-danger" style="padding:0.25rem 0.45rem;font-size:0.75rem;width:30px;">
+                    <i class="bi bi-x"></i>
+                  </button>
+                <% end %>
+              </div>
+            </div>
+          <% end %>
+        <% end %>
+      </div>
+    </div>
+
+    <%# Template para nova linha %>
+    <template id="membership-template">
+      <div class="membership-row" style="display:grid;grid-template-columns:1fr 180px 36px;gap:0.5rem;align-items:center;padding:0.5rem 0.75rem;border-bottom:1px solid #f4f4f5;">
+        <div style="position:relative;">
+          <input type="text"
+                 class="form-control member-search-input"
+                 placeholder="Buscar colaborador..."
+                 autocomplete="off"
+                 style="font-size:0.82rem;">
+          <div class="autocomplete-dropdown member-dropdown" style="display:none;position:absolute;z-index:100;width:100%;background:#fff;border:1px solid #e4e4e7;border-radius:6px;box-shadow:0 4px 12px rgba(0,0,0,0.08);max-height:200px;overflow-y:auto;top:100%;left:0;"></div>
+          <input type="hidden" class="member-user-id-input">
+        </div>
+        <% if @event_functions&.any? %>
+          <select class="form-control form-select member-function-select" style="font-size:0.78rem;padding:0.25rem 0.4rem;height:auto;">
+            <option value="">— Função —</option>
+            <% @event_functions.each do |ef| %>
+              <option value="<%= ef.id %>"><%= ef.name %> · R$<%= format('%.2f', ef.hourly_rate) %>/h</option>
+            <% end %>
+          </select>
+        <% else %>
+          <span style="font-size:0.72rem;color:#a1a1aa;">sem funções</span>
+          <input type="hidden" class="member-function-select" value="">
+        <% end %>
+        <div style="display:flex;justify-content:center;">
+          <button type="button" onclick="this.closest('.membership-row').remove()"
+                  class="btn-danger" style="padding:0.25rem 0.45rem;font-size:0.75rem;width:30px;">
+            <i class="bi bi-x"></i>
+          </button>
+        </div>
+      </div>
+    </template>
+
+    <button type="button" onclick="addMemberRow()" class="btn-secondary" style="font-size:0.82rem;margin-bottom:1.25rem;">
+      <i class="bi bi-person-plus"></i> Adicionar colaborador
+    </button>
+
+    <div style="display: flex; gap: 0.75rem; border-top: 1px solid #f4f4f5; padding-top: 1.25rem;">
       <%= f.submit t("actions.save"), class: "btn-primary" %>
       <%= link_to t("actions.cancel"), teams_path, class: "btn-secondary" %>
     </div>
   <% end %>
 </div>
+
+<script>
+(function() {
+  var newIdx = Date.now();
+  var searchUrl = "<%= search_users_path %>";
+
+  window.addMemberRow = function() {
+    var tpl = document.getElementById("membership-template").content.cloneNode(true);
+    var row = tpl.querySelector(".membership-row");
+    var idx = newIdx++;
+
+    // nomear os inputs com o índice correto
+    var searchInput   = row.querySelector(".member-search-input");
+    var userIdInput   = row.querySelector(".member-user-id-input");
+    var functionInput = row.querySelector(".member-function-select");
+    var dropdown      = row.querySelector(".member-dropdown");
+
+    userIdInput.name   = "team[team_memberships_attributes][" + idx + "][user_id]";
+    if (functionInput) functionInput.name = "team[team_memberships_attributes][" + idx + "][event_function_id]";
+
+    // autocomplete simples no campo de busca
+    var timer;
+    searchInput.addEventListener("input", function() {
+      clearTimeout(timer);
+      var q = this.value.trim();
+      if (q.length < 2) { dropdown.style.display = "none"; return; }
+      timer = setTimeout(function() {
+        fetch(searchUrl + "?q=" + encodeURIComponent(q))
+          .then(function(r) { return r.json(); })
+          .then(function(users) {
+            dropdown.innerHTML = users.length
+              ? users.map(function(u) {
+                  return '<div class="member-option" data-id="' + u.id + '" data-name="' + u.name + '" ' +
+                    'style="padding:0.5rem 0.75rem;cursor:pointer;font-size:0.82rem;color:#18181b;" ' +
+                    'onmouseover="this.style.background=\'#f4f4f5\'" onmouseout="this.style.background=\'\'">' +
+                    u.name + ' <span style="color:#a1a1aa;font-size:0.72rem;">' + (u.cpf || '') + '</span></div>';
+                }).join("")
+              : '<div style="padding:0.5rem 0.75rem;font-size:0.82rem;color:#a1a1aa;">Nenhum resultado</div>';
+            dropdown.style.display = "block";
+            dropdown.querySelectorAll(".member-option").forEach(function(opt) {
+              opt.addEventListener("mousedown", function(e) {
+                e.preventDefault();
+                searchInput.value  = this.dataset.name;
+                userIdInput.value  = this.dataset.id;
+                dropdown.style.display = "none";
+              });
+            });
+          });
+      }, 250);
+    });
+
+    searchInput.addEventListener("blur", function() {
+      setTimeout(function() { dropdown.style.display = "none"; }, 150);
+    });
+
+    document.getElementById("memberships-rows").appendChild(row);
+    searchInput.focus();
+  };
+
+  window.toggleDestroy = function(btn) {
+    var row = btn.closest(".membership-row");
+    var cb  = row.querySelector(".destroy-cb");
+    cb.checked = !cb.checked;
+    row.style.opacity  = cb.checked ? "0.4" : "1";
+    btn.innerHTML      = cb.checked ? '<i class="bi bi-arrow-counterclockwise"></i>' : '<i class="bi bi-x"></i>';
+  };
+})();
+</script>

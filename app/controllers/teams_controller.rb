@@ -1,5 +1,5 @@
 class TeamsController < ApplicationController
-  before_action :set_team, only: %i[show edit update destroy credentials import_members]
+  before_action :set_team, only: %i[show edit update destroy credentials import_members set_function]
 
   def search
     authorize Team, :index?
@@ -30,9 +30,10 @@ class TeamsController < ApplicationController
   def show
     authorize @team
     @memberships = TeamMembership.where(team_id: @team.id)
-                                 .includes(user: [:role, { avatar_attachment: :blob }])
+                                 .includes(:event_function, user: [:role, { avatar_attachment: :blob }])
                                  .joins(:user)
                                  .order("users.name")
+    @event_functions = @team.sector.event.event_functions.order(:name)
     @shifts_by_date = if Shift.column_names.include?("team_id")
       Shift.where(team_id: @team.id).includes(:user).order(:date, :start_time).group_by(&:date)
     else
@@ -134,6 +135,8 @@ class TeamsController < ApplicationController
     @team         = Team.new(sector_id: params[:sector_id])
     @sectors      = Sector.where(event_id: current_event.id).order(:name)
     @all_users    = User.order(:name)
+    @event_functions = current_event.event_functions.order(:name)
+    @team.team_memberships.build
   end
 
   def create
@@ -142,8 +145,9 @@ class TeamsController < ApplicationController
     if @team.save
       redirect_to teams_path, notice: t("notices.created", model: Team.model_name.human)
     else
-      @sectors   = Sector.where(event_id: current_event.id).order(:name)
-      @all_users = User.order(:name)
+      @sectors         = Sector.where(event_id: current_event.id).order(:name)
+      @all_users       = User.order(:name)
+      @event_functions = current_event.event_functions.order(:name)
       render :new, status: :unprocessable_entity
     end
   end
@@ -182,6 +186,14 @@ class TeamsController < ApplicationController
     }
   end
 
+  # PATCH: atribui função a um membro da equipe
+  def set_function
+    authorize @team, :edit?
+    membership = @team.team_memberships.find(params[:membership_id])
+    membership.update!(event_function_id: params[:event_function_id].presence)
+    redirect_to edit_team_path(@team), notice: "Função atualizada."
+  end
+
   # POST: importa membros selecionados
   def import_members
     authorize @team, :edit?
@@ -197,8 +209,10 @@ class TeamsController < ApplicationController
 
   def edit
     authorize @team
-    @sectors   = Sector.where(event_id: current_event.id).order(:name)
-    @all_users = User.order(:name)
+    @sectors         = Sector.where(event_id: current_event.id).order(:name)
+    @all_users       = User.order(:name)
+    @memberships     = @team.team_memberships.includes(:event_function, user: :role).joins(:user).order("users.name")
+    @event_functions = @team.sector.event.event_functions.order(:name)
   end
 
   def update
@@ -206,8 +220,10 @@ class TeamsController < ApplicationController
     if @team.update(team_params)
       redirect_to teams_path, notice: t("notices.updated", model: Team.model_name.human)
     else
-      @sectors   = Sector.where(event_id: current_event.id).order(:name)
-      @all_users = User.order(:name)
+      @sectors         = Sector.where(event_id: current_event.id).order(:name)
+      @all_users       = User.order(:name)
+      @memberships     = @team.team_memberships.includes(:event_function, user: :role).joins(:user).order("users.name")
+      @event_functions = @team.sector.event.event_functions.order(:name)
       render :edit, status: :unprocessable_entity
     end
   end
@@ -232,6 +248,9 @@ class TeamsController < ApplicationController
   end
 
   def team_params
-    params.require(:team).permit(:name, :sector_id, :coordinator_id, :radio_channel, user_ids: [])
+    params.require(:team).permit(
+      :name, :sector_id, :coordinator_id, :radio_channel,
+      team_memberships_attributes: [:id, :user_id, :event_function_id, :_destroy]
+    )
   end
 end

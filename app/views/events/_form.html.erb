@@ -33,9 +33,85 @@
       </div>
     </div>
 
+    <%# ── Funções e valores por hora ──────────────────────────────────────── %>
+    <div style="border-top: 1px solid #f4f4f5; padding-top: 1.25rem; margin-top: 0.5rem;">
+      <div style="font-size: 0.88rem; font-weight: 700; color: #18181b; margin-bottom: 0.75rem;">
+        <i class="bi bi-briefcase"></i> Funções e Valores por Hora
+      </div>
+
+      <div id="fn-fields">
+        <% event.event_functions.each do |ef| %>
+          <% ef_id = ef.object_id %>
+          <%= f.fields_for :event_functions, ef do |ff| %>
+            <div class="fn-row" style="display:flex;gap:0.6rem;align-items:center;margin-bottom:0.5rem;">
+              <%= ff.text_field :name, class: "form-control", placeholder: "Nome da função", style: "width:280px;flex-shrink:0;" %>
+              <div style="position:relative;width:160px;flex-shrink:0;">
+                <span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:#71717a;font-size:0.82rem;pointer-events:none;">R$</span>
+                <%= ff.number_field :hourly_rate, class: "form-control", placeholder: "0,00", step: "0.01", min: 0, style: "padding-left:28px;" %>
+              </div>
+              <label style="display:flex;align-items:center;gap:0.3rem;font-size:0.75rem;color:#ef4444;cursor:pointer;white-space:nowrap;">
+                <%= ff.check_box :_destroy, style: "display:none;", class: "fn-destroy-cb" %>
+                <button type="button" onclick="removeFnRow(this)" class="btn-danger" style="padding:0.3rem 0.55rem;font-size:0.8rem;">
+                  <i class="bi bi-x"></i>
+                </button>
+              </label>
+            </div>
+          <% end %>
+        <% end %>
+      </div>
+
+      <%# Template para novas linhas (oculto) %>
+      <template id="fn-template">
+        <div class="fn-row" style="display:flex;gap:0.6rem;align-items:center;margin-bottom:0.5rem;">
+          <input type="text" name="event[event_functions_attributes][__IDX__][name]"
+                 class="form-control" placeholder="Nome da função" style="width:280px;flex-shrink:0;">
+          <div style="position:relative;width:160px;flex-shrink:0;">
+            <span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:#71717a;font-size:0.82rem;pointer-events:none;">R$</span>
+            <input type="number" name="event[event_functions_attributes][__IDX__][hourly_rate]"
+                   class="form-control" placeholder="0,00" step="0.01" min="0" style="padding-left:28px;">
+          </div>
+          <button type="button" onclick="removeFnRow(this)" class="btn-danger" style="padding:0.3rem 0.55rem;font-size:0.8rem;">
+            <i class="bi bi-x"></i>
+          </button>
+        </div>
+      </template>
+
+      <button type="button" onclick="addFnRow()" class="btn-secondary" style="font-size:0.82rem;margin-top:0.25rem;">
+        <i class="bi bi-plus"></i> Adicionar função
+      </button>
+    </div>
+
     <div style="display: flex; gap: 0.75rem; margin-top: 1.5rem; border-top: 1px solid #f4f4f5; padding-top: 1.25rem;">
       <%= f.submit t("actions.save"), class: "btn-primary" %>
       <%= link_to t("actions.cancel"), events_path, class: "btn-secondary" %>
     </div>
   <% end %>
 </div>
+
+<script>
+(function() {
+  var newIdx = Date.now();
+
+  window.addFnRow = function() {
+    var tpl = document.getElementById("fn-template").content.cloneNode(true);
+    var row = tpl.querySelector(".fn-row");
+    var idx = newIdx++;
+    row.innerHTML = row.innerHTML.replace(/__IDX__/g, idx);
+    document.getElementById("fn-fields").appendChild(row);
+    document.getElementById("fn-fields").lastElementChild.querySelector("input[type=text]").focus();
+  };
+
+  window.removeFnRow = function(btn) {
+    var row = btn.closest(".fn-row");
+    var cb  = row.querySelector(".fn-destroy-cb");
+    if (cb) {
+      cb.checked = true;
+      row.style.opacity = "0.35";
+      row.querySelectorAll("input:not([type=checkbox])").forEach(function(i) { i.disabled = true; });
+      btn.disabled = true;
+    } else {
+      row.remove();
+    }
+  };
+})();
+</script>

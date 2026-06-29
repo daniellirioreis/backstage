@@ -11,6 +11,7 @@ class EventsController < ApplicationController
     @sectors = @event.sectors.includes(teams: [:users, :coordinator]).order(:name)
     all_team_ids = @sectors.flat_map { |s| s.teams.map(&:id) }
     @teams_with_shifts = Shift.where(team_id: all_team_ids).distinct.pluck(:team_id).to_set
+    @event_functions = @event.event_functions.order(:name)
   end
 
   def print
@@ -34,13 +35,14 @@ class EventsController < ApplicationController
   def new
     authorize Event
     @event = Event.new
+    @event.event_functions.build
   end
 
   def create
     authorize Event
     @event = Event.new(event_params)
     if @event.save
-      redirect_to events_path, notice: t("notices.created", model: Event.model_name.human)
+      redirect_to edit_event_path(@event), notice: "Evento criado. Adicione as funções e valores abaixo."
     else
       render :new, status: :unprocessable_entity
     end
@@ -48,6 +50,7 @@ class EventsController < ApplicationController
 
   def edit
     authorize @event
+    @event.event_functions.build if @event.event_functions.empty?
   end
 
   def update
@@ -72,6 +75,9 @@ class EventsController < ApplicationController
   end
 
   def event_params
-    params.require(:event).permit(:name, :code, :location, :start_date, :end_date, :status)
+    params.require(:event).permit(
+      :name, :code, :location, :start_date, :end_date, :status,
+      event_functions_attributes: [:id, :name, :hourly_rate, :_destroy]
+    )
   end
 end

@@ -164,7 +164,7 @@ end %>
         <tr>
           <th style="width: 48px;"></th>
           <th><%= User.human_attribute_name(:name) %></th>
-          <th><%= User.human_attribute_name(:role) %></th>
+          <th>Função no Evento</th>
           <th>Credencial</th>
         </tr>
       </thead>
@@ -175,7 +175,26 @@ end %>
               <%= avatar_tag(tm.user, size: 34, color: "#71717a") %>
             </td>
             <td style="font-weight: 500;"><%= tm.user.name %></td>
-            <td style="color: #71717a; font-size: 0.8rem;"><%= tm.user.role&.name&.humanize || "—" %></td>
+            <td>
+              <% if @event_functions.any? %>
+                <%= form_with url: set_function_team_path(@team, membership_id: tm.id), method: :patch, local: true, style: "display:inline;" do |f| %>
+                  <select name="event_function_id" onchange="this.form.submit()"
+                          class="form-control form-select"
+                          style="font-size:0.78rem;padding:0.2rem 0.5rem;height:auto;width:auto;min-width:160px;display:inline-block;">
+                    <option value="">— Sem função —</option>
+                    <% @event_functions.each do |ef| %>
+                      <option value="<%= ef.id %>" <%= "selected" if tm.event_function_id == ef.id %>>
+                        <%= ef.name %> · R$<%= format('%.2f', ef.hourly_rate) %>/h
+                      </option>
+                    <% end %>
+                  </select>
+                <% end %>
+              <% elsif tm.event_function.present? %>
+                <span style="font-size:0.8rem;color:#16a34a;font-weight:500;"><%= tm.event_function.name %></span>
+              <% else %>
+                <span style="font-size:0.75rem;color:#a1a1aa;">—</span>
+              <% end %>
+            </td>
             <td>
               <% if tm.credential_code.present? %>
                 <span style="font-family: monospace; font-size: 0.82rem; font-weight: 700; background: #f4f4f5; padding: 2px 8px; border-radius: 4px; color: #18181b;">
