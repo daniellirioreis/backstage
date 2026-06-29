@@ -211,6 +211,9 @@
       });
     }
 
+    // Guarda o valor original para restaurar se usuário não selecionar nada
+    var originalValue = hiddenInput.value;
+
     input.addEventListener('focus', function() {
       renderList(FN_LIST);
     });
@@ -221,16 +224,14 @@
         ? FN_LIST
         : FN_LIST.filter(function(fn) { return fn.label.toLowerCase().includes(q); });
       renderList(filtered);
-      if (!q) hiddenInput.value = '';
     });
 
     input.addEventListener('blur', function() {
-      setTimeout(function() { dropdown.style.display = 'none'; }, 150);
-    });
-
-    // Limpa hidden se o texto for apagado manualmente
-    input.addEventListener('change', function() {
-      if (!this.value.trim()) hiddenInput.value = '';
+      setTimeout(function() {
+        dropdown.style.display = 'none';
+        // Se o texto foi apagado sem selecionar, restaura o valor original
+        if (!input.value.trim()) hiddenInput.value = originalValue;
+      }, 160);
     });
   }
 
