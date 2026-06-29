@@ -97,7 +97,10 @@
               <%# Função %>
               <% if @event_functions&.any? %>
                 <%= ff.select :event_function_id,
-                    @event_functions.map { |ef| ["#{ef.name} · R$#{format('%.2f', ef.hourly_rate)}/h", ef.id] },
+                    options_for_select(
+                      @event_functions.map { |ef| ["#{ef.name} · R$#{format('%.2f', ef.hourly_rate)}/h", ef.id] },
+                      ff.object.event_function_id
+                    ),
                     { include_blank: "— Função —" },
                     class: "form-control form-select",
                     style: "font-size:0.78rem;padding:0.25rem 0.4rem;height:auto;" %>
