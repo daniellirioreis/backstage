@@ -33,15 +33,20 @@ class Team < ApplicationRecord
   def collaborators_unique_per_event
     return unless sector.present?
 
-    other_team_user_ids = TeamMembership.joins(team: :sector)
-                                        .where(sectors: { event_id: sector.event_id })
-                                        .where.not(team_id: id)
-                                        .pluck(:user_id)
+    other_memberships = TeamMembership.joins(team: :sector)
+                                      .where(sectors: { event_id: sector.event_id })
+                                      .where.not(team_id: id)
+                                      .includes(:user, team: :sector)
 
-    duplicates = active_membership_user_ids & other_team_user_ids
-    if duplicates.any?
-      names = User.where(id: duplicates).pluck(:name).join(", ")
-      errors.add(:base, "#{names} já #{duplicates.size == 1 ? 'está' : 'estão'} em outra equipe neste evento")
+    conflict_map = other_memberships.each_with_object({}) do |tm, h|
+      h[tm.user_id] = tm
+    end
+
+    duplicates = active_membership_user_ids & conflict_map.keys
+    duplicates.each do |uid|
+      tm   = conflict_map[uid]
+      name = tm.user.name
+      errors.add(:base, "#{name} já está na equipe \"#{tm.team.name}\" (#{tm.team.sector.name})")
     end
   end
 
