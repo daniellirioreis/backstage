@@ -1,5 +1,5 @@
 import { Controller } from "@hotwired/stimulus"
-import TomSelect from "tom-select"
+import TomSelect from "../tom_select_shim"
 
 export default class extends Controller {
   connect() {
