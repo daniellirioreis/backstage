@@ -30,11 +30,21 @@ class ShiftsController < ApplicationController
     @date = params[:date].present? ? Date.parse(params[:date]) : (@event&.start_date || Date.today)
 
     # Turnos do dia filtrados pelo evento atual
+    # Regras:
+    #   1. Turno de dia único (sem end_date, não-overnight): apenas no seu date
+    #   2. Turno overnight de dia único (sem end_date, end_time < start_time): no seu date E no dia seguinte
+    #   3. Turno multi-dia (com end_date): em todos os dias entre date e end_date
+    yesterday = @date - 1
     shifts = policy_scope(Shift)
                .joins(team: :sector)
                .where(sectors: { event_id: @event&.id })
                .includes(:user, { team: [:coordinator, :sector] })
-               .where("shifts.date <= ? AND (shifts.end_date IS NULL OR shifts.end_date >= ?)", @date, @date)
+               .where(
+                 "(shifts.end_date IS NULL AND shifts.date = :date)" \
+                 " OR (shifts.end_date IS NULL AND shifts.end_time < shifts.start_time AND shifts.date = :yesterday)" \
+                 " OR (shifts.end_date IS NOT NULL AND shifts.date <= :date AND shifts.end_date >= :date)",
+                 date: @date, yesterday: yesterday
+               )
                .order(:start_time)
 
     # Agrupa por setor → equipe → lista de turnos
