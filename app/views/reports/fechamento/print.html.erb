@@ -1,7 +1,7 @@
 <%# Cabeçalho %>
 <div style="margin-bottom:12px;border-bottom:2px solid #18181b;padding-bottom:8px;display:flex;justify-content:space-between;align-items:flex-end;">
   <div>
-    <div style="font-size:7px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#71717a;">Backstage</div>
+    <div style="font-size:7px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#71717a;"><%= @event.empresa&.name || "Backstage" %></div>
     <div style="font-size:14px;font-weight:800;color:#18181b;margin-top:1px;">Relatório de Fechamento</div>
     <div style="font-size:9px;color:#52525b;margin-top:2px;">
       <%= @event.name %> ·

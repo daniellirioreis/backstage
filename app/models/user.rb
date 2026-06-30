@@ -7,6 +7,8 @@ class User < ApplicationRecord
   belongs_to :role
   has_many :team_memberships, dependent: :destroy
   has_many :teams, through: :team_memberships
+  has_many :empresa_users, dependent: :destroy
+  has_many :empresas, through: :empresa_users
   has_one_attached :avatar
   attr_accessor :remove_avatar
   before_save { avatar.purge if remove_avatar == "1" }
@@ -17,6 +19,10 @@ class User < ApplicationRecord
 
   def admin?
     role&.name == "admin"
+  end
+
+  def empresa_role_for(empresa)
+    empresa_users.find_by(empresa: empresa)&.role
   end
 
   validates :name, presence: true

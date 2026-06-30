@@ -95,6 +95,12 @@
               <i class="bi bi-shield-check"></i> <%= Role.model_name.human(count: 2) %>
             <% end %>
           <% end %>
+
+          <% if current_user.admin? || current_user.empresas.any? %>
+            <%= link_to empresas_path, class: "sidebar-link #{controller_name == 'empresas' ? 'active' : ''}" do %>
+              <i class="bi bi-building"></i> Empresas
+            <% end %>
+          <% end %>
         </nav>
 
         <div class="sidebar-footer">

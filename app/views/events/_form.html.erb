@@ -2,6 +2,18 @@
   <%= form_with model: event do |f| %>
     <%= render "shared/error_messages", object: event %>
 
+    <%# Empresa (só aparece se houver empresas cadastradas) %>
+    <% empresas = current_user.admin? ? Empresa.order(:name) : current_user.empresas.order(:name) %>
+    <% if empresas.any? %>
+      <div style="margin-bottom:1rem;">
+        <%= f.label :empresa_id, "Empresa", class: "form-label" %>
+        <%= f.select :empresa_id,
+            empresas.map { |e| [e.name, e.id] },
+            { include_blank: "— Sem empresa —" },
+            class: "form-select form-control" %>
+      </div>
+    <% end %>
+
     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
       <div>
         <%= f.label :name, Event.human_attribute_name(:name), class: "form-label" %>

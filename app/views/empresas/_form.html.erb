@@ -1,0 +1,81 @@
+<%= form_with model: empresa, local: true, enctype: "multipart/form-data" do |f| %>
+  <% if empresa.errors.any? %>
+    <div style="background:#fef2f2; border:1px solid #fecaca; border-radius:8px; padding:0.75rem 1rem; margin-bottom:1rem; font-size:0.82rem; color:#dc2626;">
+      <% empresa.errors.full_messages.each do |msg| %>
+        <div><%= msg %></div>
+      <% end %>
+    </div>
+  <% end %>
+
+  <div class="content-card" style="padding:1.25rem; margin-bottom:1rem;">
+    <div style="font-size:0.72rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#71717a; margin-bottom:1rem;">Dados da empresa</div>
+
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
+      <div style="grid-column:1/-1;">
+        <%= f.label :name, "Nome da empresa", style:"display:block;font-size:0.8rem;font-weight:600;color:#3f3f46;margin-bottom:4px;" %>
+        <%= f.text_field :name, style:"width:100%;box-sizing:border-box;padding:0.5rem 0.75rem;border:1px solid #e4e4e7;border-radius:7px;font-size:0.88rem;", placeholder:"Ex: Produtora XYZ" %>
+      </div>
+
+      <div>
+        <%= f.label :cnpj, "CNPJ", style:"display:block;font-size:0.8rem;font-weight:600;color:#3f3f46;margin-bottom:4px;" %>
+        <%= f.text_field :cnpj, style:"width:100%;box-sizing:border-box;padding:0.5rem 0.75rem;border:1px solid #e4e4e7;border-radius:7px;font-size:0.88rem;font-family:monospace;", placeholder:"XX.XXX.XXX/XXXX-XX" %>
+      </div>
+
+      <div>
+        <%= f.label :phone, "Telefone", style:"display:block;font-size:0.8rem;font-weight:600;color:#3f3f46;margin-bottom:4px;" %>
+        <%= f.text_field :phone, style:"width:100%;box-sizing:border-box;padding:0.5rem 0.75rem;border:1px solid #e4e4e7;border-radius:7px;font-size:0.88rem;", placeholder:"(00) 00000-0000" %>
+      </div>
+
+      <div style="grid-column:1/-1;">
+        <%= f.label :email, "E-mail", style:"display:block;font-size:0.8rem;font-weight:600;color:#3f3f46;margin-bottom:4px;" %>
+        <%= f.email_field :email, style:"width:100%;box-sizing:border-box;padding:0.5rem 0.75rem;border:1px solid #e4e4e7;border-radius:7px;font-size:0.88rem;", placeholder:"contato@empresa.com" %>
+      </div>
+
+      <div style="grid-column:1/-1;">
+        <%= f.label :address, "Endereço", style:"display:block;font-size:0.8rem;font-weight:600;color:#3f3f46;margin-bottom:4px;" %>
+        <%= f.text_field :address, style:"width:100%;box-sizing:border-box;padding:0.5rem 0.75rem;border:1px solid #e4e4e7;border-radius:7px;font-size:0.88rem;", placeholder:"Rua, número, bairro" %>
+      </div>
+
+      <div>
+        <%= f.label :city, "Cidade", style:"display:block;font-size:0.8rem;font-weight:600;color:#3f3f46;margin-bottom:4px;" %>
+        <%= f.text_field :city, style:"width:100%;box-sizing:border-box;padding:0.5rem 0.75rem;border:1px solid #e4e4e7;border-radius:7px;font-size:0.88rem;" %>
+      </div>
+
+      <div>
+        <%= f.label :state, "Estado (UF)", style:"display:block;font-size:0.8rem;font-weight:600;color:#3f3f46;margin-bottom:4px;" %>
+        <%= f.text_field :state, maxlength: 2, style:"width:100%;box-sizing:border-box;padding:0.5rem 0.75rem;border:1px solid #e4e4e7;border-radius:7px;font-size:0.88rem;text-transform:uppercase;", placeholder:"MG" %>
+      </div>
+    </div>
+  </div>
+
+  <div class="content-card" style="padding:1.25rem; margin-bottom:1rem;">
+    <div style="font-size:0.72rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#71717a; margin-bottom:1rem;">Identidade visual</div>
+
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem; align-items:start;">
+      <div>
+        <%= f.label :logo, "Logo", style:"display:block;font-size:0.8rem;font-weight:600;color:#3f3f46;margin-bottom:4px;" %>
+        <% if empresa.logo.attached? %>
+          <div style="margin-bottom:8px;">
+            <%= image_tag empresa.logo, style:"max-height:60px;border-radius:6px;border:1px solid #e4e4e7;" %>
+          </div>
+        <% end %>
+        <%= f.file_field :logo, accept:"image/*", style:"font-size:0.82rem;" %>
+      </div>
+
+      <div>
+        <%= f.label :primary_color, "Cor primária", style:"display:block;font-size:0.8rem;font-weight:600;color:#3f3f46;margin-bottom:4px;" %>
+        <div style="display:flex; align-items:center; gap:0.5rem;">
+          <%= f.color_field :primary_color, style:"width:48px;height:38px;border-radius:7px;border:1px solid #e4e4e7;padding:2px;cursor:pointer;" %>
+          <%= f.text_field :primary_color, style:"flex:1;padding:0.5rem 0.75rem;border:1px solid #e4e4e7;border-radius:7px;font-size:0.88rem;font-family:monospace;", placeholder:"#18181b" %>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:flex; gap:0.75rem;">
+    <%= f.submit empresa.persisted? ? "Salvar alterações" : "Criar empresa",
+        style:"background:#18181b;color:#fff;border:none;padding:0.55rem 1.25rem;border-radius:8px;font-size:0.88rem;font-weight:600;cursor:pointer;" %>
+    <%= link_to "Cancelar", empresa.persisted? ? empresa_path(empresa) : empresas_path,
+        style:"padding:0.55rem 1rem;font-size:0.88rem;color:#71717a;text-decoration:none;" %>
+  </div>
+<% end %>

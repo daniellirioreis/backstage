@@ -1,4 +1,6 @@
 class Event < ApplicationRecord
+  belongs_to :empresa, optional: true
+
   has_many :sectors, dependent: :destroy
   has_many :teams, through: :sectors
   has_one :badge_config, dependent: :destroy

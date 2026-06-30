@@ -2,7 +2,12 @@ class EventSessionController < ApplicationController
   skip_before_action :require_current_event!
 
   def select_event
-    @events = Event.order(start_date: :desc)
+    @events = if current_user.admin?
+      Event.order(start_date: :desc)
+    else
+      empresa_ids = current_user.empresa_users.pluck(:empresa_id)
+      Event.where(empresa_id: empresa_ids).order(start_date: :desc)
+    end
     redirect_to new_event_path, notice: "Crie um evento para começar." if @events.empty?
   end
 
