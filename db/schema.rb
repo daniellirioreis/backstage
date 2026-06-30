@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_06_29_000001) do
+ActiveRecord::Schema[7.1].define(version: 2026_06_30_000003) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -80,6 +80,30 @@ ActiveRecord::Schema[7.1].define(version: 2026_06_29_000001) do
     t.index ["event_id"], name: "index_badge_configs_on_event_id"
   end
 
+  create_table "empresa_users", force: :cascade do |t|
+    t.bigint "empresa_id", null: false
+    t.bigint "user_id", null: false
+    t.string "role", default: "operator", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["empresa_id", "user_id"], name: "index_empresa_users_on_empresa_id_and_user_id", unique: true
+    t.index ["empresa_id"], name: "index_empresa_users_on_empresa_id"
+    t.index ["user_id"], name: "index_empresa_users_on_user_id"
+  end
+
+  create_table "empresas", force: :cascade do |t|
+    t.string "name", null: false
+    t.string "cnpj"
+    t.string "phone"
+    t.string "email"
+    t.string "address"
+    t.string "city"
+    t.string "state"
+    t.string "primary_color", default: "#18181b"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
+
   create_table "event_functions", force: :cascade do |t|
     t.bigint "event_id", null: false
     t.string "name", null: false
@@ -99,6 +123,8 @@ ActiveRecord::Schema[7.1].define(version: 2026_06_29_000001) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.string "code"
+    t.bigint "empresa_id"
+    t.index ["empresa_id"], name: "index_events_on_empresa_id"
   end
 
   create_table "permissions", force: :cascade do |t|
@@ -205,7 +231,10 @@ ActiveRecord::Schema[7.1].define(version: 2026_06_29_000001) do
   add_foreign_key "attendances", "users", column: "checked_in_by_id"
   add_foreign_key "attendances", "users", column: "checked_out_by_id"
   add_foreign_key "badge_configs", "events"
+  add_foreign_key "empresa_users", "empresas"
+  add_foreign_key "empresa_users", "users"
   add_foreign_key "event_functions", "events"
+  add_foreign_key "events", "empresas"
   add_foreign_key "permissions", "roles"
   add_foreign_key "sectors", "events"
   add_foreign_key "shifts", "sectors"

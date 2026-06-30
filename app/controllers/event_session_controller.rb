@@ -5,8 +5,8 @@ class EventSessionController < ApplicationController
     @events = if current_user.admin?
       Event.order(start_date: :desc)
     else
-      empresa_ids = current_user.empresa_users.pluck(:empresa_id)
-      Event.where(empresa_id: empresa_ids).order(start_date: :desc)
+      company_ids = current_user.company_users.pluck(:company_id)
+      Event.where(company_id: company_ids).order(start_date: :desc)
     end
     redirect_to new_event_path, notice: "Crie um evento para começar." if @events.empty?
   end

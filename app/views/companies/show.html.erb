@@ -2,28 +2,28 @@
   <div style="display:flex; align-items:center; gap:1rem;">
     <%# Logo %>
     <div style="width:56px; height:56px; border-radius:10px; background:#f4f4f5; border:1px solid #e4e4e7; display:flex; align-items:center; justify-content:center; overflow:hidden; flex-shrink:0;">
-      <% if @empresa.logo.attached? %>
-        <%= image_tag @empresa.logo, style:"width:100%;height:100%;object-fit:contain;" %>
+      <% if @company.logo.attached? %>
+        <%= image_tag @company.logo, style:"width:100%;height:100%;object-fit:contain;" %>
       <% else %>
         <i class="bi bi-building" style="color:#a1a1aa; font-size:1.4rem;"></i>
       <% end %>
     </div>
     <div>
-      <h1 style="margin:0;"><%= @empresa.name %></h1>
-      <% if @empresa.city.present? %>
-        <div style="font-size:0.78rem; color:#71717a; margin-top:2px;"><i class="bi bi-geo-alt"></i> <%= @empresa.city %><%= @empresa.state.present? ? ", #{@empresa.state}" : "" %></div>
+      <h1 style="margin:0;"><%= @company.name %></h1>
+      <% if @company.city.present? %>
+        <div style="font-size:0.78rem; color:#71717a; margin-top:2px;"><i class="bi bi-geo-alt"></i> <%= @company.city %><%= @company.state.present? ? ", #{@company.state}" : "" %></div>
       <% end %>
     </div>
   </div>
   <div style="display:flex; gap:0.5rem;">
-    <% if policy(@empresa).edit? %>
-      <%= link_to edit_empresa_path(@empresa), class:"btn-secondary" do %>
+    <% if policy(@company).edit? %>
+      <%= link_to edit_company_path(@company), class:"btn-secondary" do %>
         <i class="bi bi-pencil"></i> Editar
       <% end %>
     <% end %>
-    <% if policy(@empresa).destroy? %>
-      <%= button_to empresa_path(@empresa), method: :delete,
-          form: { data: { turbo_confirm: "Remover #{@empresa.name}? Esta ação não pode ser desfeita." } },
+    <% if policy(@company).destroy? %>
+      <%= button_to company_path(@company), method: :delete,
+          form: { data: { turbo_confirm: "Remover #{@company.name}? Esta ação não pode ser desfeita." } },
           style:"background:#fef2f2;border:1px solid #fecaca;color:#dc2626;border-radius:8px;padding:0.4rem 0.75rem;font-size:0.82rem;font-weight:600;cursor:pointer;" do %>
         <i class="bi bi-trash"></i>
       <% end %>
@@ -35,13 +35,13 @@
 
   <%# Dados gerais %>
   <div class="content-card" style="padding:1.25rem;">
-    <div style="font-size:0.72rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#71717a; margin-bottom:0.75rem;">Dados da empresa</div>
+    <div style="font-size:0.72rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#71717a; margin-bottom:0.75rem;">Dados da company</div>
     <dl style="margin:0; display:flex; flex-direction:column; gap:0.5rem;">
       <% [
-        ["CNPJ",      @empresa.cnpj,    "bi-file-text"],
-        ["Telefone",  @empresa.phone,   "bi-telephone"],
-        ["E-mail",    @empresa.email,   "bi-envelope"],
-        ["Endereço",  @empresa.address, "bi-geo-alt"],
+        ["CNPJ",      @company.cnpj,    "bi-file-text"],
+        ["Telefone",  @company.phone,   "bi-telephone"],
+        ["E-mail",    @company.email,   "bi-envelope"],
+        ["Endereço",  @company.address, "bi-geo-alt"],
       ].each do |label, value, icon| %>
         <% if value.present? %>
           <div style="display:flex; gap:0.5rem; align-items:flex-start;">
@@ -56,17 +56,17 @@
     </dl>
 
     <div style="margin-top:0.75rem; display:flex; align-items:center; gap:0.5rem;">
-      <div style="width:18px; height:18px; border-radius:4px; background:<%= @empresa.primary_color %>; border:1px solid #e4e4e7;"></div>
-      <span style="font-size:0.78rem; color:#71717a; font-family:monospace;"><%= @empresa.primary_color %></span>
+      <div style="width:18px; height:18px; border-radius:4px; background:<%= @company.primary_color %>; border:1px solid #e4e4e7;"></div>
+      <span style="font-size:0.78rem; color:#71717a; font-family:monospace;"><%= @company.primary_color %></span>
     </div>
   </div>
 
   <%# Eventos %>
   <div class="content-card" style="padding:1.25rem;">
-    <div style="font-size:0.72rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#71717a; margin-bottom:0.75rem;">Eventos (<%= @empresa.events.count %>)</div>
-    <% if @empresa.events.any? %>
+    <div style="font-size:0.72rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#71717a; margin-bottom:0.75rem;">Eventos (<%= @company.events.count %>)</div>
+    <% if @company.events.any? %>
       <div style="display:flex; flex-direction:column; gap:0.4rem;">
-        <% @empresa.events.order(start_date: :desc).each do |event| %>
+        <% @company.events.order(start_date: :desc).each do |event| %>
           <div style="display:flex; align-items:center; justify-content:space-between; padding:0.4rem 0; border-bottom:1px solid #f4f4f5;">
             <div>
               <div style="font-size:0.82rem; font-weight:600; color:#18181b;"><%= event.name %></div>
@@ -82,17 +82,17 @@
   </div>
 </div>
 
-<%# Usuários da empresa %>
+<%# Usuários da company %>
 <div class="content-card" style="padding:1.25rem;">
   <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1rem;">
     <div style="font-size:0.72rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#71717a;">
-      Usuários (<%= @empresa_users.size %>)
+      Usuários (<%= @company_users.size %>)
     </div>
   </div>
 
-  <% if @empresa_users.any? %>
+  <% if @company_users.any? %>
     <div style="display:flex; flex-direction:column; gap:0.5rem; margin-bottom:1.25rem;">
-      <% @empresa_users.each do |eu| %>
+      <% @company_users.each do |eu| %>
         <div style="display:flex; align-items:center; gap:0.75rem; padding:0.6rem 0; border-bottom:1px solid #f4f4f5;">
           <div style="width:34px; height:34px; border-radius:50%; background:#f4f4f5; display:flex; align-items:center; justify-content:center; font-size:0.7rem; font-weight:700; color:#52525b; overflow:hidden; flex-shrink:0;">
             <% if eu.user.avatar.attached? %>
@@ -108,9 +108,9 @@
           <% role_colors = { "owner" => ["#fef9c3","#ca8a04","#854d0e"], "manager" => ["#dbeafe","#2563eb","#1e3a8a"], "operator" => ["#f4f4f5","#71717a","#3f3f46"] } %>
           <% bg, text, _ = role_colors[eu.role] || role_colors["operator"] %>
           <span style="background:<%= bg %>; color:<%= text %>; font-size:0.68rem; font-weight:700; padding:2px 8px; border-radius:4px;"><%= eu.role_label %></span>
-          <% if policy(@empresa).update? %>
-            <%= button_to remove_user_empresa_path(@empresa, user_id: eu.user_id), method: :delete,
-                form: { data: { turbo_confirm: "Remover #{eu.user.name} da empresa?" } },
+          <% if policy(@company).update? %>
+            <%= button_to remove_user_company_path(@company, user_id: eu.user_id), method: :delete,
+                form: { data: { turbo_confirm: "Remover #{eu.user.name} da company?" } },
                 style:"background:none;border:none;cursor:pointer;color:#a1a1aa;font-size:0.8rem;padding:0.2rem 0.4rem;" do %>
               <i class="bi bi-x-lg"></i>
             <% end %>
@@ -121,21 +121,36 @@
   <% end %>
 
   <%# Adicionar usuário %>
-  <% if policy(@empresa).update? && @available_users.any? %>
+  <% if policy(@company).update? %>
     <div style="border-top:1px solid #f4f4f5; padding-top:1rem;">
-      <div style="font-size:0.78rem; font-weight:600; color:#3f3f46; margin-bottom:0.5rem;">Adicionar usuário</div>
-      <%= form_with url: add_user_empresa_path(@empresa), method: :post, local: true do |f| %>
-        <div style="display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap;">
-          <%= f.select :user_id,
-              @available_users.map { |u| [u.name, u.id] },
-              { prompt: "Selecionar colaborador..." },
-              style:"flex:1;min-width:160px;padding:0.4rem 0.6rem;border:1px solid #e4e4e7;border-radius:7px;font-size:0.82rem;" %>
+      <div style="font-size:0.78rem; font-weight:600; color:#3f3f46; margin-bottom:0.75rem;">Adicionar usuário</div>
+      <%= form_with url: add_user_company_path(@company), method: :post, local: true do |f| %>
+        <div style="display:flex; gap:0.5rem; align-items:flex-end; flex-wrap:wrap;">
+          <div style="flex:1; min-width:220px; position:relative;"
+               data-controller="autocomplete-single"
+               data-autocomplete-single-url-value="<%= search_users_path %>"
+               data-autocomplete-single-param-value="user_id">
+            <div data-autocomplete-single-target="selected"></div>
+            <input type="text"
+                   data-autocomplete-single-target="input"
+                   data-action="input->autocomplete-single#search"
+                   class="form-control"
+                   placeholder="Buscar por nome ou CPF..."
+                   autocomplete="off"
+                   style="font-size:0.85rem;">
+            <div data-autocomplete-single-target="dropdown" class="autocomplete-dropdown" style="display:none;"></div>
+            <input type="hidden"
+                   data-autocomplete-single-target="hidden"
+                   name="user_id"
+                   value="">
+          </div>
           <%= f.select :role,
-              EmpresaUser::ROLES.map { |r| [EmpresaUser.new(role: r).role_label, r] },
+              CompanyUser::ROLES.map { |r| [CompanyUser.new(role: r).role_label, r] },
               {},
-              style:"padding:0.4rem 0.6rem;border:1px solid #e4e4e7;border-radius:7px;font-size:0.82rem;" %>
+              class: "form-control form-select",
+              style: "width:140px; flex-shrink:0;" %>
           <%= f.submit "Adicionar",
-              style:"background:#18181b;color:#fff;border:none;padding:0.4rem 0.9rem;border-radius:7px;font-size:0.82rem;font-weight:600;cursor:pointer;" %>
+              style:"background:#18181b;color:#fff;border:none;padding:0.5rem 1rem;border-radius:7px;font-size:0.85rem;font-weight:600;cursor:pointer;white-space:nowrap;" %>
         </div>
       <% end %>
     </div>

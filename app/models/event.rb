@@ -1,5 +1,5 @@
 class Event < ApplicationRecord
-  belongs_to :empresa, optional: true
+  belongs_to :company, optional: true
 
   has_many :sectors, dependent: :destroy
   has_many :teams, through: :sectors

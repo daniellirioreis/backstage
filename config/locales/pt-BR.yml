@@ -71,6 +71,16 @@ pt-BR:
       long: "%d de %B de %Y, %H:%M"
       time_only: "%H:%M"
 
+  companies:
+    user_added: "%{name} adicionado como %{role}."
+    user_removed: "Usuário removido da empresa."
+
+  company_user:
+    roles:
+      owner: "Dono"
+      manager: "Gerente"
+      operator: "Operador"
+
   activerecord:
     errors:
       messages:
@@ -113,6 +123,12 @@ pt-BR:
       report:
         one: "Relatório"
         other: "Relatórios"
+      company:
+        one: "Empresa"
+        other: "Empresas"
+      company_user:
+        one: "Membro"
+        other: "Membros"
 
     attributes:
       user:
@@ -148,3 +164,16 @@ pt-BR:
         model: "Modelo"
         color: "Cor"
         license_plate: "Placa"
+      company:
+        name: "Nome"
+        cnpj: "CNPJ"
+        phone: "Telefone"
+        email: "E-mail"
+        address: "Endereço"
+        city: "Cidade"
+        state: "Estado"
+        primary_color: "Cor primária"
+        logo: "Logo"
+      company_user:
+        role: "Papel"
+        user_id: "Colaborador"

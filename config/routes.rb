@@ -13,7 +13,7 @@ Rails.application.routes.draw do
   post "evento/selecionar", to: "event_session#set_event",    as: :set_event
   delete "evento/limpar",   to: "event_session#clear_event",  as: :clear_event
 
-  resources :empresas do
+  resources :companies do
     member do
       post :add_user
       delete :remove_user

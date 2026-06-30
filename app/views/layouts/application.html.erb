@@ -96,9 +96,9 @@
             <% end %>
           <% end %>
 
-          <% if current_user.admin? || current_user.empresas.any? %>
-            <%= link_to empresas_path, class: "sidebar-link #{controller_name == 'empresas' ? 'active' : ''}" do %>
-              <i class="bi bi-building"></i> Empresas
+          <% if current_user.admin? || current_user.companies.any? %>
+            <%= link_to companies_path, class: "sidebar-link #{controller_name == 'companies' ? 'active' : ''}" do %>
+              <i class="bi bi-building"></i> <%= Company.model_name.human(count: 2) %>
             <% end %>
           <% end %>
         </nav>
