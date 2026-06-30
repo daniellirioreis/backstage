@@ -31,6 +31,20 @@
       <div style="font-size:0.72rem; color:#71717a; margin-top:3px;">primeiro check-in</div>
     </div>
   <% end %>
+  <% inside_now = @attendances.reject(&:checked_out_at) %>
+  <div class="content-card" style="padding:1rem 1.25rem; text-align:center;">
+    <div style="font-size:2rem; font-weight:800; color:#0ea5e9; line-height:1;"><%= inside_now.size %></div>
+    <div style="font-size:0.72rem; color:#71717a; margin-top:3px;">dentro agora</div>
+  </div>
+  <% finished = @attendances.select(&:checked_out_at) %>
+  <% if finished.any? %>
+    <% total_mins = finished.sum { |a| ((a.checked_out_at - a.checked_in_at) / 60).to_i } %>
+    <% total_h = total_mins / 60; total_m = total_mins % 60 %>
+    <div class="content-card" style="padding:1rem 1.25rem; text-align:center;">
+      <div style="font-size:1.4rem; font-weight:800; color:#7c3aed; line-height:1.2;"><%= total_h %>h<%= total_m > 0 ? " #{total_m}min" : "" %></div>
+      <div style="font-size:0.72rem; color:#71717a; margin-top:3px;">total de horas (<%= finished.size %> checkout<%= finished.size == 1 ? "" : "s" %>)</div>
+    </div>
+  <% end %>
 </div>
 
 <%# Barra de progresso %>
@@ -46,22 +60,35 @@
   </div>
 <% end %>
 
-<%# Filtro por setor %>
-<% if @sectors.any? %>
-  <div class="content-card" style="margin-bottom:1rem; padding:0.75rem 1rem;">
+<%# Filtros %>
+<div class="content-card" style="margin-bottom:1rem; padding:0.75rem 1rem; display:flex; flex-direction:column; gap:0.6rem;">
+  <%# Filtro status %>
+  <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
+    <span style="font-size:0.78rem; font-weight:600; color:#71717a; white-space:nowrap; width:52px;">
+      <i class="bi bi-door-open"></i> Status:
+    </span>
+    <% inside_active = params[:inside] == "1" %>
+    <%= link_to "Todos", attendances_path(sector_id: params[:sector_id]),
+        style: "font-size:0.78rem; padding:0.25rem 0.65rem; border-radius:6px; border:1px solid #{!inside_active ? '#18181b' : '#e4e4e7'}; background:#{!inside_active ? '#18181b' : 'transparent'}; color:#{!inside_active ? '#fff' : '#3f3f46'}; text-decoration:none; white-space:nowrap;" %>
+    <%= link_to "Dentro agora", attendances_path(sector_id: params[:sector_id], inside: "1"),
+        style: "font-size:0.78rem; padding:0.25rem 0.65rem; border-radius:6px; border:1px solid #{inside_active ? '#0ea5e9' : '#e4e4e7'}; background:#{inside_active ? '#0ea5e9' : 'transparent'}; color:#{inside_active ? '#fff' : '#3f3f46'}; text-decoration:none; white-space:nowrap;" %>
+  </div>
+  <%# Filtro setor %>
+  <% if @sectors.any? %>
     <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
-      <span style="font-size:0.78rem; font-weight:600; color:#71717a; white-space:nowrap;">
+      <span style="font-size:0.78rem; font-weight:600; color:#71717a; white-space:nowrap; width:52px;">
         <i class="bi bi-grid-3x3-gap"></i> Setor:
       </span>
-      <%= link_to "Todos", attendances_path,
+      <%= link_to "Todos", attendances_path(inside: params[:inside]),
           style: "font-size:0.78rem; padding:0.25rem 0.65rem; border-radius:6px; border:1px solid #{params[:sector_id].blank? ? '#18181b' : '#e4e4e7'}; background:#{params[:sector_id].blank? ? '#18181b' : 'transparent'}; color:#{params[:sector_id].blank? ? '#fff' : '#3f3f46'}; text-decoration:none; white-space:nowrap;" %>
       <% @sectors.each do |sector| %>
-        <%= link_to sector.name, attendances_path(sector_id: sector.id),
-            style: "font-size:0.78rem; padding:0.25rem 0.65rem; border-radius:6px; border:1px solid #{params[:sector_id].to_s == sector.id.to_s ? '#18181b' : '#e4e4e7'}; background:#{params[:sector_id].to_s == sector.id.to_s ? '#18181b' : 'transparent'}; color:#{params[:sector_id].to_s == sector.id.to_s ? '#fff' : '#3f3f46'}; text-decoration:none; white-space:nowrap;" %>
+        <% active_sector = params[:sector_id].to_s == sector.id.to_s %>
+        <%= link_to sector.name, attendances_path(sector_id: sector.id, inside: params[:inside]),
+            style: "font-size:0.78rem; padding:0.25rem 0.65rem; border-radius:6px; border:1px solid #{active_sector ? '#18181b' : '#e4e4e7'}; background:#{active_sector ? '#18181b' : 'transparent'}; color:#{active_sector ? '#fff' : '#3f3f46'}; text-decoration:none; white-space:nowrap;" %>
       <% end %>
     </div>
-  </div>
-<% end %>
+  <% end %>
+</div>
 
 <%# Lista de presenças %>
 <% if @attendances.empty? %>
@@ -119,6 +146,12 @@
             <div style="display:inline-flex; align-items:center; gap:0.35rem; background:#fff7ed; border:1px solid #fed7aa; border-radius:6px; padding:3px 10px;">
               <i class="bi bi-box-arrow-right" style="color:#c2410c; font-size:0.7rem;"></i>
               <span style="font-size:0.75rem; font-weight:600; color:#c2410c;"><%= l(att.checked_out_at, format: :short) %></span>
+            </div>
+            <% dur_mins = ((att.checked_out_at - att.checked_in_at) / 60).to_i %>
+            <% dur_h = dur_mins / 60; dur_m = dur_mins % 60 %>
+            <div style="display:inline-flex; align-items:center; gap:0.35rem; background:#f5f3ff; border:1px solid #ddd6fe; border-radius:6px; padding:3px 10px;">
+              <i class="bi bi-clock" style="color:#7c3aed; font-size:0.7rem;"></i>
+              <span style="font-size:0.75rem; font-weight:600; color:#7c3aed;"><%= dur_h %>h<%= dur_m > 0 ? " #{dur_m}min" : "" %></span>
             </div>
           <% end %>
           <% if att.checked_in_by %>

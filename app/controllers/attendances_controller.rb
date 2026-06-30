@@ -193,6 +193,10 @@ class AttendancesController < ApplicationController
       scope = scope.joins(team: :sector).where(sectors: { id: params[:sector_id] })
     end
 
+    if params[:inside] == "1"
+      scope = scope.where(checked_out_at: nil)
+    end
+
     @attendances = scope.order(checked_in_at: :desc)
 
     # Credential codes por user (membership ou coordenador)
