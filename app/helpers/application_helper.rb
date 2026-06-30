@@ -18,6 +18,14 @@ module ApplicationHelper
     (duration / 1440.0 * 100).round(2)
   end
 
+  # Converte horas decimais para "HH:MM"
+  def format_hours(decimal_hours)
+    total_min = (decimal_hours * 60).round
+    h = total_min / 60
+    m = total_min % 60
+    format("%d:%02d", h, m)
+  end
+
   def format_phone(phone)
     digits = phone.to_s.gsub(/\D/, "")
     case digits.length

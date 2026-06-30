@@ -55,6 +55,10 @@ Rails.application.routes.draw do
     collection do
       get  :scan
       post :check_in
+      post :check_out
+    end
+    member do
+      delete :cancel_checkout
     end
   end
 

@@ -64,7 +64,7 @@
 
           <% if policy(:attendance).index? %>
             <%= link_to attendances_path, class: "sidebar-link #{controller_name == 'attendances' && action_name != 'scan' ? 'active' : ''}" do %>
-              <i class="bi bi-person-check"></i> Check-ins Realizados
+              <i class="bi bi-person-check"></i> Check-ins
             <% end %>
           <% end %>
 

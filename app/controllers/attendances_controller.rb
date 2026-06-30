@@ -30,9 +30,14 @@ class AttendancesController < ApplicationController
     today       = Date.today
     now_minutes = Time.current.hour * 60 + Time.current.min
 
+    yesterday = today - 1
     shifts_today = Shift.joins(:sector)
                         .where(sectors: { event_id: @event.id }, user_id: user.id)
-                        .where("shifts.date <= ? AND (shifts.end_date IS NULL OR shifts.end_date >= ?)", today, today)
+                        .where(
+                          "(shifts.date <= :today AND (shifts.end_date IS NULL OR shifts.end_date >= :today))" \
+                          " OR (shifts.end_time < shifts.start_time AND shifts.date <= :yesterday AND (shifts.end_date IS NULL OR shifts.end_date >= :yesterday))",
+                          today: today, yesterday: yesterday
+                        )
 
     unless shifts_today.exists?
       return render json: {
@@ -104,11 +109,78 @@ class AttendancesController < ApplicationController
     render json: { status: :error, message: "#{e.class}: #{e.message}" }, status: :unprocessable_entity
   end
 
+  def check_out
+    authorize :attendance, :scan?
+    code = params[:code].to_s.strip.upcase
+
+    membership      = TeamMembership.includes(user: { avatar_attachment: :blob }).find_by(credential_code: code)
+    team_from_coord = Team.includes(coordinator: { avatar_attachment: :blob }).find_by(coordinator_credential_code: code) unless membership
+
+    user = membership&.user || team_from_coord&.coordinator
+    team = membership&.team || team_from_coord
+
+    unless user
+      return render json: { status: :not_found, message: "Credencial não encontrada (#{code})" }, status: :unprocessable_entity
+    end
+
+    avatar_url = user.avatar.attached? ? url_for(user.avatar) : nil
+    initials   = user.name.split.map(&:first).first(2).join.upcase
+
+    attendance = Attendance.find_by(user: user, event: @event, checked_in_date: Date.today)
+
+    unless attendance
+      return render json: {
+        status:          :not_checked_in,
+        message:         "#{user.name.split.first} ainda não realizou check-in hoje",
+        user_name:       user.name,
+        team_name:       team&.name,
+        avatar_initials: initials,
+        avatar_url:      avatar_url
+      }, status: :unprocessable_entity
+    end
+
+    if attendance.checked_out_at.present?
+      return render json: {
+        status:          :already_checked_out,
+        message:         "Checkout já registrado às #{I18n.l(attendance.checked_out_at, format: :time_only)}",
+        user_name:       user.name,
+        team_name:       team&.name,
+        checked_out_at:  I18n.l(attendance.checked_out_at, format: :short),
+        avatar_initials: initials,
+        avatar_url:      avatar_url
+      }
+    end
+
+    attendance.update!(
+      checked_out_at:    Time.current,
+      checked_out_by_id: current_user.id
+    )
+
+    render json: {
+      status:          :ok,
+      message:         "Checkout registrado!",
+      user_name:       user.name,
+      team_name:       team&.name,
+      checked_out_at:  I18n.l(attendance.checked_out_at, format: :short),
+      avatar_initials: initials,
+      avatar_url:      avatar_url
+    }
+  rescue => e
+    render json: { status: :error, message: "#{e.class}: #{e.message}" }, status: :unprocessable_entity
+  end
+
+  def cancel_checkout
+    attendance = Attendance.find(params[:id])
+    authorize attendance, :destroy?
+    attendance.update!(checked_out_at: nil, checked_out_by_id: nil)
+    redirect_to attendances_path, notice: "Checkout de #{attendance.user.name} cancelado."
+  end
+
   def destroy
     attendance = Attendance.find(params[:id])
     authorize attendance
     attendance.destroy
-    redirect_to attendances_path, notice: "Entrada de #{attendance.user.name} cancelada."
+    redirect_to attendances_path, notice: "Check-in de #{attendance.user.name} cancelado."
   end
 
   def index

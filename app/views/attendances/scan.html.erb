@@ -12,6 +12,18 @@
   #scan-close { color: #71717a; text-decoration: none; font-size: 0.8rem; }
   #scan-close:hover { color: #fafafa; }
 
+  /* Toggle check-in / check-out */
+  #mode-toggle {
+    display: flex; gap: 4px; background: #18181b; border-radius: 10px; padding: 4px;
+  }
+  .mode-btn {
+    border: none; border-radius: 7px; padding: 0.35rem 0.85rem;
+    font-size: 0.75rem; font-weight: 700; cursor: pointer; transition: background 0.15s, color 0.15s;
+    color: #71717a; background: transparent;
+  }
+  .mode-btn.active-in  { background: #15803d; color: #fff; }
+  .mode-btn.active-out { background: #b45309; color: #fff; }
+
   #video-wrapper {
     position: relative; width: 100%; max-width: 480px; flex: 1;
     display: flex; align-items: center; justify-content: center;
@@ -20,15 +32,18 @@
 
   #scan-frame {
     position: absolute; width: 220px; height: 220px;
-    border: 2px solid #4ade80; border-radius: 12px;
+    border-radius: 12px;
     box-shadow: 0 0 0 9999px rgba(0,0,0,0.55);
-    pointer-events: none;
+    pointer-events: none; transition: border-color 0.2s;
   }
+  #scan-frame.mode-in  { border: 2px solid #4ade80; }
+  #scan-frame.mode-out { border: 2px solid #fb923c; }
   #scan-line {
     position: absolute; top: 0; left: 0; right: 0; height: 2px;
-    background: #4ade80; opacity: 0.8;
-    animation: scanline 2s linear infinite;
+    opacity: 0.8; animation: scanline 2s linear infinite;
   }
+  #scan-frame.mode-in  #scan-line { background: #4ade80; }
+  #scan-frame.mode-out #scan-line { background: #fb923c; }
   @keyframes scanline { 0%{top:0} 50%{top:100%} 100%{top:0} }
 
   #scan-feedback {
@@ -37,8 +52,9 @@
     transition: transform 0.25s ease; z-index: 20;
     display: flex; align-items: center; gap: 1rem;
   }
-  #scan-feedback.show { transform: translateY(0); }
+  #scan-feedback.show  { transform: translateY(0); }
   #scan-feedback.ok    { background: #14532d; border-top: 2px solid #4ade80; }
+  #scan-feedback.ok-out{ background: #431407; border-top: 2px solid #fb923c; }
   #scan-feedback.dupe  { background: #1c1917; border-top: 2px solid #f59e0b; }
   #scan-feedback.error { background: #450a0a; border-top: 2px solid #ef4444; }
 
@@ -48,14 +64,13 @@
     font-size: 1.1rem; font-weight: 700; color: #fafafa; flex-shrink: 0;
     overflow: hidden; border: 2px solid rgba(255,255,255,0.15);
   }
-  .fb-avatar img {
-    width: 100%; height: 100%; object-fit: cover; border-radius: 50%;
-  }
+  .fb-avatar img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
   .fb-name  { font-size: 1rem; font-weight: 700; color: #fafafa; }
   .fb-team  { font-size: 0.78rem; color: #a1a1aa; margin-top: 2px; }
   .fb-msg   { font-size: 0.75rem; margin-top: 4px; }
-  .ok   .fb-msg { color: #4ade80; }
-  .dupe .fb-msg { color: #f59e0b; }
+  .ok    .fb-msg { color: #4ade80; }
+  .ok-out .fb-msg { color: #fb923c; }
+  .dupe  .fb-msg { color: #f59e0b; }
   .error .fb-msg { color: #ef4444; }
 
   #scan-counter {
@@ -74,8 +89,10 @@
     padding: 0.6rem 1rem; border-bottom: 1px solid #1a1a1a;
   }
   .recent-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
-  .recent-dot.ok   { background: #4ade80; }
-  .recent-dot.dupe { background: #f59e0b; }
+  .recent-dot.ok    { background: #4ade80; }
+  .recent-dot.ok-out{ background: #fb923c; }
+  .recent-dot.dupe  { background: #f59e0b; }
+  .recent-dot.error { background: #ef4444; }
   .recent-name { font-size: 0.8rem; color: #fafafa; font-weight: 600; }
   .recent-team { font-size: 0.7rem; color: #71717a; }
   .recent-time { font-size: 0.68rem; color: #52525b; margin-left: auto; flex-shrink: 0; }
@@ -92,22 +109,34 @@
     padding: 0.5rem 0.75rem; outline: none; text-transform: uppercase;
   }
   #manual-code-input::placeholder { color: #52525b; text-transform: none; }
-  #manual-code-input:focus { border-color: #4ade80; }
+  #manual-code-input.mode-in:focus  { border-color: #4ade80; }
+  #manual-code-input.mode-out:focus { border-color: #fb923c; }
   #manual-submit-btn {
-    background: #15803d; border: none; border-radius: 8px;
+    border: none; border-radius: 8px;
     color: #fafafa; font-size: 0.85rem; font-weight: 600;
     padding: 0.5rem 1rem; cursor: pointer; white-space: nowrap;
     transition: background 0.15s;
   }
-  #manual-submit-btn:hover { background: #16a34a; }
-  #manual-submit-btn:disabled { background: #27272a; color: #52525b; cursor: default; }
+  #manual-submit-btn.mode-in  { background: #15803d; }
+  #manual-submit-btn.mode-in:hover { background: #16a34a; }
+  #manual-submit-btn.mode-out { background: #b45309; }
+  #manual-submit-btn.mode-out:hover { background: #d97706; }
+  #manual-submit-btn:disabled { background: #27272a !important; color: #52525b; cursor: default; }
 </style>
 
 <div id="scan-overlay">
   <div id="scan-header">
     <div>
-      <div class="title"><i class="bi bi-qr-code-scan"></i> Check-in</div>
+      <div class="title" id="scan-title"><i class="bi bi-qr-code-scan"></i> Check-in</div>
       <div class="event"><%= @event.name %></div>
+    </div>
+    <div id="mode-toggle">
+      <button class="mode-btn active-in" id="btn-mode-in"  onclick="setMode('in')">
+        <i class="bi bi-box-arrow-in-right"></i> Check-in
+      </button>
+      <button class="mode-btn" id="btn-mode-out" onclick="setMode('out')">
+        <i class="bi bi-box-arrow-right"></i> Check-out
+      </button>
     </div>
     <%= link_to root_path, id: "scan-close", onclick: "stopCamera && stopCamera()" do %>
       <i class="bi bi-x-lg"></i> Fechar
@@ -116,15 +145,15 @@
 
   <div id="video-wrapper">
     <video id="qr-video" playsinline muted></video>
-    <div id="scan-frame"><div id="scan-line"></div></div>
+    <div id="scan-frame" class="mode-in"><div id="scan-line"></div></div>
     <div id="scan-counter">0 registros</div>
   </div>
 
   <div id="recent-list"></div>
 
   <div id="manual-input-bar">
-    <input id="manual-code-input" type="text" placeholder="Digite o código (ex: BOO-XXXXXXXX)" maxlength="20" autocomplete="off" autocorrect="off" spellcheck="false">
-    <button id="manual-submit-btn" type="button">
+    <input id="manual-code-input" class="mode-in" type="text" placeholder="Digite o código (ex: BOO-XXXXXXXX)" maxlength="20" autocomplete="off" autocorrect="off" spellcheck="false">
+    <button id="manual-submit-btn" class="mode-in" type="button">
       <i class="bi bi-check-lg"></i> OK
     </button>
   </div>
@@ -142,19 +171,42 @@
 <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
 <script>
 (function() {
-  const video    = document.getElementById("qr-video");
-  const feedback = document.getElementById("scan-feedback");
-  const counter  = document.getElementById("scan-counter");
-  const recent   = document.getElementById("recent-list");
-  const checkInUrl = "<%= check_in_attendances_path %>";
-  const csrfToken  = "<%= form_authenticity_token %>";
+  const video      = document.getElementById("qr-video");
+  const feedback   = document.getElementById("scan-feedback");
+  const counter    = document.getElementById("scan-counter");
+  const recent     = document.getElementById("recent-list");
+  const scanFrame  = document.getElementById("scan-frame");
+  const checkInUrl  = "<%= check_in_attendances_path %>";
+  const checkOutUrl = "<%= check_out_attendances_path %>";
+  const csrfToken   = "<%= form_authenticity_token %>";
 
   let scanning = true;
   let total    = 0;
   let lastCode = null;
   let canvas, ctx;
-
   let activeStream = null;
+  let currentMode  = "in";
+
+  // ── Toggle de modo ─────────────────────────────────────────────
+  window.setMode = function(mode) {
+    currentMode = mode;
+    const isIn = mode === "in";
+
+    document.getElementById("btn-mode-in").className  = "mode-btn" + (isIn ? " active-in"  : "");
+    document.getElementById("btn-mode-out").className = "mode-btn" + (!isIn ? " active-out" : "");
+    document.getElementById("scan-title").innerHTML   = isIn
+      ? '<i class="bi bi-qr-code-scan"></i> Check-in'
+      : '<i class="bi bi-qr-code-scan"></i> Check-out';
+
+    scanFrame.className = isIn ? "mode-in" : "mode-out";
+    document.getElementById("manual-code-input").className = isIn ? "mode-in" : "mode-out";
+    document.getElementById("manual-submit-btn").className = isIn ? "mode-in" : "mode-out";
+
+    // Reset
+    scanning = true; lastCode = null; total = 0;
+    counter.textContent = "0 registros";
+    hideFeedback();
+  };
 
   window.stopCamera = function() {
     if (activeStream) {
@@ -165,7 +217,7 @@
 
   navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
     .then(stream => {
-      activeStream   = stream;
+      activeStream    = stream;
       video.srcObject = stream;
       video.play();
       canvas = document.createElement("canvas");
@@ -178,7 +230,7 @@
   document.addEventListener("visibilitychange", () => { if (document.hidden) stopCamera(); });
   window.addEventListener("pagehide", stopCamera);
 
-  // Manual code input
+  // ── Input manual ───────────────────────────────────────────────
   const manualInput = document.getElementById("manual-code-input");
   const manualBtn   = document.getElementById("manual-submit-btn");
 
@@ -186,7 +238,7 @@
     const code = manualInput.value.trim().toUpperCase();
     if (!code) return;
     manualBtn.disabled = true;
-    doCheckIn(code, () => {
+    doScan(code, () => {
       manualInput.value = "";
       manualBtn.disabled = false;
       manualInput.focus();
@@ -196,6 +248,7 @@
   manualBtn.addEventListener("click", submitManual);
   manualInput.addEventListener("keydown", (e) => { if (e.key === "Enter") submitManual(); });
 
+  // ── Loop de câmera ─────────────────────────────────────────────
   function tick() {
     if (video.readyState === video.HAVE_ENOUGH_DATA) {
       canvas.width  = video.videoWidth;
@@ -206,37 +259,37 @@
       if (qr && qr.data && scanning && qr.data !== lastCode) {
         lastCode = qr.data;
         scanning = false;
-        doCheckIn(qr.data);
+        doScan(qr.data);
       }
     }
     requestAnimationFrame(tick);
   }
 
-  function doCheckIn(code, onDone) {
+  // ── Chamada ao servidor ────────────────────────────────────────
+  function doScan(code, onDone) {
     if (!code || code.trim() === "") { scanning = true; lastCode = null; return; }
-    fetch(checkInUrl, {
+    const url = currentMode === "in" ? checkInUrl : checkOutUrl;
+
+    fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json", "X-CSRF-Token": csrfToken },
       body: JSON.stringify({ code })
     })
     .then(r => r.json().catch(() => { throw new Error("HTTP " + r.status); }))
     .then(data => {
-      const isDupe    = data.status === "already_checked_in";
-      const isErr     = data.status === "not_found";
-      const isWarn    = data.status === "no_shift_today" || data.status === "out_of_schedule";
-      const isOk      = data.status === "ok";
+      const isOk   = data.status === "ok";
+      const isDupe = ["already_checked_in", "already_checked_out"].includes(data.status);
+      const isErr  = ["not_found", "not_checked_in"].includes(data.status);
+      const isWarn = ["no_shift_today", "out_of_schedule"].includes(data.status);
+
       if (isOk) total++;
       counter.textContent = total + (total === 1 ? " registro" : " registros");
-      const type = isErr ? "error" : (isDupe || isWarn) ? "dupe" : "ok";
-      showFeedback(
-        type,
-        data.avatar_initials || "?",
-        data.user_name || "—",
-        data.team_name || "",
-        data.message,
-        data.avatar_url || null
-      );
-      addRecent(isOk ? "ok" : isErr ? "error" : "dupe", data.user_name, data.team_name, data.checked_in_at);
+
+      const type = isErr || isWarn ? "error" : isDupe ? "dupe" : (currentMode === "out" ? "ok-out" : "ok");
+
+      showFeedback(type, data.avatar_initials || "?", data.user_name || "—", data.team_name || "", data.message, data.avatar_url || null);
+      addRecent(type, data.user_name, data.team_name, data.checked_in_at || data.checked_out_at);
+
       const delay = isOk ? (onDone ? 1500 : 2500) : (onDone ? 3000 : 5000);
       setTimeout(() => { hideFeedback(); scanning = true; lastCode = null; if (onDone) onDone(); }, delay);
     })
@@ -250,19 +303,13 @@
   function showFeedback(type, initials, name, team, msg, avatarUrl) {
     feedback.className = "show " + type;
     const av = document.getElementById("fb-avatar");
-    if (avatarUrl) {
-      av.innerHTML = `<img src="${avatarUrl}" alt="${initials}">`;
-    } else {
-      av.textContent = initials;
-    }
+    av.innerHTML = avatarUrl ? `<img src="${avatarUrl}" alt="${initials}">` : initials;
     document.getElementById("fb-name").textContent = name;
     document.getElementById("fb-team").textContent = team;
     document.getElementById("fb-msg").textContent  = msg;
   }
 
-  function hideFeedback() {
-    feedback.className = "";
-  }
+  function hideFeedback() { feedback.className = ""; }
 
   function addRecent(type, name, team, time) {
     if (!name) return;

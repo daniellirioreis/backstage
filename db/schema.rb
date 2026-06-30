@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_06_28_000002) do
+ActiveRecord::Schema[7.1].define(version: 2026_06_29_000001) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -51,6 +51,8 @@ ActiveRecord::Schema[7.1].define(version: 2026_06_28_000002) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.date "checked_in_date", null: false
+    t.datetime "checked_out_at"
+    t.bigint "checked_out_by_id"
     t.index ["checked_in_by_id"], name: "index_attendances_on_checked_in_by_id"
     t.index ["event_id"], name: "index_attendances_on_event_id"
     t.index ["team_id"], name: "index_attendances_on_team_id"
@@ -201,6 +203,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_06_28_000002) do
   add_foreign_key "attendances", "teams"
   add_foreign_key "attendances", "users"
   add_foreign_key "attendances", "users", column: "checked_in_by_id"
+  add_foreign_key "attendances", "users", column: "checked_out_by_id"
   add_foreign_key "badge_configs", "events"
   add_foreign_key "event_functions", "events"
   add_foreign_key "permissions", "roles"

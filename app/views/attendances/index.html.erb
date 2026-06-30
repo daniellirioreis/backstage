@@ -1,6 +1,6 @@
 <div class="page-header">
   <div>
-    <h1 style="margin:0;">Check-ins Realizados</h1>
+    <h1 style="margin:0;">Check-ins</h1>
     <div style="font-size:0.78rem; color:#71717a; margin-top:0.15rem;"><%= @event.name %></div>
   </div>
   <% if policy(:attendance).scan? %>
@@ -109,26 +109,47 @@
           </div>
         </div>
 
-        <%# Horário de check-in %>
-        <div style="text-align:right; flex-shrink:0;">
+        <%# Horários check-in / check-out %>
+        <div style="text-align:right; flex-shrink:0; display:flex; flex-direction:column; gap:4px; align-items:flex-end;">
           <div style="display:inline-flex; align-items:center; gap:0.35rem; background:#dcfce7; border:1px solid #86efac; border-radius:6px; padding:3px 10px;">
-            <i class="bi bi-check-circle-fill" style="color:#16a34a; font-size:0.7rem;"></i>
+            <i class="bi bi-box-arrow-in-right" style="color:#16a34a; font-size:0.7rem;"></i>
             <span style="font-size:0.75rem; font-weight:600; color:#15803d;"><%= l(att.checked_in_at, format: :short) %></span>
           </div>
+          <% if att.checked_out_at %>
+            <div style="display:inline-flex; align-items:center; gap:0.35rem; background:#fff7ed; border:1px solid #fed7aa; border-radius:6px; padding:3px 10px;">
+              <i class="bi bi-box-arrow-right" style="color:#c2410c; font-size:0.7rem;"></i>
+              <span style="font-size:0.75rem; font-weight:600; color:#c2410c;"><%= l(att.checked_out_at, format: :short) %></span>
+            </div>
+          <% end %>
           <% if att.checked_in_by %>
-            <div style="font-size:0.65rem; color:#a1a1aa; margin-top:3px;">por <%= att.checked_in_by.name.split.first %></div>
+            <div style="font-size:0.65rem; color:#a1a1aa;">por <%= att.checked_in_by.name.split.first %></div>
           <% end %>
         </div>
 
-        <%# Cancelar entrada %>
+        <%# Ações %>
         <% if policy(att).destroy? %>
-          <%= button_to attendance_path(att), method: :delete,
-              form: { data: { turbo_confirm: "Cancelar entrada de #{att.user.name}?" } },
-              class: "btn-danger",
-              style: "padding:0.3rem 0.55rem; flex-shrink:0;",
-              title: "Cancelar entrada" do %>
-            <i class="bi bi-x-lg"></i>
-          <% end %>
+          <div style="display:flex; flex-direction:column; gap:4px; flex-shrink:0;">
+            <% if att.checked_out_at %>
+              <%= button_to cancel_checkout_attendance_path(att), method: :delete,
+                  form: { data: { turbo_confirm: "Cancelar checkout de #{att.user.name}?" } },
+                  style: "background:#fff7ed; border:1px solid #fed7aa; border-radius:7px; padding:0.3rem 0.55rem; cursor:pointer; color:#c2410c; font-size:0.72rem; font-weight:600; white-space:nowrap;",
+                  title: "Cancelar checkout" do %>
+                <i class="bi bi-box-arrow-right"></i> Cancelar checkout
+              <% end %>
+            <% end %>
+            <% if att.checked_out_at %>
+              <span style="background:#f4f4f5; border:1px solid #e4e4e7; border-radius:7px; padding:0.3rem 0.55rem; color:#a1a1aa; font-size:0.72rem; font-weight:600; white-space:nowrap; cursor:not-allowed;" title="Cancele o checkout primeiro">
+                <i class="bi bi-box-arrow-in-right"></i> Cancelar check-in
+              </span>
+            <% else %>
+              <%= button_to attendance_path(att), method: :delete,
+                  form: { data: { turbo_confirm: "Cancelar check-in de #{att.user.name}?" } },
+                  style: "background:#fef2f2; border:1px solid #fecaca; border-radius:7px; padding:0.3rem 0.55rem; cursor:pointer; color:#dc2626; font-size:0.72rem; font-weight:600; white-space:nowrap;",
+                  title: "Cancelar check-in" do %>
+                <i class="bi bi-box-arrow-in-right"></i> Cancelar check-in
+              <% end %>
+            <% end %>
+          </div>
         <% end %>
 
       </div>
