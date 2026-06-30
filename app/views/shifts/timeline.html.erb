@@ -87,7 +87,10 @@
           eff_start_min = started_before ? 0 : (s.start_time.hour * 60 + s.start_time.min)
 
           # Turno overnight de dia único (sem end_date, horário fim < início)
-          single_overnight = !started_before && !ends_after && end_t < s.start_time
+          # Usa comparação por minutos para evitar problema de TimeWithZone comparando UTC
+          end_min_of_day   = end_t.hour * 60 + end_t.min
+          start_min_of_day = s.start_time.hour * 60 + s.start_time.min
+          single_overnight = !started_before && !ends_after && end_min_of_day < start_min_of_day
 
           # Horário efetivo de fim para a barra deste dia
           eff_end_min = if ends_after || single_overnight

@@ -24,8 +24,9 @@ class Shift < ApplicationRecord
   end
 
   # Turno que passa da meia-noite
+  # Usa comparação por minutos para evitar problema de TimeWithZone comparando UTC
   def overnight?
-    end_time < start_time
+    (end_time.hour * 60 + end_time.min) < (start_time.hour * 60 + start_time.min)
   end
 
   private
