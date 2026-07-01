@@ -6,7 +6,7 @@
     </div>
   </div>
   <div style="display:flex;gap:0.5rem;">
-    <%= link_to reports_fechamento_print_path(basis: @basis), class: "btn-secondary" do %>
+    <%= link_to reports_closing_print_path(basis: @basis), class: "btn-secondary" do %>
       <i class="bi bi-printer"></i> Imprimir PDF
     <% end %>
   </div>
@@ -16,12 +16,12 @@
 <div class="content-card" style="padding:0.75rem 1rem;margin-bottom:1rem;display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap;">
   <span style="font-size:0.78rem;font-weight:700;color:#71717a;">Base de cálculo:</span>
   <div style="display:flex;gap:4px;background:#f4f4f5;border-radius:10px;padding:4px;">
-    <%= link_to reports_fechamento_path(basis: "shifts"),
+    <%= link_to reports_closing_path(basis: "shifts"),
         style: "font-size:0.8rem;font-weight:700;padding:0.3rem 0.9rem;border-radius:7px;text-decoration:none;transition:all 0.15s;" +
                (@basis == "shifts" ? "background:#18181b;color:#fff;" : "color:#71717a;") do %>
       <i class="bi bi-calendar2-week"></i> Escalas cadastradas
     <% end %>
-    <%= link_to reports_fechamento_path(basis: "attendance"),
+    <%= link_to reports_closing_path(basis: "attendance"),
         style: "font-size:0.8rem;font-weight:700;padding:0.3rem 0.9rem;border-radius:7px;text-decoration:none;transition:all 0.15s;" +
                (@basis == "attendance" ? "background:#18181b;color:#fff;" : "color:#71717a;") do %>
       <i class="bi bi-qr-code-scan"></i> Check-in / Check-out
@@ -210,6 +210,30 @@
     </tbody>
   </table>
 </div>
+<% end %>
+
+<% if @company %>
+  <div class="content-card" style="margin-top:1.5rem;padding:1rem 1.25rem;display:flex;align-items:center;gap:1rem;flex-wrap:wrap;border-top:2px solid #e4e4e7;">
+    <% if @company.logo.attached? %>
+      <div style="width:40px;height:40px;border-radius:8px;overflow:hidden;background:#f4f4f5;flex-shrink:0;">
+        <%= image_tag @company.logo, style:"width:100%;height:100%;object-fit:contain;" %>
+      </div>
+    <% else %>
+      <div style="width:40px;height:40px;border-radius:8px;background:#18181b;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+        <i class="bi bi-building" style="font-size:1rem;color:#fff;"></i>
+      </div>
+    <% end %>
+    <div style="flex:1;min-width:0;">
+      <div style="font-size:0.68rem;font-weight:700;color:#a1a1aa;text-transform:uppercase;letter-spacing:0.07em;">Empresa responsável</div>
+      <div style="font-size:0.9rem;font-weight:700;color:#18181b;"><%= @company.name %></div>
+      <div style="font-size:0.75rem;color:#71717a;display:flex;flex-wrap:wrap;gap:0.75rem;margin-top:0.15rem;">
+        <% if @company.cnpj.present? %><span><i class="bi bi-file-earmark-text"></i> <%= @company.cnpj %></span><% end %>
+        <% if @company.phone.present? %><span><i class="bi bi-telephone"></i> <%= @company.phone %></span><% end %>
+        <% if @company.email.present? %><span><i class="bi bi-envelope"></i> <%= @company.email %></span><% end %>
+        <% if @company.city.present? %><span><i class="bi bi-geo-alt"></i> <%= [@company.city, @company.state].compact.join(", ") %></span><% end %>
+      </div>
+    </div>
+  </div>
 <% end %>
 
 <style>

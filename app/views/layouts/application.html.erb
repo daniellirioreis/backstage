@@ -74,9 +74,9 @@
             <% end %>
           <% end %>
 
-          <% if policy(:report).fechamento? %>
-            <%= link_to reports_fechamento_path, class: "sidebar-link #{controller_path == 'reports/fechamento' ? 'active' : ''}" do %>
-              <i class="bi bi-receipt"></i> Fechamento
+          <% if policy(:report).closing? %>
+            <%= link_to reports_closing_path, class: "sidebar-link #{controller_path == 'reports/closing' ? 'active' : ''}" do %>
+              <i class="bi bi-receipt"></i> <%= t("nav.closing") %>
             <% end %>
           <% end %>
 
@@ -96,7 +96,7 @@
             <% end %>
           <% end %>
 
-          <% if current_user.admin? || current_user.companies.any? %>
+          <% if policy(Company).index? %>
             <%= link_to companies_path, class: "sidebar-link #{controller_name == 'companies' ? 'active' : ''}" do %>
               <i class="bi bi-building"></i> <%= Company.model_name.human(count: 2) %>
             <% end %>
@@ -119,6 +119,9 @@
 
             <div class="sidebar-user-dropdown">
               <div class="sidebar-user-dropdown-name"><%= current_user.name %></div>
+              <%= link_to edit_user_path(current_user), class: "sidebar-user-dropdown-item" do %>
+                <i class="bi bi-person-gear"></i> Editar perfil
+              <% end %>
               <% if policy(current_user).my_schedule? %>
                 <%= link_to my_schedule_user_path(current_user), class: "sidebar-user-dropdown-item" do %>
                   <i class="bi bi-calendar-week"></i> <%= t("permission_actions.my_schedule") %>

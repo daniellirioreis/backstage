@@ -3,8 +3,8 @@ class UserPolicy < ApplicationPolicy
   def show?    = can?("show")
   def new?     = can?("create")
   def create?  = can?("create")
-  def edit?    = can?("update")
-  def update?  = can?("update")
+  def edit?    = user == record || can?("update")
+  def update?  = user == record || can?("update")
   def destroy?     = can?("destroy") && record != user
   def credential?  = user.present? && (user.admin? || user == record || can?("show"))
   def my_schedule? = user.present? && (user.admin? || user == record || can?("my_schedule"))

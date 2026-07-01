@@ -16,11 +16,30 @@ class Event < ApplicationRecord
   validates :start_date, presence: true
   validates :end_date, presence: true
   validate :end_date_after_start_date
+  after_validation :translate_nested_errors
 
   private
 
   def end_date_after_start_date
     return if start_date.blank? || end_date.blank?
     errors.add(:end_date, :after_start_date) if end_date < start_date
+  end
+
+  def translate_nested_errors
+    errors.each do |error|
+      attr = error.attribute.to_s
+      next unless attr.start_with?("event_functions")
+
+      # strip index notation: "event_functions[0].hourly_rate" → "hourly_rate"
+      nested_attr = attr.gsub(/\Aevent_functions\[\d+\]\./, "")
+      human_attr  = EventFunction.human_attribute_name(nested_attr)
+      prefix      = I18n.t("activerecord.models.event_function.one", default: "Função")
+
+      error.instance_variable_set(:@attribute, :"event_functions")
+      error.instance_variable_set(
+        :@full_message,
+        "#{prefix} — #{human_attr} #{error.message}"
+      )
+    end
   end
 end

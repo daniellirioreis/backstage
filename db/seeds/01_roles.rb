@@ -9,6 +9,7 @@ Permission::RESOURCES.each do |resource|
   end
 end
 
-Role.find_or_create_by!(name: "colaborador")
+colab = Role.find_or_create_by!(name: "colaborador")
+colab.update!(collaborator: true) unless colab.collaborator?
 
 puts "   Perfis: #{Role.count} | Permissões: #{Permission.count}"

@@ -1,17 +1,17 @@
 module Reports
-  class FechamentoController < ApplicationController
+  class ClosingController < ApplicationController
     def index
-      authorize :report, :fechamento?
+      authorize :report, :closing?
       @basis = params[:basis].presence_in(%w[shifts attendance]) || "shifts"
       load_report_data
     end
 
     def print
-      authorize :report, :fechamento?
+      authorize :report, :closing?
       @basis = params[:basis].presence_in(%w[shifts attendance]) || "shifts"
       load_report_data
       render pdf:         "fechamento-#{@event.name.parameterize}-#{@basis}",
-             template:    "reports/fechamento/print",
+             template:    "reports/closing/print",
              layout:      "pdf",
              formats:     [:html],
              page_size:   "A4",
@@ -23,7 +23,8 @@ module Reports
     private
 
     def load_report_data
-      @event = current_event
+      @event   = current_event
+      @company = @event.company
       @basis == "attendance" ? load_by_attendance : load_by_shifts
     end
 

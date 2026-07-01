@@ -2,6 +2,7 @@ pt-BR:
   nav:
     home: "Início"
     sign_out: "Sair"
+    closing: "Fechamento"
 
   actions:
     new: "Novo %{model}"
@@ -33,7 +34,7 @@ pt-BR:
     print: "Imprimir"
     my_schedule: "Minha Escala"
     scan: "Registrar Check-in (QR)"
-    fechamento: "Relatório de Fechamento"
+    closing: "Relatório de Fechamento"
 
   badge_config:
     configure: "Configurar Credencial"
@@ -47,6 +48,7 @@ pt-BR:
 
   errors:
     not_authorized: "Você não tem permissão para realizar esta ação."
+    no_events_available: "Nenhum evento disponível para o seu acesso."
     messages:
       invalid_cpf: "inválido"
       after_start_date: "deve ser igual ou posterior à data de início"
@@ -72,6 +74,15 @@ pt-BR:
       time_only: "%H:%M"
 
   companies:
+    empty: "Nenhuma empresa cadastrada."
+    settings: "Configurações"
+    events_count:
+      one: "1 evento"
+      other: "%{count} eventos"
+    users_count:
+      one: "1 usuário"
+      other: "%{count} usuários"
+    primary_color_title: "Cor primária: %{color}"
     user_added: "%{name} adicionado como %{role}."
     user_removed: "Usuário removido da empresa."
 
@@ -89,6 +100,10 @@ pt-BR:
         blank: "não pode ficar em branco"
         invalid: "é inválido"
         required: "é obrigatório(a)"
+        not_a_number: "não é um número"
+        greater_than_or_equal_to: "deve ser maior ou igual a %{count}"
+        greater_than: "deve ser maior que %{count}"
+        less_than_or_equal_to: "deve ser menor ou igual a %{count}"
     models:
       user:
         one: "Colaborador"
@@ -129,6 +144,12 @@ pt-BR:
       company_user:
         one: "Membro"
         other: "Membros"
+      event_function:
+        one: "Função"
+        other: "Funções"
+      team_membership:
+        one: "Membro de equipe"
+        other: "Membros de equipe"
 
     attributes:
       user:
@@ -150,6 +171,7 @@ pt-BR:
         start_date: "Data de início"
         end_date: "Data de fim"
         status: "Status"
+        event_functions: "Funções"
       team:
         name: "Nome"
         sector: "Setor"
@@ -177,3 +199,9 @@ pt-BR:
       company_user:
         role: "Papel"
         user_id: "Colaborador"
+      event_function:
+        name: "Nome da função"
+        hourly_rate: "Valor por hora"
+      team_membership:
+        credential_code: "Código de credencial"
+        event_function_id: "Função"

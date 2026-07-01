@@ -2,3 +2,35 @@
   <h1><%= t("actions.edit_model", model: User.model_name.human) %>: <%= @user.name %></h1>
 </div>
 <%= render "form", user: @user %>
+
+<% if @company_memberships.any? %>
+  <div class="content-card" style="max-width:700px; margin-top:1.5rem; padding:1.25rem;">
+    <div style="font-size:0.7rem; font-weight:700; color:#a1a1aa; text-transform:uppercase; letter-spacing:0.07em; margin-bottom:1rem;">
+      <i class="bi bi-building"></i> <%= Company.model_name.human(count: 2) %>
+    </div>
+    <div style="display:flex; flex-direction:column; gap:0.5rem;">
+      <% @company_memberships.each do |cu| %>
+        <div style="display:flex; align-items:center; gap:0.75rem; padding:0.6rem 0.85rem; background:#f4f4f5; border-radius:8px;">
+          <% if cu.company.logo.attached? %>
+            <div style="width:32px; height:32px; border-radius:6px; overflow:hidden; background:#e4e4e7; flex-shrink:0;">
+              <%= image_tag cu.company.logo, style:"width:100%;height:100%;object-fit:contain;" %>
+            </div>
+          <% else %>
+            <div style="width:32px; height:32px; border-radius:6px; background:#18181b; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+              <i class="bi bi-building" style="font-size:0.8rem; color:#fff;"></i>
+            </div>
+          <% end %>
+          <div style="flex:1; min-width:0;">
+            <div style="font-size:0.85rem; font-weight:600; color:#18181b;"><%= cu.company.name %></div>
+            <% if cu.company.city.present? %>
+              <div style="font-size:0.7rem; color:#71717a;"><%= cu.company.city %></div>
+            <% end %>
+          </div>
+          <span style="font-size:0.7rem; font-weight:600; background:#e4e4e7; border-radius:4px; padding:2px 8px; color:#52525b;">
+            <%= t("company_user.roles.#{cu.role}", default: cu.role) %>
+          </span>
+        </div>
+      <% end %>
+    </div>
+  </div>
+<% end %>

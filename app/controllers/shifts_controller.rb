@@ -322,7 +322,7 @@ class ShiftsController < ApplicationController
     event_id    = current_event&.id
     @teams      = Team.joins(:sector).where(sectors: { event_id: event_id }).includes(:sector).order("sectors.name, teams.name")
     @sectors    = Sector.where(event_id: event_id).order(:name)
-    @all_users  = User.order(:name)
+    @all_users  = company_users_scope.order(:name)
   end
 
   def shift_params

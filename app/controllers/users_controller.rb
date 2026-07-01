@@ -4,7 +4,7 @@ class UsersController < ApplicationController
   def index
     authorize User
     @roles = Role.order(:name)
-    scope  = policy_scope(User).includes(:role, :avatar_attachment)
+    scope  = policy_scope(company_users_scope).includes(:role, :avatar_attachment, :companies)
 
     if params[:q].present?
       q      = params[:q].strip
@@ -27,17 +27,19 @@ class UsersController < ApplicationController
     q      = params[:q].to_s.strip
     digits = q.gsub(/\D/, "")
 
+    base = company_users_scope
+
     scope = if q.present?
       if digits.present?
-        User.where("name ILIKE ? OR cpf LIKE ?", "%#{q}%", "%#{digits}%")
+        base.where("users.name ILIKE ? OR users.cpf LIKE ?", "%#{q}%", "%#{digits}%")
       else
-        User.where("name ILIKE ?", "%#{q}%")
+        base.where("users.name ILIKE ?", "%#{q}%")
       end
     else
-      User.all
+      base
     end
 
-    @users = scope.includes(:avatar_attachment).order(:name).limit(100)
+    @users = scope.includes(:avatar_attachment).order("users.name").limit(100)
 
     render json: @users.map { |u|
       {
@@ -99,6 +101,8 @@ class UsersController < ApplicationController
   def my_schedule
     authorize @user, :my_schedule?
 
+    @company_memberships = @user.company_users.eager_load(:company).order("companies.name")
+
     shifts = Shift.joins(sector: :event)
                   .where(user_id: @user.id)
                   .includes({ team: [:sector, :coordinator] }, sector: :event)
@@ -126,6 +130,7 @@ class UsersController < ApplicationController
 
   def edit
     authorize @user
+    @company_memberships = @user.company_users.eager_load(:company).order("companies.name")
   end
 
   def update
@@ -155,6 +160,8 @@ class UsersController < ApplicationController
   end
 
   def user_params
-    params.require(:user).permit(:name, :cpf, :phone, :email, :role_id, :password, :password_confirmation, :avatar, :remove_avatar)
+    permitted = [:name, :cpf, :phone, :email, :password, :password_confirmation, :avatar, :remove_avatar]
+    permitted << :role_id if current_user.admin?
+    params.require(:user).permit(permitted)
   end
 end

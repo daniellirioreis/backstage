@@ -1,24 +1,24 @@
 class CompanyPolicy < ApplicationPolicy
-  def index?   = user.admin?
-  def new?     = user.admin?
-  def create?  = user.admin?
-  def destroy? = user.admin?
+  def index?   = can?("index")
+  def new?     = can?("create")
+  def create?  = can?("create")
+  def destroy? = can?("destroy")
 
-  def show?   = user.admin? || member?
-  def edit?   = user.admin? || owner_or_manager?
-  def update? = user.admin? || owner_or_manager?
+  def show?   = can?("show") || member?
+  def edit?   = can?("update") || owner_or_manager?
+  def update? = can?("update") || owner_or_manager?
 
   class Scope < ApplicationPolicy::Scope
     def resolve
-      if user.admin?
-        scope.all
-      else
-        scope.joins(:company_users).where(company_users: { user_id: user.id })
-      end
+      return scope.all if user.admin?
+      return scope.joins(:company_users).where(company_users: { user_id: user.id }) if user.can?("companies", "index")
+      scope.none
     end
   end
 
   private
+
+  def resource_name = "companies"
 
   def member?
     record.is_a?(Company) && record.company_users.exists?(user: user)

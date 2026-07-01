@@ -1,5 +1,5 @@
 class ReportPolicy < ApplicationPolicy
-  def fechamento? = can?("fechamento")
+  def closing? = can?("closing")
 
   private
 

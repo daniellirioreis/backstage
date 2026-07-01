@@ -3,7 +3,7 @@ class EventFunction < ApplicationRecord
   has_many :team_memberships, dependent: :nullify
 
   validates :name,        presence: true
-  validates :hourly_rate, presence: true, numericality: { greater_than_or_equal_to: 0 }
+  validates :hourly_rate, presence: true, numericality: { greater_than_or_equal_to: 0, allow_nil: true }
   validates :name, uniqueness: { scope: :event_id, message: "já existe neste evento" }
 
   def to_s

@@ -70,14 +70,16 @@
         <%= f.text_field :phone, class: "form-control", placeholder: "(11) 99999-9999" %>
       </div>
 
-      <div style="grid-column: 1 / -1;">
-        <%= f.label :role_id, User.human_attribute_name(:role), class: "form-label" %>
-        <%= f.collection_select :role_id, Role.order(:name), :id, :name,
-            { include_blank: "— Selecione um perfil —" },
-            class: "form-control form-select",
-            data: { user_form_target: "role" } %>
-        <span class="field-error" data-user-form-target="roleError"></span>
-      </div>
+      <% if current_user.admin? %>
+        <div style="grid-column: 1 / -1;">
+          <%= f.label :role_id, User.human_attribute_name(:role), class: "form-label" %>
+          <%= f.collection_select :role_id, Role.order(:name), :id, :name,
+              { include_blank: "— Selecione um perfil —" },
+              class: "form-control form-select",
+              data: { user_form_target: "role" } %>
+          <span class="field-error" data-user-form-target="roleError"></span>
+        </div>
+      <% end %>
 
     </div>
 

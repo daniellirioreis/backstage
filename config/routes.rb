@@ -9,9 +9,9 @@ Rails.application.routes.draw do
                password: "password"
              }
 
-  get  "evento/selecionar", to: "event_session#select_event", as: :select_event
-  post "evento/selecionar", to: "event_session#set_event",    as: :set_event
-  delete "evento/limpar",   to: "event_session#clear_event",  as: :clear_event
+  get  "events/select", to: "event_session#select_event", as: :select_event
+  post "events/select", to: "event_session#set_event",    as: :set_event
+  delete "events/clear", to: "event_session#clear_event", as: :clear_event
 
   resources :companies do
     member do
@@ -68,8 +68,8 @@ Rails.application.routes.draw do
     end
   end
 
-  get "reports/fechamento",       to: "reports/fechamento#index", as: :reports_fechamento
-  get "reports/fechamento/print", to: "reports/fechamento#print", as: :reports_fechamento_print
+  get "reports/closing",       to: "reports/closing#index", as: :reports_closing
+  get "reports/closing/print", to: "reports/closing#print", as: :reports_closing_print
 
   root "dashboard#index"
 end

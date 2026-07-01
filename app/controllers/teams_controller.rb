@@ -136,7 +136,7 @@ class TeamsController < ApplicationController
     authorize Team
     @team         = Team.new(sector_id: params[:sector_id])
     @sectors      = Sector.where(event_id: current_event.id).order(:name)
-    @all_users    = User.order(:name)
+    @all_users    = company_users_scope.order(:name)
     @event_functions = current_event.event_functions.order(:name)
     @team.team_memberships.build
   end

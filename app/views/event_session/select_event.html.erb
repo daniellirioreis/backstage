@@ -20,6 +20,11 @@
               <h3 style="font-size: 0.95rem; font-weight: 600; color: #18181b; margin: 0;"><%= event.name %></h3>
               <span class="badge-status badge-<%= event.status %>"><%= t("event_statuses.#{event.status}") %></span>
             </div>
+            <% if event.company.present? %>
+              <div style="font-size: 0.75rem; color: #52525b; font-weight: 600; margin-bottom: 0.4rem; display:flex; align-items:center; gap:0.35rem;">
+                <i class="bi bi-building" style="opacity:0.6;"></i> Produzido por: <%= event.company.name %>
+              </div>
+            <% end %>
             <% if event.location.present? %>
               <div style="font-size: 0.8rem; color: #71717a; margin-bottom: 0.25rem;">
                 <i class="bi bi-geo-alt"></i> <%= event.location %>

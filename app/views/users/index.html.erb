@@ -51,6 +51,7 @@
       <th><%= User.human_attribute_name(:cpf) %></th>
       <th><%= User.human_attribute_name(:phone) %></th>
       <th><%= User.human_attribute_name(:role) %></th>
+      <th><%= Company.model_name.human(count: 2) %></th>
       <th></th>
     </tr>
   </thead>
@@ -79,6 +80,16 @@
             <span class="badge-status badge-active"><%= user.role.name %></span>
           <% else %>
             <span style="color: #a1a1aa; font-size: 0.8rem;">—</span>
+          <% end %>
+        </td>
+        <td>
+          <% user.companies.each do |company| %>
+            <span style="display:inline-flex; align-items:center; gap:0.25rem; background:#f4f4f5; border:1px solid #e4e4e7; border-radius:5px; padding:2px 8px; font-size:0.72rem; font-weight:600; color:#52525b; margin-right:2px;">
+              <i class="bi bi-building" style="font-size:0.65rem;"></i> <%= company.name %>
+            </span>
+          <% end %>
+          <% if user.companies.empty? %>
+            <span style="color:#a1a1aa; font-size:0.8rem;">—</span>
           <% end %>
         </td>
         <td class="td-actions">

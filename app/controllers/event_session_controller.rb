@@ -3,12 +3,20 @@ class EventSessionController < ApplicationController
 
   def select_event
     @events = if current_user.admin?
-      Event.order(start_date: :desc)
+      Event.includes(:company).order(start_date: :desc)
     else
       company_ids = current_user.company_users.pluck(:company_id)
-      Event.where(company_id: company_ids).order(start_date: :desc)
+      Event.includes(:company).where(company_id: company_ids).order(start_date: :desc)
     end
-    redirect_to new_event_path, notice: "Crie um evento para começar." if @events.empty?
+    if @events.empty?
+      if policy(Event).new?
+        redirect_to new_event_path, notice: "Crie um evento para começar."
+      elsif current_user.role&.collaborator?
+        redirect_to my_schedule_user_path(current_user), alert: t("errors.no_events_available")
+      else
+        redirect_to root_path, alert: t("errors.no_events_available")
+      end
+    end
   end
 
   def set_event
