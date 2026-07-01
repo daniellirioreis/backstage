@@ -1,154 +1,145 @@
 <%# Cabeçalho %>
-<div style="margin-bottom:12px;border-bottom:2px solid #18181b;padding-bottom:8px;display:flex;justify-content:space-between;align-items:flex-end;">
+<div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:16px; padding-bottom:10px; border-bottom:2px solid #18181b;">
   <div>
-    <div style="font-size:7px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#71717a;"><%= @event.company&.name || "Backstage" %></div>
-    <div style="font-size:14px;font-weight:800;color:#18181b;margin-top:1px;">Relatório de Fechamento</div>
-    <div style="font-size:9px;color:#52525b;margin-top:2px;">
-      <%= @event.name %> ·
-      <span style="color:#7c3aed;font-weight:700;">
-        <%= @basis == "attendance" ? "Base: Check-in / Check-out" : "Base: Escalas cadastradas" %>
-      </span>
+    <div style="font-size:16px; font-weight:800; color:#18181b; letter-spacing:-0.02em;">Relatório de Fechamento</div>
+    <div style="font-size:9px; color:#52525b; margin-top:3px;">
+      <%= @event.name %>
+      <% if @event.location.present? %> · <%= @event.location %><% end %>
+      · <%= l(@event.start_date, format: :short) %> → <%= l(@event.end_date, format: :short) %>
+    </div>
+    <div style="font-size:8px; color:#a1a1aa; margin-top:2px;">
+      Base: <%= @basis == "attendance" ? "Check-in / Check-out" : "Escalas cadastradas" %>
     </div>
   </div>
-  <div style="text-align:right;font-size:8px;color:#a1a1aa;">
-    Gerado em <%= l(Date.today, format: :short) %>
+  <div style="text-align:right;">
+    <% if @company %>
+      <div style="font-size:10px; font-weight:700; color:#18181b;"><%= @company.name %></div>
+    <% end %>
+    <div style="font-size:8px; color:#a1a1aa; margin-top:2px;">Gerado em <%= l(Date.today, format: :short) %></div>
   </div>
 </div>
 
-<%# Resumo por função %>
+<%# Resumo por função — linha simples %>
 <% by_function = @rows.group_by { |r| r[:function_name] }.sort_by { |fn, _| fn.to_s } %>
-<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;">
+<div style="display:flex; flex-wrap:wrap; gap:12px; margin-bottom:14px; padding:8px 10px; background:#f9fafb; border-radius:4px; border:1px solid #e4e4e7;">
   <% by_function.each do |fn_name, fn_rows| %>
     <% fn_hours = fn_rows.sum { |r| r[:total_hours] } %>
     <% fn_total = fn_rows.sum { |r| r[:total_value] } %>
-    <div style="border:1px solid #e4e4e7;border-radius:4px;padding:4px 8px;min-width:120px;">
-      <div style="font-size:7px;font-weight:700;color:#7c3aed;text-transform:uppercase;margin-bottom:2px;"><%= fn_name %></div>
-      <div style="font-size:8px;color:#52525b;"><%= fn_rows.size %> pessoa<%= fn_rows.size == 1 ? "" : "s" %> · <%= format_hours(fn_hours) %></div>
-      <div style="font-size:9px;font-weight:700;color:#18181b;">R$ <%= "%.2f" % fn_total %></div>
+    <div>
+      <div style="font-size:7px; font-weight:700; color:#71717a; text-transform:uppercase; letter-spacing:0.06em;"><%= fn_name %></div>
+      <div style="font-size:9px; color:#18181b;"><%= fn_rows.size %> pessoa<%= fn_rows.size == 1 ? "" : "s" %> · <%= format_hours(fn_hours) %> · <strong>R$ <%= "%.2f" % fn_total %></strong></div>
     </div>
   <% end %>
-  <div style="border:2px solid #18181b;border-radius:4px;padding:4px 8px;min-width:120px;background:#18181b;">
-    <div style="font-size:7px;font-weight:700;color:#a1a1aa;text-transform:uppercase;margin-bottom:2px;">Total Geral</div>
-    <div style="font-size:8px;color:#d4d4d8;"><%= @rows.size %> pessoas · <%= format_hours(@rows.sum { |r| r[:total_hours] }) %></div>
-    <div style="font-size:9px;font-weight:700;color:#fff;">R$ <%= "%.2f" % @grand_total %></div>
+  <div style="margin-left:auto; border-left:1px solid #e4e4e7; padding-left:12px;">
+    <div style="font-size:7px; font-weight:700; color:#71717a; text-transform:uppercase; letter-spacing:0.06em;">Total geral</div>
+    <div style="font-size:9px; color:#18181b;"><%= @rows.size %> pessoas · <%= format_hours(@rows.sum { |r| r[:total_hours] }) %> · <strong>R$ <%= "%.2f" % @grand_total %></strong></div>
   </div>
 </div>
 
-<%# Tabela detalhada %>
+<%# Tabela %>
 <table>
   <thead>
     <tr>
-      <th style="width:20%;">Colaborador</th>
-      <th style="width:12%;">CPF</th>
-      <th style="width:12%;">Função</th>
+      <th style="width:22%;">Colaborador</th>
+      <th style="width:13%;">CPF</th>
+      <th style="width:13%;">Função</th>
       <% if @basis == "attendance" %>
-        <th style="width:10%;text-align:center;">Data</th>
-        <th style="width:10%;text-align:center;">Check-in</th>
-        <th style="width:10%;text-align:center;">Check-out</th>
+        <th style="width:9%; text-align:center;">Data</th>
+        <th style="width:9%; text-align:center;">Entrada</th>
+        <th style="width:9%; text-align:center;">Saída</th>
       <% else %>
-        <th style="width:24%;text-align:center;">Turnos</th>
+        <th style="width:20%;">Turnos</th>
       <% end %>
-      <th style="width:8%;text-align:right;">Horas</th>
-      <th style="width:6%;text-align:right;">R$/h</th>
-      <th style="width:6%;text-align:right;">Total</th>
+      <th style="width:8%; text-align:right;">Horas</th>
+      <th style="width:7%; text-align:right;">R$/h</th>
+      <th style="width:8%; text-align:right;">Total</th>
     </tr>
   </thead>
   <tbody>
-    <% @rows.each do |row| %>
-      <tr>
+    <% @rows.each_with_index do |row, idx| %>
+      <tr style="<%= idx.odd? ? 'background:#fafafa;' : '' %>">
         <td style="font-weight:600;"><%= row[:user].name %></td>
-        <td style="font-family:monospace;font-size:9px;color:#52525b;">
-          <%= row[:user].cpf.gsub(/(\d{3})(\d{3})(\d{3})(\d{2})/, '\1.\2.\3-\4') %>
-        </td>
-        <td>
-          <span style="font-size:8px;font-weight:700;color:#7c3aed;"><%= row[:function_name] %></span>
-        </td>
+        <td style="font-family:monospace; color:#71717a;"><%= row[:user].cpf.gsub(/(\d{3})(\d{3})(\d{3})(\d{2})/, '\1.\2.\3-\4') %></td>
+        <td style="color:#52525b;"><%= row[:function_name] %></td>
         <% if @basis == "attendance" %>
-          <td style="font-size:8px;color:#52525b;text-align:center;">
-            <% row[:entries].each do |entry| %>
-              <div><%= entry[:date] %></div>
-            <% end %>
+          <td style="text-align:center; color:#52525b;">
+            <% row[:entries].each do |entry| %><div><%= entry[:date] %></div><% end %>
           </td>
-          <td style="font-size:8px;text-align:center;">
-            <% row[:entries].each do |entry| %>
-              <div style="color:#15803d;font-weight:600;"><%= entry[:checked_in] %></div>
-            <% end %>
+          <td style="text-align:center;">
+            <% row[:entries].each do |entry| %><div style="color:#15803d; font-weight:600;"><%= entry[:checked_in] %></div><% end %>
           </td>
-          <td style="font-size:8px;text-align:center;">
-            <% row[:entries].each do |entry| %>
-              <div style="color:#c2410c;font-weight:600;"><%= entry[:checked_out] %></div>
-            <% end %>
+          <td style="text-align:center;">
+            <% row[:entries].each do |entry| %><div style="color:#b91c1c; font-weight:600;"><%= entry[:checked_out] %></div><% end %>
           </td>
         <% else %>
-          <td style="font-size:8px;color:#52525b;">
+          <td style="color:#71717a; font-size:8px;">
             <% row[:entries].each do |entry| %>
-              <div><%= entry[:label] %> <span style="color:#a1a1aa;font-weight:600;"><%= format_hours(entry[:hours]) %></span></div>
+              <div><%= entry[:label] %> · <%= format_hours(entry[:hours]) %></div>
             <% end %>
           </td>
         <% end %>
-        <td style="text-align:right;font-weight:700;"><%= format_hours(row[:total_hours]) %></td>
-        <td style="text-align:right;color:#52525b;">
-          <% if row[:hourly_rate] > 0 %>R$ <%= "%.2f" % row[:hourly_rate] %><% else %>—<% end %>
-        </td>
-        <td style="text-align:right;font-weight:700;color:<%= row[:total_value] > 0 ? '#15803d' : '#a1a1aa' %>;">
-          <% if row[:total_value] > 0 %>R$ <%= "%.2f" % row[:total_value] %><% else %>—<% end %>
-        </td>
+        <td style="text-align:right; font-weight:700;"><%= format_hours(row[:total_hours]) %></td>
+        <td style="text-align:right; color:#71717a;"><%= row[:hourly_rate] > 0 ? "R$ #{"%.2f" % row[:hourly_rate]}" : "—" %></td>
+        <td style="text-align:right; font-weight:700;"><%= row[:total_value] > 0 ? "R$ #{"%.2f" % row[:total_value]}" : "—" %></td>
       </tr>
     <% end %>
   </tbody>
   <tfoot>
-    <tr style="background:#f4f4f5;">
-      <td colspan="<%= @basis == 'attendance' ? 6 : 4 %>" style="font-weight:700;">
-        Total — <%= @rows.size %> colaboradore<%= @rows.size == 1 ? "" : "s" %>
+    <tr>
+      <td colspan="<%= @basis == 'attendance' ? 6 : 4 %>" style="font-weight:700; background:#18181b; color:#fff;">
+        Total · <%= @rows.size %> colaboradore<%= @rows.size == 1 ? "" : "s" %>
       </td>
-      <td style="text-align:right;font-weight:700;"><%= format_hours(@rows.sum { |r| r[:total_hours] }) %></td>
-      <td></td>
-      <td style="text-align:right;font-weight:700;color:#15803d;">R$ <%= "%.2f" % @grand_total %></td>
+      <td style="text-align:right; font-weight:700; background:#18181b; color:#fff;"><%= format_hours(@rows.sum { |r| r[:total_hours] }) %></td>
+      <td style="background:#18181b;"></td>
+      <td style="text-align:right; font-weight:700; background:#18181b; color:#fff;">R$ <%= "%.2f" % @grand_total %></td>
     </tr>
   </tfoot>
 </table>
 
-<%# Rodapé — empresa %>
-<% if @company %>
-  <div style="margin-top:16px;padding-top:8px;border-top:1px solid #e4e4e7;display:flex;align-items:center;gap:8px;">
-    <div>
-      <div style="font-size:6px;font-weight:700;color:#a1a1aa;text-transform:uppercase;letter-spacing:0.1em;">Empresa responsável</div>
-      <div style="font-size:9px;font-weight:700;color:#18181b;"><%= @company.name %></div>
-      <div style="font-size:7px;color:#71717a;display:flex;flex-wrap:wrap;gap:6px;margin-top:2px;">
-        <% if @company.cnpj.present? %><span>CNPJ: <%= @company.cnpj %></span><% end %>
-        <% if @company.phone.present? %><span>Tel: <%= @company.phone %></span><% end %>
-        <% if @company.email.present? %><span><%= @company.email %></span><% end %>
-        <% if @company.city.present? %><span><%= [@company.city, @company.state].compact.join(", ") %></span><% end %>
-      </div>
+<%# Pendentes de checkout %>
+<% if @basis == "attendance" && @pending_rows.present? %>
+  <div style="margin-top:14px; padding-top:8px; border-top:1px solid #e4e4e7;">
+    <div style="font-size:8px; font-weight:700; color:#b45309; margin-bottom:6px; text-transform:uppercase; letter-spacing:0.06em;">
+      Aguardando checkout (<%= @pending_rows.size %>)
     </div>
+    <table>
+      <thead>
+        <tr>
+          <th>Colaborador</th>
+          <th>Função</th>
+          <th style="text-align:center;">Check-in</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @pending_rows.each_with_index do |row, idx| %>
+          <tr style="<%= idx.odd? ? 'background:#fafafa;' : '' %>">
+            <td style="font-weight:600;"><%= row[:user].name %></td>
+            <td style="color:#52525b;"><%= row[:function_name] %></td>
+            <td style="text-align:center; color:#15803d; font-weight:600;"><%= l(row[:checked_in_at], format: :short) %></td>
+            <td style="color:#b45309; font-weight:600;">Sem checkout</td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
   </div>
 <% end %>
 
-<%# Pendentes de checkout (só no modo attendance) %>
-<% if @basis == "attendance" && @pending_rows.present? %>
-<div style="margin-top:12px;border-top:1px solid #e4e4e7;padding-top:8px;">
-  <div style="font-size:8px;font-weight:700;color:#d97706;margin-bottom:6px;">
-    Aguardando checkout (<%= @pending_rows.size %>)
+<%# Rodapé — empresa %>
+<% if @company %>
+  <div style="margin-top:16px; padding-top:8px; border-top:1px solid #e4e4e7; display:flex; justify-content:space-between; align-items:flex-end;">
+    <div>
+      <div style="font-size:6px; font-weight:700; color:#a1a1aa; text-transform:uppercase; letter-spacing:0.1em; margin-bottom:2px;">Empresa responsável</div>
+      <div style="font-size:9px; font-weight:700; color:#18181b;"><%= @company.name %></div>
+      <div style="font-size:7px; color:#71717a; margin-top:1px;">
+        <% parts = [] %>
+        <% parts << "CNPJ: #{@company.cnpj}" if @company.cnpj.present? %>
+        <% parts << "Tel: #{@company.phone}" if @company.phone.present? %>
+        <% parts << @company.email if @company.email.present? %>
+        <% parts << [@company.city, @company.state].compact.join(", ") if @company.city.present? %>
+        <%= parts.join(" · ") %>
+      </div>
+    </div>
+    <div style="font-size:7px; color:#a1a1aa;">Backstage · <%= l(Date.today, format: :short) %></div>
   </div>
-  <table>
-    <thead>
-      <tr>
-        <th>Colaborador</th>
-        <th>Função</th>
-        <th style="text-align:center;">Check-in</th>
-        <th>Status</th>
-      </tr>
-    </thead>
-    <tbody>
-      <% @pending_rows.each do |row| %>
-        <tr>
-          <td style="font-weight:600;"><%= row[:user].name %></td>
-          <td style="font-size:8px;color:#7c3aed;font-weight:700;"><%= row[:function_name] %></td>
-          <td style="font-size:8px;text-align:center;color:#15803d;font-weight:600;"><%= l(row[:checked_in_at], format: :short) %></td>
-          <td style="font-size:8px;color:#d97706;font-weight:600;">Sem checkout</td>
-        </tr>
-      <% end %>
-    </tbody>
-  </table>
-</div>
 <% end %>

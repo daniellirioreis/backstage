@@ -29,24 +29,54 @@
   <button id="teams-search-clear" type="button" style="background: none; border: none; cursor: pointer; color: #a1a1aa; padding: 0; font-size: 1rem; line-height: 1; display: none;">×</button>
 </div>
 
-<%# Filtro de setor %>
-<div class="content-card" style="margin-bottom: 1rem; padding: 0.75rem 1rem;">
+<%# Filtros %>
+<% active_filters = params.permit(:sector_id, :without_shifts, :without_coordinator) %>
+<div class="content-card" style="margin-bottom: 1rem; padding: 0.75rem 1rem; display: flex; flex-direction: column; gap: 0.6rem;">
+
+  <%# Setor %>
   <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
-    <span style="font-size: 0.78rem; font-weight: 600; color: #71717a; white-space: nowrap;">
+    <span style="font-size: 0.78rem; font-weight: 600; color: #71717a; white-space: nowrap; min-width: 72px;">
       <i class="bi bi-grid-3x3-gap"></i> Setor:
     </span>
-    <%= link_to "Todos", teams_path,
-        style: "font-size: 0.78rem; padding: 0.25rem 0.65rem; border-radius: 6px; border: 1px solid #{params[:sector_id].blank? ? '#18181b' : '#e4e4e7'}; background: #{params[:sector_id].blank? ? '#18181b' : 'transparent'}; color: #{params[:sector_id].blank? ? '#fff' : '#3f3f46'}; text-decoration: none; white-space: nowrap;" %>
+    <% no_sector = params[:sector_id].blank? %>
+    <%= link_to "Todos", teams_path(active_filters.except(:sector_id)),
+        style: "font-size:0.78rem;padding:0.25rem 0.65rem;border-radius:6px;border:1px solid #{no_sector ? '#18181b' : '#e4e4e7'};background:#{no_sector ? '#18181b' : 'transparent'};color:#{no_sector ? '#fff' : '#3f3f46'};text-decoration:none;white-space:nowrap;" %>
     <% @sectors.each do |sector| %>
-      <%= link_to sector.name, teams_path(sector_id: sector.id),
-          style: "font-size: 0.78rem; padding: 0.25rem 0.65rem; border-radius: 6px; border: 1px solid #{params[:sector_id].to_s == sector.id.to_s ? '#18181b' : '#e4e4e7'}; background: #{params[:sector_id].to_s == sector.id.to_s ? '#18181b' : 'transparent'}; color: #{params[:sector_id].to_s == sector.id.to_s ? '#fff' : '#3f3f46'}; text-decoration: none; white-space: nowrap;" %>
-    <% end %>
-    <% if params[:sector_id].present? %>
-      <span style="font-size: 0.75rem; color: #a1a1aa; margin-left: auto;">
-        <%= @teams.size %> equipe<%= @teams.size == 1 ? "" : "s" %>
-      </span>
+      <% active = params[:sector_id].to_s == sector.id.to_s %>
+      <%= link_to sector.name, teams_path(active_filters.merge(sector_id: sector.id)),
+          style: "font-size:0.78rem;padding:0.25rem 0.65rem;border-radius:6px;border:1px solid #{active ? '#18181b' : '#e4e4e7'};background:#{active ? '#18181b' : 'transparent'};color:#{active ? '#fff' : '#3f3f46'};text-decoration:none;white-space:nowrap;" %>
     <% end %>
   </div>
+
+  <%# Situação %>
+  <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+    <span style="font-size: 0.78rem; font-weight: 600; color: #71717a; white-space: nowrap; min-width: 72px;">
+      <i class="bi bi-funnel"></i> Filtros:
+    </span>
+
+    <% without_shifts_on = params[:without_shifts] == "1" %>
+    <% toggle_shifts = without_shifts_on ? active_filters.except(:without_shifts) : active_filters.merge(without_shifts: "1") %>
+    <%= link_to teams_path(toggle_shifts),
+        style: "font-size:0.78rem;padding:0.25rem 0.65rem;border-radius:6px;border:1px solid #{without_shifts_on ? '#dc2626' : '#e4e4e7'};background:#{without_shifts_on ? '#fef2f2' : 'transparent'};color:#{without_shifts_on ? '#dc2626' : '#3f3f46'};text-decoration:none;white-space:nowrap;display:inline-flex;align-items:center;gap:0.3rem;" do %>
+      <i class="bi bi-calendar-x" style="font-size:0.7rem;"></i> Sem escala
+    <% end %>
+
+    <% without_coord_on = params[:without_coordinator] == "1" %>
+    <% toggle_coord = without_coord_on ? active_filters.except(:without_coordinator) : active_filters.merge(without_coordinator: "1") %>
+    <%= link_to teams_path(toggle_coord),
+        style: "font-size:0.78rem;padding:0.25rem 0.65rem;border-radius:6px;border:1px solid #{without_coord_on ? '#d97706' : '#e4e4e7'};background:#{without_coord_on ? '#fffbeb' : 'transparent'};color:#{without_coord_on ? '#d97706' : '#3f3f46'};text-decoration:none;white-space:nowrap;display:inline-flex;align-items:center;gap:0.3rem;" do %>
+      <i class="bi bi-person-x" style="font-size:0.7rem;"></i> Sem coordenador
+    <% end %>
+
+    <% any_filter = params[:sector_id].present? || without_shifts_on || without_coord_on %>
+    <% if any_filter %>
+      <span style="font-size:0.75rem;color:#a1a1aa;">
+        <%= @teams.size %> equipe<%= @teams.size == 1 ? "" : "s" %>
+      </span>
+      <%= link_to "× Limpar", teams_path, style: "font-size:0.75rem;color:#a1a1aa;text-decoration:none;margin-left:0.25rem;" %>
+    <% end %>
+  </div>
+
 </div>
 
 <% if @teams.empty? %>
@@ -60,10 +90,10 @@
     <div class="content-card team-sector-group" style="margin-bottom: 1rem; padding: 0; overflow: hidden;">
 
       <%# Header do setor %>
-      <div style="padding: 0.55rem 1rem; background: #f9fafb; border-bottom: 1px solid #e4e4e7; display: flex; align-items: center; gap: 0.5rem;">
+      <div style="padding: 0.55rem 1rem; background: #18181b; border-bottom: 1px solid #27272a; display: flex; align-items: center; gap: 0.5rem;">
         <i class="bi bi-grid-3x3-gap" style="color: #71717a; font-size: 0.8rem;"></i>
-        <span style="font-size: 0.78rem; font-weight: 700; color: #3f3f46; text-transform: uppercase; letter-spacing: 0.06em;"><%= sector.name %></span>
-        <span style="font-size: 0.72rem; color: #a1a1aa; margin-left: 0.25rem;"><%= teams.size %> equipe<%= teams.size == 1 ? "" : "s" %></span>
+        <span style="font-size: 0.78rem; font-weight: 700; color: #f4f4f5; text-transform: uppercase; letter-spacing: 0.06em;"><%= sector.name %></span>
+        <span style="font-size: 0.72rem; color: #71717a; margin-left: 0.25rem;"><%= teams.size %> equipe<%= teams.size == 1 ? "" : "s" %></span>
       </div>
 
       <%# Linhas de equipe %>

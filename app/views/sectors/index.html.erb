@@ -41,3 +41,14 @@
     <% end %>
   </tbody>
 </table>
+
+<% if @sectors.total_pages > 1 %>
+  <div style="display:flex; justify-content:center; align-items:center; gap:0.4rem; margin-top:1.5rem;">
+    <%= will_paginate @sectors,
+        previous_label: "‹ Anterior",
+        next_label:     "Próximo ›",
+        inner_window:   2,
+        outer_window:   1,
+        renderer:       "BackstagePaginationRenderer" %>
+  </div>
+<% end %>

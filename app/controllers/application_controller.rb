@@ -40,7 +40,14 @@ class ApplicationController < ActionController::Base
     end
 
     unless current_event
-      redirect_to select_event_path, alert: "Selecione um evento para continuar."
+      @return_to = request.path
+      @events = if current_user.admin?
+        Event.includes(:company).order(start_date: :desc)
+      else
+        company_ids = current_user.company_users.pluck(:company_id)
+        Event.includes(:company).where(company_id: company_ids).order(start_date: :desc)
+      end
+      render "event_session/select_event_modal", layout: "application"
     end
   end
 

@@ -30,10 +30,21 @@
           class: "form-control", style: "margin: 0;" %>
     </div>
 
+    <%# Empresa — só aparece se houver mais de uma %>
+    <% if @companies.size > 1 %>
+      <div style="min-width: 180px;">
+        <label style="display: block; font-size: 0.72rem; font-weight: 600; color: #71717a; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.3rem;">Empresa</label>
+        <%= f.select :company_id,
+            options_from_collection_for_select(@companies, :id, :name, params[:company_id]),
+            { include_blank: "Todas" },
+            class: "form-control", style: "margin: 0;" %>
+      </div>
+    <% end %>
+
     <%# Botões %>
     <div style="display: flex; gap: 0.5rem; padding-bottom: 1px;">
       <%= f.submit "Filtrar", class: "btn-primary" %>
-      <% if params[:q].present? || params[:role_id].present? %>
+      <% if params[:q].present? || params[:role_id].present? || params[:company_id].present? %>
         <%= link_to users_path, class: "btn-secondary" do %>
           <i class="bi bi-x"></i> Limpar
         <% end %>
@@ -112,3 +123,15 @@
     <% end %>
   </tbody>
 </table>
+
+<%# Paginação %>
+<% if @users.total_pages > 1 %>
+  <div style="display:flex; justify-content:center; align-items:center; gap:0.4rem; margin-top:1.5rem;">
+    <%= will_paginate @users,
+        previous_label: "‹ Anterior",
+        next_label:     "Próximo ›",
+        inner_window:   2,
+        outer_window:   1,
+        renderer:       "BackstagePaginationRenderer" %>
+  </div>
+<% end %>

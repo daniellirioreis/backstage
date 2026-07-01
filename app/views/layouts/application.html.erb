@@ -154,7 +154,7 @@
               <span class="event-bar-sep">·</span>
               <span style="color: #71717a;"><i class="bi bi-geo-alt"></i> <%= current_event.location %></span>
             <% end %>
-            <%= link_to select_event_path, class: "event-bar-change" do %>
+            <%= link_to select_event_path(modal: 1, return_to: request.path), class: "event-bar-change" do %>
               <i class="bi bi-arrow-left-right"></i> Trocar
             <% end %>
           </div>

@@ -3,23 +3,34 @@ class UsersController < ApplicationController
 
   def index
     authorize User
-    @roles = Role.order(:name)
-    scope  = policy_scope(company_users_scope).includes(:role, :avatar_attachment, :companies)
+    @roles     = Role.order(:name)
+    @companies = if current_user.admin?
+      Company.order(:name)
+    else
+      Company.joins(:company_users)
+             .where(company_users: { user_id: current_user.id })
+             .order(:name)
+    end
+    scope      = policy_scope(company_users_scope).includes(:role, :avatar_attachment, :companies)
 
     if params[:q].present?
       q      = params[:q].strip
       digits = q.gsub(/\D/, "")
       scope  = if digits.length >= 3
-        scope.where("name ILIKE ? OR cpf LIKE ?", "%#{q}%", "%#{digits}%")
+        scope.where("users.name ILIKE ? OR users.cpf LIKE ?", "%#{q}%", "%#{digits}%")
       else
-        scope.where("name ILIKE ?", "%#{q}%")
+        scope.where("users.name ILIKE ?", "%#{q}%")
       end
     end
 
     scope = scope.where(role_id: params[:role_id]) if params[:role_id].present?
 
-    @users = scope.order(:name)
-    @total = @users.size
+    if params[:company_id].present?
+      scope = scope.where(id: User.joins(:company_users).where(company_users: { company_id: params[:company_id] }).select(:id))
+    end
+
+    @users = scope.order("users.name").distinct.paginate(page: params[:page], per_page: 10)
+    @total = @users.total_entries
   end
 
   def search

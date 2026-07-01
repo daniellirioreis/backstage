@@ -10,7 +10,12 @@ class UserPolicy < ApplicationPolicy
   def my_schedule? = user.present? && (user.admin? || user == record || can?("my_schedule"))
 
   class Scope < ApplicationPolicy::Scope
-    def resolve = scope.all
+    def resolve
+      return scope.all if user.admin?
+      company_ids = user.company_users.pluck(:company_id)
+      return scope.all if company_ids.empty?
+      scope.joins(:company_users).where(company_users: { company_id: company_ids })
+    end
   end
 
   private

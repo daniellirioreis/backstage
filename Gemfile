@@ -27,6 +27,9 @@ gem "rqrcode"
 gem "bootstrap", "~> 5.3"
 gem "sassc-rails"
 
+# Pagination
+gem "will_paginate", "~> 4.0"
+
 group :development, :test do
   gem "debug", platforms: %i[mri windows]
 end

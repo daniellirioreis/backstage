@@ -1,0 +1,51 @@
+<div class="bs-modal-overlay">
+  <div class="bs-modal-box" style="max-width:520px; padding:2rem; text-align:left;">
+
+    <div style="display:flex; align-items:center; gap:0.75rem; margin-bottom:1.5rem; padding-bottom:1.25rem; border-bottom:1px solid #f4f4f5;">
+      <div class="bs-modal-icon" style="margin:0; flex-shrink:0; width:44px; height:44px;">
+        <i class="bi bi-calendar-event" style="font-size:1.25rem;"></i>
+      </div>
+      <div>
+        <h2 class="bs-modal-title" style="text-align:left; margin:0; font-size:1rem;">Selecionar evento</h2>
+        <p style="margin:0; font-size:0.78rem; color:#71717a;">Escolha o evento em que deseja trabalhar.</p>
+      </div>
+    </div>
+
+    <% if @events.empty? %>
+      <div style="text-align:center; padding:2rem; color:#a1a1aa;">
+        <i class="bi bi-calendar-x" style="font-size:2rem; display:block; margin-bottom:0.5rem;"></i>
+        <p style="margin:0; font-size:0.85rem;">Nenhum evento disponível.</p>
+      </div>
+    <% else %>
+      <div style="display:flex; flex-direction:column; gap:0.5rem; max-height:55vh; overflow-y:auto; padding-right:4px;">
+        <% @events.each do |event| %>
+          <%= form_with url: set_event_path, method: :post do |f| %>
+            <%= f.hidden_field :event_id, value: event.id %>
+            <%= f.hidden_field :return_to, value: @return_to %>
+            <button type="submit" style="width:100%; text-align:left; background:none; border:1px solid #e4e4e7; border-radius:10px; padding:0; cursor:pointer; transition:border-color 0.15s, box-shadow 0.15s;"
+                    onmouseover="this.style.borderColor='#18181b'; this.style.boxShadow='0 2px 8px rgba(0,0,0,0.08)'"
+                    onmouseout="this.style.borderColor='#e4e4e7'; this.style.boxShadow='none'">
+              <div style="height:3px; border-radius:10px 10px 0 0; background:<%= event.active? ? '#4ade80' : event.draft? ? '#d4d4d8' : '#27272a' %>;"></div>
+              <div style="padding:0.75rem 1rem; display:flex; align-items:center; justify-content:space-between; gap:0.75rem;">
+                <div style="min-width:0;">
+                  <div style="font-size:0.88rem; font-weight:700; color:#18181b; margin-bottom:0.2rem;"><%= event.name %></div>
+                  <div style="font-size:0.72rem; color:#71717a; display:flex; flex-wrap:wrap; gap:0.5rem;">
+                    <% if event.company.present? %>
+                      <span><i class="bi bi-building"></i> <%= event.company.name %></span>
+                    <% end %>
+                    <% if event.location.present? %>
+                      <span><i class="bi bi-geo-alt"></i> <%= event.location %></span>
+                    <% end %>
+                    <span><i class="bi bi-calendar3"></i> <%= l(event.start_date, format: :short) %> → <%= l(event.end_date, format: :short) %></span>
+                  </div>
+                </div>
+                <span class="badge-status badge-<%= event.status %>" style="flex-shrink:0;"><%= t("event_statuses.#{event.status}") %></span>
+              </div>
+            </button>
+          <% end %>
+        <% end %>
+      </div>
+    <% end %>
+
+  </div>
+</div>

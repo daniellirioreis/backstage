@@ -23,6 +23,13 @@ class TeamsController < ApplicationController
               .includes(:sector, coordinator: { avatar_attachment: :blob }, team_memberships: [:event_function, { user: { avatar_attachment: :blob } }])
               .order("sectors.name, teams.name")
     scope = scope.where(sector_id: params[:sector_id]) if params[:sector_id].present?
+    scope = scope.where(coordinator_id: nil) if params[:without_coordinator] == "1"
+    if params[:without_shifts] == "1"
+      teams_with_shifts_ids = Shift.joins(sector: :event)
+                                   .where(sectors: { event_id: current_event.id })
+                                   .distinct.pluck(:team_id)
+      scope = scope.where.not(id: teams_with_shifts_ids)
+    end
     @teams = scope
     @teams_with_shifts = Shift.where(team_id: @teams.map(&:id)).distinct.pluck(:team_id).to_set
   end

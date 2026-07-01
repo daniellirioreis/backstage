@@ -36,3 +36,14 @@
     <% end %>
   </tbody>
 </table>
+
+<% if @vehicles.total_pages > 1 %>
+  <div style="display:flex; justify-content:center; align-items:center; gap:0.4rem; margin-top:1.5rem;">
+    <%= will_paginate @vehicles,
+        previous_label: "‹ Anterior",
+        next_label:     "Próximo ›",
+        inner_window:   2,
+        outer_window:   1,
+        renderer:       "BackstagePaginationRenderer" %>
+  </div>
+<% end %>

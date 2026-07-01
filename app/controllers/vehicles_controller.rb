@@ -3,7 +3,7 @@ class VehiclesController < ApplicationController
 
   def index
     authorize Vehicle
-    @vehicles = policy_scope(Vehicle).order(:license_plate)
+    @vehicles = policy_scope(Vehicle).order(:license_plate).paginate(page: params[:page], per_page: 10)
   end
 
   def show
