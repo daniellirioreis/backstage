@@ -1,0 +1,42 @@
+<div style="text-align:center; margin-bottom:1.5rem;">
+  <div style="width:3rem; height:3rem; background:#f0fdf4; border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 0.75rem;">
+    <i class="bi bi-check-circle-fill" style="font-size:1.4rem; color:#16a34a;"></i>
+  </div>
+  <h2 style="font-size:1.1rem; font-weight:700; color:#18181b; margin:0 0 0.25rem;">Convite criado!</h2>
+  <p style="font-size:0.83rem; color:#71717a; margin:0;">Compartilhe o link abaixo com <strong style="color:#18181b;"><%= @invited_user.name %></strong>.</p>
+</div>
+
+<div style="background:#f4f4f5; border-radius:8px; padding:0.75rem 1rem; margin-bottom:1rem; display:flex; align-items:center; gap:0.5rem;">
+  <input id="invite-url" type="text" readonly value="<%= @invite_url %>"
+         style="flex:1; border:none; background:transparent; font-size:0.78rem; color:#374151; outline:none; min-width:0; word-break:break-all;" />
+  <button onclick="copyInviteUrl()" id="copy-btn"
+          style="flex-shrink:0; background:#18181b; color:#fff; border:none; border-radius:6px; padding:0.4rem 0.85rem; font-size:0.78rem; font-weight:600; cursor:pointer; white-space:nowrap;">
+    Copiar
+  </button>
+</div>
+
+<p style="font-size:0.75rem; color:#a1a1aa; text-align:center; margin:0 0 1.5rem;">
+  O link expira quando o convite for aceito.
+</p>
+
+<div style="display:flex; gap:0.75rem;">
+  <%= link_to "Novo convite", new_invitation_path,
+        style: "flex:1; text-align:center; background:#fff; color:#18181b; border:1px solid #d1d5db; border-radius:8px; padding:0.6rem; font-size:0.84rem; font-weight:500; text-decoration:none;" %>
+  <%= link_to "Voltar para Usuários", users_path,
+        style: "flex:1; text-align:center; background:#18181b; color:#fff; border:none; border-radius:8px; padding:0.6rem; font-size:0.84rem; font-weight:500; text-decoration:none;" %>
+</div>
+
+<script>
+  function copyInviteUrl() {
+    var input = document.getElementById("invite-url");
+    var btn   = document.getElementById("copy-btn");
+    navigator.clipboard.writeText(input.value).then(function() {
+      btn.textContent = "Copiado!";
+      btn.style.background = "#16a34a";
+      setTimeout(function() {
+        btn.textContent = "Copiar";
+        btn.style.background = "#18181b";
+      }, 2000);
+    });
+  }
+</script>

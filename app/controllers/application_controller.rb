@@ -2,6 +2,7 @@ class ApplicationController < ActionController::Base
   include Pundit::Authorization
 
   before_action :authenticate_user!
+  before_action :check_onboarding!
   before_action :require_current_event!
 
   layout :resolve_layout
@@ -64,6 +65,15 @@ class ApplicationController < ActionController::Base
       controller_name == "roles" ||
       controller_name == "companies" ||
       controller_name == "vehicles"
+  end
+
+  def check_onboarding!
+    return unless user_signed_in?
+    return if current_user.onboarding_complete?
+    return if current_user.pending_invitation? # ainda não aceitou o convite
+    return if controller_name.in?(%w[onboarding invitations])
+    return if devise_controller?
+    redirect_to onboarding_empresa_path
   end
 
   def after_sign_in_path_for(resource)

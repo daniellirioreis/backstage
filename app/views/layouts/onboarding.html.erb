@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Backstage — Configuração</title>
+  <%= csrf_meta_tags %>
+  <%= csp_meta_tag %>
+  <%= stylesheet_link_tag "application", media: "all" %>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+</head>
+<body style="min-height:100vh; background:#f4f4f5; display:flex; flex-direction:column; align-items:center; justify-content:center; font-family:system-ui,sans-serif; margin:0; padding:2rem; box-sizing:border-box;">
+
+  <%# Logo %>
+  <div style="margin-bottom:2rem; text-align:center;">
+    <div style="font-size:1.4rem; font-weight:800; letter-spacing:-0.03em; color:#18181b;">
+      <span style="background:#18181b; color:#fff; border-radius:6px; padding:0.15rem 0.5rem;">B</span>ackstage
+    </div>
+  </div>
+
+  <%# Flash %>
+  <% flash.each do |type, msg| %>
+    <% bg = type == "notice" ? "#f0fdf4" : "#fef2f2"; border = type == "notice" ? "#86efac" : "#fca5a5"; color = type == "notice" ? "#15803d" : "#dc2626" %>
+    <div style="background:<%= bg %>; border:1px solid <%= border %>; color:<%= color %>; border-radius:8px; padding:0.65rem 1rem; font-size:0.83rem; margin-bottom:1rem; width:100%; max-width:520px; box-sizing:border-box;">
+      <%= msg %>
+    </div>
+  <% end %>
+
+  <%# Card %>
+  <div style="background:#fff; border-radius:14px; box-shadow:0 4px 24px rgba(0,0,0,0.08); padding:2.5rem; width:100%; max-width:520px; box-sizing:border-box;">
+    <%= yield %>
+  </div>
+
+  <div style="margin-top:1.5rem; font-size:0.75rem; color:#a1a1aa;">Backstage · Gestão de Eventos</div>
+</body>
+</html>

@@ -1,0 +1,26 @@
+<%# Progress %>
+<div style="display:flex; gap:0.5rem; margin-bottom:1.75rem;">
+  <% [["Empresa", false], ["Evento", false], ["Concluído", true]].each do |label, active| %>
+    <div style="flex:1; text-align:center;">
+      <div style="font-size:0.7rem; font-weight:<%= active ? 700 : 400 %>; color:<%= active ? '#18181b' : '#a1a1aa' %>; margin-bottom:0.35rem;"><%= label %></div>
+      <div style="height:3px; border-radius:2px; background:#18181b;"></div>
+    </div>
+  <% end %>
+</div>
+
+<div style="text-align:center; padding:0.5rem 0 1rem;">
+  <div style="width:4rem; height:4rem; background:#f0fdf4; border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 1rem;">
+    <i class="bi bi-rocket-takeoff-fill" style="font-size:1.8rem; color:#16a34a;"></i>
+  </div>
+
+  <h2 style="font-size:1.2rem; font-weight:700; color:#18181b; margin:0 0 0.5rem;">Tudo pronto, <%= current_user.name.split.first %>!</h2>
+  <p style="font-size:0.85rem; color:#71717a; margin:0 0 2rem; line-height:1.5;">
+    Sua conta está ativa, sua empresa e evento estão cadastrados.<br>
+    Agora é só começar a gerenciar.
+  </p>
+
+  <%= link_to root_path,
+        style: "display:inline-block; background:#18181b; color:#fff; border-radius:8px; padding:0.7rem 2rem; font-size:0.9rem; font-weight:600; text-decoration:none;" do %>
+    Ir para o dashboard <i class="bi bi-arrow-right"></i>
+  <% end %>
+</div>

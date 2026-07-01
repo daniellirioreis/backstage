@@ -10,7 +10,7 @@ class User < ApplicationRecord
   has_many :company_users, dependent: :destroy
   has_many :companies, through: :company_users
   has_one_attached :avatar
-  attr_accessor :remove_avatar
+  attr_accessor :remove_avatar, :skip_required_validations
   before_save { avatar.purge if remove_avatar == "1" }
 
   delegate :can?, to: :role, allow_nil: true
@@ -25,11 +25,28 @@ class User < ApplicationRecord
     company_users.find_by(company: company)&.role
   end
 
+  # ── Invitation helpers ────────────────────────────────────────────────────
+  def pending_invitation?
+    invitation_token.present? && invitation_accepted_at.nil?
+  end
+
+  def onboarding_complete?
+    return true if invitation_token.nil?   # usuário não veio por convite
+    onboarding_completed_at.present?
+  end
+
+  def generate_invitation_token!
+    token = SecureRandom.urlsafe_base64(24)
+    update_column(:invitation_token, token)
+    token
+  end
+
   validates :name, presence: true
   validates :cpf, presence: true, uniqueness: true,
-                  format: { with: /\A\d{11}\z/, message: :invalid_cpf }
+                  format: { with: /\A\d{11}\z/, message: :invalid_cpf },
+                  unless: :skip_required_validations
   validate :cpf_check_digits, if: -> { cpf.present? && cpf.match?(/\A\d{11}\z/) }
-  validates :phone, presence: true
+  validates :phone, presence: true, unless: :skip_required_validations
 
   private
 

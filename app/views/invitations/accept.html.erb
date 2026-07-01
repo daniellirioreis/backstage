@@ -1,0 +1,53 @@
+<h2 style="font-size:1.2rem; font-weight:700; color:#18181b; margin:0 0 0.25rem;">Bem-vindo ao Backstage!</h2>
+<p style="font-size:0.83rem; color:#71717a; margin:0 0 1.5rem;">Preencha seus dados para ativar sua conta.</p>
+
+<%= form_with url: confirm_invitation_path(token: params[:token]), method: :post do |f| %>
+  <div style="display:flex; flex-direction:column; gap:1rem;">
+
+    <div>
+      <label style="display:block; font-size:0.8rem; font-weight:500; color:#374151; margin-bottom:0.3rem;">Nome</label>
+      <input type="text" name="user[name]" required
+             value="<%= @invited_user.name %>"
+             style="width:100%; box-sizing:border-box; border:1px solid #d1d5db; border-radius:8px; padding:0.55rem 0.75rem; font-size:0.875rem; color:#18181b; outline:none;" />
+    </div>
+
+    <div>
+      <label style="display:block; font-size:0.8rem; font-weight:500; color:#374151; margin-bottom:0.3rem;">CPF <span style="color:#a1a1aa; font-weight:400;">(somente números)</span></label>
+      <input type="text" name="user[cpf]" required maxlength="11" inputmode="numeric"
+             style="width:100%; box-sizing:border-box; border:1px solid #d1d5db; border-radius:8px; padding:0.55rem 0.75rem; font-size:0.875rem; color:#18181b; outline:none;"
+             placeholder="00000000000" />
+    </div>
+
+    <div>
+      <label style="display:block; font-size:0.8rem; font-weight:500; color:#374151; margin-bottom:0.3rem;">Telefone</label>
+      <input type="tel" name="user[phone]" required
+             style="width:100%; box-sizing:border-box; border:1px solid #d1d5db; border-radius:8px; padding:0.55rem 0.75rem; font-size:0.875rem; color:#18181b; outline:none;"
+             placeholder="(00) 00000-0000" />
+    </div>
+
+    <div style="border-top:1px solid #f4f4f5; padding-top:1rem;">
+      <label style="display:block; font-size:0.8rem; font-weight:500; color:#374151; margin-bottom:0.3rem;">Senha</label>
+      <input type="password" name="user[password]" required minlength="8"
+             style="width:100%; box-sizing:border-box; border:1px solid #d1d5db; border-radius:8px; padding:0.55rem 0.75rem; font-size:0.875rem; color:#18181b; outline:none;" />
+    </div>
+
+    <div>
+      <label style="display:block; font-size:0.8rem; font-weight:500; color:#374151; margin-bottom:0.3rem;">Confirmar senha</label>
+      <input type="password" name="user[password_confirmation]" required minlength="8"
+             style="width:100%; box-sizing:border-box; border:1px solid #d1d5db; border-radius:8px; padding:0.55rem 0.75rem; font-size:0.875rem; color:#18181b; outline:none;" />
+    </div>
+
+    <% if @invited_user.errors.any? %>
+      <div style="background:#fef2f2; border:1px solid #fca5a5; border-radius:8px; padding:0.65rem 1rem; font-size:0.82rem; color:#dc2626;">
+        <% @invited_user.errors.full_messages.each do |msg| %>
+          <div><%= msg %></div>
+        <% end %>
+      </div>
+    <% end %>
+
+    <button type="submit"
+            style="width:100%; background:#18181b; color:#fff; border:none; border-radius:8px; padding:0.65rem; font-size:0.875rem; font-weight:600; cursor:pointer; margin-top:0.25rem;">
+      Ativar minha conta
+    </button>
+  </div>
+<% end %>
