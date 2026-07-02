@@ -4,6 +4,20 @@
       <i class="bi bi-arrow-left"></i>
     <% end %>
     <div>
+      <% if @company_memberships.any? %>
+        <div style="display:flex; align-items:center; gap:0.4rem; margin-bottom:0.25rem; flex-wrap:wrap;">
+          <% @company_memberships.each do |cu| %>
+            <%= link_to company_path(cu.company),
+                style:"display:inline-flex; align-items:center; gap:0.3rem; font-size:0.72rem; font-weight:600; color:#71717a; text-decoration:none; background:#f4f4f5; border-radius:5px; padding:2px 8px; transition:background 0.15s;" do %>
+              <i class="bi bi-building" style="font-size:0.65rem;"></i>
+              <%= cu.company.name %>
+              <% if policy(cu.company).update? %>
+                <i class="bi bi-pencil" style="font-size:0.6rem; opacity:0.6; margin-left:2px;"></i>
+              <% end %>
+            <% end %>
+          <% end %>
+        </div>
+      <% end %>
       <h1 style="margin:0;"><%= t("permission_actions.my_schedule") %></h1>
       <div style="font-size:0.78rem; color:#71717a; margin-top:0.1rem;"><%= @user.name %></div>
     </div>
