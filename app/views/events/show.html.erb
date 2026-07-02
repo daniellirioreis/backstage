@@ -65,6 +65,18 @@
     <div class="metric-label"><i class="bi bi-star-fill"></i> Coordenadores</div>
     <div class="metric-value"><%= total_coordinators %></div>
   </div>
+  <div class="metric-card" style="border-top: 3px solid #16a34a;">
+    <div class="metric-label"><i class="bi bi-cash-stack"></i> Custo previsto</div>
+    <% if @estimated_cost > 0 %>
+      <div class="metric-value metric-accent" style="font-size: 1.3rem;">
+        <%= number_to_currency(@estimated_cost, unit: "R$", separator: ",", delimiter: ".", precision: 2) %>
+      </div>
+      <div class="metric-sub">em horas × função</div>
+    <% else %>
+      <div class="metric-value" style="font-size: 1.3rem; color: #a1a1aa;">—</div>
+      <div class="metric-sub">sem escalas com função</div>
+    <% end %>
+  </div>
 </div>
 
 <%# ── Coordenadores ───────────────────────────────────────────────────────── %>

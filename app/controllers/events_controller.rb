@@ -12,6 +12,23 @@ class EventsController < ApplicationController
     all_team_ids = @sectors.flat_map { |s| s.teams.map(&:id) }
     @teams_with_shifts = Shift.where(team_id: all_team_ids).distinct.pluck(:team_id).to_set
     @event_functions = @event.event_functions.order(:name)
+
+    # ── Custo previsto ────────────────────────────────────────────────────────
+    shifts = Shift.joins(:sector).where(sectors: { event_id: @event.id }).includes(:sector)
+    memberships_map = TeamMembership.includes(:event_function)
+                                    .where(team_id: all_team_ids)
+                                    .each_with_object({}) { |m, h| h[[m.user_id, m.team_id]] = m }
+
+    @estimated_cost = shifts.sum do |shift|
+      next 0 unless shift.team_id
+      rate = memberships_map[[shift.user_id, shift.team_id]]&.event_function&.hourly_rate.to_f
+      next 0 unless rate > 0
+      s = shift.start_time.hour * 60 + shift.start_time.min
+      e = shift.end_time.hour   * 60 + shift.end_time.min
+      hours = (e > s ? e - s : 1440 - s + e) / 60.0
+      days  = shift.end_date.present? ? (shift.end_date - shift.date).to_i + 1 : 1
+      hours * days * rate
+    end
   end
 
   def print
