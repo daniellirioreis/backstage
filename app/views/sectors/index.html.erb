@@ -25,7 +25,7 @@
          expected     = sector.planned_headcount
     %>
       <tr>
-        <td><%= link_to sector.name, sector_path(sector), style: "color: #18181b; font-weight: 500; text-decoration: none;" %></td>
+        <td><%= link_to sector.name, edit_sector_path(sector), style: "color: #18181b; font-weight: 500; text-decoration: none;" %></td>
         <td>
           <% if sector.sector_type.present? %>
             <span style="display:inline-block; background:#f4f4f5; border-radius:5px; padding:2px 8px; font-size:0.72rem; color:#52525b;">
@@ -56,9 +56,6 @@
         </td>
         <td class="td-actions">
           <div style="display: flex; gap: 0.4rem; justify-content: flex-end;">
-            <% if policy(sector).show? %>
-              <%= link_to sector_path(sector), class: "btn-secondary" do %><i class="bi bi-eye"></i><% end %>
-            <% end %>
             <% if policy(sector).edit? %>
               <%= link_to edit_sector_path(sector), class: "btn-secondary" do %><i class="bi bi-pencil"></i><% end %>
             <% end %>

@@ -1,5 +1,5 @@
 class SectorsController < ApplicationController
-  before_action :set_sector, only: %i[show edit update destroy]
+  before_action :set_sector, only: %i[edit update destroy]
 
   def index
     return redirect_to(select_event_path, alert: "Selecione um evento para continuar.") unless current_event
@@ -8,11 +8,6 @@ class SectorsController < ApplicationController
                                    .where(event_id: current_event.id)
                                    .order(:name)
                                    .paginate(page: params[:page], per_page: 10)
-  end
-
-  def show
-    authorize @sector
-    @sector = Sector.includes(:event, teams: [:coordinator, :users]).find(params[:id])
   end
 
   def new

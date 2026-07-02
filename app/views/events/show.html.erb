@@ -259,11 +259,6 @@
             <%= sector.name %>
           </h3>
           <div style="display: flex; gap: 0.35rem; flex-shrink: 0;">
-            <% if policy(sector).show? %>
-              <%= link_to sector_path(sector), class: "btn-secondary", style: "padding: 0.3rem 0.55rem;" do %>
-                <i class="bi bi-eye"></i>
-              <% end %>
-            <% end %>
             <% if policy(sector).edit? %>
               <%= link_to edit_sector_path(sector), class: "btn-secondary", style: "padding: 0.3rem 0.55rem;" do %>
                 <i class="bi bi-pencil"></i>

@@ -6,25 +6,25 @@ class SectorFunctionsController < ApplicationController
     authorize @sector, :edit?
     @sector_function = @sector.sector_functions.new(sector_function_params)
     if @sector_function.save
-      redirect_to sector_path(@sector), notice: "Função adicionada ao planejamento."
+      redirect_to edit_sector_path(@sector), notice: "Função adicionada ao planejamento."
     else
-      redirect_to sector_path(@sector), alert: @sector_function.errors.full_messages.to_sentence
+      redirect_to edit_sector_path(@sector), alert: @sector_function.errors.full_messages.to_sentence
     end
   end
 
   def update
     authorize @sector, :edit?
     if @sector_function.update(sector_function_params)
-      redirect_to sector_path(@sector), notice: "Quantidade atualizada."
+      redirect_to edit_sector_path(@sector), notice: "Quantidade atualizada."
     else
-      redirect_to sector_path(@sector), alert: @sector_function.errors.full_messages.to_sentence
+      redirect_to edit_sector_path(@sector), alert: @sector_function.errors.full_messages.to_sentence
     end
   end
 
   def destroy
     authorize @sector, :edit?
     @sector_function.destroy
-    redirect_to sector_path(@sector), notice: "Função removida do planejamento."
+    redirect_to edit_sector_path(@sector), notice: "Função removida do planejamento."
   end
 
   private
