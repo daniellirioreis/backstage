@@ -1,3 +1,19 @@
+<% if @company %>
+  <div style="display:flex; align-items:center; gap:0.75rem; margin-bottom:1.25rem; padding-bottom:1.25rem; border-bottom:1px solid #f4f4f5;">
+    <div style="width:2.75rem; height:2.75rem; border-radius:8px; background:#f4f4f5; border:1px solid #e4e4e7; display:flex; align-items:center; justify-content:center; overflow:hidden; flex-shrink:0;">
+      <% if @company.logo.attached? %>
+        <%= image_tag @company.logo, style:"width:100%;height:100%;object-fit:contain;" %>
+      <% else %>
+        <i class="bi bi-building" style="color:#a1a1aa; font-size:1.1rem;"></i>
+      <% end %>
+    </div>
+    <div>
+      <div style="font-size:0.7rem; color:#a1a1aa; font-weight:500; text-transform:uppercase; letter-spacing:0.05em;">Convite de</div>
+      <div style="font-size:0.9rem; font-weight:700; color:#18181b;"><%= @company.name %></div>
+    </div>
+  </div>
+<% end %>
+
 <h2 style="font-size:1.2rem; font-weight:700; color:#18181b; margin:0 0 0.25rem;">Bem-vindo ao Backstage!</h2>
 <p style="font-size:0.83rem; color:#71717a; margin:0 0 1.5rem;">Preencha seus dados para ativar sua conta.</p>
 
@@ -12,10 +28,11 @@
     </div>
 
     <div>
-      <label style="display:block; font-size:0.8rem; font-weight:500; color:#374151; margin-bottom:0.3rem;">CPF <span style="color:#a1a1aa; font-weight:400;">(somente números)</span></label>
-      <input type="text" name="user[cpf]" required maxlength="11" inputmode="numeric"
+      <label style="display:block; font-size:0.8rem; font-weight:500; color:#374151; margin-bottom:0.3rem;">CPF</label>
+      <input type="text" name="user[cpf]" required inputmode="numeric"
+             data-mask="cpf"
              style="width:100%; box-sizing:border-box; border:1px solid #d1d5db; border-radius:8px; padding:0.55rem 0.75rem; font-size:0.875rem; color:#18181b; outline:none;"
-             placeholder="00000000000" />
+             placeholder="000.000.000-00" />
     </div>
 
     <div>

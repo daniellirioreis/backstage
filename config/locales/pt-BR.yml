@@ -92,6 +92,7 @@ pt-BR:
       owner: "Dono"
       manager: "Gerente"
       operator: "Operador"
+      collaborator: "Colaborador"
 
   activerecord:
     errors:
@@ -145,6 +146,9 @@ pt-BR:
       dashboard:
         one: "Dashboard"
         other: "Dashboard"
+      invitation:
+        one: "Convite"
+        other: "Convites"
       company:
         one: "Empresa"
         other: "Empresas"

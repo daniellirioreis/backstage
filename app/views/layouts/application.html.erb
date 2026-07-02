@@ -101,6 +101,12 @@
               <i class="bi bi-building"></i> <%= Company.model_name.human(count: 2) %>
             <% end %>
           <% end %>
+
+          <% if policy(:invitation).index? %>
+            <%= link_to invitations_path, class: "sidebar-link #{controller_name == 'invitations' ? 'active' : ''}" do %>
+              <i class="bi bi-envelope"></i> Convites
+            <% end %>
+          <% end %>
         </nav>
 
         <div class="sidebar-footer">

@@ -6,25 +6,20 @@ class OnboardingController < ApplicationController
 
   # GET /onboarding/empresa
   def empresa
-    @company   = Company.new
-    @companies = Company.order(:name)
+    return redirect_to onboarding_evento_path if current_user.companies.exists?
+    @company = Company.new
   end
 
   # POST /onboarding/empresa
   def save_empresa
-    if params[:company_id].present?
-      company = Company.find(params[:company_id])
-      current_user.company_users.find_or_create_by(company: company) { |cu| cu.role = "manager" }
+    return redirect_to onboarding_evento_path if current_user.companies.exists?
+
+    @company = Company.new(company_params)
+    if @company.save
+      current_user.company_users.create!(company: @company, role: "owner")
       redirect_to onboarding_evento_path
     else
-      @company = Company.new(company_params)
-      if @company.save
-        current_user.company_users.create!(company: @company, role: "owner")
-        redirect_to onboarding_evento_path
-      else
-        @companies = Company.order(:name)
-        render :empresa, status: :unprocessable_entity
-      end
+      render :empresa, status: :unprocessable_entity
     end
   end
 
@@ -32,7 +27,11 @@ class OnboardingController < ApplicationController
   def evento
     company = current_user.companies.first
     redirect_to onboarding_empresa_path and return unless company
-    @event   = Event.new(company: company, start_date: Date.today, end_date: Date.today + 1)
+    if company.events.exists?
+      current_user.update_column(:onboarding_completed_at, Time.current)
+      return redirect_to onboarding_done_path
+    end
+    @event = Event.new(company: company, start_date: Date.today, end_date: Date.today + 1)
   end
 
   # POST /onboarding/evento
@@ -40,12 +39,19 @@ class OnboardingController < ApplicationController
     company = current_user.companies.first
     redirect_to onboarding_empresa_path and return unless company
 
+    # Se a empresa já tem eventos, pula a criação
+    if company.events.exists?
+      current_user.update_column(:onboarding_completed_at, Time.current)
+      return redirect_to onboarding_done_path
+    end
+
     @event = company.events.new(event_params)
     if @event.save
       session[:current_event_id] = @event.id
       current_user.update_column(:onboarding_completed_at, Time.current)
       redirect_to onboarding_done_path
     else
+      @preset_events = []
       render :evento, status: :unprocessable_entity
     end
   end

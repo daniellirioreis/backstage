@@ -9,110 +9,49 @@
 </div>
 
 <h2 style="font-size:1.1rem; font-weight:700; color:#18181b; margin:0 0 0.25rem;">Sua empresa</h2>
-<p style="font-size:0.83rem; color:#71717a; margin:0 0 1.5rem;">Crie uma nova empresa ou junte-se a uma existente.</p>
+<p style="font-size:0.83rem; color:#71717a; margin:0 0 1.5rem;">Crie a empresa para continuar.</p>
 
-<%# Tabs %>
-<div style="display:flex; border:1px solid #e4e4e7; border-radius:8px; padding:0.25rem; gap:0.25rem; margin-bottom:1.5rem; background:#f9f9f9;">
-  <button type="button" id="tab-nova" onclick="switchTab('nova')"
-          style="flex:1; padding:0.5rem; border:none; border-radius:6px; font-size:0.82rem; font-weight:600; cursor:pointer; background:#18181b; color:#fff; transition:all 0.15s;">
-    Nova empresa
-  </button>
-  <button type="button" id="tab-existente" onclick="switchTab('existente')"
-          style="flex:1; padding:0.5rem; border:none; border-radius:6px; font-size:0.82rem; font-weight:500; cursor:pointer; background:transparent; color:#71717a; transition:all 0.15s;">
-    Entrar em existente
-  </button>
-</div>
-
-<%# Criar nova empresa %>
-<div id="panel-nova">
-  <%= form_with url: url_for(action: :save_empresa), method: :post do |f| %>
-    <div style="display:flex; flex-direction:column; gap:1rem;">
-      <div>
-        <label style="display:block; font-size:0.8rem; font-weight:500; color:#374151; margin-bottom:0.3rem;">Nome da empresa <span style="color:#dc2626;">*</span></label>
-        <input type="text" name="company[name]" required
-               value="<%= @company&.name %>"
-               style="width:100%; box-sizing:border-box; border:1px solid #d1d5db; border-radius:8px; padding:0.55rem 0.75rem; font-size:0.875rem; color:#18181b; outline:none;"
-               placeholder="Ex: AX Produções" />
-        <% if @company&.errors&.[](:name)&.any? %>
-          <p style="font-size:0.75rem; color:#dc2626; margin:0.25rem 0 0;"><%= @company.errors[:name].first %></p>
-        <% end %>
-      </div>
-
-      <div>
-        <label style="display:block; font-size:0.8rem; font-weight:500; color:#374151; margin-bottom:0.3rem;">CNPJ <span style="color:#a1a1aa; font-weight:400;">(opcional)</span></label>
-        <input type="text" name="company[cnpj]"
-               value="<%= @company&.cnpj %>"
-               style="width:100%; box-sizing:border-box; border:1px solid #d1d5db; border-radius:8px; padding:0.55rem 0.75rem; font-size:0.875rem; color:#18181b; outline:none;"
-               placeholder="00.000.000/0000-00" />
-      </div>
-
-      <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem;">
-        <div>
-          <label style="display:block; font-size:0.8rem; font-weight:500; color:#374151; margin-bottom:0.3rem;">Cidade</label>
-          <input type="text" name="company[city]"
-                 value="<%= @company&.city %>"
-                 style="width:100%; box-sizing:border-box; border:1px solid #d1d5db; border-radius:8px; padding:0.55rem 0.75rem; font-size:0.875rem; color:#18181b; outline:none;"
-                 placeholder="São Paulo" />
-        </div>
-        <div>
-          <label style="display:block; font-size:0.8rem; font-weight:500; color:#374151; margin-bottom:0.3rem;">Estado</label>
-          <input type="text" name="company[state]" maxlength="2"
-                 value="<%= @company&.state %>"
-                 style="width:100%; box-sizing:border-box; border:1px solid #d1d5db; border-radius:8px; padding:0.55rem 0.75rem; font-size:0.875rem; color:#18181b; outline:none;"
-                 placeholder="SP" />
-        </div>
-      </div>
-
-      <button type="submit"
-              style="width:100%; background:#18181b; color:#fff; border:none; border-radius:8px; padding:0.65rem; font-size:0.875rem; font-weight:600; cursor:pointer; margin-top:0.25rem;">
-        Criar empresa e continuar →
-      </button>
+<%= form_with url: url_for(action: :save_empresa), method: :post do |f| %>
+  <div style="display:flex; flex-direction:column; gap:1rem;">
+    <div>
+      <label style="display:block; font-size:0.8rem; font-weight:500; color:#374151; margin-bottom:0.3rem;">Nome da empresa <span style="color:#dc2626;">*</span></label>
+      <input type="text" name="company[name]" required
+             value="<%= @company&.name %>"
+             style="width:100%; box-sizing:border-box; border:1px solid #d1d5db; border-radius:8px; padding:0.55rem 0.75rem; font-size:0.875rem; color:#18181b; outline:none;"
+             placeholder="Ex: AX Produções" />
+      <% if @company&.errors&.[](:name)&.any? %>
+        <p style="font-size:0.75rem; color:#dc2626; margin:0.25rem 0 0;"><%= @company.errors[:name].first %></p>
+      <% end %>
     </div>
-  <% end %>
-</div>
 
-<%# Entrar em empresa existente %>
-<div id="panel-existente" style="display:none;">
-  <% if @companies.any? %>
-    <%= form_with url: url_for(action: :save_empresa), method: :post do |f| %>
-      <div style="display:flex; flex-direction:column; gap:1rem;">
-        <div>
-          <label style="display:block; font-size:0.8rem; font-weight:500; color:#374151; margin-bottom:0.3rem;">Selecione a empresa</label>
-          <select name="company_id" required
-                  style="width:100%; box-sizing:border-box; border:1px solid #d1d5db; border-radius:8px; padding:0.55rem 0.75rem; font-size:0.875rem; color:#18181b; background:#fff; outline:none;">
-            <option value="">Escolha uma empresa...</option>
-            <% @companies.each do |c| %>
-              <option value="<%= c.id %>"><%= c.name %></option>
-            <% end %>
-          </select>
-        </div>
-        <button type="submit"
-                style="width:100%; background:#18181b; color:#fff; border:none; border-radius:8px; padding:0.65rem; font-size:0.875rem; font-weight:600; cursor:pointer;">
-          Entrar e continuar →
-        </button>
+    <div>
+      <label style="display:block; font-size:0.8rem; font-weight:500; color:#374151; margin-bottom:0.3rem;">CNPJ <span style="color:#a1a1aa; font-weight:400;">(opcional)</span></label>
+      <input type="text" name="company[cnpj]"
+             value="<%= @company&.cnpj %>"
+             style="width:100%; box-sizing:border-box; border:1px solid #d1d5db; border-radius:8px; padding:0.55rem 0.75rem; font-size:0.875rem; color:#18181b; outline:none;"
+             placeholder="00.000.000/0000-00" />
+    </div>
+
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem;">
+      <div>
+        <label style="display:block; font-size:0.8rem; font-weight:500; color:#374151; margin-bottom:0.3rem;">Cidade</label>
+        <input type="text" name="company[city]"
+               value="<%= @company&.city %>"
+               style="width:100%; box-sizing:border-box; border:1px solid #d1d5db; border-radius:8px; padding:0.55rem 0.75rem; font-size:0.875rem; color:#18181b; outline:none;"
+               placeholder="São Paulo" />
       </div>
-    <% end %>
-  <% else %>
-    <p style="text-align:center; font-size:0.83rem; color:#a1a1aa; padding:1.5rem 0;">Nenhuma empresa cadastrada ainda. Crie uma nova.</p>
-  <% end %>
-</div>
+      <div>
+        <label style="display:block; font-size:0.8rem; font-weight:500; color:#374151; margin-bottom:0.3rem;">Estado</label>
+        <input type="text" name="company[state]" maxlength="2"
+               value="<%= @company&.state %>"
+               style="width:100%; box-sizing:border-box; border:1px solid #d1d5db; border-radius:8px; padding:0.55rem 0.75rem; font-size:0.875rem; color:#18181b; outline:none;"
+               placeholder="SP" />
+      </div>
+    </div>
 
-<script>
-  function switchTab(tab) {
-    var nova      = document.getElementById("panel-nova");
-    var existente = document.getElementById("panel-existente");
-    var btnNova   = document.getElementById("tab-nova");
-    var btnEx     = document.getElementById("tab-existente");
-    if (tab === "nova") {
-      nova.style.display      = "block";
-      existente.style.display = "none";
-      btnNova.style.background = "#18181b"; btnNova.style.color = "#fff"; btnNova.style.fontWeight = "600";
-      btnEx.style.background   = "transparent"; btnEx.style.color = "#71717a"; btnEx.style.fontWeight = "500";
-    } else {
-      nova.style.display      = "none";
-      existente.style.display = "block";
-      btnEx.style.background   = "#18181b"; btnEx.style.color = "#fff"; btnEx.style.fontWeight = "600";
-      btnNova.style.background = "transparent"; btnNova.style.color = "#71717a"; btnNova.style.fontWeight = "500";
-    }
-  }
-</script>
+    <button type="submit"
+            style="width:100%; background:#18181b; color:#fff; border:none; border-radius:8px; padding:0.65rem; font-size:0.875rem; font-weight:600; cursor:pointer; margin-top:0.25rem;">
+      Criar empresa e continuar →
+    </button>
+  </div>
+<% end %>

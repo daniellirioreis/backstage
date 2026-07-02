@@ -7,10 +7,11 @@ Rails.application.routes.draw do
                sign_in: "login",
                sign_out: "logout",
                password: "password"
-             }
+             },
+             controllers: { registrations: "users/registrations" }
 
   # Convites
-  resources :invitations, only: [:new, :create]
+  resources :invitations, only: [:index, :new, :create]
   get  "/convite/:token", to: "invitations#accept",  as: :accept_invitation
   post "/convite/:token", to: "invitations#confirm", as: :confirm_invitation
 
@@ -29,6 +30,7 @@ Rails.application.routes.draw do
   resources :companies do
     member do
       post :add_user
+      patch :update_user_role
       delete :remove_user
     end
   end

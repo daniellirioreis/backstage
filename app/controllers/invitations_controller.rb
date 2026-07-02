@@ -7,12 +7,21 @@ class InvitationsController < ApplicationController
 
   before_action :find_invited_user, only: [:accept, :confirm]
 
+  def index
+    authorize :invitation, :index?
+    @invitations = User.where.not(invitation_token: nil)
+                       .includes(:role, :companies)
+                       .order(created_at: :desc)
+  end
+
   def new
-    @roles     = Role.where(collaborator: false).order(:name)
+    authorize :invitation, :create?
+    @roles     = Role.order(:name)
     @companies = Company.order(:name)
   end
 
   def create
+    authorize :invitation, :create?
     role    = Role.find_by(id: params[:role_id])
     company = Company.find_by(id: params[:company_id]) if params[:company_id].present?
 
@@ -30,7 +39,7 @@ class InvitationsController < ApplicationController
       company&.company_users&.create(user: @invited_user, role: "manager")
       @invite_url = accept_invitation_url(token: token)
     else
-      @roles     = Role.where(collaborator: false).order(:name)
+      @roles     = Role.order(:name)
       @companies = Company.order(:name)
       render :new, status: :unprocessable_entity
     end
@@ -39,6 +48,7 @@ class InvitationsController < ApplicationController
   def accept
     return redirect_to root_path, alert: "Convite inválido ou não encontrado." unless @invited_user
     return redirect_to new_user_session_path, notice: "Este convite já foi utilizado. Faça login." if @invited_user.invitation_accepted_at?
+    @company = @invited_user.companies.first
   end
 
   def confirm

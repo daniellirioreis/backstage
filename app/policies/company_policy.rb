@@ -4,9 +4,10 @@ class CompanyPolicy < ApplicationPolicy
   def create?  = can?("create")
   def destroy? = can?("destroy")
 
-  def show?   = can?("show") || member?
-  def edit?   = can?("update") || owner_or_manager?
-  def update? = can?("update") || owner_or_manager?
+  def show?     = can?("show") || member?
+  def edit?     = can?("update") || owner_or_manager?
+  def update?   = can?("update") || owner_or_manager?
+  def add_user? = user.present? && user.admin?
 
   class Scope < ApplicationPolicy::Scope
     def resolve

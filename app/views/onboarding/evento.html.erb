@@ -8,6 +8,38 @@
   <% end %>
 </div>
 
+<% if @preset_events&.any? %>
+  <%# Empresa já tem eventos — somente leitura %>
+  <div style="text-align:center; padding:0.5rem 0 1.25rem;">
+    <div style="width:3.5rem; height:3.5rem; background:#f0fdf4; border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 1rem;">
+      <i class="bi bi-calendar-check" style="font-size:1.5rem; color:#16a34a;"></i>
+    </div>
+    <h2 style="font-size:1.1rem; font-weight:700; color:#18181b; margin:0 0 0.4rem;">Eventos já cadastrados</h2>
+    <p style="font-size:0.83rem; color:#71717a; margin:0 0 1.25rem; line-height:1.5;">
+      A empresa já possui eventos. Você pode acessar o sistema agora.
+    </p>
+  </div>
+
+  <div style="display:flex; flex-direction:column; gap:0.5rem; margin-bottom:1.5rem;">
+    <% @preset_events.first(3).each do |ev| %>
+      <div style="background:#f4f4f5; border:1px solid #e4e4e7; border-radius:8px; padding:0.7rem 1rem; display:flex; align-items:center; gap:0.75rem;">
+        <i class="bi bi-calendar3" style="color:#71717a; font-size:0.95rem;"></i>
+        <div>
+          <div style="font-size:0.85rem; font-weight:600; color:#18181b;"><%= ev.name %></div>
+          <div style="font-size:0.72rem; color:#71717a;"><%= I18n.l(ev.start_date, format: :short) %> – <%= I18n.l(ev.end_date, format: :short) %></div>
+        </div>
+        <i class="bi bi-lock-fill" style="color:#a1a1aa; font-size:0.8rem; margin-left:auto;"></i>
+      </div>
+    <% end %>
+  </div>
+
+  <%= button_to onboarding_evento_path, method: :post,
+        style: "width:100%; background:#18181b; color:#fff; border:none; border-radius:8px; padding:0.65rem; font-size:0.875rem; font-weight:600; cursor:pointer; text-align:center;" do %>
+    Acessar o sistema →
+  <% end %>
+
+<% else %>
+
 <%# Pergunta inicial %>
 <div id="panel-pergunta">
   <div style="text-align:center; padding:0.5rem 0 1.5rem;">
@@ -105,3 +137,5 @@
     document.addEventListener("DOMContentLoaded", mostrarFormulario);
   <% end %>
 </script>
+
+<% end %>

@@ -1,5 +1,5 @@
 class CompaniesController < ApplicationController
-  before_action :set_company, only: %i[show edit update destroy add_user remove_user]
+  before_action :set_company, only: %i[show edit update destroy add_user update_user_role remove_user]
 
   def index
     authorize Company
@@ -48,7 +48,7 @@ class CompaniesController < ApplicationController
   end
 
   def add_user
-    authorize @company, :update?
+    authorize @company, :add_user?
     user = User.find(params[:user_id])
     role = params[:role].presence_in(CompanyUser::ROLES) || "operator"
 
@@ -56,6 +56,16 @@ class CompaniesController < ApplicationController
     cu.role = role
     cu.save!
     redirect_to @company, notice: t("companies.user_added", name: user.name, role: cu.role_label)
+  rescue ActiveRecord::RecordInvalid => e
+    redirect_to @company, alert: e.message
+  end
+
+  def update_user_role
+    authorize @company, :update?
+    cu = CompanyUser.find_by!(company: @company, user_id: params[:user_id])
+    role = params[:role].presence_in(CompanyUser::ROLES) || cu.role
+    cu.update!(role: role)
+    redirect_to @company, notice: "Perfil de #{cu.user.name} atualizado para #{cu.role_label}."
   rescue ActiveRecord::RecordInvalid => e
     redirect_to @company, alert: e.message
   end
