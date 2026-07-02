@@ -67,12 +67,54 @@
   </div>
 </div>
 
-<%# ── Custo previsto por função ───────────────────────────────────────────── %>
+<%# ── Estimativa de planejamento ──────────────────────────────────────────── %>
+<% if @plan_cost_by_function.any? %>
+  <div class="content-card" style="margin-bottom: 2rem; padding: 1.25rem 1.5rem;">
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1rem;">
+      <h2 style="font-size:0.9rem; font-weight:600; color:#18181b; margin:0;">
+        <i class="bi bi-calculator" style="color:#7c3aed;"></i> Estimativa de planejamento
+        <span style="font-size:0.72rem; font-weight:400; color:#a1a1aa; margin-left:0.35rem;">
+          <%= @event_days %> dia<%= @event_days == 1 ? '' : 's' %> × 8h/dia
+        </span>
+      </h2>
+      <span style="font-size:0.95rem; font-weight:700; color:#7c3aed;">
+        <%= number_to_currency(@plan_total_cost, unit: "R$", separator: ",", delimiter: ".", precision: 2) %>
+      </span>
+    </div>
+
+    <%
+      sorted_plan = @plan_cost_by_function.sort_by { |_, v| -v }
+      max_plan    = sorted_plan.first&.last.to_f
+    %>
+    <div style="display:flex; flex-direction:column; gap:0.65rem;">
+      <% sorted_plan.each do |ef, cost| %>
+        <% sf_total_qty = @sectors.sum { |s| s.sector_functions.select { |sf| sf.event_function_id == ef.id }.sum(&:quantity) } %>
+        <% pct = max_plan > 0 ? (cost / max_plan * 100).round(1) : 0 %>
+        <div>
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:0.3rem;">
+            <div style="display:flex; align-items:center; gap:0.5rem;">
+              <span style="font-size:0.83rem; font-weight:500; color:#18181b;"><%= ef.name %></span>
+              <span style="font-size:0.72rem; color:#a1a1aa;"><%= sf_total_qty %> × <%= ef.hourly_rate_formatted %></span>
+            </div>
+            <span style="font-size:0.85rem; font-weight:700; color:#7c3aed;">
+              <%= number_to_currency(cost, unit: "R$", separator: ",", delimiter: ".", precision: 2) %>
+            </span>
+          </div>
+          <div style="height:6px; background:#f4f4f5; border-radius:99px; overflow:hidden;">
+            <div style="height:100%; width:<%= pct %>%; background:#a78bfa; border-radius:99px;"></div>
+          </div>
+        </div>
+      <% end %>
+    </div>
+  </div>
+<% end %>
+
+<%# ── Custo realizado por função ──────────────────────────────────────────── %>
 <% if @cost_by_function.any? %>
   <div class="content-card" style="margin-bottom: 2rem; padding: 1.25rem 1.5rem;">
     <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem;">
       <h2 style="font-size: 0.9rem; font-weight: 600; color: #18181b; margin: 0;">
-        <i class="bi bi-cash-stack" style="color: #16a34a;"></i> Custo previsto por função
+        <i class="bi bi-cash-stack" style="color: #16a34a;"></i> Custo realizado por função
       </h2>
       <span style="font-size: 0.88rem; font-weight: 700; color: #15803d;">
         Total: <%= number_to_currency(@estimated_cost, unit: "R$", separator: ",", delimiter: ".", precision: 2) %>

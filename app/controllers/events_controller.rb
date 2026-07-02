@@ -8,18 +8,31 @@ class EventsController < ApplicationController
 
   def show
     authorize @event
-    @sectors = @event.sectors.includes(:sector_functions, teams: [:users, :coordinator]).order(:name)
+    @sectors = @event.sectors.includes(sector_functions: :event_function,
+                                       teams: [:users, :coordinator]).order(:name)
     all_team_ids = @sectors.flat_map { |s| s.teams.map(&:id) }
     @teams_with_shifts = Shift.where(team_id: all_team_ids).distinct.pluck(:team_id).to_set
     @event_functions = @event.event_functions.order(:name)
+    @event_days = (@event.end_date - @event.start_date).to_i + 1
 
-    # ── Custo previsto ────────────────────────────────────────────────────────
+    # ── Estimativa de planejamento (sector_functions × dias × 8h) ─────────────
+    @plan_cost_by_function = Hash.new(0.0)
+    @sectors.each do |sector|
+      sector.sector_functions.each do |sf|
+        ef = sf.event_function
+        next unless ef.hourly_rate.to_f > 0
+        @plan_cost_by_function[ef] += sf.quantity * ef.hourly_rate.to_f * @event_days * 8
+      end
+    end
+    @plan_total_cost = @plan_cost_by_function.values.sum
+
+    # ── Custo realizado (baseado nas escalas reais) ───────────────────────────
     shifts = Shift.joins(:sector).where(sectors: { event_id: @event.id }).includes(:sector)
     memberships_map = TeamMembership.includes(:event_function)
                                     .where(team_id: all_team_ids)
                                     .each_with_object({}) { |m, h| h[[m.user_id, m.team_id]] = m }
 
-    @cost_by_function = Hash.new(0.0)  # { event_function => total_cost }
+    @cost_by_function = Hash.new(0.0)
 
     shifts.each do |shift|
       next unless shift.team_id
