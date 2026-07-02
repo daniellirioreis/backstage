@@ -146,6 +146,9 @@ pt-BR:
       dashboard:
         one: "Dashboard"
         other: "Dashboard"
+      plan:
+        one: "Plano"
+        other: "Planos"
       invitation:
         one: "Convite"
         other: "Convites"
@@ -216,3 +219,8 @@ pt-BR:
       team_membership:
         credential_code: "Código de credencial"
         event_function_id: "Função"
+      plan:
+        name: "Nome do plano"
+        events_limit: "Limite de eventos"
+        members_limit: "Limite de colaboradores"
+        description: "Descrição"
