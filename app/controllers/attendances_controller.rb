@@ -110,7 +110,7 @@ class AttendancesController < ApplicationController
   end
 
   def check_out
-    authorize :attendance, :scan?
+    authorize :attendance, :checkout?
     code = params[:code].to_s.strip.upcase
 
     membership      = TeamMembership.includes(user: { avatar_attachment: :blob }).find_by(credential_code: code)

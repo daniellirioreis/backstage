@@ -5,7 +5,7 @@ class Permission < ApplicationRecord
   validates :action, presence: true
   validates :action, uniqueness: { scope: [ :role_id, :resource ] }
 
-  RESOURCES = %w[users roles events companies teams sectors shifts vehicles badge_configs attendances reports].freeze
+  RESOURCES = %w[users roles events companies teams sectors shifts vehicles badge_configs attendances reports dashboard].freeze
   ACTIONS   = %w[index show create update destroy].freeze
 
   # Ações extras por recurso (além das padrão)
@@ -13,7 +13,7 @@ class Permission < ApplicationRecord
     "shifts"      => %w[timeline print],
     "events"      => %w[print],
     "users"       => %w[my_schedule],
-    "attendances" => %w[scan],
+    "attendances" => %w[scan checkout],
     "reports"     => %w[closing]
   }.freeze
 end

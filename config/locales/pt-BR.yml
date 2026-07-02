@@ -34,6 +34,7 @@ pt-BR:
     print: "Imprimir"
     my_schedule: "Minha Escala"
     scan: "Registrar Check-in (QR)"
+    checkout: "Registrar Check-out (QR)"
     closing: "Relatório de Fechamento"
 
   badge_config:
@@ -141,6 +142,9 @@ pt-BR:
       report:
         one: "Relatório"
         other: "Relatórios"
+      dashboard:
+        one: "Dashboard"
+        other: "Dashboard"
       company:
         one: "Empresa"
         other: "Empresas"

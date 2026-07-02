@@ -2,12 +2,12 @@ puts "→ Criando usuário admin..."
 
 admin_role = Role.find_by!(name: "admin")
 
-User.find_or_create_by!(email: "admin@backstage.com") do |u|
-  u.name     = "Admin"
-  u.cpf      = "52998224725"
-  u.phone    = "11999999999"
-  u.password = "senha123"
-  u.role     = admin_role
-end
+admin = User.find_or_initialize_by(email: "admin@backstage.com")
+admin.name  = "Admin"
+admin.phone = "11999999999"
+admin.role  = admin_role
+admin.password = "senha123" if admin.new_record?
+admin.cpf      = "52998224725" if admin.cpf.blank?
+admin.save!
 
 puts "   Admin: admin@backstage.com / senha123"
