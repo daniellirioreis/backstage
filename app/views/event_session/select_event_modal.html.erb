@@ -9,14 +9,12 @@
         <h2 class="bs-modal-title" style="text-align:left; margin:0; font-size:1rem;">Selecionar evento</h2>
         <p style="margin:0; font-size:0.78rem; color:#71717a;">Escolha o evento em que deseja trabalhar.</p>
       </div>
-      <% if current_event.present? %>
-        <%= link_to @return_to || root_path,
-              style: "display:flex; align-items:center; justify-content:center; width:2rem; height:2rem; border-radius:6px; color:#71717a; text-decoration:none; flex-shrink:0;",
-              title: "Fechar",
-              onmouseover: "this.style.background='#f4f4f5'",
-              onmouseout:  "this.style.background='transparent'" do %>
-          <i class="bi bi-x-lg" style="font-size:1rem;"></i>
-        <% end %>
+      <%= link_to (current_event.present? ? (@return_to || root_path) : root_path),
+            style: "display:flex; align-items:center; justify-content:center; width:2rem; height:2rem; border-radius:6px; color:#71717a; text-decoration:none; flex-shrink:0;",
+            title: "Fechar",
+            onmouseover: "this.style.background='#f4f4f5'",
+            onmouseout:  "this.style.background='transparent'" do %>
+        <i class="bi bi-x-lg" style="font-size:1rem;"></i>
       <% end %>
     </div>
 
