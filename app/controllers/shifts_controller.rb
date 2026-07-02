@@ -2,7 +2,7 @@ class ShiftsController < ApplicationController
   before_action :set_shift, only: %i[show edit update destroy]
 
   def index
-    return redirect_to(new_event_path, alert: "Selecione um evento para continuar.") unless current_event
+    return redirect_to(select_event_path, alert: "Selecione um evento para continuar.") unless current_event
     authorize Shift
     shifts = policy_scope(Shift)
                .joins(:sector)

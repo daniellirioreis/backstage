@@ -15,7 +15,7 @@ class TeamsController < ApplicationController
   end
 
   def index
-    return redirect_to(new_event_path, alert: "Selecione um evento para continuar.") unless current_event
+    return redirect_to(select_event_path, alert: "Selecione um evento para continuar.") unless current_event
     authorize Team
     @sectors = Sector.where(event_id: current_event.id).order(:name)
     scope = policy_scope(Team)

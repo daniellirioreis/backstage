@@ -36,18 +36,26 @@ class ApplicationController < ActionController::Base
     return unless user_signed_in?
     return if skip_event_check?
 
-    if !Event.exists?
+    available = if current_user.admin?
+      Event.order(start_date: :desc)
+    else
+      company_ids = current_user.company_users.pluck(:company_id)
+      Event.where(company_id: company_ids).order(start_date: :desc)
+    end
+
+    if available.empty?
       redirect_to new_event_path, alert: "Crie um evento para começar." and return
+    end
+
+    # Auto-seleciona se só há um evento disponível
+    if available.count == 1 && current_event.nil?
+      session[:current_event_id] = available.first.id
+      return
     end
 
     unless current_event
       @return_to = request.path
-      @events = if current_user.admin?
-        Event.includes(:company).order(start_date: :desc)
-      else
-        company_ids = current_user.company_users.pluck(:company_id)
-        Event.includes(:company).where(company_id: company_ids).order(start_date: :desc)
-      end
+      @events = available.includes(:company)
       render "event_session/select_event_modal", layout: "application"
       return
     end
