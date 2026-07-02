@@ -230,29 +230,5 @@
       </div>
     </div>
 
-    <%# Ações rápidas %>
-    <div class="content-card" style="padding:1.25rem;">
-      <h3 style="font-size:0.82rem; font-weight:600; margin:0 0 0.85rem; text-transform:uppercase; letter-spacing:0.06em; color:#71717a;">
-        <i class="bi bi-grid"></i> Ações rápidas
-      </h3>
-      <div style="display:flex; flex-direction:column; gap:0.4rem;">
-        <% [
-          [events_path,   "bi-calendar-event", "Eventos"],
-          [sectors_path,  "bi-grid-3x3-gap",   "Setores"],
-          [teams_path,    "bi-people",          "Equipes"],
-          [users_path,    "bi-person-badge",    "Colaboradores"],
-          [vehicles_path, "bi-car-front",       "Veículos"],
-        ].each do |path, icon, label| %>
-          <%= link_to path, style: "display:flex; align-items:center; gap:0.6rem; padding:0.5rem 0.7rem; border-radius:7px; text-decoration:none; color:#3f3f46; font-size:0.83rem; transition:background 0.1s;",
-                onmouseover: "this.style.background='#f4f4f5'",
-                onmouseout:  "this.style.background='transparent'" do %>
-            <i class="bi <%= icon %>" style="color:#71717a; font-size:0.9rem; width:1.1rem; text-align:center;"></i>
-            <%= label %>
-            <i class="bi bi-chevron-right" style="margin-left:auto; font-size:0.7rem; color:#d4d4d8;"></i>
-          <% end %>
-        <% end %>
-      </div>
-    </div>
-
   </div>
 </div>
