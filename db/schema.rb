@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_07_02_000005) do
+ActiveRecord::Schema[7.1].define(version: 2026_07_02_000006) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -162,7 +162,9 @@ ActiveRecord::Schema[7.1].define(version: 2026_07_02_000005) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.bigint "event_id", null: false
+    t.string "sector_type"
     t.index ["event_id"], name: "index_sectors_on_event_id"
+    t.index ["sector_type"], name: "index_sectors_on_sector_type"
   end
 
   create_table "shifts", force: :cascade do |t|

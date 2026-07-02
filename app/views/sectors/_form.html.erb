@@ -14,7 +14,8 @@
       <%= f.select :sector_type,
             Sector::TYPES.map { |t| [I18n.t("sector_types.#{t}"), t] }.sort_by(&:first),
             { include_blank: "— Selecione um tipo (opcional) —" },
-            class: "form-control" %>
+            class: "form-control",
+            data: { controller: "tom-select", placeholder: "Buscar tipo de setor..." } %>
     </div>
 
     <div style="display: flex; gap: 0.75rem; border-top: 1px solid #f4f4f5; padding-top: 1.25rem; margin-top: 1.25rem;">
