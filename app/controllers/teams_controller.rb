@@ -146,7 +146,7 @@ class TeamsController < ApplicationController
     @sectors      = Sector.where(event_id: current_event.id).order(:name)
     @all_users    = company_users_scope.order(:name)
     @event_functions = current_event.event_functions.order(:name)
-    @sector_planned_functions = load_sector_planned_functions
+    @sector_function_data = load_sector_function_data
     @team.team_memberships.build
   end
 
@@ -159,7 +159,7 @@ class TeamsController < ApplicationController
       @sectors         = Sector.where(event_id: current_event.id).order(:name)
       @all_users       = User.order(:name)
       @event_functions = current_event.event_functions.order(:name)
-      @sector_planned_functions = load_sector_planned_functions
+      @sector_function_data = load_sector_function_data
       render :new, status: :unprocessable_entity
     end
   end
@@ -225,7 +225,7 @@ class TeamsController < ApplicationController
     @all_users       = User.order(:name)
     @memberships     = @team.team_memberships.includes(:event_function, user: :role).joins(:user).order("users.name")
     @event_functions = @team.sector.event.event_functions.order(:name)
-    @sector_planned_functions = load_sector_planned_functions
+    @sector_function_data = load_sector_function_data
   end
 
   def update
@@ -237,7 +237,7 @@ class TeamsController < ApplicationController
       @all_users       = User.order(:name)
       @memberships     = @team.team_memberships.includes(:event_function, user: :role).joins(:user).order("users.name")
       @event_functions = @team.sector.event.event_functions.order(:name)
-      @sector_planned_functions = load_sector_planned_functions
+      @sector_function_data = load_sector_function_data
       render :edit, status: :unprocessable_entity
     end
   end
@@ -254,13 +254,35 @@ class TeamsController < ApplicationController
     @team = Team.includes(:users, sector: :event).find(params[:id])
   end
 
-  def load_sector_planned_functions
+  def load_sector_function_data
+    # Quantidades planejadas: { sector_id => { fn_id => qty } }
+    planned = {}
     Sector.where(event_id: current_event.id)
           .includes(:sector_functions)
-          .each_with_object({}) do |sector, hash|
-            ids = sector.sector_functions.map(&:event_function_id)
-            hash[sector.id.to_s] = ids if ids.any?
+          .each do |sector|
+            next if sector.sector_functions.empty?
+            sid = sector.id.to_s
+            sector.sector_functions.each do |sf|
+              planned[sid] ||= {}
+              planned[sid][sf.event_function_id.to_s] = sf.quantity
+            end
           end
+
+    # Contagem já atribuída: { sector_id => { fn_id => count } }
+    assigned = {}
+    sector_ids = Sector.where(event_id: current_event.id).select(:id)
+    TeamMembership
+      .joins(team: :sector)
+      .where(teams: { sector_id: sector_ids })
+      .where.not(event_function_id: nil)
+      .group("sectors.id", "team_memberships.event_function_id")
+      .count
+      .each do |(sector_id, fn_id), count|
+        assigned[sector_id.to_s] ||= {}
+        assigned[sector_id.to_s][fn_id.to_s] = count
+      end
+
+    { planned: planned, assigned: assigned }
   end
 
   def load_team_memberships

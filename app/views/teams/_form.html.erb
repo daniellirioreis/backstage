@@ -1,6 +1,6 @@
 <div class="content-card" style="max-width: 700px;">
   <%= form_with model: team,
-        data: { sector_planned_functions: (@sector_planned_functions || {}).to_json } do |f| %>
+        data: { sector_function_data: (@sector_function_data || {}).to_json } do |f| %>
     <%= render "shared/error_messages", object: team %>
 
     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.25rem;">
@@ -359,9 +359,9 @@
     btn.innerHTML     = cb.checked ? '<i class="bi bi-arrow-counterclockwise"></i>' : '<i class="bi bi-x"></i>';
   };
 
-  // ── Aviso de função não planejada ──────────────────────────────────────────
-  var form = document.querySelector("form[data-sector-planned-functions]");
-  var PLANNED = form ? JSON.parse(form.dataset.sectorPlannedFunctions || "{}") : {};
+  // ── Aviso de função não planejada / quantidade atingida ───────────────────
+  var form = document.querySelector("form[data-sector-function-data]");
+  var SECTOR_DATA = form ? JSON.parse(form.dataset.sectorFunctionData || "{}") : {};
 
   function currentSectorId() {
     var sel = document.querySelector("select[name='team[sector_id]']");
@@ -374,12 +374,33 @@
     if (!warning || !fnHidden) return;
 
     var sectorId = currentSectorId();
-    var fnId     = parseInt(fnHidden.value);
-    var planned  = PLANNED[sectorId];
+    var fnId     = fnHidden.value ? parseInt(fnHidden.value) : null;
 
-    // Só avisa se: setor selecionado, setor TEM funções planejadas e função escolhida não está nelas
-    var shouldWarn = sectorId && planned && planned.length > 0 && fnId && !planned.includes(fnId);
-    warning.style.display = shouldWarn ? "block" : "none";
+    if (!sectorId || !fnId) { warning.style.display = "none"; return; }
+
+    var planned  = ((SECTOR_DATA.planned  || {})[sectorId]) || {};
+    var assigned = ((SECTOR_DATA.assigned || {})[sectorId]) || {};
+    var plannedIds = Object.keys(planned).map(Number);
+    var messages = [];
+
+    // Aviso 1: função não está no planejamento
+    if (plannedIds.length > 0 && !plannedIds.includes(fnId)) {
+      messages.push("Esta função não está no planejamento deste setor.");
+    }
+
+    // Aviso 2: quantidade planejada já atingida
+    var plannedQty  = planned[fnId.toString()];
+    var assignedQty = assigned[fnId.toString()] || 0;
+    if (plannedQty && assignedQty >= plannedQty) {
+      messages.push("Quantidade planejada atingida para esta função (" + assignedQty + "/" + plannedQty + ").");
+    }
+
+    if (messages.length > 0) {
+      warning.innerHTML = '<i class="bi bi-exclamation-triangle"></i> ' + messages.join(" ");
+      warning.style.display = "block";
+    } else {
+      warning.style.display = "none";
+    }
   }
 
   function checkAllRows() {
