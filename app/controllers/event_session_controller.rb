@@ -20,8 +20,16 @@ class EventSessionController < ApplicationController
       return
     end
 
+    # Auto-seleciona se só há um evento disponível
+    if @events.count == 1
+      session[:current_event_id] = @events.first.id
+      redirect_to params[:return_to].presence || root_path,
+                  notice: "Trabalhando no evento: #{@events.first.name}"
+      return
+    end
+
+    @return_to = params[:return_to].presence || root_path
     if params[:modal] == "1"
-      @return_to = params[:return_to].presence || root_path
       render "select_event_modal", layout: "application"
     end
   end

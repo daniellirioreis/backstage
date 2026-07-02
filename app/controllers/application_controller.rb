@@ -49,7 +49,8 @@ class ApplicationController < ActionController::Base
 
     # Auto-seleciona se só há um evento disponível
     if available.count == 1 && current_event.nil?
-      session[:current_event_id] = available.first.id
+      @current_event = available.first
+      session[:current_event_id] = @current_event.id
       return
     end
 
