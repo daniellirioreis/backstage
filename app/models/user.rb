@@ -51,7 +51,7 @@ class User < ApplicationRecord
   private
 
   def strip_cpf
-    self.cpf = cpf.to_s.gsub(/\D/, "")
+    self.cpf = cpf.gsub(/\D/, "") if cpf.present?
   end
 
   def cpf_check_digits
