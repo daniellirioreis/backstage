@@ -17,6 +17,16 @@
       </div>
     </div>
 
+    <%# Preview: funções planejadas do setor %>
+    <div id="sector-plan-preview" style="display:none; background:#f5f3ff; border:1px solid #ddd6fe; border-radius:8px; padding:0.75rem 1rem; margin-bottom:1.25rem;">
+      <div style="font-size:0.78rem; font-weight:600; color:#6d28d9; margin-bottom:0.6rem;">
+        <i class="bi bi-clipboard-check"></i> Funções planejadas para este setor
+      </div>
+      <div id="sector-plan-rows"
+           style="display:grid; grid-template-columns:1fr auto 90px auto; gap:0.4rem 0.75rem; align-items:center;">
+      </div>
+    </div>
+
     <%# Coordenador + Canal de Rádio %>
     <div style="display: grid; grid-template-columns: 1fr auto; gap: 1rem; align-items: start; margin-bottom: 0.4rem;">
       <div class="form-label" style="margin: 0;">Coordenador</div>
@@ -409,10 +419,63 @@
     });
   }
 
+  // ── Preview de funções planejadas do setor ────────────────────────────────
+  var fnNameMap = {};
+  FN_LIST.forEach(function(fn) { fnNameMap[fn.id.toString()] = fn.label.split(' · ')[0]; });
+
+  function updateSectorPlanPreview() {
+    var preview  = document.getElementById("sector-plan-preview");
+    var rowsEl   = document.getElementById("sector-plan-rows");
+    var sectorId = currentSectorId();
+    if (!preview || !rowsEl) return;
+
+    var planned  = ((SECTOR_DATA.planned  || {})[sectorId]) || {};
+    var assigned = ((SECTOR_DATA.assigned || {})[sectorId]) || {};
+    var plannedIds = Object.keys(planned);
+
+    if (!sectorId || plannedIds.length === 0) {
+      preview.style.display = "none";
+      return;
+    }
+
+    // Cabeçalho
+    var html = '<span style="font-size:0.7rem;font-weight:600;color:#7c3aed;text-transform:uppercase;letter-spacing:0.05em;">Função</span>' +
+               '<span style="font-size:0.7rem;font-weight:600;color:#7c3aed;text-transform:uppercase;letter-spacing:0.05em;text-align:right;">Atribuído</span>' +
+               '<span></span>' +
+               '<span></span>';
+
+    plannedIds.forEach(function(fnId) {
+      var name       = fnNameMap[fnId] || ("Função " + fnId);
+      var qty        = planned[fnId];
+      var done       = assigned[fnId] || 0;
+      var remaining  = qty - done;
+      var pct        = Math.min(Math.round(done * 100 / qty), 100);
+      var color      = done >= qty ? '#dc2626' : done / qty >= 0.8 ? '#d97706' : '#16a34a';
+      var bgColor    = done >= qty ? '#fee2e2' : done / qty >= 0.8 ? '#fef3c7' : '#dcfce7';
+      var label      = remaining > 0
+        ? remaining + ' vaga' + (remaining > 1 ? 's' : '')
+        : '<i class="bi bi-check-circle-fill"></i> Completo';
+
+      html +=
+        '<span style="font-size:0.82rem;color:#3f3f46;">' + name + '</span>' +
+        '<span style="font-size:0.82rem;font-weight:600;color:#52525b;text-align:right;">' + done + '&nbsp;/&nbsp;' + qty + '</span>' +
+        '<div style="height:5px;background:#e4e4e7;border-radius:99px;overflow:hidden;">' +
+          '<div style="height:100%;width:' + pct + '%;background:' + color + ';border-radius:99px;transition:width .3s;"></div>' +
+        '</div>' +
+        '<span style="font-size:0.72rem;font-weight:600;background:' + bgColor + ';color:' + color + ';padding:2px 8px;border-radius:99px;white-space:nowrap;">' + label + '</span>';
+    });
+
+    rowsEl.innerHTML  = html;
+    preview.style.display = "block";
+  }
+
   // Monitora mudança de setor
   var sectorSelect = document.querySelector("select[name='team[sector_id]']");
   if (sectorSelect) {
-    sectorSelect.addEventListener("change", checkAllRows);
+    sectorSelect.addEventListener("change", function() {
+      checkAllRows();
+      updateSectorPlanPreview();
+    });
     // tom-select dispara change no select nativo
   }
 
@@ -435,5 +498,6 @@
 
   // Verifica ao carregar
   checkAllRows();
+  updateSectorPlanPreview();
 })();
 </script>
