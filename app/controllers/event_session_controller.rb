@@ -29,9 +29,7 @@ class EventSessionController < ApplicationController
     end
 
     @return_to = params[:return_to].presence || root_path
-    if params[:modal] == "1"
-      render "select_event_modal", layout: "application"
-    end
+    render "select_event_modal", layout: "application"
   end
 
   def set_event
