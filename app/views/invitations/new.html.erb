@@ -40,14 +40,48 @@
 
     <div>
       <label style="display:block; font-size:0.8rem; font-weight:500; color:#374151; margin-bottom:0.3rem;">Empresa <span style="color:#a1a1aa; font-weight:400;">(opcional)</span></label>
-      <select name="company_id"
+      <select name="company_id" id="invitation_company_id"
+              onchange="updatePlanInfo(this)"
               style="width:100%; box-sizing:border-box; border:1px solid #d1d5db; border-radius:8px; padding:0.55rem 0.75rem; font-size:0.875rem; color:#18181b; background:#fff; outline:none;">
         <option value="">Sem empresa por enquanto</option>
         <% @companies.each do |company| %>
-          <option value="<%= company.id %>"><%= company.name %></option>
+          <option value="<%= company.id %>"
+                  data-plan="<%= company.plan&.name %>"
+                  data-members="<%= company.current_members_count %>"
+                  data-limit="<%= company.members_limit || '' %>"
+                  data-at-limit="<%= !company.can_add_member? %>">
+            <%= company.name %><%= company.plan ? " (#{company.plan.name})" : "" %>
+          </option>
         <% end %>
       </select>
+
+      <div id="plan-info" style="display:none; margin-top:0.5rem; padding:0.5rem 0.75rem; border-radius:7px; font-size:0.78rem;">
+      </div>
     </div>
+
+    <script>
+      function updatePlanInfo(select) {
+        var opt    = select.options[select.selectedIndex];
+        var box    = document.getElementById("plan-info");
+        var plan   = opt.dataset.plan;
+        var used   = opt.dataset.members;
+        var limit  = opt.dataset.limit;
+        var atLimit = opt.dataset.atLimit === "true";
+
+        if (!plan || !opt.value) { box.style.display = "none"; return; }
+
+        var limitLabel = limit ? limit : "∞";
+        var color = atLimit ? "#fef2f2" : "#f0fdf4";
+        var textColor = atLimit ? "#dc2626" : "#16a34a";
+        var icon = atLimit ? "⚠️" : "✓";
+
+        box.style.display = "block";
+        box.style.background = color;
+        box.style.color = textColor;
+        box.innerHTML = icon + " Plano <strong>" + plan + "</strong> · Colaboradores: " + used + " / " + limitLabel +
+                        (atLimit ? " — <strong>limite atingido</strong>" : "");
+      }
+    </script>
 
     <button type="submit"
             style="width:100%; background:#18181b; color:#fff; border:none; border-radius:8px; padding:0.65rem; font-size:0.875rem; font-weight:600; cursor:pointer; margin-top:0.5rem;">
