@@ -1,12 +1,14 @@
 module Reports
   class ClosingController < ApplicationController
     def index
+      return redirect_to(new_event_path, alert: "Selecione um evento para continuar.") unless current_event
       authorize :report, :closing?
       @basis = params[:basis].presence_in(%w[shifts attendance]) || "shifts"
       load_report_data
     end
 
     def print
+      return redirect_to(new_event_path, alert: "Selecione um evento para continuar.") unless current_event
       authorize :report, :closing?
       @basis = params[:basis].presence_in(%w[shifts attendance]) || "shifts"
       load_report_data
