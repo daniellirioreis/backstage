@@ -32,7 +32,7 @@
 </div>
 
 <%# ── Plano da empresa ──────────────────────────────────────────────────────── %>
-<% if current_user.admin? %>
+<% if @company.plan.present? || current_user.admin? %>
   <div class="content-card" style="padding:1.25rem; margin-bottom:1.25rem;">
     <div style="display:flex; align-items:center; justify-content:space-between; gap:1rem; flex-wrap:wrap;">
 
@@ -66,15 +66,17 @@
         </div>
       </div>
 
-      <%# Trocar plano %>
-      <%= form_with url: company_path(@company), method: :patch, style:"display:flex; align-items:center; gap:0.5rem;" do |f| %>
-        <%= f.select :plan_id,
-              [["Sem plano", ""]] + @plans.map { |p| [p.name, p.id] },
-              { selected: @company.plan_id },
-              class: "form-control form-select",
-              style: "width:160px; font-size:0.85rem;",
-              name: "company[plan_id]" %>
-        <%= f.submit "Aplicar", style:"background:#18181b;color:#fff;border:none;padding:0.45rem 0.9rem;border-radius:7px;font-size:0.82rem;font-weight:600;cursor:pointer;white-space:nowrap;" %>
+      <%# Trocar plano (somente admin) %>
+      <% if current_user.admin? %>
+        <%= form_with url: company_path(@company), method: :patch, style:"display:flex; align-items:center; gap:0.5rem;" do |f| %>
+          <%= f.select :plan_id,
+                [["Sem plano", ""]] + @plans.map { |p| [p.name, p.id] },
+                { selected: @company.plan_id },
+                class: "form-control form-select",
+                style: "width:160px; font-size:0.85rem;",
+                name: "company[plan_id]" %>
+          <%= f.submit "Aplicar", style:"background:#18181b;color:#fff;border:none;padding:0.45rem 0.9rem;border-radius:7px;font-size:0.82rem;font-weight:600;cursor:pointer;white-space:nowrap;" %>
+        <% end %>
       <% end %>
 
     </div>
