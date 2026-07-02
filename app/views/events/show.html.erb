@@ -65,19 +65,46 @@
     <div class="metric-label"><i class="bi bi-star-fill"></i> Coordenadores</div>
     <div class="metric-value"><%= total_coordinators %></div>
   </div>
-  <div class="metric-card" style="border-top: 3px solid #16a34a;">
-    <div class="metric-label"><i class="bi bi-cash-stack"></i> Custo previsto</div>
-    <% if @estimated_cost > 0 %>
-      <div class="metric-value metric-accent" style="font-size: 1.3rem;">
-        <%= number_to_currency(@estimated_cost, unit: "R$", separator: ",", delimiter: ".", precision: 2) %>
-      </div>
-      <div class="metric-sub">em horas × função</div>
-    <% else %>
-      <div class="metric-value" style="font-size: 1.3rem; color: #a1a1aa;">—</div>
-      <div class="metric-sub">sem escalas com função</div>
-    <% end %>
-  </div>
 </div>
+
+<%# ── Custo previsto por função ───────────────────────────────────────────── %>
+<% if @cost_by_function.any? %>
+  <div class="content-card" style="margin-bottom: 2rem; padding: 1.25rem 1.5rem;">
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem;">
+      <h2 style="font-size: 0.9rem; font-weight: 600; color: #18181b; margin: 0;">
+        <i class="bi bi-cash-stack" style="color: #16a34a;"></i> Custo previsto por função
+      </h2>
+      <span style="font-size: 0.88rem; font-weight: 700; color: #15803d;">
+        Total: <%= number_to_currency(@estimated_cost, unit: "R$", separator: ",", delimiter: ".", precision: 2) %>
+      </span>
+    </div>
+
+    <%
+      sorted = @cost_by_function.sort_by { |_, v| -v }
+      max_cost = sorted.first&.last.to_f
+    %>
+
+    <div style="display: flex; flex-direction: column; gap: 0.65rem;">
+      <% sorted.each do |ef, cost| %>
+        <% pct = max_cost > 0 ? (cost / max_cost * 100).round(1) : 0 %>
+        <div>
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.3rem;">
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+              <span style="font-size: 0.83rem; font-weight: 500; color: #18181b;"><%= ef.name %></span>
+              <span style="font-size: 0.72rem; color: #a1a1aa;"><%= ef.hourly_rate_formatted %></span>
+            </div>
+            <span style="font-size: 0.85rem; font-weight: 700; color: #15803d;">
+              <%= number_to_currency(cost, unit: "R$", separator: ",", delimiter: ".", precision: 2) %>
+            </span>
+          </div>
+          <div style="height: 6px; background: #f4f4f5; border-radius: 99px; overflow: hidden;">
+            <div style="height: 100%; width: <%= pct %>%; background: #4ade80; border-radius: 99px; transition: width 0.4s ease;"></div>
+          </div>
+        </div>
+      <% end %>
+    </div>
+  </div>
+<% end %>
 
 <%# ── Coordenadores ───────────────────────────────────────────────────────── %>
 <% coordinators = @sectors.flat_map(&:teams).select(&:coordinator).map { |t| { team: t, user: t.coordinator } } %>

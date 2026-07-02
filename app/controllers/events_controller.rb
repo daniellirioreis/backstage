@@ -19,16 +19,23 @@ class EventsController < ApplicationController
                                     .where(team_id: all_team_ids)
                                     .each_with_object({}) { |m, h| h[[m.user_id, m.team_id]] = m }
 
-    @estimated_cost = shifts.sum do |shift|
-      next 0 unless shift.team_id
-      rate = memberships_map[[shift.user_id, shift.team_id]]&.event_function&.hourly_rate.to_f
-      next 0 unless rate > 0
+    @cost_by_function = Hash.new(0.0)  # { event_function => total_cost }
+
+    shifts.each do |shift|
+      next unless shift.team_id
+      membership = memberships_map[[shift.user_id, shift.team_id]]
+      ef   = membership&.event_function
+      rate = ef&.hourly_rate.to_f
+      next unless rate > 0
+
       s = shift.start_time.hour * 60 + shift.start_time.min
       e = shift.end_time.hour   * 60 + shift.end_time.min
       hours = (e > s ? e - s : 1440 - s + e) / 60.0
       days  = shift.end_date.present? ? (shift.end_date - shift.date).to_i + 1 : 1
-      hours * days * rate
+      @cost_by_function[ef] += hours * days * rate
     end
+
+    @estimated_cost = @cost_by_function.values.sum
   end
 
   def print
