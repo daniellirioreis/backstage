@@ -4,8 +4,10 @@
     <div style="font-size: 0.8rem; color: #a1a1aa; margin-top: 0.2rem;"><%= @total %> encontrado<%= @total == 1 ? "" : "s" %></div>
   </div>
   <div style="display:flex; gap:0.5rem; align-items:center;">
-    <%= link_to new_invitation_path, style: "display:inline-flex; align-items:center; gap:0.35rem; background:#fff; color:#18181b; border:1px solid #d1d5db; border-radius:8px; padding:0.45rem 0.9rem; font-size:0.82rem; font-weight:500; text-decoration:none;" do %>
-      <i class="bi bi-envelope-plus"></i> Convidar
+    <% if current_user.admin? %>
+      <%= link_to new_invitation_path, style: "display:inline-flex; align-items:center; gap:0.35rem; background:#fff; color:#18181b; border:1px solid #d1d5db; border-radius:8px; padding:0.45rem 0.9rem; font-size:0.82rem; font-weight:500; text-decoration:none;" do %>
+        <i class="bi bi-envelope-plus"></i> Convidar
+      <% end %>
     <% end %>
     <% if policy(User).new? %>
       <%= link_to new_user_path, class: "btn-primary" do %>
