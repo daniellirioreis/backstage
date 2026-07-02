@@ -64,7 +64,9 @@ Rails.application.routes.draw do
       patch :set_function
     end
   end
-  resources :sectors
+  resources :sectors do
+    resources :sector_functions, only: [:create, :update, :destroy]
+  end
   resources :shifts do
     collection do
       get   :print

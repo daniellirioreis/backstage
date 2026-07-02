@@ -2,6 +2,8 @@ class Sector < ApplicationRecord
   belongs_to :event
   has_many :teams, dependent: :destroy
   has_many :shifts, dependent: :destroy
+  has_many :sector_functions, dependent: :destroy
+  has_many :event_functions, through: :sector_functions
 
   TYPES = %w[
     stage lighting sound generator tents

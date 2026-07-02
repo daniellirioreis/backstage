@@ -12,7 +12,11 @@ class SectorsController < ApplicationController
 
   def show
     authorize @sector
-    @sector = Sector.includes(:event, teams: [:coordinator, :users]).find(params[:id])
+    @sector = Sector.includes(:event, teams: [:coordinator, :users],
+                              sector_functions: :event_function).find(params[:id])
+    @available_functions = @sector.event.event_functions.order(:name) -
+                           @sector.event_functions
+    @event_days = (@sector.event.end_date - @sector.event.start_date).to_i + 1
   end
 
   def new

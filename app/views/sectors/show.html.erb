@@ -31,6 +31,114 @@
   </div>
 </div>
 
+<%# ── Funções planejadas ───────────────────────────────────────────────────── %>
+<div class="content-card" style="margin-bottom: 1.5rem;">
+  <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1rem;">
+    <h2 style="font-size:0.9rem; font-weight:600; color:#18181b; margin:0;">
+      <i class="bi bi-person-gear"></i> Funções planejadas
+    </h2>
+  </div>
+
+  <% if @sector.sector_functions.any? %>
+    <%
+      total_hourly = @sector.sector_functions.sum(&:hourly_cost)
+      total_est    = total_hourly * @event_days * 8
+    %>
+    <table class="data-table" style="margin-bottom:0.75rem;">
+      <thead>
+        <tr>
+          <th>Função</th>
+          <th style="text-align:center;">Qtd prevista</th>
+          <th>Taxa/h</th>
+          <th>Custo/h total</th>
+          <th>Estimativa (<%= @event_days %>d × 8h)</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @sector.sector_functions.each do |sf| %>
+          <tr>
+            <td style="font-weight:500;"><%= sf.event_function.name %></td>
+            <td style="text-align:center;">
+              <%= form_with url: sector_sector_function_path(@sector, sf), method: :patch,
+                    style: "display:inline-flex; align-items:center; gap:0.4rem;" do |f| %>
+                <%= f.number_field :quantity, value: sf.quantity, min: 1,
+                      style: "width:60px; text-align:center; border:1px solid #e4e4e7; border-radius:6px; padding:0.2rem 0.4rem; font-size:0.82rem;",
+                      name: "sector_function[quantity]" %>
+                <button type="submit" style="background:none; border:none; cursor:pointer; color:#71717a; padding:0;" title="Salvar">
+                  <i class="bi bi-check-lg" style="font-size:0.9rem;"></i>
+                </button>
+              <% end %>
+            </td>
+            <td style="color:#71717a;"><%= sf.event_function.hourly_rate_formatted %></td>
+            <td style="font-weight:600; color:#18181b;">
+              <%= number_to_currency(sf.hourly_cost, unit: "R$", separator: ",", delimiter: ".", precision: 2) %>/h
+            </td>
+            <td style="font-weight:600; color:#15803d;">
+              <%= number_to_currency(sf.estimated_total_cost(@event_days), unit: "R$", separator: ",", delimiter: ".", precision: 2) %>
+            </td>
+            <td class="td-actions">
+              <%= button_to sector_sector_function_path(@sector, sf), method: :delete,
+                    form: { data: { turbo_confirm: "Remover esta função do planejamento?" } },
+                    class: "btn-danger", style: "padding:0.3rem 0.55rem;" do %>
+                <i class="bi bi-trash"></i>
+              <% end %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+      <tfoot>
+        <tr style="border-top:2px solid #e4e4e7;">
+          <td colspan="3" style="font-weight:700; font-size:0.82rem; color:#71717a; padding-top:0.6rem;">Total estimado</td>
+          <td style="font-weight:700; color:#18181b; padding-top:0.6rem;">
+            <%= number_to_currency(total_hourly, unit: "R$", separator: ",", delimiter: ".", precision: 2) %>/h
+          </td>
+          <td style="font-weight:700; color:#15803d; font-size:0.95rem; padding-top:0.6rem;">
+            <%= number_to_currency(total_est, unit: "R$", separator: ",", delimiter: ".", precision: 2) %>
+          </td>
+          <td></td>
+        </tr>
+      </tfoot>
+    </table>
+  <% else %>
+    <p style="color:#a1a1aa; font-size:0.85rem; text-align:center; padding:1.25rem 0; margin:0;">
+      Nenhuma função planejada para este setor.
+    </p>
+  <% end %>
+
+  <% if policy(@sector).edit? && @available_functions.any? %>
+    <div style="border-top:1px solid #f4f4f5; padding-top:1rem; margin-top:0.5rem;">
+      <%= form_with url: sector_sector_functions_path(@sector), method: :post,
+            style: "display:flex; align-items:flex-end; gap:0.75rem; flex-wrap:wrap;" do |f| %>
+        <div>
+          <label style="display:block; font-size:0.75rem; font-weight:500; color:#374151; margin-bottom:0.25rem;">Função</label>
+          <%= f.select "sector_function[event_function_id]",
+                @available_functions.map { |ef| ["#{ef.name} (#{ef.hourly_rate_formatted})", ef.id] },
+                { include_blank: "— Selecione —" },
+                class: "form-control", style: "min-width:220px;" %>
+        </div>
+        <div>
+          <label style="display:block; font-size:0.75rem; font-weight:500; color:#374151; margin-bottom:0.25rem;">Qtd prevista</label>
+          <%= f.number_field "sector_function[quantity]", value: 1, min: 1,
+                class: "form-control", style: "width:80px;" %>
+        </div>
+        <button type="submit" class="btn-primary">
+          <i class="bi bi-plus"></i> Adicionar
+        </button>
+      <% end %>
+    </div>
+  <% elsif policy(@sector).edit? && @available_functions.empty? && @sector.event.event_functions.any? %>
+    <p style="font-size:0.78rem; color:#a1a1aa; margin:0.5rem 0 0; text-align:center;">
+      Todas as funções do evento já foram adicionadas a este setor.
+    </p>
+  <% elsif policy(@sector).edit? && @sector.event.event_functions.empty? %>
+    <p style="font-size:0.78rem; color:#a1a1aa; margin:0.5rem 0 0; text-align:center;">
+      Cadastre funções no evento antes de planejar este setor.
+      <%= link_to "Ir para o evento", event_path(@sector.event), style: "color:#18181b;" %>
+    </p>
+  <% end %>
+</div>
+
 <%# Equipes do setor %>
 <div class="content-card">
   <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem;">
