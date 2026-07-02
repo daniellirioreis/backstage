@@ -217,6 +217,7 @@ pt-BR:
       sector:
         name: "Nome"
         sector_type: "Tipo de setor"
+        expected_headcount: "Previsto"
       shift:
         date: "Data"
         start_time: "Hora de início"

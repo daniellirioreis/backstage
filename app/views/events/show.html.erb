@@ -158,6 +158,16 @@
 <% end %>
 
 <%# ── Setores ─────────────────────────────────────────────────────────────── %>
+<%
+  total_expected = @sectors.sum { |s| s.expected_headcount.to_i }
+  total_scaled   = @sectors.flat_map(&:teams).flat_map(&:users).uniq.size
+  sectors_with_expected = @sectors.count { |s| s.expected_headcount.present? }
+  sectors_complete = @sectors.count { |s|
+    s.expected_headcount.present? &&
+    s.teams.flat_map(&:users).uniq.size >= s.expected_headcount
+  }
+%>
+
 <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem;">
   <h2 style="font-size: 1rem; font-weight: 600; color: #18181b; margin: 0;">
     <%= Sector.model_name.human(count: 2) %>
@@ -168,6 +178,28 @@
     <% end %>
   <% end %>
 </div>
+
+<% if sectors_with_expected > 0 %>
+  <div class="content-card" style="margin-bottom: 1.25rem; padding: 1rem 1.25rem;">
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:0.75rem;">
+      <span style="font-size:0.8rem; font-weight:600; text-transform:uppercase; letter-spacing:0.06em; color:#71717a;">
+        <i class="bi bi-people"></i> Preenchimento geral
+      </span>
+      <% overall_pct = total_expected > 0 ? [(total_scaled * 100.0 / total_expected).round, 100].min : 0 %>
+      <span style="font-size:0.85rem; font-weight:700; color:<%= overall_pct >= 100 ? '#15803d' : overall_pct >= 60 ? '#92400e' : '#991b1b' %>;">
+        <%= total_scaled %> / <%= total_expected %> (<%= overall_pct %>%)
+      </span>
+    </div>
+    <div style="height:8px; background:#f4f4f5; border-radius:99px; overflow:hidden; margin-bottom:0.75rem;">
+      <div style="height:100%; width:<%= overall_pct %>%; background:<%= overall_pct >= 100 ? '#4ade80' : overall_pct >= 60 ? '#fb923c' : '#f87171' %>; border-radius:99px; transition:width 0.4s ease;"></div>
+    </div>
+    <div style="display:flex; gap:1.5rem; font-size:0.78rem; color:#71717a;">
+      <span><i class="bi bi-check-circle-fill" style="color:#4ade80;"></i> <%= sectors_complete %> setor<%= sectors_complete == 1 ? '' : 'es' %> completo<%= sectors_complete == 1 ? '' : 's' %></span>
+      <span><i class="bi bi-hourglass-split" style="color:#fb923c;"></i> <%= sectors_with_expected - sectors_complete %> incompleto<%= (sectors_with_expected - sectors_complete) == 1 ? '' : 's' %></span>
+      <span><i class="bi bi-dash-circle" style="color:#d4d4d8;"></i> <%= @sectors.size - sectors_with_expected %> sem previsão</span>
+    </div>
+  </div>
+<% end %>
 
 <% if @sectors.empty? %>
   <div class="content-card" style="text-align: center; padding: 2.5rem; color: #a1a1aa;">
@@ -204,6 +236,27 @@
             <% end %>
           </div>
         </div>
+
+        <%# Previsto vs escalado %>
+        <% if sector.expected_headcount.present?
+             scaled_count = sector.teams.flat_map(&:users).uniq.size
+             expected     = sector.expected_headcount
+             pct          = expected > 0 ? [(scaled_count * 100.0 / expected).round, 100].min : 0
+             bar_color    = pct >= 100 ? '#4ade80' : pct >= 60 ? '#fb923c' : '#f87171'
+             text_color   = pct >= 100 ? '#15803d' : pct >= 60 ? '#92400e' : '#991b1b'
+        %>
+          <div style="background:#f9f9f9; border-radius:8px; padding:0.6rem 0.75rem;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.35rem;">
+              <span style="font-size:0.7rem; color:#71717a; font-weight:600; text-transform:uppercase; letter-spacing:0.05em;">Preenchimento</span>
+              <span style="font-size:0.78rem; font-weight:700; color:<%= text_color %>;">
+                <%= scaled_count %> / <%= expected %>
+              </span>
+            </div>
+            <div style="height:5px; background:#e4e4e7; border-radius:99px; overflow:hidden;">
+              <div style="height:100%; width:<%= pct %>%; background:<%= bar_color %>; border-radius:99px;"></div>
+            </div>
+          </div>
+        <% end %>
 
         <%# Equipes %>
         <div style="border-top: 1px solid #f4f4f5; padding-top: 0.9rem;">
