@@ -11,7 +11,8 @@ class CompanyPolicy < ApplicationPolicy
 
   class Scope < ApplicationPolicy::Scope
     def resolve
-      return scope.joins(:company_users).where(company_users: { user_id: user.id }) if user.admin? || user.can?("companies", "index")
+      return scope.all if user.admin?
+      return scope.joins(:company_users).where(company_users: { user_id: user.id }) if user.can?("companies", "index")
       scope.none
     end
   end
