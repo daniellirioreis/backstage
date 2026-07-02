@@ -1,7 +1,5 @@
 class DashboardController < ApplicationController
   def index
-    return redirect_to my_schedule_user_path(current_user) if current_user.role&.collaborator?
-
     authorize :dashboard, :index?
 
     company_ids = if current_user.admin?

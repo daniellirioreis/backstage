@@ -24,14 +24,19 @@
         </div>
 
         <nav>
-          <div class="sidebar-section">Geral</div>
-          <% if current_user.role&.collaborator? %>
-            <%= link_to my_schedule_user_path(current_user), class: "sidebar-link #{controller_name == 'users' && action_name == 'my_schedule' ? 'active' : ''}" do %>
-              <i class="bi bi-calendar-week"></i> <%= t("permission_actions.my_schedule") %>
+          <% show_home        = policy(:dashboard).index? %>
+          <% show_my_schedule = policy(current_user).my_schedule? %>
+          <% if show_home || show_my_schedule %>
+            <div class="sidebar-section">Geral</div>
+            <% if show_home %>
+              <%= link_to root_path, class: "sidebar-link #{current_page?(root_path) ? 'active' : ''}" do %>
+                <i class="bi bi-grid-1x2"></i> <%= t("nav.home") %>
+              <% end %>
             <% end %>
-          <% else %>
-            <%= link_to root_path, class: "sidebar-link #{current_page?(root_path) ? 'active' : ''}" do %>
-              <i class="bi bi-grid-1x2"></i> <%= t("nav.home") %>
+            <% if show_my_schedule %>
+              <%= link_to my_schedule_user_path(current_user), class: "sidebar-link #{controller_name == 'users' && action_name == 'my_schedule' ? 'active' : ''}" do %>
+                <i class="bi bi-calendar-week"></i> <%= t("permission_actions.my_schedule") %>
+              <% end %>
             <% end %>
           <% end %>
 
