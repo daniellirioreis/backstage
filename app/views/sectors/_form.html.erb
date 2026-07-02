@@ -20,6 +20,80 @@
     </div>
 
 
+    <%# ── Funções planejadas ──────────────────────────────────────────────── %>
+    <div style="margin-bottom: 1.25rem;">
+      <div class="form-label" style="margin-bottom: 0.75rem;">
+        <i class="bi bi-clipboard-check"></i> Funções planejadas
+      </div>
+
+      <% if @event_functions.blank? %>
+        <p style="font-size:0.82rem; color:#a1a1aa; margin:0;">
+          Nenhuma função cadastrada neste evento.
+          <%= link_to "Adicione funções ao evento", edit_event_path(sector.event_id), style: "color:#6d28d9;" %> primeiro.
+        </p>
+      <% else %>
+        <div style="border:1px solid #e4e4e7; border-radius:8px; margin-bottom:0.75rem; overflow:hidden;">
+          <%# Cabeçalho %>
+          <div style="display:grid; grid-template-columns:1fr 100px 36px; gap:0.5rem; padding:0.4rem 0.75rem; background:#f9fafb; border-bottom:1px solid #e4e4e7;">
+            <span style="font-size:0.72rem; font-weight:600; color:#71717a; text-transform:uppercase; letter-spacing:0.05em;">Função</span>
+            <span style="font-size:0.72rem; font-weight:600; color:#71717a; text-transform:uppercase; letter-spacing:0.05em;">Qtd.</span>
+            <span></span>
+          </div>
+
+          <%# Linhas existentes %>
+          <div id="sf-rows">
+            <%= f.fields_for :sector_functions do |ff| %>
+              <div class="sf-row" style="display:grid; grid-template-columns:1fr 100px 36px; gap:0.5rem; align-items:center; padding:0.45rem 0.75rem; border-bottom:1px solid #f4f4f5;">
+                <%= ff.collection_select :event_function_id, @event_functions, :id, :name,
+                      { include_blank: "— Selecione —" },
+                      class: "form-control", style: "font-size:0.82rem;" %>
+                <%= ff.number_field :quantity, min: 1, class: "form-control", style: "font-size:0.82rem;" %>
+                <div style="display:flex; justify-content:center;">
+                  <% if ff.object.persisted? %>
+                    <%= ff.check_box :_destroy, { style: "display:none;", class: "sf-destroy-cb" }, "1", "0" %>
+                    <button type="button" onclick="toggleSfDestroy(this)"
+                            class="btn-danger" style="padding:0.25rem 0.45rem; font-size:0.75rem; width:30px;">
+                      <i class="bi bi-x"></i>
+                    </button>
+                  <% else %>
+                    <button type="button" onclick="this.closest('.sf-row').remove()"
+                            class="btn-danger" style="padding:0.25rem 0.45rem; font-size:0.75rem; width:30px;">
+                      <i class="bi bi-x"></i>
+                    </button>
+                  <% end %>
+                </div>
+              </div>
+            <% end %>
+          </div>
+        </div>
+
+        <%# Template para nova linha %>
+        <template id="sf-template">
+          <div class="sf-row" style="display:grid; grid-template-columns:1fr 100px 36px; gap:0.5rem; align-items:center; padding:0.45rem 0.75rem; border-bottom:1px solid #f4f4f5;">
+            <select class="form-control" name="sector[sector_functions_attributes][NEW_IDX][event_function_id]" style="font-size:0.82rem;">
+              <option value="">— Selecione —</option>
+              <% @event_functions.each do |ef| %>
+                <option value="<%= ef.id %>"><%= ef.name %><% if ef.hourly_rate.to_f > 0 %> · R$<%= format('%.2f', ef.hourly_rate) %>/h<% end %></option>
+              <% end %>
+            </select>
+            <input type="number" class="form-control"
+                   name="sector[sector_functions_attributes][NEW_IDX][quantity]"
+                   min="1" value="1" style="font-size:0.82rem;">
+            <div style="display:flex; justify-content:center;">
+              <button type="button" onclick="this.closest('.sf-row').remove()"
+                      class="btn-danger" style="padding:0.25rem 0.45rem; font-size:0.75rem; width:30px;">
+                <i class="bi bi-x"></i>
+              </button>
+            </div>
+          </div>
+        </template>
+
+        <button type="button" onclick="addSfRow()" class="btn-secondary" style="font-size:0.82rem;">
+          <i class="bi bi-plus"></i> Adicionar função
+        </button>
+      <% end %>
+    </div>
+
     <div style="display: flex; gap: 0.75rem; border-top: 1px solid #f4f4f5; padding-top: 1.25rem; margin-top: 1.25rem;">
       <%= f.submit t("actions.save"), class: "btn-primary" %>
       <%= link_to t("actions.cancel"), sectors_path, class: "btn-secondary" %>
@@ -31,13 +105,38 @@
   (function () {
     var typeSelect = document.getElementById("sector_sector_type");
     var nameInput  = document.getElementById("sector_name");
-    if (!typeSelect || !nameInput) return;
+    if (typeSelect && nameInput) {
+      typeSelect.addEventListener("change", function () {
+        var selected = typeSelect.options[typeSelect.selectedIndex];
+        if (selected && selected.value && !nameInput.value.trim()) {
+          nameInput.value = selected.text;
+        }
+      });
+    }
 
-    typeSelect.addEventListener("change", function () {
-      var selected = typeSelect.options[typeSelect.selectedIndex];
-      if (selected && selected.value && !nameInput.value.trim()) {
-        nameInput.value = selected.text;
-      }
-    });
+    // ── Funções planejadas ──────────────────────────────────────────────────
+    var sfIdx = Date.now();
+
+    window.addSfRow = function () {
+      var tpl = document.getElementById("sf-template");
+      if (!tpl) return;
+      var clone = tpl.content.cloneNode(true);
+      var row   = clone.querySelector(".sf-row");
+      var idx   = sfIdx++;
+      row.querySelectorAll("select, input").forEach(function (el) {
+        if (el.name) el.name = el.name.replace("NEW_IDX", idx);
+      });
+      document.getElementById("sf-rows").appendChild(row);
+    };
+
+    window.toggleSfDestroy = function (btn) {
+      var row = btn.closest(".sf-row");
+      var cb  = row.querySelector(".sf-destroy-cb");
+      cb.checked     = !cb.checked;
+      row.style.opacity = cb.checked ? "0.4" : "1";
+      btn.innerHTML  = cb.checked
+        ? '<i class="bi bi-arrow-counterclockwise"></i>'
+        : '<i class="bi bi-x"></i>';
+    };
   })();
 </script>

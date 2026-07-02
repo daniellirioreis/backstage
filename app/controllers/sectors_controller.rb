@@ -22,6 +22,8 @@ class SectorsController < ApplicationController
   def new
     authorize Sector
     @sector = Sector.new(event_id: current_event.id)
+    @sector.sector_functions.build
+    @event_functions = current_event.event_functions.order(:name)
   end
 
   def create
@@ -31,12 +33,15 @@ class SectorsController < ApplicationController
     if @sector.save
       redirect_to sectors_path, notice: t("notices.created", model: Sector.model_name.human)
     else
+      @event_functions = current_event.event_functions.order(:name)
       render :new, status: :unprocessable_entity
     end
   end
 
   def edit
     authorize @sector
+    @sector.sector_functions.build if @sector.sector_functions.empty?
+    @event_functions = @sector.event.event_functions.order(:name)
   end
 
   def update
@@ -44,6 +49,7 @@ class SectorsController < ApplicationController
     if @sector.update(sector_params)
       redirect_to sectors_path, notice: t("notices.updated", model: Sector.model_name.human)
     else
+      @event_functions = @sector.event.event_functions.order(:name)
       render :edit, status: :unprocessable_entity
     end
   end
@@ -61,6 +67,9 @@ class SectorsController < ApplicationController
   end
 
   def sector_params
-    params.require(:sector).permit(:name, :event_id, :sector_type)
+    params.require(:sector).permit(
+      :name, :event_id, :sector_type,
+      sector_functions_attributes: [:id, :event_function_id, :quantity, :_destroy]
+    )
   end
 end

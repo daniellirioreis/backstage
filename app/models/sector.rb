@@ -5,6 +5,10 @@ class Sector < ApplicationRecord
   has_many :sector_functions, dependent: :destroy
   has_many :event_functions, through: :sector_functions
 
+  accepts_nested_attributes_for :sector_functions,
+    allow_destroy: true,
+    reject_if: proc { |attrs| attrs["event_function_id"].blank? }
+
   TYPES = %w[
     stage lighting sound generator tents
     security entrance parking
