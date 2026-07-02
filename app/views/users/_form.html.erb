@@ -67,7 +67,7 @@
 
       <div>
         <%= f.label :phone, User.human_attribute_name(:phone), class: "form-label" %>
-        <%= f.text_field :phone, class: "form-control", placeholder: "(11) 99999-9999" %>
+        <%= f.text_field :phone, class: "form-control", placeholder: "(11) 99999-9999", data: { mask: "phone" } %>
       </div>
 
       <% if current_user.admin? %>

@@ -30,5 +30,25 @@
   </div>
 
   <div style="margin-top:1.5rem; font-size:0.75rem; color:#a1a1aa;">Backstage · Gestão de Eventos</div>
+  <script>
+    function applyPhoneMask(input) {
+      input.addEventListener("input", function(e) {
+        var v = e.target.value.replace(/\D/g, "").slice(0, 11);
+        if (v.length <= 10) {
+          v = v.replace(/^(\d{2})(\d{4})(\d{0,4})/, function(_, a, b, c) {
+            return c ? "(" + a + ") " + b + "-" + c : b ? "(" + a + ") " + b : a ? "(" + a : "";
+          });
+        } else {
+          v = v.replace(/^(\d{2})(\d{5})(\d{0,4})/, function(_, a, b, c) {
+            return c ? "(" + a + ") " + b + "-" + c : "(" + a + ") " + b;
+          });
+        }
+        e.target.value = v;
+      });
+    }
+    document.addEventListener("DOMContentLoaded", function() {
+      document.querySelectorAll("[data-mask='phone']").forEach(applyPhoneMask);
+    });
+  </script>
 </body>
 </html>
