@@ -1,0 +1,62 @@
+<%# Progress %>
+<div style="display:flex; gap:0.5rem; margin-bottom:1.75rem;">
+  <% [["Empresa", false], ["Plano", true], ["Evento", false], ["Concluído", false]].each_with_index do |(label, active), i| %>
+    <div style="flex:1; text-align:center;">
+      <div style="font-size:0.7rem; font-weight:<%= active ? 700 : 400 %>; color:<%= active ? '#18181b' : '#a1a1aa' %>; margin-bottom:0.35rem;"><%= label %></div>
+      <div style="height:3px; border-radius:2px; background:<%= active ? '#18181b' : (i == 0 ? '#18181b' : '#e4e4e7') %>;"></div>
+    </div>
+  <% end %>
+</div>
+
+<div style="text-align:center; padding:0.5rem 0 1.5rem;">
+  <div style="width:3.5rem; height:3.5rem; background:#f4f4f5; border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 1rem;">
+    <i class="bi bi-box" style="font-size:1.5rem; color:#18181b;"></i>
+  </div>
+  <h2 style="font-size:1.1rem; font-weight:700; color:#18181b; margin:0 0 0.4rem;">Escolha seu plano</h2>
+  <p style="font-size:0.83rem; color:#71717a; margin:0 0 1.5rem; line-height:1.5;">
+    Selecione o plano que melhor atende a <strong><%= @company.name %></strong>.
+  </p>
+</div>
+
+<%= form_with url: onboarding_plano_path, method: :post do |f| %>
+  <div style="display:flex; flex-direction:column; gap:0.5rem; margin-bottom:1.5rem;">
+
+    <label style="display:flex; align-items:flex-start; gap:0.75rem; padding:0.75rem 1rem; border:2px solid #e4e4e7; border-radius:10px; cursor:pointer; transition:border-color 0.15s;"
+           onmouseover="this.style.borderColor='#18181b'" onmouseout="if(!this.querySelector('input').checked) this.style.borderColor='#e4e4e7'">
+      <input type="radio" name="plan_id" value="" style="margin-top:3px; flex-shrink:0;" checked>
+      <div>
+        <div style="font-size:0.9rem; font-weight:700; color:#18181b;">Sem plano</div>
+        <div style="font-size:0.75rem; color:#71717a; margin-top:0.15rem;">Acesso ilimitado — sem restrições de eventos ou colaboradores</div>
+      </div>
+    </label>
+
+    <% @plans.each do |plan| %>
+      <label style="display:flex; align-items:flex-start; gap:0.75rem; padding:0.75rem 1rem; border:2px solid #e4e4e7; border-radius:10px; cursor:pointer; transition:border-color 0.15s;"
+             onmouseover="this.style.borderColor='#18181b'" onmouseout="if(!this.querySelector('input').checked) this.style.borderColor='#e4e4e7'">
+        <input type="radio" name="plan_id" value="<%= plan.id %>" style="margin-top:3px; flex-shrink:0;">
+        <div style="flex:1;">
+          <div style="font-size:0.9rem; font-weight:700; color:#18181b;"><%= plan.name %></div>
+          <% if plan.description.present? %>
+            <div style="font-size:0.75rem; color:#71717a; margin-top:0.1rem;"><%= plan.description %></div>
+          <% end %>
+          <div style="display:flex; gap:1rem; margin-top:0.5rem;">
+            <div style="background:#f4f4f5; border-radius:6px; padding:0.25rem 0.6rem; font-size:0.72rem; color:#52525b;">
+              <i class="bi bi-calendar-event" style="font-size:0.65rem;"></i>
+              <strong><%= plan.events_limit_label %></strong> eventos
+            </div>
+            <div style="background:#f4f4f5; border-radius:6px; padding:0.25rem 0.6rem; font-size:0.72rem; color:#52525b;">
+              <i class="bi bi-people" style="font-size:0.65rem;"></i>
+              <strong><%= plan.members_limit_label %></strong> colaboradores
+            </div>
+          </div>
+        </div>
+      </label>
+    <% end %>
+
+  </div>
+
+  <button type="submit"
+          style="width:100%; background:#18181b; color:#fff; border:none; border-radius:8px; padding:0.65rem; font-size:0.875rem; font-weight:600; cursor:pointer;">
+    Continuar →
+  </button>
+<% end %>

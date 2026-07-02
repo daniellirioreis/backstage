@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_07_02_000004) do
+ActiveRecord::Schema[7.1].define(version: 2026_07_02_000005) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -91,6 +91,8 @@ ActiveRecord::Schema[7.1].define(version: 2026_07_02_000004) do
     t.string "primary_color", default: "#18181b"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.bigint "plan_id"
+    t.index ["plan_id"], name: "index_companies_on_plan_id"
   end
 
   create_table "company_users", force: :cascade do |t|
@@ -135,6 +137,16 @@ ActiveRecord::Schema[7.1].define(version: 2026_07_02_000004) do
     t.datetime "updated_at", null: false
     t.index ["role_id", "resource", "action"], name: "index_permissions_on_role_id_and_resource_and_action", unique: true
     t.index ["role_id"], name: "index_permissions_on_role_id"
+  end
+
+  create_table "plans", force: :cascade do |t|
+    t.string "name", null: false
+    t.integer "events_limit"
+    t.integer "members_limit"
+    t.text "description"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["name"], name: "index_plans_on_name", unique: true
   end
 
   create_table "roles", force: :cascade do |t|
@@ -236,6 +248,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_07_02_000004) do
   add_foreign_key "attendances", "users", column: "checked_in_by_id"
   add_foreign_key "attendances", "users", column: "checked_out_by_id"
   add_foreign_key "badge_configs", "events"
+  add_foreign_key "companies", "plans"
   add_foreign_key "company_users", "companies"
   add_foreign_key "company_users", "users"
   add_foreign_key "event_functions", "events"

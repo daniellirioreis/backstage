@@ -18,6 +18,8 @@ Rails.application.routes.draw do
   # Onboarding wizard
   get  "onboarding/empresa",      to: "onboarding#empresa",     as: :onboarding_empresa
   post "onboarding/empresa",      to: "onboarding#save_empresa"
+  get  "onboarding/plano",        to: "onboarding#plano",       as: :onboarding_plano
+  post "onboarding/plano",        to: "onboarding#save_plano"
   get  "onboarding/evento",       to: "onboarding#evento",      as: :onboarding_evento
   post "onboarding/evento",       to: "onboarding#save_evento"
   post "onboarding/evento/pular", to: "onboarding#skip_evento", as: :onboarding_skip_evento

@@ -12,15 +12,33 @@ class OnboardingController < ApplicationController
 
   # POST /onboarding/empresa
   def save_empresa
-    return redirect_to onboarding_evento_path if current_user.companies.exists?
+    return redirect_to onboarding_plano_path if current_user.companies.exists?
 
     @company = Company.new(company_params)
     if @company.save
       current_user.company_users.create!(company: @company, role: "owner")
-      redirect_to onboarding_evento_path
+      redirect_to onboarding_plano_path
     else
       render :empresa, status: :unprocessable_entity
     end
+  end
+
+  # GET /onboarding/plano
+  def plano
+    @company = current_user.companies.first
+    redirect_to onboarding_empresa_path and return unless @company
+    redirect_to onboarding_evento_path if @company.events.exists?
+    @plans = Plan.order(:name)
+  end
+
+  # POST /onboarding/plano
+  def save_plano
+    @company = current_user.companies.first
+    redirect_to onboarding_empresa_path and return unless @company
+
+    plan_id = params[:plan_id].presence
+    @company.update!(plan_id: plan_id)
+    redirect_to onboarding_evento_path
   end
 
   # GET /onboarding/evento
@@ -75,7 +93,7 @@ class OnboardingController < ApplicationController
   end
 
   def company_params
-    params.require(:company).permit(:name, :cnpj, :phone, :email, :city, :state)
+    params.require(:company).permit(:name, :cnpj, :phone, :email, :city, :state, :plan_id)
   end
 
   def event_params
