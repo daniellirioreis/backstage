@@ -75,6 +75,7 @@ class ApplicationController < ActionController::Base
         events
         users
         roles
+        plans
         companies
         vehicles
         invitations
