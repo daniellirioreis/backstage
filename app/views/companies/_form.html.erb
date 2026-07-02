@@ -72,6 +72,36 @@
     </div>
   </div>
 
+  <% if defined?(@plans) && @plans&.any? && !company.persisted? %>
+    <div class="content-card" style="padding:1.25rem; margin-bottom:1rem;">
+      <div style="font-size:0.72rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#71717a; margin-bottom:1rem;">Plano</div>
+      <div style="display:flex; flex-direction:column; gap:0.5rem;">
+        <label style="display:flex; align-items:flex-start; gap:0.6rem; padding:0.6rem 0.75rem; border:1px solid #e4e4e7; border-radius:8px; cursor:pointer;">
+          <%= f.radio_button :plan_id, "", style:"margin-top:3px; flex-shrink:0;", checked: company.plan_id.blank? %>
+          <div>
+            <div style="font-size:0.85rem; font-weight:600; color:#18181b;">Sem plano</div>
+            <div style="font-size:0.72rem; color:#71717a;">Acesso ilimitado (sem restrições)</div>
+          </div>
+        </label>
+        <% @plans.each do |plan| %>
+          <label style="display:flex; align-items:flex-start; gap:0.6rem; padding:0.6rem 0.75rem; border:1px solid #e4e4e7; border-radius:8px; cursor:pointer;">
+            <%= f.radio_button :plan_id, plan.id, style:"margin-top:3px; flex-shrink:0;", checked: company.plan_id == plan.id %>
+            <div>
+              <div style="font-size:0.85rem; font-weight:600; color:#18181b;"><%= plan.name %></div>
+              <div style="font-size:0.72rem; color:#71717a;">
+                <% parts = [] %>
+                <% parts << "#{plan.events_limit_label} eventos" %>
+                <% parts << "#{plan.members_limit_label} colaboradores" %>
+                <% parts << plan.description if plan.description.present? %>
+                <%= parts.join(" · ") %>
+              </div>
+            </div>
+          </label>
+        <% end %>
+      </div>
+    </div>
+  <% end %>
+
   <div style="display:flex; gap:0.75rem;">
     <%= f.submit company.persisted? ? "Salvar alterações" : "Criar company",
         style:"background:#18181b;color:#fff;border:none;padding:0.55rem 1.25rem;border-radius:8px;font-size:0.88rem;font-weight:600;cursor:pointer;" %>

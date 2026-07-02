@@ -16,6 +16,7 @@ class CompaniesController < ApplicationController
   def new
     authorize Company
     @company = Company.new
+    @plans = Plan.order(:name) if current_user.admin?
   end
 
   def create
