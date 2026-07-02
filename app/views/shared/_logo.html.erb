@@ -9,16 +9,17 @@
   sub_sz  = size == :sm ? 6  : (size == :lg ? 9  : 8)
   gap     = size == :sm ? 6  : (size == :lg ? 12 : 10)
   total_h = hex_h + gap + (stacked ? (name_sz + 4 + sub_sz + 6) : 0)
+  svg_w   = stacked ? 210 : hex_w
 %>
 <svg xmlns="http://www.w3.org/2000/svg"
-     viewBox="0 0 <%= hex_w %> <%= total_h %>"
-     width="<%= hex_w %>" height="<%= total_h %>"
+     viewBox="0 0 <%= svg_w %> <%= total_h %>"
+     width="<%= svg_w %>" height="<%= total_h %>"
      role="img" aria-label="Backstage">
   <title>Backstage</title>
   <%
     hw = hex_w / 2.0
     hh = hex_h / 2.0
-    cx = hw
+    cx = svg_w / 2.0
     cy = hh
     r  = hw - 1
     pts = (0..5).map { |i| a = Math::PI/180*(60*i - 30); [cx + r*Math.cos(a), cy + r*Math.sin(a)] }
