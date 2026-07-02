@@ -15,11 +15,15 @@
       <th><%= Sector.human_attribute_name(:name) %></th>
       <th><%= Sector.human_attribute_name(:sector_type) %></th>
       <th>Equipes</th>
+      <th>Preenchimento</th>
       <th></th>
     </tr>
   </thead>
   <tbody>
-    <% @sectors.each do |sector| %>
+    <% @sectors.each do |sector|
+         scaled_count = sector.teams.flat_map(&:users).uniq.size
+         expected     = sector.expected_headcount
+    %>
       <tr>
         <td><%= link_to sector.name, sector_path(sector), style: "color: #18181b; font-weight: 500; text-decoration: none;" %></td>
         <td>
@@ -32,6 +36,24 @@
           <% end %>
         </td>
         <td style="color: #71717a;"><%= sector.teams.size %></td>
+        <td style="min-width: 140px;">
+          <% if expected.present?
+               pct       = expected > 0 ? [(scaled_count * 100.0 / expected).round, 100].min : 0
+               bar_color = pct >= 100 ? '#4ade80' : pct >= 60 ? '#fb923c' : '#f87171'
+               txt_color = pct >= 100 ? '#15803d' : pct >= 60 ? '#92400e' : '#991b1b'
+          %>
+            <div style="display:flex; align-items:center; gap:0.5rem;">
+              <div style="flex:1; height:5px; background:#e4e4e7; border-radius:99px; overflow:hidden;">
+                <div style="height:100%; width:<%= pct %>%; background:<%= bar_color %>; border-radius:99px;"></div>
+              </div>
+              <span style="font-size:0.75rem; font-weight:700; color:<%= txt_color %>; white-space:nowrap;">
+                <%= scaled_count %>/<%= expected %>
+              </span>
+            </div>
+          <% else %>
+            <span style="color:#a1a1aa; font-size:0.82rem;">—</span>
+          <% end %>
+        </td>
         <td class="td-actions">
           <div style="display: flex; gap: 0.4rem; justify-content: flex-end;">
             <% if policy(sector).show? %>

@@ -4,7 +4,7 @@ class SectorsController < ApplicationController
   def index
     return redirect_to(select_event_path, alert: "Selecione um evento para continuar.") unless current_event
     authorize Sector
-    @sectors = policy_scope(Sector).includes(:event, :teams)
+    @sectors = policy_scope(Sector).includes(:event, teams: :users)
                                    .where(event_id: current_event.id)
                                    .order(:name)
                                    .paginate(page: params[:page], per_page: 10)
