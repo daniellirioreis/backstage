@@ -94,6 +94,30 @@ pt-BR:
       operator: "Operador"
       collaborator: "Colaborador"
 
+  sector_types:
+    stage: "Palco / Estrutura"
+    lighting: "Iluminação"
+    sound: "Som / Audiovisual"
+    generator: "Gerador / Energia"
+    tents: "Tendas / Coberturas"
+    security: "Segurança"
+    entrance: "Portaria / Credenciamento"
+    parking: "Estacionamento"
+    reception: "Recepção"
+    ticketing: "Bilheteria"
+    catering: "Alimentação / Catering"
+    bar: "Bar"
+    executive: "Produção Executiva"
+    logistics: "Logística / Transporte"
+    press: "Comunicação / Imprensa"
+    health: "Saúde / Primeiros Socorros"
+    cleaning: "Limpeza"
+    backstage: "Camarim / Hospitalidade"
+    decoration: "Decoração / Cenografia"
+    photo_video: "Fotografia / Vídeo"
+    entertainment: "Animação / Entretenimento"
+    other: "Outro"
+
   activerecord:
     errors:
       messages:
@@ -192,6 +216,7 @@ pt-BR:
         coordinator_id: "Coordenador"
       sector:
         name: "Nome"
+        sector_type: "Tipo de setor"
       shift:
         date: "Data"
         start_time: "Hora de início"

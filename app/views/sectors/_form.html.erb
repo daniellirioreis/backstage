@@ -9,6 +9,14 @@
       <%= f.text_field :name, class: "form-control" %>
     </div>
 
+    <div style="margin-bottom: 1.25rem;">
+      <%= f.label :sector_type, Sector.human_attribute_name(:sector_type), class: "form-label" %>
+      <%= f.select :sector_type,
+            Sector::TYPES.map { |t| [I18n.t("sector_types.#{t}"), t] }.sort_by(&:first),
+            { include_blank: "— Selecione um tipo (opcional) —" },
+            class: "form-control" %>
+    </div>
+
     <div style="display: flex; gap: 0.75rem; border-top: 1px solid #f4f4f5; padding-top: 1.25rem; margin-top: 1.25rem;">
       <%= f.submit t("actions.save"), class: "btn-primary" %>
       <%= link_to t("actions.cancel"), sectors_path, class: "btn-secondary" %>

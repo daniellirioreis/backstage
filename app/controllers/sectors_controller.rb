@@ -57,6 +57,6 @@ class SectorsController < ApplicationController
   end
 
   def sector_params
-    params.require(:sector).permit(:name, :event_id)
+    params.require(:sector).permit(:name, :event_id, :sector_type)
   end
 end

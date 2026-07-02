@@ -5,8 +5,13 @@
     <% end %>
     <div>
       <h1 style="margin: 0;"><%= @sector.name %></h1>
-      <div style="font-size: 0.82rem; color: #71717a; margin-top: 0.2rem;">
-        <i class="bi bi-calendar-event"></i> <%= @sector.event.name %>
+      <div style="font-size: 0.82rem; color: #71717a; margin-top: 0.2rem; display:flex; align-items:center; gap:0.5rem;">
+        <span><i class="bi bi-calendar-event"></i> <%= @sector.event.name %></span>
+        <% if @sector.sector_type.present? %>
+          <span style="background:#f4f4f5; border-radius:5px; padding:1px 7px; font-size:0.7rem; color:#52525b;">
+            <%= @sector.sector_type_label %>
+          </span>
+        <% end %>
       </div>
     </div>
   </div>

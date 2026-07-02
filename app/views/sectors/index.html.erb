@@ -13,6 +13,7 @@
   <thead>
     <tr>
       <th><%= Sector.human_attribute_name(:name) %></th>
+      <th><%= Sector.human_attribute_name(:sector_type) %></th>
       <th>Equipes</th>
       <th></th>
     </tr>
@@ -21,6 +22,15 @@
     <% @sectors.each do |sector| %>
       <tr>
         <td><%= link_to sector.name, sector_path(sector), style: "color: #18181b; font-weight: 500; text-decoration: none;" %></td>
+        <td>
+          <% if sector.sector_type.present? %>
+            <span style="display:inline-block; background:#f4f4f5; border-radius:5px; padding:2px 8px; font-size:0.72rem; color:#52525b;">
+              <%= sector.sector_type_label %>
+            </span>
+          <% else %>
+            <span style="color:#a1a1aa; font-size:0.82rem;">—</span>
+          <% end %>
+        </td>
         <td style="color: #71717a;"><%= sector.teams.size %></td>
         <td class="td-actions">
           <div style="display: flex; gap: 0.4rem; justify-content: flex-end;">
