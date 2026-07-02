@@ -19,6 +19,7 @@ gem "pundit"
 
 # PDF
 gem "wicked_pdf"
+gem "wkhtmltopdf-binary"
 
 # QR Code
 gem "rqrcode"
