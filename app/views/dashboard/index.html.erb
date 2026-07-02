@@ -19,7 +19,7 @@
 </div>
 
 <%# ── Métricas principais ─────────────────────────────────────────────────────── %>
-<div style="display:grid; grid-template-columns:repeat(7,1fr); gap:0.85rem; margin-bottom:2rem;">
+<div style="display:grid; grid-template-columns:repeat(4,1fr); gap:0.85rem; margin-bottom:2rem;">
 
   <div class="metric-card" style="border-top:3px solid #18181b;">
     <div class="metric-label"><i class="bi bi-calendar-event"></i> Eventos</div>
@@ -47,8 +47,14 @@
 
   <div class="metric-card" style="border-top:3px solid #f59e0b;">
     <div class="metric-label"><i class="bi bi-person-badge"></i> Colaboradores</div>
-    <div class="metric-value metric-warn" style="font-size:1.75rem;"><%= @total_members %></div>
-    <div class="metric-sub">escalados</div>
+    <div class="metric-value metric-warn" style="font-size:1.75rem;"><%= @total_users %></div>
+    <div class="metric-sub">cadastrados</div>
+  </div>
+
+  <div class="metric-card" style="border-top:3px solid #f97316;">
+    <div class="metric-label"><i class="bi bi-person-check"></i> Escalados</div>
+    <div class="metric-value" style="font-size:1.75rem; color:#ea580c;"><%= @total_members %></div>
+    <div class="metric-sub">em turnos</div>
   </div>
 
   <div class="metric-card" style="border-top:3px solid #71717a;">
@@ -230,9 +236,9 @@
       </h3>
       <div style="display:flex; flex-direction:column; gap:0.6rem;">
         <% [
-          ["bi-people-fill",     @total_users,    "colaboradores na empresa",  "#2563eb"],
-          ["bi-car-front-fill",  @total_vehicles, "veículos",                  "#52525b"],
-          ["bi-grid-3x3-gap-fill", @total_sectors, "setores no total",         "#7c3aed"],
+          ["bi-car-front-fill",    @total_vehicles, "veículos",       "#52525b"],
+          ["bi-grid-3x3-gap-fill", @total_sectors,  "setores",        "#7c3aed"],
+          ["bi-people-fill",       @total_teams,    "equipes",        "#2563eb"],
         ].each do |icon, value, label, color| %>
           <div style="display:flex; align-items:center; gap:0.6rem; padding:0.55rem 0.7rem; background:#f9f9f9; border-radius:8px;">
             <div style="width:2rem; height:2rem; background:<%= color %>1a; border-radius:6px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
