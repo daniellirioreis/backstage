@@ -33,6 +33,8 @@ class TeamsController < ApplicationController
     end
     @teams = scope
     @teams_with_shifts = Shift.where(team_id: @teams.map(&:id)).distinct.pluck(:team_id).to_set
+    @sector_function_data  = load_sector_function_data
+    @event_functions_map   = current_event.event_functions.index_by { |ef| ef.id.to_s }
   end
 
   def show

@@ -90,10 +90,24 @@
     <div class="content-card team-sector-group" style="margin-bottom: 1rem; padding: 0; overflow: hidden;">
 
       <%# Header do setor %>
-      <div style="padding: 0.55rem 1rem; background: #18181b; border-bottom: 1px solid #27272a; display: flex; align-items: center; gap: 0.5rem;">
+      <% s_planned  = (@sector_function_data&.dig(:planned,  sector.id.to_s) || {}) %>
+      <% s_assigned = (@sector_function_data&.dig(:assigned, sector.id.to_s) || {}) %>
+      <div style="padding: 0.55rem 1rem; background: #18181b; border-bottom: 1px solid #27272a; display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
         <i class="bi bi-grid-3x3-gap" style="color: #71717a; font-size: 0.8rem;"></i>
         <span style="font-size: 0.78rem; font-weight: 700; color: #f4f4f5; text-transform: uppercase; letter-spacing: 0.06em;"><%= sector.name %></span>
-        <span style="font-size: 0.72rem; color: #71717a; margin-left: 0.25rem;"><%= teams.size %> equipe<%= teams.size == 1 ? "" : "s" %></span>
+        <span style="font-size: 0.72rem; color: #71717a;"><%= teams.size %> equipe<%= teams.size == 1 ? "" : "s" %></span>
+
+        <% if s_planned.any? %>
+          <span style="color:#3f3f46; margin: 0 0.1rem;">·</span>
+          <% s_planned.each do |fn_id, qty| %>
+            <% ef   = @event_functions_map[fn_id] %>
+            <% done = [s_assigned[fn_id] || 0, 0].max %>
+            <% color, bg = done >= qty ? ['#4ade80','rgba(74,222,128,0.15)'] : done > 0 ? ['#fb923c','rgba(251,146,60,0.15)'] : ['#71717a','rgba(255,255,255,0.07)'] %>
+            <span style="font-size:0.68rem; font-weight:600; color:<%= color %>; background:<%= bg %>; border:1px solid <%= color %>33; border-radius:4px; padding:1px 6px; white-space:nowrap;">
+              <%= ef&.name || "Função #{fn_id}" %> <%= done %>/<%= qty %>
+            </span>
+          <% end %>
+        <% end %>
       </div>
 
       <%# Linhas de equipe %>
