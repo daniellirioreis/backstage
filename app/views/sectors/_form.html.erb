@@ -34,20 +34,27 @@
       <% else %>
         <div style="border:1px solid #e4e4e7; border-radius:8px; margin-bottom:0.75rem; overflow:hidden;">
           <%# Cabeçalho %>
-          <div style="display:grid; grid-template-columns:1fr 100px 36px; gap:0.5rem; padding:0.4rem 0.75rem; background:#f9fafb; border-bottom:1px solid #e4e4e7;">
-            <span style="font-size:0.72rem; font-weight:600; color:#71717a; text-transform:uppercase; letter-spacing:0.05em;">Função</span>
-            <span style="font-size:0.72rem; font-weight:600; color:#71717a; text-transform:uppercase; letter-spacing:0.05em;">Qtd.</span>
+          <div style="display:grid; grid-template-columns:1fr 72px 90px 100px 120px 36px; gap:0.5rem; padding:0.4rem 0.75rem; background:#f9fafb; border-bottom:1px solid #e4e4e7;">
+            <span style="font-size:0.7rem; font-weight:600; color:#71717a; text-transform:uppercase; letter-spacing:0.05em;">Função</span>
+            <span style="font-size:0.7rem; font-weight:600; color:#71717a; text-transform:uppercase; letter-spacing:0.05em;">Qtd.</span>
+            <span style="font-size:0.7rem; font-weight:600; color:#71717a; text-transform:uppercase; letter-spacing:0.05em;">Taxa/h</span>
+            <span style="font-size:0.7rem; font-weight:600; color:#71717a; text-transform:uppercase; letter-spacing:0.05em;">Custo/h</span>
+            <span style="font-size:0.7rem; font-weight:600; color:#71717a; text-transform:uppercase; letter-spacing:0.05em;">Estimativa</span>
             <span></span>
           </div>
 
           <%# Linhas existentes %>
           <div id="sf-rows">
             <%= f.fields_for :sector_functions do |ff| %>
-              <div class="sf-row" style="display:grid; grid-template-columns:1fr 100px 36px; gap:0.5rem; align-items:center; padding:0.45rem 0.75rem; border-bottom:1px solid #f4f4f5;">
+              <div class="sf-row" style="display:grid; grid-template-columns:1fr 72px 90px 100px 120px 36px; gap:0.5rem; align-items:center; padding:0.45rem 0.75rem; border-bottom:1px solid #f4f4f5;">
                 <%= ff.collection_select :event_function_id, @event_functions, :id, :name,
                       { include_blank: "— Selecione —" },
-                      class: "form-control", style: "font-size:0.82rem;" %>
-                <%= ff.number_field :quantity, min: 1, class: "form-control", style: "font-size:0.82rem;" %>
+                      class: "form-control sf-fn-select", style: "font-size:0.82rem;" %>
+                <%= ff.number_field :quantity, min: 1,
+                      class: "form-control sf-qty-input", style: "font-size:0.82rem;" %>
+                <span class="sf-rate"  style="font-size:0.78rem; color:#71717a;">—</span>
+                <span class="sf-cost"  style="font-size:0.78rem; font-weight:600; color:#18181b;">—</span>
+                <span class="sf-est"   style="font-size:0.78rem; font-weight:600; color:#15803d;">—</span>
                 <div style="display:flex; justify-content:center;">
                   <% if ff.object.persisted? %>
                     <%= ff.check_box :_destroy, { style: "display:none;", class: "sf-destroy-cb" }, "1", "0" %>
@@ -56,7 +63,7 @@
                       <i class="bi bi-x"></i>
                     </button>
                   <% else %>
-                    <button type="button" onclick="this.closest('.sf-row').remove()"
+                    <button type="button" onclick="this.closest('.sf-row').remove(); updateSfTotals();"
                             class="btn-danger" style="padding:0.25rem 0.45rem; font-size:0.75rem; width:30px;">
                       <i class="bi bi-x"></i>
                     </button>
@@ -65,22 +72,34 @@
               </div>
             <% end %>
           </div>
+
+          <%# Rodapé de totais %>
+          <div id="sf-totals" style="display:none; grid-template-columns:1fr 72px 90px 100px 120px 36px; gap:0.5rem; padding:0.45rem 0.75rem; background:#f9fafb; border-top:2px solid #e4e4e7;">
+            <span style="font-size:0.75rem; font-weight:700; color:#71717a; grid-column:1/3;">Total estimado</span>
+            <span></span>
+            <span id="sf-total-cost"  style="font-size:0.82rem; font-weight:700; color:#18181b;"></span>
+            <span id="sf-total-est"   style="font-size:0.82rem; font-weight:700; color:#15803d;"></span>
+            <span></span>
+          </div>
         </div>
 
         <%# Template para nova linha %>
         <template id="sf-template">
-          <div class="sf-row" style="display:grid; grid-template-columns:1fr 100px 36px; gap:0.5rem; align-items:center; padding:0.45rem 0.75rem; border-bottom:1px solid #f4f4f5;">
-            <select class="form-control" name="sector[sector_functions_attributes][NEW_IDX][event_function_id]" style="font-size:0.82rem;">
+          <div class="sf-row" style="display:grid; grid-template-columns:1fr 72px 90px 100px 120px 36px; gap:0.5rem; align-items:center; padding:0.45rem 0.75rem; border-bottom:1px solid #f4f4f5;">
+            <select class="form-control sf-fn-select" name="sector[sector_functions_attributes][NEW_IDX][event_function_id]" style="font-size:0.82rem;">
               <option value="">— Selecione —</option>
               <% @event_functions.each do |ef| %>
-                <option value="<%= ef.id %>"><%= ef.name %><% if ef.hourly_rate.to_f > 0 %> · R$<%= format('%.2f', ef.hourly_rate) %>/h<% end %></option>
+                <option value="<%= ef.id %>"><%= ef.name %></option>
               <% end %>
             </select>
-            <input type="number" class="form-control"
+            <input type="number" class="form-control sf-qty-input"
                    name="sector[sector_functions_attributes][NEW_IDX][quantity]"
                    min="1" value="1" style="font-size:0.82rem;">
+            <span class="sf-rate"  style="font-size:0.78rem; color:#71717a;">—</span>
+            <span class="sf-cost"  style="font-size:0.78rem; font-weight:600; color:#18181b;">—</span>
+            <span class="sf-est"   style="font-size:0.78rem; font-weight:600; color:#15803d;">—</span>
             <div style="display:flex; justify-content:center;">
-              <button type="button" onclick="this.closest('.sf-row').remove()"
+              <button type="button" onclick="this.closest('.sf-row').remove(); updateSfTotals();"
                       class="btn-danger" style="padding:0.25rem 0.45rem; font-size:0.75rem; width:30px;">
                 <i class="bi bi-x"></i>
               </button>
@@ -115,7 +134,69 @@
     }
 
     // ── Funções planejadas ──────────────────────────────────────────────────
-    var sfIdx = Date.now();
+    var sfIdx    = Date.now();
+    var FN_RATES = <%= raw(@event_functions.each_with_object({}) { |ef, h| h[ef.id.to_s] = ef.hourly_rate.to_f }.to_json) %>;
+    var EVENT_DAYS = <%= @event_days || 1 %>;
+
+    function formatBRL(n) {
+      return "R$" + n.toFixed(2).replace(".", ",").replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+    }
+
+    function updateRowCost(row) {
+      var sel  = row.querySelector(".sf-fn-select");
+      var qty  = parseFloat(row.querySelector(".sf-qty-input")?.value) || 0;
+      var rate = sel && sel.value ? (FN_RATES[sel.value] || 0) : 0;
+      var costH = qty * rate;
+      var est   = costH * EVENT_DAYS * 8;
+
+      var rateEl = row.querySelector(".sf-rate");
+      var costEl = row.querySelector(".sf-cost");
+      var estEl  = row.querySelector(".sf-est");
+      if (rateEl) rateEl.textContent = rate  > 0 ? formatBRL(rate)  + "/h" : "—";
+      if (costEl) costEl.textContent = costH > 0 ? formatBRL(costH) + "/h" : "—";
+      if (estEl)  estEl.textContent  = est   > 0 ? formatBRL(est)         : "—";
+    }
+
+    function updateSfTotals() {
+      var totalsEl  = document.getElementById("sf-totals");
+      var totalCost = document.getElementById("sf-total-cost");
+      var totalEst  = document.getElementById("sf-total-est");
+      var rows = document.querySelectorAll("#sf-rows .sf-row");
+      var sumCost = 0, sumEst = 0, hasAny = false;
+
+      rows.forEach(function (row) {
+        var cb = row.querySelector(".sf-destroy-cb");
+        if (cb && cb.checked) return;
+        var sel  = row.querySelector(".sf-fn-select");
+        var qty  = parseFloat(row.querySelector(".sf-qty-input")?.value) || 0;
+        var rate = sel && sel.value ? (FN_RATES[sel.value] || 0) : 0;
+        if (rate > 0 && qty > 0) {
+          sumCost += qty * rate;
+          sumEst  += qty * rate * EVENT_DAYS * 8;
+          hasAny = true;
+        }
+      });
+
+      if (totalsEl) {
+        totalsEl.style.display = hasAny ? "grid" : "none";
+        if (totalCost) totalCost.textContent = formatBRL(sumCost) + "/h";
+        if (totalEst)  totalEst.textContent  = formatBRL(sumEst);
+      }
+    }
+
+    // Delegação de eventos nas linhas existentes e futuras
+    document.getElementById("sf-rows")?.addEventListener("change", function (e) {
+      var row = e.target.closest(".sf-row");
+      if (row) { updateRowCost(row); updateSfTotals(); }
+    });
+    document.getElementById("sf-rows")?.addEventListener("input", function (e) {
+      var row = e.target.closest(".sf-row");
+      if (row) { updateRowCost(row); updateSfTotals(); }
+    });
+
+    // Calcula ao carregar (linhas existentes)
+    document.querySelectorAll("#sf-rows .sf-row").forEach(function (row) { updateRowCost(row); });
+    updateSfTotals();
 
     window.addSfRow = function () {
       var tpl = document.getElementById("sf-template");
@@ -132,11 +213,14 @@
     window.toggleSfDestroy = function (btn) {
       var row = btn.closest(".sf-row");
       var cb  = row.querySelector(".sf-destroy-cb");
-      cb.checked     = !cb.checked;
+      cb.checked        = !cb.checked;
       row.style.opacity = cb.checked ? "0.4" : "1";
-      btn.innerHTML  = cb.checked
+      btn.innerHTML     = cb.checked
         ? '<i class="bi bi-arrow-counterclockwise"></i>'
         : '<i class="bi bi-x"></i>';
+      updateSfTotals();
     };
+
+    window.updateSfTotals = updateSfTotals;
   })();
 </script>

@@ -15,6 +15,7 @@ class SectorsController < ApplicationController
     @sector = Sector.new(event_id: current_event.id)
     @sector.sector_functions.build
     @event_functions = current_event.event_functions.order(:name)
+    @event_days = event_days_for(current_event)
   end
 
   def create
@@ -25,6 +26,7 @@ class SectorsController < ApplicationController
       redirect_to sectors_path, notice: t("notices.created", model: Sector.model_name.human)
     else
       @event_functions = current_event.event_functions.order(:name)
+      @event_days = event_days_for(current_event)
       render :new, status: :unprocessable_entity
     end
   end
@@ -33,6 +35,7 @@ class SectorsController < ApplicationController
     authorize @sector
     @sector.sector_functions.build if @sector.sector_functions.empty?
     @event_functions = @sector.event.event_functions.order(:name)
+    @event_days = event_days_for(@sector.event)
   end
 
   def update
@@ -41,6 +44,7 @@ class SectorsController < ApplicationController
       redirect_to sectors_path, notice: t("notices.updated", model: Sector.model_name.human)
     else
       @event_functions = @sector.event.event_functions.order(:name)
+      @event_days = event_days_for(@sector.event)
       render :edit, status: :unprocessable_entity
     end
   end
@@ -55,6 +59,11 @@ class SectorsController < ApplicationController
 
   def set_sector
     @sector = Sector.find(params[:id])
+  end
+
+  def event_days_for(event)
+    return 1 unless event&.start_date && event&.end_date
+    (event.end_date - event.start_date).to_i + 1
   end
 
   def sector_params
