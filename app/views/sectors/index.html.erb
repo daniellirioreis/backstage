@@ -22,7 +22,7 @@
   <tbody>
     <% @sectors.each do |sector|
          scaled_count = sector.teams.flat_map(&:users).uniq.size
-         expected     = sector.expected_headcount
+         expected     = sector.planned_headcount
     %>
       <tr>
         <td><%= link_to sector.name, sector_path(sector), style: "color: #18181b; font-weight: 500; text-decoration: none;" %></td>
@@ -37,8 +37,8 @@
         </td>
         <td style="color: #71717a;"><%= sector.teams.size %></td>
         <td style="min-width: 140px;">
-          <% if expected.present?
-               pct       = expected > 0 ? [(scaled_count * 100.0 / expected).round, 100].min : 0
+          <% if expected > 0
+               pct       = [(scaled_count * 100.0 / expected).round, 100].min
                bar_color = pct >= 100 ? '#4ade80' : pct >= 60 ? '#fb923c' : '#f87171'
                txt_color = pct >= 100 ? '#15803d' : pct >= 60 ? '#92400e' : '#991b1b'
           %>

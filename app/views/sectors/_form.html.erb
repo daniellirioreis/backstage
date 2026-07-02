@@ -19,14 +19,6 @@
       <%= f.text_field :name, class: "form-control", id: "sector_name" %>
     </div>
 
-    <div style="margin-bottom: 1.25rem;">
-      <%= f.label :expected_headcount, Sector.human_attribute_name(:expected_headcount), class: "form-label" %>
-      <div style="display:flex; align-items:center; gap:0.5rem;">
-        <%= f.number_field :expected_headcount, class: "form-control", min: 1, placeholder: "Ex: 10",
-              style: "max-width: 160px;" %>
-        <span style="font-size:0.82rem; color:#71717a;">colaboradores esperados <span style="color:#a1a1aa;">(opcional)</span></span>
-      </div>
-    </div>
 
     <div style="display: flex; gap: 0.75rem; border-top: 1px solid #f4f4f5; padding-top: 1.25rem; margin-top: 1.25rem;">
       <%= f.submit t("actions.save"), class: "btn-primary" %>

@@ -18,7 +18,10 @@ class Sector < ApplicationRecord
   enum :sector_type, TYPES.index_by { |t| t.to_sym }
 
   validates :name, presence: true
-  validates :expected_headcount, numericality: { only_integer: true, greater_than: 0, allow_nil: true }
+
+  def planned_headcount
+    sector_functions.sum(:quantity)
+  end
 
   def sector_type_label
     return nil unless sector_type.present?

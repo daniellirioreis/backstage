@@ -159,12 +159,12 @@
 
 <%# ── Setores ─────────────────────────────────────────────────────────────── %>
 <%
-  total_expected = @sectors.sum { |s| s.expected_headcount.to_i }
+  total_expected = @sectors.sum { |s| s.planned_headcount }
   total_scaled   = @sectors.flat_map(&:teams).flat_map(&:users).uniq.size
-  sectors_with_expected = @sectors.count { |s| s.expected_headcount.present? }
+  sectors_with_expected = @sectors.count { |s| s.planned_headcount > 0 }
   sectors_complete = @sectors.count { |s|
-    s.expected_headcount.present? &&
-    s.teams.flat_map(&:users).uniq.size >= s.expected_headcount
+    s.planned_headcount > 0 &&
+    s.teams.flat_map(&:users).uniq.size >= s.planned_headcount
   }
 %>
 
@@ -238,10 +238,10 @@
         </div>
 
         <%# Previsto vs escalado %>
-        <% if sector.expected_headcount.present?
+        <% if sector.planned_headcount > 0
              scaled_count = sector.teams.flat_map(&:users).uniq.size
-             expected     = sector.expected_headcount
-             pct          = expected > 0 ? [(scaled_count * 100.0 / expected).round, 100].min : 0
+             expected     = sector.planned_headcount
+             pct          = [(scaled_count * 100.0 / expected).round, 100].min
              bar_color    = pct >= 100 ? '#4ade80' : pct >= 60 ? '#fb923c' : '#f87171'
              text_color   = pct >= 100 ? '#15803d' : pct >= 60 ? '#92400e' : '#991b1b'
         %>

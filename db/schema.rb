@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_07_02_000007) do
+ActiveRecord::Schema[7.1].define(version: 2026_07_02_000008) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -157,6 +157,17 @@ ActiveRecord::Schema[7.1].define(version: 2026_07_02_000007) do
     t.index ["name"], name: "index_roles_on_name", unique: true
   end
 
+  create_table "sector_functions", force: :cascade do |t|
+    t.bigint "sector_id", null: false
+    t.bigint "event_function_id", null: false
+    t.integer "quantity", default: 1, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["event_function_id"], name: "index_sector_functions_on_event_function_id"
+    t.index ["sector_id", "event_function_id"], name: "index_sector_functions_on_sector_id_and_event_function_id", unique: true
+    t.index ["sector_id"], name: "index_sector_functions_on_sector_id"
+  end
+
   create_table "sectors", force: :cascade do |t|
     t.string "name", null: false
     t.datetime "created_at", null: false
@@ -257,6 +268,8 @@ ActiveRecord::Schema[7.1].define(version: 2026_07_02_000007) do
   add_foreign_key "event_functions", "events"
   add_foreign_key "events", "companies"
   add_foreign_key "permissions", "roles"
+  add_foreign_key "sector_functions", "event_functions"
+  add_foreign_key "sector_functions", "sectors"
   add_foreign_key "sectors", "events"
   add_foreign_key "shifts", "sectors"
   add_foreign_key "shifts", "teams"
