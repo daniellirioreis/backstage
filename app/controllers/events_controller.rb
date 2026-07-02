@@ -65,6 +65,15 @@ class EventsController < ApplicationController
   def create
     authorize Event
     @event = Event.new(event_params)
+
+    # Verifica limite do plano
+    company = @event.company || current_user.companies.first
+    if company && !company.can_add_event?
+      redirect_to new_event_path,
+        alert: "Limite de eventos atingido para o plano #{company.plan.name} (#{company.events_limit} eventos). Entre em contato para upgrade."
+      return
+    end
+
     if @event.save
       redirect_to edit_event_path(@event), notice: "Evento criado. Adicione as funções e valores abaixo."
     else

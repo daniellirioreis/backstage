@@ -100,6 +100,9 @@
           <% end %>
 
           <% if current_user.admin? %>
+            <%= link_to plans_path, class: "sidebar-link #{controller_name == 'plans' ? 'active' : ''}" do %>
+              <i class="bi bi-box"></i> Planos
+            <% end %>
             <%= link_to roles_path, class: "sidebar-link #{controller_name == 'roles' ? 'active' : ''}" do %>
               <i class="bi bi-shield-check"></i> <%= Role.model_name.human(count: 2) %>
             <% end %>

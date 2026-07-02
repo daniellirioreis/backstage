@@ -10,6 +10,7 @@ class CompaniesController < ApplicationController
     authorize @company
     @company_users = @company.company_users.includes(:user).order("users.name")
     @available_users = User.order(:name) - @company.users
+    @plans = Plan.order(:name) if current_user.admin?
   end
 
   def new
@@ -84,6 +85,8 @@ class CompaniesController < ApplicationController
   end
 
   def company_params
-    params.require(:company).permit(:name, :cnpj, :phone, :email, :address, :city, :state, :primary_color, :logo, :company_id)
+    permitted = params.require(:company).permit(:name, :cnpj, :phone, :email, :address, :city, :state, :primary_color, :logo, :company_id, :plan_id)
+    permitted[:plan_id] = nil if permitted[:plan_id].blank?
+    permitted
   end
 end

@@ -34,6 +34,7 @@ Rails.application.routes.draw do
       delete :remove_user
     end
   end
+  resources :plans
   resources :roles
   resources :users do
     collection { get :search }

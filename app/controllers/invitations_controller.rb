@@ -25,6 +25,15 @@ class InvitationsController < ApplicationController
     role    = Role.find_by(id: params[:role_id])
     company = Company.find_by(id: params[:company_id]) if params[:company_id].present?
 
+    # Verifica limite de colaboradores do plano
+    if company && !company.can_add_member?
+      @roles     = Role.order(:name)
+      @companies = Company.order(:name)
+      flash.now[:alert] = "Limite de colaboradores atingido para o plano #{company.plan.name} (#{company.members_limit} colaboradores). Entre em contato para upgrade."
+      render :new, status: :unprocessable_entity
+      return
+    end
+
     @invited_user = User.new(
       name:                      params[:name].to_s.strip,
       email:                     params[:email].to_s.strip,

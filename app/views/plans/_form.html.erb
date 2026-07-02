@@ -1,0 +1,37 @@
+<%= form_with model: plan, class: "content-card", style: "padding:1.5rem; max-width:480px;" do |f| %>
+  <% if plan.errors.any? %>
+    <div class="flash-alert" style="margin-bottom:1rem;">
+      <% plan.errors.full_messages.each do |msg| %>
+        <div><i class="bi bi-exclamation-circle"></i> <%= msg %></div>
+      <% end %>
+    </div>
+  <% end %>
+
+  <div class="form-group">
+    <%= f.label :name, "Nome do plano" %>
+    <%= f.text_field :name, class: "form-control", placeholder: "Ex: Free, Pro, Enterprise" %>
+  </div>
+
+  <div class="form-group">
+    <%= f.label :description, "Descrição (opcional)" %>
+    <%= f.text_area :description, class: "form-control", rows: 2, placeholder: "Breve descrição do plano" %>
+  </div>
+
+  <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
+    <div class="form-group">
+      <%= f.label :events_limit, "Limite de eventos" %>
+      <%= f.number_field :events_limit, class: "form-control", placeholder: "Vazio = ilimitado", min: 1 %>
+      <small style="color:#71717a; font-size:0.72rem;">Deixe em branco para ilimitado</small>
+    </div>
+    <div class="form-group">
+      <%= f.label :members_limit, "Limite de colaboradores" %>
+      <%= f.number_field :members_limit, class: "form-control", placeholder: "Vazio = ilimitado", min: 1 %>
+      <small style="color:#71717a; font-size:0.72rem;">Deixe em branco para ilimitado</small>
+    </div>
+  </div>
+
+  <div style="display:flex; gap:0.75rem; margin-top:0.5rem;">
+    <%= f.submit plan.new_record? ? "Criar plano" : "Salvar alterações", class: "btn-primary" %>
+    <%= link_to "Cancelar", plans_path, class: "btn-secondary" %>
+  </div>
+<% end %>
