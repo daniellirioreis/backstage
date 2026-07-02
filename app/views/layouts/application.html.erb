@@ -24,8 +24,12 @@
         </div>
 
         <nav>
-          <% unless current_user.role&.collaborator? %>
-            <div class="sidebar-section">Geral</div>
+          <div class="sidebar-section">Geral</div>
+          <% if current_user.role&.collaborator? %>
+            <%= link_to my_schedule_user_path(current_user), class: "sidebar-link #{controller_name == 'users' && action_name == 'my_schedule' ? 'active' : ''}" do %>
+              <i class="bi bi-calendar-week"></i> <%= t("permission_actions.my_schedule") %>
+            <% end %>
+          <% else %>
             <%= link_to root_path, class: "sidebar-link #{current_page?(root_path) ? 'active' : ''}" do %>
               <i class="bi bi-grid-1x2"></i> <%= t("nav.home") %>
             <% end %>
