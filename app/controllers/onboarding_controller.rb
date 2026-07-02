@@ -50,6 +50,12 @@ class OnboardingController < ApplicationController
     end
   end
 
+  # POST /onboarding/evento/pular
+  def skip_evento
+    current_user.update_column(:onboarding_completed_at, Time.current)
+    redirect_to onboarding_done_path
+  end
+
   # GET /onboarding/concluido
   def done
     current_user.update_column(:onboarding_completed_at, Time.current) unless current_user.onboarding_complete?

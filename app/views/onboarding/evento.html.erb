@@ -8,62 +8,100 @@
   <% end %>
 </div>
 
-<h2 style="font-size:1.1rem; font-weight:700; color:#18181b; margin:0 0 0.25rem;">Primeiro evento</h2>
-<p style="font-size:0.83rem; color:#71717a; margin:0 0 1.5rem;">Cadastre o evento que você vai gerenciar.</p>
+<%# Pergunta inicial %>
+<div id="panel-pergunta">
+  <div style="text-align:center; padding:0.5rem 0 1.5rem;">
+    <div style="width:3.5rem; height:3.5rem; background:#f4f4f5; border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 1rem;">
+      <i class="bi bi-calendar-event" style="font-size:1.5rem; color:#18181b;"></i>
+    </div>
+    <h2 style="font-size:1.1rem; font-weight:700; color:#18181b; margin:0 0 0.5rem;">Deseja criar um evento agora?</h2>
+    <p style="font-size:0.83rem; color:#71717a; margin:0 0 1.75rem; line-height:1.5;">
+      Você pode cadastrar seu primeiro evento agora<br>ou fazer isso depois pelo painel.
+    </p>
 
-<%= form_with model: @event, url: url_for(action: :save_evento), method: :post do |f| %>
-  <div style="display:flex; flex-direction:column; gap:1rem;">
+    <div style="display:flex; flex-direction:column; gap:0.65rem;">
+      <button type="button" onclick="mostrarFormulario()"
+              style="width:100%; background:#18181b; color:#fff; border:none; border-radius:8px; padding:0.7rem; font-size:0.875rem; font-weight:600; cursor:pointer;">
+        <i class="bi bi-plus-circle"></i> Sim, criar evento agora
+      </button>
 
-    <div>
-      <label style="display:block; font-size:0.8rem; font-weight:500; color:#374151; margin-bottom:0.3rem;">Nome do evento <span style="color:#dc2626;">*</span></label>
-      <%= f.text_field :name, required: true,
-            style: "width:100%; box-sizing:border-box; border:1px solid #d1d5db; border-radius:8px; padding:0.55rem 0.75rem; font-size:0.875rem; color:#18181b; outline:none;",
-            placeholder: "Ex: Festival Boombay 2026" %>
-      <% if @event.errors[:name].any? %>
-        <p style="font-size:0.75rem; color:#dc2626; margin:0.25rem 0 0;"><%= @event.errors[:name].first %></p>
+      <%= button_to onboarding_skip_evento_path,
+            method: :post,
+            style: "width:100%; background:#fff; color:#71717a; border:1px solid #d1d5db; border-radius:8px; padding:0.7rem; font-size:0.875rem; font-weight:500; cursor:pointer; text-align:center;" do %>
+        Não, fazer isso depois
       <% end %>
     </div>
-
-    <div>
-      <label style="display:block; font-size:0.8rem; font-weight:500; color:#374151; margin-bottom:0.3rem;">Local <span style="color:#a1a1aa; font-weight:400;">(opcional)</span></label>
-      <%= f.text_field :location,
-            style: "width:100%; box-sizing:border-box; border:1px solid #d1d5db; border-radius:8px; padding:0.55rem 0.75rem; font-size:0.875rem; color:#18181b; outline:none;",
-            placeholder: "Ex: Parque Olímpico, Rio de Janeiro" %>
-    </div>
-
-    <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem;">
-      <div>
-        <label style="display:block; font-size:0.8rem; font-weight:500; color:#374151; margin-bottom:0.3rem;">Data de início <span style="color:#dc2626;">*</span></label>
-        <%= f.date_field :start_date, required: true,
-              style: "width:100%; box-sizing:border-box; border:1px solid #d1d5db; border-radius:8px; padding:0.55rem 0.75rem; font-size:0.875rem; color:#18181b; outline:none;" %>
-        <% if @event.errors[:start_date].any? %>
-          <p style="font-size:0.75rem; color:#dc2626; margin:0.25rem 0 0;"><%= @event.errors[:start_date].first %></p>
-        <% end %>
-      </div>
-      <div>
-        <label style="display:block; font-size:0.8rem; font-weight:500; color:#374151; margin-bottom:0.3rem;">Data de término <span style="color:#dc2626;">*</span></label>
-        <%= f.date_field :end_date, required: true,
-              style: "width:100%; box-sizing:border-box; border:1px solid #d1d5db; border-radius:8px; padding:0.55rem 0.75rem; font-size:0.875rem; color:#18181b; outline:none;" %>
-        <% if @event.errors[:end_date].any? %>
-          <p style="font-size:0.75rem; color:#dc2626; margin:0.25rem 0 0;"><%= @event.errors[:end_date].first %></p>
-        <% end %>
-      </div>
-    </div>
-
-    <% if @event.errors.any? && @event.errors.attribute_names.reject { |a| [:name, :start_date, :end_date].include?(a) }.any? %>
-      <div style="background:#fef2f2; border:1px solid #fca5a5; border-radius:8px; padding:0.65rem 1rem; font-size:0.82rem; color:#dc2626;">
-        <% @event.errors.full_messages.each do |msg| %>
-          <div><%= msg %></div>
-        <% end %>
-      </div>
-    <% end %>
-
-    <button type="submit"
-            style="width:100%; background:#18181b; color:#fff; border:none; border-radius:8px; padding:0.65rem; font-size:0.875rem; font-weight:600; cursor:pointer; margin-top:0.25rem;">
-      Criar evento e continuar →
-    </button>
-
-    <%= link_to "← Voltar", onboarding_empresa_path,
-          style: "display:block; text-align:center; font-size:0.8rem; color:#71717a; text-decoration:none; margin-top:0.75rem;" %>
   </div>
-<% end %>
+</div>
+
+<%# Formulário de criação do evento (oculto inicialmente) %>
+<div id="panel-formulario" style="display:none;">
+  <h2 style="font-size:1.1rem; font-weight:700; color:#18181b; margin:0 0 0.25rem;">Primeiro evento</h2>
+  <p style="font-size:0.83rem; color:#71717a; margin:0 0 1.25rem;">Cadastre o evento que você vai gerenciar.</p>
+
+  <%= form_with model: @event, url: url_for(action: :save_evento), method: :post do |f| %>
+    <div style="display:flex; flex-direction:column; gap:1rem;">
+
+      <div>
+        <label style="display:block; font-size:0.8rem; font-weight:500; color:#374151; margin-bottom:0.3rem;">Nome do evento <span style="color:#dc2626;">*</span></label>
+        <%= f.text_field :name, required: true,
+              style: "width:100%; box-sizing:border-box; border:1px solid #d1d5db; border-radius:8px; padding:0.55rem 0.75rem; font-size:0.875rem; color:#18181b; outline:none;",
+              placeholder: "Ex: Festival Boombay 2026" %>
+        <% if @event.errors[:name].any? %>
+          <p style="font-size:0.75rem; color:#dc2626; margin:0.25rem 0 0;"><%= @event.errors[:name].first %></p>
+        <% end %>
+      </div>
+
+      <div>
+        <label style="display:block; font-size:0.8rem; font-weight:500; color:#374151; margin-bottom:0.3rem;">Local <span style="color:#a1a1aa; font-weight:400;">(opcional)</span></label>
+        <%= f.text_field :location,
+              style: "width:100%; box-sizing:border-box; border:1px solid #d1d5db; border-radius:8px; padding:0.55rem 0.75rem; font-size:0.875rem; color:#18181b; outline:none;",
+              placeholder: "Ex: Parque Olímpico, Rio de Janeiro" %>
+      </div>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem;">
+        <div>
+          <label style="display:block; font-size:0.8rem; font-weight:500; color:#374151; margin-bottom:0.3rem;">Data de início <span style="color:#dc2626;">*</span></label>
+          <%= f.date_field :start_date, required: true,
+                style: "width:100%; box-sizing:border-box; border:1px solid #d1d5db; border-radius:8px; padding:0.55rem 0.75rem; font-size:0.875rem; color:#18181b; outline:none;" %>
+        </div>
+        <div>
+          <label style="display:block; font-size:0.8rem; font-weight:500; color:#374151; margin-bottom:0.3rem;">Data de término <span style="color:#dc2626;">*</span></label>
+          <%= f.date_field :end_date, required: true,
+                style: "width:100%; box-sizing:border-box; border:1px solid #d1d5db; border-radius:8px; padding:0.55rem 0.75rem; font-size:0.875rem; color:#18181b; outline:none;" %>
+        </div>
+      </div>
+
+      <% if @event.errors.any? %>
+        <div style="background:#fef2f2; border:1px solid #fca5a5; border-radius:8px; padding:0.65rem 1rem; font-size:0.82rem; color:#dc2626;">
+          <% @event.errors.full_messages.each do |msg| %><div><%= msg %></div><% end %>
+        </div>
+      <% end %>
+
+      <button type="submit"
+              style="width:100%; background:#18181b; color:#fff; border:none; border-radius:8px; padding:0.65rem; font-size:0.875rem; font-weight:600; cursor:pointer; margin-top:0.25rem;">
+        Criar evento e continuar →
+      </button>
+
+      <button type="button" onclick="voltarPergunta()"
+              style="background:none; border:none; font-size:0.8rem; color:#71717a; cursor:pointer; padding:0;">
+        ← Voltar
+      </button>
+    </div>
+  <% end %>
+</div>
+
+<script>
+  function mostrarFormulario() {
+    document.getElementById("panel-pergunta").style.display  = "none";
+    document.getElementById("panel-formulario").style.display = "block";
+  }
+  function voltarPergunta() {
+    document.getElementById("panel-formulario").style.display = "none";
+    document.getElementById("panel-pergunta").style.display   = "block";
+  }
+  // Se voltou com erro de validação, mostra o formulário direto
+  <% if @event&.errors&.any? %>
+    document.addEventListener("DOMContentLoaded", mostrarFormulario);
+  <% end %>
+</script>

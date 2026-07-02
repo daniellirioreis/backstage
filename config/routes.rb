@@ -15,11 +15,12 @@ Rails.application.routes.draw do
   post "/convite/:token", to: "invitations#confirm", as: :confirm_invitation
 
   # Onboarding wizard
-  get  "onboarding/empresa",   to: "onboarding#empresa",      as: :onboarding_empresa
-  post "onboarding/empresa",   to: "onboarding#save_empresa"
-  get  "onboarding/evento",    to: "onboarding#evento",        as: :onboarding_evento
-  post "onboarding/evento",    to: "onboarding#save_evento"
-  get  "onboarding/concluido", to: "onboarding#done",          as: :onboarding_done
+  get  "onboarding/empresa",      to: "onboarding#empresa",     as: :onboarding_empresa
+  post "onboarding/empresa",      to: "onboarding#save_empresa"
+  get  "onboarding/evento",       to: "onboarding#evento",      as: :onboarding_evento
+  post "onboarding/evento",       to: "onboarding#save_evento"
+  post "onboarding/evento/pular", to: "onboarding#skip_evento", as: :onboarding_skip_evento
+  get  "onboarding/concluido",    to: "onboarding#done",        as: :onboarding_done
 
   get  "events/select", to: "event_session#select_event", as: :select_event
   post "events/select", to: "event_session#set_event",    as: :set_event
