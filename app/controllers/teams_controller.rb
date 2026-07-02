@@ -146,7 +146,8 @@ class TeamsController < ApplicationController
     @sectors      = Sector.where(event_id: current_event.id).order(:name)
     @all_users    = company_users_scope.order(:name)
     @event_functions = current_event.event_functions.order(:name)
-    @sector_function_data = load_sector_function_data
+    @sector_function_data  = load_sector_function_data
+    @team_saved_fn_counts  = {}
     @team.team_memberships.build
   end
 
@@ -156,10 +157,11 @@ class TeamsController < ApplicationController
     if @team.save
       redirect_to teams_path, notice: t("notices.created", model: Team.model_name.human)
     else
-      @sectors         = Sector.where(event_id: current_event.id).order(:name)
-      @all_users       = User.order(:name)
-      @event_functions = current_event.event_functions.order(:name)
+      @sectors              = Sector.where(event_id: current_event.id).order(:name)
+      @all_users            = User.order(:name)
+      @event_functions      = current_event.event_functions.order(:name)
       @sector_function_data = load_sector_function_data
+      @team_saved_fn_counts = {}
       render :new, status: :unprocessable_entity
     end
   end
@@ -225,7 +227,8 @@ class TeamsController < ApplicationController
     @all_users       = User.order(:name)
     @memberships     = @team.team_memberships.includes(:event_function, user: :role).joins(:user).order("users.name")
     @event_functions = @team.sector.event.event_functions.order(:name)
-    @sector_function_data = load_sector_function_data
+    @sector_function_data  = load_sector_function_data
+    @team_saved_fn_counts  = team_fn_counts(@team)
   end
 
   def update
@@ -233,11 +236,12 @@ class TeamsController < ApplicationController
     if @team.update(team_params)
       redirect_to teams_path, notice: t("notices.updated", model: Team.model_name.human)
     else
-      @sectors         = Sector.where(event_id: current_event.id).order(:name)
-      @all_users       = User.order(:name)
-      @memberships     = @team.team_memberships.includes(:event_function, user: :role).joins(:user).order("users.name")
-      @event_functions = @team.sector.event.event_functions.order(:name)
+      @sectors              = Sector.where(event_id: current_event.id).order(:name)
+      @all_users            = User.order(:name)
+      @memberships          = @team.team_memberships.includes(:event_function, user: :role).joins(:user).order("users.name")
+      @event_functions      = @team.sector.event.event_functions.order(:name)
       @sector_function_data = load_sector_function_data
+      @team_saved_fn_counts = team_fn_counts(@team)
       render :edit, status: :unprocessable_entity
     end
   end
@@ -252,6 +256,15 @@ class TeamsController < ApplicationController
 
   def set_team
     @team = Team.includes(:users, sector: :event).find(params[:id])
+  end
+
+  # Contagem de funções já salvas desta equipe: { "fn_id" => count }
+  def team_fn_counts(team)
+    team.team_memberships
+        .where.not(event_function_id: nil)
+        .group(:event_function_id)
+        .count
+        .transform_keys(&:to_s)
   end
 
   def load_sector_function_data

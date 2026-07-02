@@ -1,6 +1,7 @@
 <div class="content-card" style="max-width: 700px;">
   <%= form_with model: team,
-        data: { sector_function_data: (@sector_function_data || {}).to_json } do |f| %>
+        data: { sector_function_data:  (@sector_function_data  || {}).to_json,
+                team_saved_fn_counts:  (@team_saved_fn_counts  || {}).to_json } do |f| %>
     <%= render "shared/error_messages", object: team %>
 
     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.25rem;">
@@ -130,7 +131,7 @@
                     <i class="bi bi-x"></i>
                   </button>
                 <% else %>
-                  <button type="button" onclick="this.closest('.membership-row').remove()"
+                  <button type="button" onclick="this.closest('.membership-row').remove(); if(window.updateSectorPlanPreview) window.updateSectorPlanPreview(); if(window.checkAllFnWarnings) window.checkAllFnWarnings();"
                           class="btn-danger" style="padding:0.25rem 0.45rem;font-size:0.75rem;width:30px;">
                     <i class="bi bi-x"></i>
                   </button>
@@ -173,7 +174,7 @@
           <input type="hidden" class="fn-ac-hidden" value="">
         <% end %>
         <div style="display:flex;justify-content:center;">
-          <button type="button" onclick="this.closest('.membership-row').remove()"
+          <button type="button" onclick="this.closest('.membership-row').remove(); if(window.updateSectorPlanPreview) window.updateSectorPlanPreview(); if(window.checkAllFnWarnings) window.checkAllFnWarnings();"
                   class="btn-danger" style="padding:0.25rem 0.45rem;font-size:0.75rem;width:30px;">
             <i class="bi bi-x"></i>
           </button>
@@ -240,9 +241,10 @@
       currentLabel      = label;
       currentId         = id;
       dropdown.style.display = 'none';
-      // Verifica aviso de função não planejada
+      // Atualiza aviso e painel de planejamento
       var row = wrapper.closest(".membership-row");
       if (row && window.checkFnWarningForRow) window.checkFnWarningForRow(row);
+      if (window.updateSectorPlanPreview) window.updateSectorPlanPreview();
     }
 
     // Sobrescreve renderList para usar onSelect
@@ -356,6 +358,7 @@
     // Autocomplete de função na nova linha
     if (fnWrapper && fnHidden) initFnAutocomplete(fnWrapper, fnHidden);
     if (window.checkAllFnWarnings) window.checkAllFnWarnings();
+    // Painel não muda ao só adicionar linha (sem função ainda)
 
     document.getElementById("memberships-rows").appendChild(row);
     searchInput.focus();
@@ -367,11 +370,29 @@
     cb.checked = !cb.checked;
     row.style.opacity = cb.checked ? "0.4" : "1";
     btn.innerHTML     = cb.checked ? '<i class="bi bi-arrow-counterclockwise"></i>' : '<i class="bi bi-x"></i>';
+    if (window.updateSectorPlanPreview) window.updateSectorPlanPreview();
+    checkAllRows();
   };
 
-  // ── Aviso de função não planejada / quantidade atingida ───────────────────
+  // ── Dados de planejamento e estado salvo ──────────────────────────────────
   var form = document.querySelector("form[data-sector-function-data]");
   var SECTOR_DATA = form ? JSON.parse(form.dataset.sectorFunctionData || "{}") : {};
+  var TEAM_SAVED  = form ? JSON.parse(form.dataset.teamSavedFnCounts  || "{}") : {};
+
+  // Conta funções selecionadas nas linhas do form neste momento
+  function getCurrentFormCounts() {
+    var counts = {};
+    document.querySelectorAll(".membership-row").forEach(function(row) {
+      var destroyCb = row.querySelector(".destroy-cb");
+      if (destroyCb && destroyCb.checked) return; // marcado para remoção
+      var hidden = row.querySelector(".fn-ac-hidden");
+      if (hidden && hidden.value) {
+        var fid = hidden.value.toString();
+        counts[fid] = (counts[fid] || 0) + 1;
+      }
+    });
+    return counts;
+  }
 
   function currentSectorId() {
     var sel = document.querySelector("select[name='team[sector_id]']");
@@ -429,14 +450,21 @@
     var sectorId = currentSectorId();
     if (!preview || !rowsEl) return;
 
-    var planned  = ((SECTOR_DATA.planned  || {})[sectorId]) || {};
-    var assigned = ((SECTOR_DATA.assigned || {})[sectorId]) || {};
-    var plannedIds = Object.keys(planned);
+    var planned     = ((SECTOR_DATA.planned  || {})[sectorId]) || {};
+    var serverAssigned = ((SECTOR_DATA.assigned || {})[sectorId]) || {};
+    var plannedIds  = Object.keys(planned);
 
     if (!sectorId || plannedIds.length === 0) {
       preview.style.display = "none";
       return;
     }
+
+    // Contagem efetiva = servidor (todas equipes) − salvo desta equipe + form atual
+    var formCounts = getCurrentFormCounts();
+    var assigned   = {};
+    Object.keys(serverAssigned).forEach(function(fid) { assigned[fid] = serverAssigned[fid]; });
+    Object.keys(TEAM_SAVED).forEach(function(fid) { assigned[fid] = (assigned[fid] || 0) - TEAM_SAVED[fid]; });
+    Object.keys(formCounts).forEach(function(fid)  { assigned[fid] = (assigned[fid] || 0) + formCounts[fid]; });
 
     // Cabeçalho
     var html = '<span style="font-size:0.7rem;font-weight:600;color:#7c3aed;text-transform:uppercase;letter-spacing:0.05em;">Função</span>' +
@@ -447,7 +475,7 @@
     plannedIds.forEach(function(fnId) {
       var name       = fnNameMap[fnId] || ("Função " + fnId);
       var qty        = planned[fnId];
-      var done       = assigned[fnId] || 0;
+      var done       = Math.max(assigned[fnId] || 0, 0);
       var remaining  = qty - done;
       var pct        = Math.min(Math.round(done * 100 / qty), 100);
       var color      = done >= qty ? '#dc2626' : done / qty >= 0.8 ? '#d97706' : '#16a34a';
@@ -492,9 +520,10 @@
     });
   });
 
-  // Disponibiliza globalmente para uso em novas linhas
-  window.checkFnWarningForRow = checkFnWarning;
-  window.checkAllFnWarnings   = checkAllRows;
+  // Disponibiliza globalmente para uso em novas linhas e botões inline
+  window.checkFnWarningForRow   = checkFnWarning;
+  window.checkAllFnWarnings     = checkAllRows;
+  window.updateSectorPlanPreview = updateSectorPlanPreview;
 
   // Verifica ao carregar
   checkAllRows();
