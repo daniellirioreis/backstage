@@ -2,6 +2,7 @@ class SectorsController < ApplicationController
   before_action :set_sector, only: %i[show edit update destroy]
 
   def index
+    return redirect_to(new_event_path, alert: "Selecione um evento para continuar.") unless current_event
     authorize Sector
     @sectors = policy_scope(Sector).includes(:event, :teams)
                                    .where(event_id: current_event.id)

@@ -49,6 +49,7 @@ class ApplicationController < ActionController::Base
         Event.includes(:company).where(company_id: company_ids).order(start_date: :desc)
       end
       render "event_session/select_event_modal", layout: "application"
+      return
     end
   end
 
