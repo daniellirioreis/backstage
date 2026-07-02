@@ -59,12 +59,17 @@ class ApplicationController < ActionController::Base
   def skip_event_check?
     devise_controller? ||
       current_user&.role&.collaborator? ||
-      controller_name == "event_session" ||
-      controller_name == "events" ||
-      controller_name == "users" ||
-      controller_name == "roles" ||
-      controller_name == "companies" ||
-      controller_name == "vehicles"
+      controller_name.in?(%w[
+        event_session
+        dashboard
+        events
+        users
+        roles
+        companies
+        vehicles
+        invitations
+        onboarding
+      ])
   end
 
   def check_onboarding!
