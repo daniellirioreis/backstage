@@ -1,12 +1,8 @@
 <div class="page-header">
   <div>
-    <h1 style="margin: 0;"><%= current_event.name %></h1>
-    <div style="font-size: 0.82rem; color: #71717a; margin-top: 0.2rem; display: flex; gap: 1rem;">
-      <% if current_event.location.present? %>
-        <span><i class="bi bi-geo-alt"></i> <%= current_event.location %></span>
-      <% end %>
-      <span><i class="bi bi-calendar3"></i> <%= l(current_event.start_date, format: :short) %> → <%= l(current_event.end_date, format: :short) %></span>
-      <span class="badge-status badge-<%= current_event.status %>"><%= t("event_statuses.#{current_event.status}") %></span>
+    <h1 style="margin: 0;">Dashboard</h1>
+    <div style="font-size: 0.82rem; color: #71717a; margin-top: 0.2rem;">
+      Visão geral de todos os eventos da sua empresa
     </div>
   </div>
   <span style="font-size: 0.8rem; color: #71717a;"><%= l(Date.today, format: :long) %></span>
@@ -17,12 +13,12 @@
   <div class="metric-card">
     <div class="metric-label"><i class="bi bi-grid-3x3-gap"></i> Setores</div>
     <div class="metric-value"><%= @total_sectors %></div>
-    <div class="metric-sub">no evento</div>
+    <div class="metric-sub">em todos os eventos</div>
   </div>
   <div class="metric-card metric-info">
     <div class="metric-label"><i class="bi bi-people"></i> Equipes</div>
     <div class="metric-value"><%= @total_teams %></div>
-    <div class="metric-sub">no evento</div>
+    <div class="metric-sub">em todos os eventos</div>
   </div>
   <div class="metric-card metric-accent">
     <div class="metric-label"><i class="bi bi-person-badge"></i> Colaboradores</div>
@@ -36,50 +32,68 @@
   </div>
 </div>
 
-<%# ── Setores e equipes ───────────────────────────────────────────────────── %>
+<%# ── Eventos ───────────────────────────────────────────────────────────────── %>
 <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem;">
-  <h2 style="font-size: 1rem; font-weight: 600; color: #18181b; margin: 0;">Setores do evento</h2>
-  <% if policy(Sector).index? %>
-    <%= link_to "Ver todos", sectors_path, class: "btn-secondary", style: "font-size: 0.75rem; padding: 0.25rem 0.6rem;" %>
+  <h2 style="font-size: 1rem; font-weight: 600; color: #18181b; margin: 0;">Eventos</h2>
+  <% if policy(Event).index? %>
+    <%= link_to "Ver todos", events_path, class: "btn-secondary", style: "font-size: 0.75rem; padding: 0.25rem 0.6rem;" %>
   <% end %>
 </div>
 
-<% if @sectors.empty? %>
+<% if @events.empty? %>
   <div class="content-card" style="text-align: center; color: #a1a1aa; font-size: 0.85rem; padding: 2rem;">
-    <i class="bi bi-grid-3x3-gap" style="font-size: 1.5rem; display: block; margin-bottom: 0.5rem;"></i>
-    Nenhum setor cadastrado para este evento.
-    <% if policy(Sector).new? %>
+    <i class="bi bi-calendar-event" style="font-size: 1.5rem; display: block; margin-bottom: 0.5rem;"></i>
+    Nenhum evento cadastrado.
+    <% if policy(Event).new? %>
       <div style="margin-top: 0.75rem;">
-        <%= link_to new_sector_path(event_id: current_event.id), class: "btn-primary" do %>
-          <i class="bi bi-plus"></i> Criar setor
+        <%= link_to new_event_path, class: "btn-primary" do %>
+          <i class="bi bi-plus"></i> Criar evento
         <% end %>
       </div>
     <% end %>
   </div>
 <% else %>
-  <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1rem;">
-    <% @sectors.each do |sector| %>
-      <div class="content-card" style="padding: 1.1rem; display: flex; flex-direction: column; gap: 0.75rem;">
-        <div style="display: flex; align-items: center; justify-content: space-between;">
-          <h3 style="font-size: 0.88rem; font-weight: 600; color: #18181b; margin: 0;"><%= sector.name %></h3>
-          <span style="font-size: 0.72rem; color: #71717a;">
-            <%= sector.teams.size %> <%= sector.teams.size == 1 ? "equipe" : "equipes" %>
-          </span>
-        </div>
-
-        <% if sector.teams.any? %>
-          <div style="display: flex; flex-direction: column; gap: 0.25rem;">
-            <% sector.teams.each do |team| %>
-              <div style="display: flex; align-items: center; justify-content: space-between;
-                          padding: 0.3rem 0; border-bottom: 1px solid #f4f4f5; font-size: 0.8rem;">
-                <span style="color: #3f3f46;"><%= team.name %></span>
-                <span style="color: #a1a1aa; font-size: 0.75rem;"><%= team.users.size %> col.</span>
-              </div>
+  <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem;">
+    <% @events.each do |event| %>
+      <% sectors_count = event.sectors.size
+         teams_count   = event.sectors.sum { |s| s.teams.size }
+         members_count = event.sectors.flat_map(&:teams).flat_map(&:team_memberships).map(&:user_id).uniq.size
+         is_current    = event.id == current_event&.id %>
+      <div class="content-card" style="padding: 1.1rem; display: flex; flex-direction: column; gap: 0.75rem; <%= is_current ? 'border: 1.5px solid #18181b;' : '' %>">
+        <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 0.5rem;">
+          <div>
+            <h3 style="font-size: 0.88rem; font-weight: 600; color: #18181b; margin: 0 0 0.2rem;"><%= event.name %></h3>
+            <% if event.location.present? %>
+              <div style="font-size: 0.75rem; color: #71717a;"><i class="bi bi-geo-alt"></i> <%= event.location %></div>
             <% end %>
           </div>
-        <% else %>
-          <span style="font-size: 0.78rem; color: #a1a1aa;">Sem equipes</span>
-        <% end %>
+          <div style="display:flex; flex-direction:column; align-items:flex-end; gap:0.25rem; flex-shrink:0;">
+            <span class="badge-status badge-<%= event.status %>"><%= t("event_statuses.#{event.status}") %></span>
+            <% if is_current %>
+              <span style="font-size:0.68rem; font-weight:600; color:#18181b; background:#f4f4f5; border-radius:4px; padding:0.1rem 0.35rem;">atual</span>
+            <% end %>
+          </div>
+        </div>
+
+        <div style="font-size: 0.75rem; color: #71717a;">
+          <i class="bi bi-calendar3"></i>
+          <%= l(event.start_date, format: :short) %> → <%= l(event.end_date, format: :short) %>
+        </div>
+
+        <div style="display: flex; gap: 1rem; padding-top: 0.5rem; border-top: 1px solid #f4f4f5;">
+          <div style="text-align: center;">
+            <div style="font-size: 1rem; font-weight: 700; color: #18181b;"><%= sectors_count %></div>
+            <div style="font-size: 0.7rem; color: #a1a1aa;">setores</div>
+          </div>
+          <div style="text-align: center;">
+            <div style="font-size: 1rem; font-weight: 700; color: #18181b;"><%= teams_count %></div>
+            <div style="font-size: 0.7rem; color: #a1a1aa;">equipes</div>
+          </div>
+          <div style="text-align: center;">
+            <div style="font-size: 1rem; font-weight: 700; color: #18181b;"><%= members_count %></div>
+            <div style="font-size: 0.7rem; color: #a1a1aa;">colaboradores</div>
+          </div>
+        </div>
       </div>
     <% end %>
   </div>
