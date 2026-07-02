@@ -146,6 +146,7 @@ class TeamsController < ApplicationController
     @sectors      = Sector.where(event_id: current_event.id).order(:name)
     @all_users    = company_users_scope.order(:name)
     @event_functions = current_event.event_functions.order(:name)
+    @sector_planned_functions = load_sector_planned_functions
     @team.team_memberships.build
   end
 
@@ -158,6 +159,7 @@ class TeamsController < ApplicationController
       @sectors         = Sector.where(event_id: current_event.id).order(:name)
       @all_users       = User.order(:name)
       @event_functions = current_event.event_functions.order(:name)
+      @sector_planned_functions = load_sector_planned_functions
       render :new, status: :unprocessable_entity
     end
   end
@@ -223,6 +225,7 @@ class TeamsController < ApplicationController
     @all_users       = User.order(:name)
     @memberships     = @team.team_memberships.includes(:event_function, user: :role).joins(:user).order("users.name")
     @event_functions = @team.sector.event.event_functions.order(:name)
+    @sector_planned_functions = load_sector_planned_functions
   end
 
   def update
@@ -234,6 +237,7 @@ class TeamsController < ApplicationController
       @all_users       = User.order(:name)
       @memberships     = @team.team_memberships.includes(:event_function, user: :role).joins(:user).order("users.name")
       @event_functions = @team.sector.event.event_functions.order(:name)
+      @sector_planned_functions = load_sector_planned_functions
       render :edit, status: :unprocessable_entity
     end
   end
@@ -248,6 +252,15 @@ class TeamsController < ApplicationController
 
   def set_team
     @team = Team.includes(:users, sector: :event).find(params[:id])
+  end
+
+  def load_sector_planned_functions
+    Sector.where(event_id: current_event.id)
+          .includes(:sector_functions)
+          .each_with_object({}) do |sector, hash|
+            ids = sector.sector_functions.map(&:event_function_id)
+            hash[sector.id.to_s] = ids if ids.any?
+          end
   end
 
   def load_team_memberships

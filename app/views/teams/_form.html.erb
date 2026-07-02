@@ -1,5 +1,6 @@
 <div class="content-card" style="max-width: 700px;">
-  <%= form_with model: team do |f| %>
+  <%= form_with model: team,
+        data: { sector_planned_functions: (@sector_planned_functions || {}).to_json } do |f| %>
     <%= render "shared/error_messages", object: team %>
 
     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.25rem;">
@@ -62,7 +63,7 @@
         <% team.team_memberships.each do |tm| %>
           <%= f.fields_for :team_memberships, tm do |ff| %>
             <% current_fn = @event_functions.find { |ef| ef.id == ff.object.event_function_id } %>
-            <div class="membership-row" style="display:grid;grid-template-columns:1fr 180px 36px;gap:0.5rem;align-items:center;padding:0.5rem 0.75rem;border-bottom:1px solid #f4f4f5;">
+            <div class="membership-row" style="display:grid;grid-template-columns:1fr 180px 36px;gap:0.5rem;align-items:center;padding:0.5rem 0.75rem;border-bottom:1px solid #f4f4f5;flex-wrap:wrap;">
               <% if tm.persisted? && tm.user %>
                 <div style="display:flex;align-items:center;gap:0.5rem;">
                   <div style="width:26px;height:26px;border-radius:50%;background:#f4f4f5;border:1px solid #e4e4e7;display:flex;align-items:center;justify-content:center;font-size:0.5rem;font-weight:700;color:#52525b;flex-shrink:0;overflow:hidden;">
@@ -125,6 +126,10 @@
                   </button>
                 <% end %>
               </div>
+              <%# Aviso de função não planejada %>
+              <div class="fn-warning" style="display:none; grid-column:1/-1; background:#fffbeb; border:1px solid #fde68a; border-radius:6px; padding:0.3rem 0.7rem; font-size:0.75rem; color:#92400e; margin-top:0.1rem;">
+                <i class="bi bi-exclamation-triangle"></i> Esta função não está no planejamento deste setor.
+              </div>
             </div>
           <% end %>
         <% end %>
@@ -133,7 +138,7 @@
 
     <%# Template para nova linha %>
     <template id="membership-template">
-      <div class="membership-row" style="display:grid;grid-template-columns:1fr 180px 36px;gap:0.5rem;align-items:center;padding:0.5rem 0.75rem;border-bottom:1px solid #f4f4f5;">
+      <div class="membership-row" style="display:grid;grid-template-columns:1fr 180px 36px;gap:0.5rem;align-items:center;padding:0.5rem 0.75rem;border-bottom:1px solid #f4f4f5;flex-wrap:wrap;">
         <div style="position:relative;">
           <input type="text"
                  class="form-control member-search-input"
@@ -162,6 +167,9 @@
                   class="btn-danger" style="padding:0.25rem 0.45rem;font-size:0.75rem;width:30px;">
             <i class="bi bi-x"></i>
           </button>
+        </div>
+        <div class="fn-warning" style="display:none; grid-column:1/-1; background:#fffbeb; border:1px solid #fde68a; border-radius:6px; padding:0.3rem 0.7rem; font-size:0.75rem; color:#92400e; margin-top:0.1rem;">
+          <i class="bi bi-exclamation-triangle"></i> Esta função não está no planejamento deste setor.
         </div>
       </div>
     </template>
@@ -222,6 +230,9 @@
       currentLabel      = label;
       currentId         = id;
       dropdown.style.display = 'none';
+      // Verifica aviso de função não planejada
+      var row = wrapper.closest(".membership-row");
+      if (row && window.checkFnWarningForRow) window.checkFnWarningForRow(row);
     }
 
     // Sobrescreve renderList para usar onSelect
@@ -334,6 +345,7 @@
 
     // Autocomplete de função na nova linha
     if (fnWrapper && fnHidden) initFnAutocomplete(fnWrapper, fnHidden);
+    if (window.checkAllFnWarnings) window.checkAllFnWarnings();
 
     document.getElementById("memberships-rows").appendChild(row);
     searchInput.focus();
@@ -346,5 +358,61 @@
     row.style.opacity = cb.checked ? "0.4" : "1";
     btn.innerHTML     = cb.checked ? '<i class="bi bi-arrow-counterclockwise"></i>' : '<i class="bi bi-x"></i>';
   };
+
+  // ── Aviso de função não planejada ──────────────────────────────────────────
+  var form = document.querySelector("form[data-sector-planned-functions]");
+  var PLANNED = form ? JSON.parse(form.dataset.sectorPlannedFunctions || "{}") : {};
+
+  function currentSectorId() {
+    var sel = document.querySelector("select[name='team[sector_id]']");
+    return sel ? sel.value : "";
+  }
+
+  function checkFnWarning(row) {
+    var warning  = row.querySelector(".fn-warning");
+    var fnHidden = row.querySelector(".fn-ac-hidden");
+    if (!warning || !fnHidden) return;
+
+    var sectorId = currentSectorId();
+    var fnId     = parseInt(fnHidden.value);
+    var planned  = PLANNED[sectorId];
+
+    // Só avisa se: setor selecionado, setor TEM funções planejadas e função escolhida não está nelas
+    var shouldWarn = sectorId && planned && planned.length > 0 && fnId && !planned.includes(fnId);
+    warning.style.display = shouldWarn ? "block" : "none";
+  }
+
+  function checkAllRows() {
+    document.querySelectorAll(".membership-row").forEach(function(row) {
+      checkFnWarning(row);
+    });
+  }
+
+  // Monitora mudança de setor
+  var sectorSelect = document.querySelector("select[name='team[sector_id]']");
+  if (sectorSelect) {
+    sectorSelect.addEventListener("change", checkAllRows);
+    // tom-select dispara change no select nativo
+  }
+
+  // Monitora seleção de função em cada linha existente
+  document.querySelectorAll(".fn-ac-hidden").forEach(function(hidden) {
+    var observer = new MutationObserver(function() {
+      checkFnWarning(hidden.closest(".membership-row"));
+    });
+    observer.observe(hidden, { attributes: true, attributeFilter: ["value"] });
+
+    // Também escuta input event via proxy no onSelect do autocomplete
+    hidden.addEventListener("change", function() {
+      checkFnWarning(hidden.closest(".membership-row"));
+    });
+  });
+
+  // Disponibiliza globalmente para uso em novas linhas
+  window.checkFnWarningForRow = checkFnWarning;
+  window.checkAllFnWarnings   = checkAllRows;
+
+  // Verifica ao carregar
+  checkAllRows();
 })();
 </script>
