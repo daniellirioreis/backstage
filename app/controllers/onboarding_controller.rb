@@ -37,6 +37,12 @@ class OnboardingController < ApplicationController
     redirect_to onboarding_empresa_path and return unless @company
 
     plan_id = params[:plan_id].presence
+    unless plan_id
+      @plans = Plan.order(:name)
+      flash.now[:alert] = "Selecione um plano para continuar."
+      render :plano, status: :unprocessable_entity and return
+    end
+
     @company.update!(plan_id: plan_id)
     redirect_to onboarding_evento_path
   end

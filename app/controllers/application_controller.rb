@@ -4,6 +4,7 @@ class ApplicationController < ActionController::Base
   before_action :authenticate_user!
   before_action :check_onboarding!
   before_action :require_current_event!
+  before_action :check_company_plan!
 
   layout :resolve_layout
 
@@ -80,6 +81,35 @@ class ApplicationController < ActionController::Base
         vehicles
         invitations
         onboarding
+      ])
+  end
+
+  def check_company_plan!
+    return unless user_signed_in?
+    return if current_user.admin?
+    return if skip_plan_check?
+
+    # Prioriza a empresa do evento atual; cai no primeiro vínculo do usuário
+    company = current_event&.company
+    company ||= current_user.company_users.includes(:company).first&.company
+
+    # Sem empresa ainda → onboarding cuida disso
+    return unless company
+
+    return if company.plan.present?
+
+    redirect_to root_path, alert: "Sua empresa não possui um plano ativo. Entre em contato com o administrador para contratar um plano."
+  end
+
+  def skip_plan_check?
+    devise_controller? ||
+      controller_name.in?(%w[
+        dashboard
+        event_session
+        onboarding
+        companies
+        plans
+        invitations
       ])
   end
 

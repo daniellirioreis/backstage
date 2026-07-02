@@ -19,44 +19,40 @@
 </div>
 
 <%= form_with url: onboarding_plano_path, method: :post do |f| %>
-  <div style="display:flex; flex-direction:column; gap:0.5rem; margin-bottom:1.5rem;">
-
-    <label style="display:flex; align-items:flex-start; gap:0.75rem; padding:0.75rem 1rem; border:2px solid #e4e4e7; border-radius:10px; cursor:pointer; transition:border-color 0.15s;"
-           onmouseover="this.style.borderColor='#18181b'" onmouseout="if(!this.querySelector('input').checked) this.style.borderColor='#e4e4e7'">
-      <input type="radio" name="plan_id" value="" style="margin-top:3px; flex-shrink:0;" checked>
-      <div>
-        <div style="font-size:0.9rem; font-weight:700; color:#18181b;">Sem plano</div>
-        <div style="font-size:0.75rem; color:#71717a; margin-top:0.15rem;">Acesso ilimitado — sem restrições de eventos ou colaboradores</div>
-      </div>
-    </label>
-
-    <% @plans.each do |plan| %>
-      <label style="display:flex; align-items:flex-start; gap:0.75rem; padding:0.75rem 1rem; border:2px solid #e4e4e7; border-radius:10px; cursor:pointer; transition:border-color 0.15s;"
-             onmouseover="this.style.borderColor='#18181b'" onmouseout="if(!this.querySelector('input').checked) this.style.borderColor='#e4e4e7'">
-        <input type="radio" name="plan_id" value="<%= plan.id %>" style="margin-top:3px; flex-shrink:0;">
-        <div style="flex:1;">
-          <div style="font-size:0.9rem; font-weight:700; color:#18181b;"><%= plan.name %></div>
-          <% if plan.description.present? %>
-            <div style="font-size:0.75rem; color:#71717a; margin-top:0.1rem;"><%= plan.description %></div>
-          <% end %>
-          <div style="display:flex; gap:1rem; margin-top:0.5rem;">
-            <div style="background:#f4f4f5; border-radius:6px; padding:0.25rem 0.6rem; font-size:0.72rem; color:#52525b;">
-              <i class="bi bi-calendar-event" style="font-size:0.65rem;"></i>
-              <strong><%= plan.events_limit_label %></strong> eventos
-            </div>
-            <div style="background:#f4f4f5; border-radius:6px; padding:0.25rem 0.6rem; font-size:0.72rem; color:#52525b;">
-              <i class="bi bi-people" style="font-size:0.65rem;"></i>
-              <strong><%= plan.members_limit_label %></strong> colaboradores
+  <% if @plans.empty? %>
+    <div style="background:#fef9c3; border:1px solid #fde047; border-radius:10px; padding:1rem 1.25rem; font-size:0.83rem; color:#713f12; text-align:center;">
+      <i class="bi bi-exclamation-triangle"></i>
+      Nenhum plano cadastrado. Peça ao administrador para criar planos antes de continuar.
+    </div>
+  <% else %>
+    <div style="display:flex; flex-direction:column; gap:0.5rem; margin-bottom:1.5rem;">
+      <% @plans.each_with_index do |plan, idx| %>
+        <label style="display:flex; align-items:flex-start; gap:0.75rem; padding:0.75rem 1rem; border:2px solid #e4e4e7; border-radius:10px; cursor:pointer; transition:border-color 0.15s;"
+               onmouseover="this.style.borderColor='#18181b'" onmouseout="if(!this.querySelector('input').checked) this.style.borderColor='#e4e4e7'">
+          <input type="radio" name="plan_id" value="<%= plan.id %>" style="margin-top:3px; flex-shrink:0;" <%= idx == 0 ? "checked" : "" %>>
+          <div style="flex:1;">
+            <div style="font-size:0.9rem; font-weight:700; color:#18181b;"><%= plan.name %></div>
+            <% if plan.description.present? %>
+              <div style="font-size:0.75rem; color:#71717a; margin-top:0.1rem;"><%= plan.description %></div>
+            <% end %>
+            <div style="display:flex; gap:1rem; margin-top:0.5rem;">
+              <div style="background:#f4f4f5; border-radius:6px; padding:0.25rem 0.6rem; font-size:0.72rem; color:#52525b;">
+                <i class="bi bi-calendar-event" style="font-size:0.65rem;"></i>
+                <strong><%= plan.events_limit_label %></strong> eventos
+              </div>
+              <div style="background:#f4f4f5; border-radius:6px; padding:0.25rem 0.6rem; font-size:0.72rem; color:#52525b;">
+                <i class="bi bi-people" style="font-size:0.65rem;"></i>
+                <strong><%= plan.members_limit_label %></strong> colaboradores
+              </div>
             </div>
           </div>
-        </div>
-      </label>
-    <% end %>
+        </label>
+      <% end %>
+    </div>
 
-  </div>
-
-  <button type="submit"
-          style="width:100%; background:#18181b; color:#fff; border:none; border-radius:8px; padding:0.65rem; font-size:0.875rem; font-weight:600; cursor:pointer;">
-    Continuar →
-  </button>
+    <button type="submit"
+            style="width:100%; background:#18181b; color:#fff; border:none; border-radius:8px; padding:0.65rem; font-size:0.875rem; font-weight:600; cursor:pointer;">
+      Continuar →
+    </button>
+  <% end %>
 <% end %>
