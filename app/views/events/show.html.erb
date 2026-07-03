@@ -20,8 +20,8 @@
     </div>
   </div>
   <div style="display: flex; gap: 0.5rem;">
-    <%# Botão de transição de status %>
-    <% if policy(@event).update? && @event.status != "closed" %>
+    <%# Botão de transição de status (avançar) %>
+    <% if policy(@event).update? %>
       <% if @event.draft? %>
         <%= button_to transition_event_path(@event), method: :patch,
               style: "display:flex; align-items:center; gap:0.4rem; background:#16a34a; color:#fff; border:none; border-radius:7px; padding:0.4rem 0.85rem; font-size:0.82rem; font-weight:600; cursor:pointer;",
@@ -33,6 +33,21 @@
               style: "display:flex; align-items:center; gap:0.4rem; background:#dc2626; color:#fff; border:none; border-radius:7px; padding:0.4rem 0.85rem; font-size:0.82rem; font-weight:600; cursor:pointer;",
               data: { confirm: "Encerrar o evento '#{@event.name}'? Isso liberará o Fechamento e bloqueará novas escalas." } do %>
           <i class="bi bi-stop-circle-fill"></i> Encerrar evento
+        <% end %>
+      <% end %>
+
+      <%# Botão de retrocesso (discreto) %>
+      <% if @event.active? %>
+        <%= button_to revert_event_path(@event), method: :patch,
+              style: "display:flex; align-items:center; gap:0.35rem; background:transparent; color:#71717a; border:1px solid #e4e4e7; border-radius:7px; padding:0.4rem 0.75rem; font-size:0.78rem; cursor:pointer;",
+              data: { confirm: "Voltar para Rascunho? Só é possível se não houver check-ins registrados." } do %>
+          <i class="bi bi-arrow-counterclockwise"></i> Voltar para Rascunho
+        <% end %>
+      <% elsif @event.closed? %>
+        <%= button_to revert_event_path(@event), method: :patch,
+              style: "display:flex; align-items:center; gap:0.35rem; background:transparent; color:#71717a; border:1px solid #e4e4e7; border-radius:7px; padding:0.4rem 0.75rem; font-size:0.78rem; cursor:pointer;",
+              data: { confirm: "Reabrir o evento '#{@event.name}' como Ativo?" } do %>
+          <i class="bi bi-arrow-counterclockwise"></i> Reabrir evento
         <% end %>
       <% end %>
     <% end %>

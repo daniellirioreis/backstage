@@ -1,8 +1,7 @@
 class EventsController < ApplicationController
-  before_action :set_event, only: %i[show edit update destroy print transition]
+  before_action :set_event, only: %i[show edit update destroy print transition revert]
 
   TRANSITIONS = { "draft" => "active", "active" => "closed" }.freeze
-  TRANSITION_LABELS = { "draft" => "ativar", "active" => "encerrar" }.freeze
 
   def index
     authorize Event
@@ -158,6 +157,26 @@ class EventsController < ApplicationController
       redirect_to @event, notice: "Evento #{label} com sucesso."
     else
       redirect_to @event, alert: "Não foi possível alterar o status."
+    end
+  end
+
+  def revert
+    authorize @event, :update?
+
+    case @event.status
+    when "active"
+      has_checkins = Attendance.where(event: @event).exists?
+      if has_checkins
+        redirect_to @event, alert: "Não é possível voltar para Rascunho: já existem check-ins registrados neste evento."
+        return
+      end
+      @event.update!(status: "draft")
+      redirect_to @event, notice: "Evento voltou para Rascunho."
+    when "closed"
+      @event.update!(status: "active")
+      redirect_to @event, notice: "Evento reaberto como Ativo."
+    else
+      redirect_to @event, alert: "Este evento não pode ser revertido."
     end
   end
 

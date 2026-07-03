@@ -49,8 +49,9 @@ Rails.application.routes.draw do
     resource  :badge_config, only: [:edit, :update]
     resources :event_functions, only: [:create, :update, :destroy]
     member do
-      get  :print
+      get   :print
       patch :transition
+      patch :revert
     end
   end
   resources :teams do
