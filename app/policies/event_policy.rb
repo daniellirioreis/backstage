@@ -12,6 +12,10 @@ class EventPolicy < ApplicationPolicy
   def update?  = can?("update")  && (user.admin? || record.draft?)
   def destroy? = can?("destroy") && (user.admin? || record.draft?)
 
+  # Transições de status: independente do status atual
+  def transition? = can?("update")
+  def revert?     = can?("update")
+
   def print? = can?("print")
 
   private

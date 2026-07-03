@@ -146,7 +146,7 @@ class EventsController < ApplicationController
   end
 
   def transition
-    authorize @event, :update?
+    authorize @event, :transition?
     next_status = TRANSITIONS[@event.status]
     unless next_status
       redirect_to @event, alert: "Este evento não pode mais mudar de status."
@@ -161,7 +161,7 @@ class EventsController < ApplicationController
   end
 
   def revert
-    authorize @event, :update?
+    authorize @event, :revert?
 
     case @event.status
     when "active"

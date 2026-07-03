@@ -21,7 +21,7 @@
   </div>
   <div style="display: flex; gap: 0.5rem;">
     <%# Botão de transição de status (avançar) %>
-    <% if policy(@event).update? %>
+    <% if policy(@event).transition? %>
       <% if @event.draft? %>
         <%= button_to transition_event_path(@event), method: :patch,
               style: "display:flex; align-items:center; gap:0.4rem; background:#16a34a; color:#fff; border:none; border-radius:7px; padding:0.4rem 0.85rem; font-size:0.82rem; font-weight:600; cursor:pointer;",
