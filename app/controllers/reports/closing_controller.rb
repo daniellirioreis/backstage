@@ -3,6 +3,10 @@ module Reports
     def index
       return redirect_to(select_event_path, alert: "Selecione um evento para continuar.") unless current_event
       authorize :report, :closing?
+      unless current_event.closed?
+        redirect_to event_path(current_event), alert: "O Fechamento só está disponível após o evento ser encerrado."
+        return
+      end
       @basis = params[:basis].presence_in(%w[shifts attendance]) || "shifts"
       load_report_data
     end
@@ -10,6 +14,10 @@ module Reports
     def print
       return redirect_to(select_event_path, alert: "Selecione um evento para continuar.") unless current_event
       authorize :report, :closing?
+      unless current_event.closed?
+        redirect_to event_path(current_event), alert: "O Fechamento só está disponível após o evento ser encerrado."
+        return
+      end
       @basis = params[:basis].presence_in(%w[shifts attendance]) || "shifts"
       load_report_data
       render pdf:         "fechamento-#{@event.name.parameterize}-#{@basis}",

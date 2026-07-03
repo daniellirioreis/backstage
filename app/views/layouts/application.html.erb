@@ -84,8 +84,14 @@
           <% end %>
 
           <% if policy(:report).closing? %>
-            <%= link_to reports_closing_path, class: "sidebar-link #{controller_path == 'reports/closing' ? 'active' : ''}" do %>
+            <% event_closed = current_event&.closed? %>
+            <%= link_to reports_closing_path,
+                  class: "sidebar-link #{controller_path == 'reports/closing' ? 'active' : ''} #{event_closed ? '' : 'sidebar-link--locked'}",
+                  title: event_closed ? nil : "Disponível apenas após encerrar o evento" do %>
               <i class="bi bi-receipt"></i> <%= t("nav.closing") %>
+              <% unless event_closed %>
+                <i class="bi bi-lock-fill" style="font-size:0.65rem; margin-left:auto; opacity:0.45;"></i>
+              <% end %>
             <% end %>
           <% end %>
 

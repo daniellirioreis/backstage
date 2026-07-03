@@ -48,7 +48,10 @@ Rails.application.routes.draw do
   resources :events do
     resource  :badge_config, only: [:edit, :update]
     resources :event_functions, only: [:create, :update, :destroy]
-    member { get :print }
+    member do
+      get  :print
+      patch :transition
+    end
   end
   resources :teams do
     collection do

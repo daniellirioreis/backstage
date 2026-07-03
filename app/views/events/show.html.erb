@@ -20,6 +20,22 @@
     </div>
   </div>
   <div style="display: flex; gap: 0.5rem;">
+    <%# Botão de transição de status %>
+    <% if policy(@event).update? && @event.status != "closed" %>
+      <% if @event.draft? %>
+        <%= button_to transition_event_path(@event), method: :patch,
+              style: "display:flex; align-items:center; gap:0.4rem; background:#16a34a; color:#fff; border:none; border-radius:7px; padding:0.4rem 0.85rem; font-size:0.82rem; font-weight:600; cursor:pointer;",
+              data: { confirm: "Ativar o evento '#{@event.name}'? Ele ficará visível para a equipe." } do %>
+          <i class="bi bi-play-circle-fill"></i> Ativar evento
+        <% end %>
+      <% elsif @event.active? %>
+        <%= button_to transition_event_path(@event), method: :patch,
+              style: "display:flex; align-items:center; gap:0.4rem; background:#dc2626; color:#fff; border:none; border-radius:7px; padding:0.4rem 0.85rem; font-size:0.82rem; font-weight:600; cursor:pointer;",
+              data: { confirm: "Encerrar o evento '#{@event.name}'? Isso liberará o Fechamento e bloqueará novas escalas." } do %>
+          <i class="bi bi-stop-circle-fill"></i> Encerrar evento
+        <% end %>
+      <% end %>
+    <% end %>
     <% if policy(@event).print? %>
       <%= link_to print_event_path(@event), class: "btn-secondary" do %>
         <i class="bi bi-printer"></i> Imprimir

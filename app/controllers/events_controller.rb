@@ -1,5 +1,8 @@
 class EventsController < ApplicationController
-  before_action :set_event, only: %i[show edit update destroy print]
+  before_action :set_event, only: %i[show edit update destroy print transition]
+
+  TRANSITIONS = { "draft" => "active", "active" => "closed" }.freeze
+  TRANSITION_LABELS = { "draft" => "ativar", "active" => "encerrar" }.freeze
 
   def index
     authorize Event
@@ -141,6 +144,21 @@ class EventsController < ApplicationController
     authorize @event
     @event.destroy
     redirect_to events_path, notice: t("notices.destroyed", model: Event.model_name.human)
+  end
+
+  def transition
+    authorize @event, :update?
+    next_status = TRANSITIONS[@event.status]
+    unless next_status
+      redirect_to @event, alert: "Este evento não pode mais mudar de status."
+      return
+    end
+    if @event.update(status: next_status)
+      label = next_status == "active" ? "ativado" : "encerrado"
+      redirect_to @event, notice: "Evento #{label} com sucesso."
+    else
+      redirect_to @event, alert: "Não foi possível alterar o status."
+    end
   end
 
   private
