@@ -11,7 +11,7 @@ class ApplicationController < ActionController::Base
   helper_method :current_event
   helper_method :company_users_scope
 
-  rescue_from Pundit::NotAuthorizedError, with: :user_not_authorized
+  rescue_from Pundit::NotAuthorizedError, with: ->(e) { user_not_authorized(e) }
 
   private
 
@@ -130,15 +130,51 @@ class ApplicationController < ActionController::Base
     super
   end
 
-  def user_not_authorized
+  def user_not_authorized(exception = nil)
+    message = not_authorized_message(exception)
     if request.format.json?
-      render json: { status: :error, message: t("errors.not_authorized") }, status: :forbidden
+      render json: { status: :error, message: message }, status: :forbidden
     else
-      flash[:alert] = t("errors.not_authorized")
+      flash[:alert] = message
       safe_back = request.referer.present? &&
                   !request.referer.include?(new_user_session_path) &&
                   request.referer != request.url
       safe_back ? redirect_back(fallback_location: root_path) : redirect_to(root_path)
     end
+  end
+
+  def not_authorized_message(exception)
+    query  = exception&.query&.to_s&.delete_suffix("?")
+    record = exception&.record
+
+    event_status = current_event&.status
+
+    # Mensagens específicas por contexto
+    case query
+    when "create", "update", "edit", "destroy"
+      case record
+      when Event, Class
+        return "Edição de eventos só é permitida quando o status é Rascunho." if event_status&.in?(%w[active closed])
+      when Sector
+        return "Setores só podem ser alterados quando o evento está em Rascunho."
+      when Team
+        return "Equipes só podem ser alteradas quando o evento está em Rascunho."
+      when EventFunction
+        return "Funções do evento só podem ser alteradas quando o evento está em Rascunho."
+      when Shift
+        return "Escalas não podem ser alteradas com o evento Encerrado." if event_status == "closed"
+      end
+    when "scan", "checkout"
+      return "Check-in e Check-out só estão disponíveis com o evento Ativo." \
+             " Status atual: #{t("event_statuses.#{event_status}")}."
+    when "credentials"
+      return "Credenciais só estão disponíveis com o evento Ativo." \
+             " Status atual: #{t("event_statuses.#{event_status}")}."
+    when "closing"
+      return "O Fechamento só está disponível após o evento ser Encerrado." \
+             " Status atual: #{t("event_statuses.#{event_status}")}."
+    end
+
+    t("errors.not_authorized")
   end
 end
