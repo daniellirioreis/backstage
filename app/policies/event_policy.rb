@@ -7,6 +7,11 @@ class EventPolicy < ApplicationPolicy
     end
   end
 
+  # Editar/excluir evento só no rascunho
+  def edit?    = can?("update")  && (user.admin? || record.draft?)
+  def update?  = can?("update")  && (user.admin? || record.draft?)
+  def destroy? = can?("destroy") && (user.admin? || record.draft?)
+
   def print? = can?("print")
 
   private

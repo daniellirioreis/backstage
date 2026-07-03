@@ -1,5 +1,6 @@
 class ReportPolicy < ApplicationPolicy
-  def closing? = can?("closing")
+  # Fechamento: só com evento encerrado
+  def closing? = can?("closing") && (user.admin? || event_closed?)
 
   private
 

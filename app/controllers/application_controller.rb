@@ -15,8 +15,10 @@ class ApplicationController < ActionController::Base
 
   private
 
+  UserContext = Struct.new(:user, :event)
+
   def pundit_user
-    current_user
+    UserContext.new(current_user, current_event)
   end
 
   def current_event

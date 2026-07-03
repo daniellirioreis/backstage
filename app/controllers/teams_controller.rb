@@ -87,7 +87,7 @@ class TeamsController < ApplicationController
   end
 
   def credentials
-    authorize @team, :show?
+    authorize @team, :credentials?
 
     # Recarrega explicitamente todos os membros do banco
     event      = @team.sector.event
