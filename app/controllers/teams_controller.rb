@@ -1,5 +1,5 @@
 class TeamsController < ApplicationController
-  before_action :set_team, only: %i[show edit update destroy credentials import_members set_function]
+  before_action :set_team, only: %i[show edit update destroy credentials import_members set_function schedule]
 
   def search
     authorize Team, :index?
@@ -80,7 +80,11 @@ class TeamsController < ApplicationController
         created += 1 if shift.save
       end
 
-      redirect_to team_path(@team), notice: "#{created} turno(s) criado(s) com sucesso."
+      if params[:modal] == "1"
+        render html: "<script>window.parent.closeShiftModal(); window.parent.location.reload();</script>".html_safe, layout: false
+      else
+        redirect_to team_path(@team), notice: "#{created} turno(s) criado(s) com sucesso."
+      end
     else
       @memberships = load_team_memberships
     end
@@ -89,30 +93,18 @@ class TeamsController < ApplicationController
   def credentials
     authorize @team, :credentials?
 
-    # Recarrega explicitamente todos os membros do banco
-    event      = @team.sector.event
-    coordinator = User.includes(avatar_attachment: :blob).find_by(id: @team.coordinator_id)
+    event = @team.sector.event
     memberships = TeamMembership.where(team_id: @team.id)
                                 .includes(:event_function, user: { avatar_attachment: :blob })
                                 .joins(:user)
-                                .order("users.name")
+                                .order(role: :desc).order("users.name")
 
-    members = []
-    if coordinator
-      members << {
-        user: coordinator,
-        is_coordinator: true,
-        credential_code: @team.coordinator_full_credential_code
-      }
-    end
-
-    memberships.each do |tm|
-      next if tm.user_id == @team.coordinator_id
-      members << {
-        user: tm.user,
-        is_coordinator: false,
+    members = memberships.map do |tm|
+      {
+        user:            tm.user,
+        is_coordinator:  tm.coordinator?,
         credential_code: tm.full_credential_code,
-        function_name: tm.event_function&.name
+        function_name:   tm.event_function&.name
       }
     end
 

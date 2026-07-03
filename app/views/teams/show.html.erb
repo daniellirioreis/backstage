@@ -58,11 +58,12 @@ end %>
           </div>
         </div>
       </div>
-      <% if @team.coordinator_credential_code.present? %>
+      <% coord_membership = @memberships.find { |m| m.coordinator? } %>
+      <% if coord_membership&.credential_code.present? %>
         <div style="text-align: right;">
           <div style="font-size: 0.7rem; color: #a1a1aa; text-transform: uppercase; letter-spacing: 0.05em;">Credencial</div>
           <div style="font-family: monospace; font-size: 0.82rem; font-weight: 700; color: #18181b; background: #f4f4f5; padding: 2px 8px; border-radius: 4px;">
-            <%= @team.coordinator_full_credential_code %>
+            <%= coord_membership.full_credential_code %>
           </div>
         </div>
       <% else %>

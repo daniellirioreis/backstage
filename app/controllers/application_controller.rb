@@ -152,17 +152,20 @@ class ApplicationController < ActionController::Base
     # Mensagens específicas por contexto
     case query
     when "create", "update", "edit", "destroy"
-      case record
-      when Event, Class
-        return "Edição de eventos só é permitida quando o status é Rascunho." if event_status&.in?(%w[active closed])
-      when Sector
-        return "Setores só podem ser alterados quando o evento está em Rascunho."
-      when Team
-        return "Equipes só podem ser alteradas quando o evento está em Rascunho."
-      when EventFunction
-        return "Funções do evento só podem ser alteradas quando o evento está em Rascunho."
-      when Shift
+      # record pode ser instância OU classe (quando authorize recebe a classe diretamente)
+      record_class = record.is_a?(Class) ? record : record.class
+      case record_class
+      when ->(c) { c <= Shift }
         return "Escalas não podem ser alteradas com o evento Encerrado." if event_status == "closed"
+        return "Escalas só podem ser alteradas com o evento em Rascunho ou Ativo."
+      when ->(c) { c <= Sector }
+        return "Setores só podem ser alterados quando o evento está em Rascunho."
+      when ->(c) { c <= Team }
+        return "Equipes só podem ser alteradas quando o evento está em Rascunho."
+      when ->(c) { c <= EventFunction }
+        return "Funções do evento só podem ser alteradas quando o evento está em Rascunho."
+      else
+        return "Edição de eventos só é permitida quando o status é Rascunho." if event_status&.in?(%w[active closed])
       end
     when "scan", "checkout"
       return "Check-in e Check-out só estão disponíveis com o evento Ativo." \

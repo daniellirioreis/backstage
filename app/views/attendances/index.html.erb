@@ -3,25 +3,42 @@
     <h1 style="margin:0;">Check-ins</h1>
     <div style="font-size:0.78rem; color:#71717a; margin-top:0.15rem;"><%= @event.name %></div>
   </div>
-  <% if policy(:attendance).scan? %>
-    <%= link_to scan_attendances_path, class: "btn-primary" do %>
-      <i class="bi bi-qr-code-scan"></i> Escanear
+  <div style="display:flex; gap:0.5rem; align-items:center;">
+    <%= link_to attendances_path(date: @selected_date, sector_id: params[:sector_id], inside: params[:inside], q: params[:q]),
+        class: "btn-secondary" do %>
+      <i class="bi bi-arrow-clockwise"></i> Atualizar
     <% end %>
-  <% end %>
+    <% if policy(:attendance).scan? %>
+      <%= link_to scan_attendances_path, class: "btn-primary" do %>
+        <i class="bi bi-qr-code-scan"></i> Escanear
+      <% end %>
+    <% end %>
+  </div>
 </div>
 
 <%# Estatísticas %>
+<% inside_now = @attendances.reject(&:checked_out_at) %>
+<% finished   = @attendances.select(&:checked_out_at) %>
+<% pct = @total_collaborators > 0 ? [(@attendances.size * 100.0 / @total_collaborators).round, 100].min : 0 %>
+
 <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:0.75rem; margin-bottom:1.25rem;">
+  <div class="content-card" style="padding:1rem 1.25rem; text-align:center;">
+    <div style="font-size:2rem; font-weight:800; color:#18181b; line-height:1;"><%= @total_collaborators %></div>
+    <div style="font-size:0.72rem; color:#71717a; margin-top:3px;">colaborador<%= @total_collaborators == 1 ? "" : "es" %></div>
+  </div>
   <div class="content-card" style="padding:1rem 1.25rem; text-align:center;">
     <div style="font-size:2rem; font-weight:800; color:#16a34a; line-height:1;"><%= @attendances.size %></div>
     <div style="font-size:0.72rem; color:#71717a; margin-top:3px;">check-in<%= @attendances.size == 1 ? "" : "s" %> realizados</div>
   </div>
   <div class="content-card" style="padding:1rem 1.25rem; text-align:center;">
-    <div style="font-size:2rem; font-weight:800; color:#18181b; line-height:1;"><%= @total_collaborators %></div>
-    <div style="font-size:0.72rem; color:#71717a; margin-top:3px;">colaboradores no evento</div>
+    <div style="font-size:2rem; font-weight:800; color:#0ea5e9; line-height:1;"><%= inside_now.size %></div>
+    <div style="font-size:0.72rem; color:#71717a; margin-top:3px;">em atividade</div>
   </div>
   <div class="content-card" style="padding:1rem 1.25rem; text-align:center;">
-    <% pct = @total_collaborators > 0 ? (@attendances.size * 100.0 / @total_collaborators).round : 0 %>
+    <div style="font-size:2rem; font-weight:800; color:#f59e0b; line-height:1;"><%= @not_checked_in.size %></div>
+    <div style="font-size:0.72rem; color:#71717a; margin-top:3px;">aguardando check-in</div>
+  </div>
+  <div class="content-card" style="padding:1rem 1.25rem; text-align:center;">
     <div style="font-size:2rem; font-weight:800; color:<%= pct >= 80 ? '#16a34a' : pct >= 50 ? '#d97706' : '#dc2626' %>; line-height:1;"><%= pct %>%</div>
     <div style="font-size:0.72rem; color:#71717a; margin-top:3px;">de presença</div>
   </div>
@@ -31,12 +48,6 @@
       <div style="font-size:0.72rem; color:#71717a; margin-top:3px;">primeiro check-in</div>
     </div>
   <% end %>
-  <% inside_now = @attendances.reject(&:checked_out_at) %>
-  <div class="content-card" style="padding:1rem 1.25rem; text-align:center;">
-    <div style="font-size:2rem; font-weight:800; color:#0ea5e9; line-height:1;"><%= inside_now.size %></div>
-    <div style="font-size:0.72rem; color:#71717a; margin-top:3px;">dentro agora</div>
-  </div>
-  <% finished = @attendances.select(&:checked_out_at) %>
   <% if finished.any? %>
     <% total_mins = finished.sum { |a| ((a.checked_out_at - a.checked_in_at) / 60).to_i } %>
     <% total_h = total_mins / 60; total_m = total_mins % 60 %>
@@ -62,28 +73,48 @@
 
 <%# Filtros %>
 <div class="content-card" style="margin-bottom:1rem; padding:0.75rem 1rem; display:flex; flex-direction:column; gap:0.6rem;">
+  <%# Filtro data %>
+  <% if @event_days.size > 1 %>
+    <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
+      <span style="font-size:0.78rem; font-weight:600; color:#71717a; white-space:nowrap; width:52px;">
+        <i class="bi bi-calendar3"></i> Dia:
+      </span>
+      <% @event_days.each do |ed| %>
+        <% active_day = @selected_date == ed.date %>
+        <%= link_to attendances_path(date: ed.date, sector_id: params[:sector_id], inside: params[:inside], q: params[:q]),
+            style: "font-size:0.78rem; padding:0.25rem 0.65rem; border-radius:6px; border:1px solid #{active_day ? '#7c3aed' : '#e4e4e7'}; background:#{active_day ? '#7c3aed' : 'transparent'}; color:#{active_day ? '#fff' : '#3f3f46'}; text-decoration:none; white-space:nowrap;" do %>
+          <%= I18n.l(ed.date, format: :short) %>
+          <% if ed.date == Date.today %><span style="font-size:0.65rem; opacity:0.8;"> hoje</span><% end %>
+        <% end %>
+      <% end %>
+    </div>
+  <% end %>
+
   <%# Filtro status %>
   <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
     <span style="font-size:0.78rem; font-weight:600; color:#71717a; white-space:nowrap; width:52px;">
       <i class="bi bi-door-open"></i> Status:
     </span>
-    <% inside_active = params[:inside] == "1" %>
-    <%= link_to "Todos", attendances_path(sector_id: params[:sector_id]),
-        style: "font-size:0.78rem; padding:0.25rem 0.65rem; border-radius:6px; border:1px solid #{!inside_active ? '#18181b' : '#e4e4e7'}; background:#{!inside_active ? '#18181b' : 'transparent'}; color:#{!inside_active ? '#fff' : '#3f3f46'}; text-decoration:none; white-space:nowrap;" %>
-    <%= link_to "Dentro agora", attendances_path(sector_id: params[:sector_id], inside: "1"),
-        style: "font-size:0.78rem; padding:0.25rem 0.65rem; border-radius:6px; border:1px solid #{inside_active ? '#0ea5e9' : '#e4e4e7'}; background:#{inside_active ? '#0ea5e9' : 'transparent'}; color:#{inside_active ? '#fff' : '#3f3f46'}; text-decoration:none; white-space:nowrap;" %>
+    <% current_filter = params[:inside] %>
+    <%= link_to "Todos", attendances_path(date: @selected_date, sector_id: params[:sector_id], q: params[:q]),
+        style: "font-size:0.78rem; padding:0.25rem 0.65rem; border-radius:6px; border:1px solid #{current_filter.blank? ? '#18181b' : '#e4e4e7'}; background:#{current_filter.blank? ? '#18181b' : 'transparent'}; color:#{current_filter.blank? ? '#fff' : '#3f3f46'}; text-decoration:none; white-space:nowrap;" %>
+    <%= link_to "Em atividade", attendances_path(date: @selected_date, sector_id: params[:sector_id], inside: "1", q: params[:q]),
+        style: "font-size:0.78rem; padding:0.25rem 0.65rem; border-radius:6px; border:1px solid #{current_filter == '1' ? '#0ea5e9' : '#e4e4e7'}; background:#{current_filter == '1' ? '#0ea5e9' : 'transparent'}; color:#{current_filter == '1' ? '#fff' : '#3f3f46'}; text-decoration:none; white-space:nowrap;" %>
+    <%= link_to "Aguardando Check-in", attendances_path(date: @selected_date, sector_id: params[:sector_id], inside: "pending", q: params[:q]),
+        style: "font-size:0.78rem; padding:0.25rem 0.65rem; border-radius:6px; border:1px solid #{current_filter == 'pending' ? '#f59e0b' : '#e4e4e7'}; background:#{current_filter == 'pending' ? '#f59e0b' : 'transparent'}; color:#{current_filter == 'pending' ? '#fff' : '#3f3f46'}; text-decoration:none; white-space:nowrap;" %>
   </div>
+
   <%# Filtro setor %>
   <% if @sectors.any? %>
     <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
       <span style="font-size:0.78rem; font-weight:600; color:#71717a; white-space:nowrap; width:52px;">
         <i class="bi bi-grid-3x3-gap"></i> Setor:
       </span>
-      <%= link_to "Todos", attendances_path(inside: params[:inside], q: params[:q]),
+      <%= link_to "Todos", attendances_path(date: @selected_date, inside: params[:inside], q: params[:q]),
           style: "font-size:0.78rem; padding:0.25rem 0.65rem; border-radius:6px; border:1px solid #{params[:sector_id].blank? ? '#18181b' : '#e4e4e7'}; background:#{params[:sector_id].blank? ? '#18181b' : 'transparent'}; color:#{params[:sector_id].blank? ? '#fff' : '#3f3f46'}; text-decoration:none; white-space:nowrap;" %>
       <% @sectors.each do |sector| %>
         <% active_sector = params[:sector_id].to_s == sector.id.to_s %>
-        <%= link_to sector.name, attendances_path(sector_id: sector.id, inside: params[:inside], q: params[:q]),
+        <%= link_to sector.name, attendances_path(date: @selected_date, sector_id: sector.id, inside: params[:inside], q: params[:q]),
             style: "font-size:0.78rem; padding:0.25rem 0.65rem; border-radius:6px; border:1px solid #{active_sector ? '#18181b' : '#e4e4e7'}; background:#{active_sector ? '#18181b' : 'transparent'}; color:#{active_sector ? '#fff' : '#3f3f46'}; text-decoration:none; white-space:nowrap;" %>
       <% end %>
     </div>
@@ -95,13 +126,14 @@
       <i class="bi bi-person"></i> Nome:
     </span>
     <%= form_with url: attendances_path, method: :get, data: { turbo: false }, style: "margin:0; display:flex; gap:0.4rem; flex:1;" do |f| %>
+      <%= f.hidden_field :date,      value: @selected_date %>
       <%= f.hidden_field :sector_id, value: params[:sector_id] %>
       <%= f.hidden_field :inside,    value: params[:inside] %>
       <%= f.text_field :q, value: params[:q], placeholder: "Buscar colaborador...",
           style: "font-size:0.78rem; border:1px solid #e4e4e7; border-radius:6px; padding:0.25rem 0.65rem; color:#18181b; flex:1; max-width:260px;",
           autocomplete: "off" %>
       <% if params[:q].present? %>
-        <%= link_to attendances_path(sector_id: params[:sector_id], inside: params[:inside]),
+        <%= link_to attendances_path(date: @selected_date, sector_id: params[:sector_id], inside: params[:inside]),
             style: "font-size:0.78rem; padding:0.25rem 0.65rem; border-radius:6px; border:1px solid #e4e4e7; color:#71717a; text-decoration:none; display:inline-flex; align-items:center; gap:3px;" do %>
           <i class="bi bi-x"></i> Limpar
         <% end %>
@@ -110,102 +142,168 @@
   </div>
 </div>
 
-<%# Lista de presenças %>
-<% if @attendances.empty? %>
-  <div class="content-card" style="text-align:center; padding:3rem; color:#a1a1aa;">
-    <i class="bi bi-qr-code" style="font-size:2rem; display:block; margin-bottom:0.5rem;"></i>
-    <p style="margin:0; font-size:0.88rem;">Nenhum check-in registrado ainda.</p>
+<%# ── Seção: Aguardando Check-in ──────────────────────────────────────────── %>
+<% show_pending = params[:inside].blank? || params[:inside] == "pending" %>
+<% if show_pending && @not_checked_in.any? %>
+  <div style="margin-bottom:1rem;">
+    <div style="font-size:0.78rem; font-weight:700; color:#b45309; text-transform:uppercase; letter-spacing:0.06em; margin-bottom:0.5rem;">
+      <i class="bi bi-hourglass-split"></i> Aguardando Check-in — <%= @not_checked_in.size %>
+    </div>
+    <div style="display:flex; flex-direction:column; gap:0.4rem;">
+      <% @not_checked_in.each do |r| %>
+        <div class="content-card" style="padding:0.75rem 1.1rem; display:flex; align-items:center; gap:1rem; border-left:3px solid #f59e0b; opacity:0.85;">
+          <%# Avatar %>
+          <div style="width:38px; height:38px; border-radius:50%; background:#fef3c7; border:2px solid #fcd34d; display:flex; align-items:center; justify-content:center; font-size:0.72rem; font-weight:700; color:#92400e; flex-shrink:0;">
+            <%= r[:user].name.split.map(&:first).first(2).join.upcase %>
+          </div>
+          <%# Info %>
+          <div style="min-width:0; flex:1;">
+            <div style="font-size:0.86rem; font-weight:600; color:#18181b;"><%= r[:user].name %></div>
+            <div style="display:flex; align-items:center; gap:0.4rem; flex-wrap:wrap; margin-top:2px;">
+              <% if r[:team] %>
+                <span style="font-size:0.7rem; color:#71717a;"><i class="bi bi-grid-3x3-gap" style="font-size:0.6rem;"></i> <%= r[:team].sector&.name %></span>
+                <span style="color:#d4d4d8; font-size:0.65rem;">·</span>
+                <span style="font-size:0.7rem; color:#71717a;"><%= r[:team].name %></span>
+              <% end %>
+              <% if r[:credential_code].present? %>
+                <span style="color:#d4d4d8; font-size:0.65rem;">·</span>
+                <span style="font-size:0.68rem; font-family:monospace; color:#71717a;"><%= r[:credential_code] %></span>
+              <% end %>
+            </div>
+          </div>
+          <%# Horários de escala %>
+          <div style="text-align:right; flex-shrink:0;">
+            <% r[:shifts].each do |shift| %>
+              <div style="display:inline-flex; align-items:center; gap:0.3rem; background:#fef3c7; border:1px solid #fcd34d; border-radius:6px; padding:2px 8px; font-size:0.72rem; font-weight:600; color:#92400e; margin-bottom:2px;">
+                <i class="bi bi-clock" style="font-size:0.65rem;"></i>
+                <%= shift.start_time.strftime("%H:%M") %> – <%= shift.end_time.strftime("%H:%M") %>
+              </div>
+            <% end %>
+          </div>
+        </div>
+      <% end %>
+    </div>
   </div>
-<% else %>
-  <div style="display:flex; flex-direction:column; gap:0.5rem;">
-    <% @attendances.each_with_index do |att, idx| %>
-      <% credential_code = @credential_codes[att.user_id] %>
-      <div class="content-card" style="padding:0.9rem 1.1rem; display:flex; align-items:center; gap:1rem;">
+<% end %>
 
-        <%# Número de ordem %>
-        <div style="width:28px; text-align:center; font-size:0.7rem; font-weight:700; color:#a1a1aa; flex-shrink:0;">
-          <%= idx + 1 %>
-        </div>
-
-        <%# Avatar %>
-        <div style="width:42px; height:42px; border-radius:50%; background:#f4f4f5; border:2px solid #16a34a; display:flex; align-items:center; justify-content:center; font-size:0.75rem; font-weight:700; color:#52525b; flex-shrink:0; overflow:hidden;">
-          <% if att.user.avatar.attached? %>
-            <%= image_tag att.user.avatar, style:"width:100%;height:100%;object-fit:cover;" %>
-          <% else %>
-            <%= att.user.name.split.map(&:first).first(2).join.upcase %>
-          <% end %>
-        </div>
-
-        <%# Nome + equipe + setor %>
-        <div style="min-width:0; flex:1;">
-          <div style="font-size:0.88rem; font-weight:600; color:#18181b; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
-            <%= att.user.name %>
-          </div>
-          <div style="display:flex; align-items:center; gap:0.4rem; flex-wrap:wrap; margin-top:2px;">
-            <% if att.team %>
-              <span style="font-size:0.7rem; color:#71717a;">
-                <i class="bi bi-grid-3x3-gap" style="font-size:0.6rem;"></i> <%= att.team.sector&.name %>
-              </span>
-              <span style="color:#d4d4d8; font-size:0.65rem;">·</span>
-              <span style="font-size:0.7rem; color:#71717a;"><%= att.team.name %></span>
-            <% end %>
-            <% if credential_code.present? %>
-              <span style="color:#d4d4d8; font-size:0.65rem;">·</span>
-              <span style="font-size:0.68rem; font-family:monospace; color:#71717a; letter-spacing:0.04em;"><%= credential_code %></span>
-            <% end %>
-          </div>
-        </div>
-
-        <%# Horários check-in / check-out %>
-        <div style="text-align:right; flex-shrink:0; display:flex; flex-direction:column; gap:4px; align-items:flex-end;">
-          <div style="display:inline-flex; align-items:center; gap:0.35rem; background:#dcfce7; border:1px solid #86efac; border-radius:6px; padding:3px 10px;">
-            <i class="bi bi-box-arrow-in-right" style="color:#16a34a; font-size:0.7rem;"></i>
-            <span style="font-size:0.75rem; font-weight:600; color:#15803d;"><%= l(att.checked_in_at, format: :short) %></span>
-          </div>
-          <% if att.checked_out_at %>
-            <div style="display:inline-flex; align-items:center; gap:0.35rem; background:#fff7ed; border:1px solid #fed7aa; border-radius:6px; padding:3px 10px;">
-              <i class="bi bi-box-arrow-right" style="color:#c2410c; font-size:0.7rem;"></i>
-              <span style="font-size:0.75rem; font-weight:600; color:#c2410c;"><%= l(att.checked_out_at, format: :short) %></span>
-            </div>
-            <% dur_mins = ((att.checked_out_at - att.checked_in_at) / 60).to_i %>
-            <% dur_h = dur_mins / 60; dur_m = dur_mins % 60 %>
-            <div style="display:inline-flex; align-items:center; gap:0.35rem; background:#f5f3ff; border:1px solid #ddd6fe; border-radius:6px; padding:3px 10px;">
-              <i class="bi bi-clock" style="color:#7c3aed; font-size:0.7rem;"></i>
-              <span style="font-size:0.75rem; font-weight:600; color:#7c3aed;"><%= dur_h %>h<%= dur_m > 0 ? " #{dur_m}min" : "" %></span>
-            </div>
-          <% end %>
-          <% if att.checked_in_by %>
-            <div style="font-size:0.65rem; color:#a1a1aa;">por <%= att.checked_in_by.name.split.first %></div>
-          <% end %>
-        </div>
-
-        <%# Ações %>
-        <% if policy(att).destroy? %>
-          <div style="display:flex; flex-direction:column; gap:4px; flex-shrink:0;">
-            <% if att.checked_out_at %>
-              <%= button_to cancel_checkout_attendance_path(att), method: :delete,
-                  form: { data: { turbo_confirm: "Cancelar checkout de #{att.user.name}?" } },
-                  style: "background:#fff7ed; border:1px solid #fed7aa; border-radius:7px; padding:0.3rem 0.55rem; cursor:pointer; color:#c2410c; font-size:0.72rem; font-weight:600; white-space:nowrap;",
-                  title: "Cancelar checkout" do %>
-                <i class="bi bi-box-arrow-right"></i> Cancelar checkout
-              <% end %>
-            <% end %>
-            <% if att.checked_out_at %>
-              <span style="background:#f4f4f5; border:1px solid #e4e4e7; border-radius:7px; padding:0.3rem 0.55rem; color:#a1a1aa; font-size:0.72rem; font-weight:600; white-space:nowrap; cursor:not-allowed;" title="Cancele o checkout primeiro">
-                <i class="bi bi-box-arrow-in-right"></i> Cancelar check-in
-              </span>
-            <% else %>
-              <%= button_to attendance_path(att), method: :delete,
-                  form: { data: { turbo_confirm: "Cancelar check-in de #{att.user.name}?" } },
-                  style: "background:#fef2f2; border:1px solid #fecaca; border-radius:7px; padding:0.3rem 0.55rem; cursor:pointer; color:#dc2626; font-size:0.72rem; font-weight:600; white-space:nowrap;",
-                  title: "Cancelar check-in" do %>
-                <i class="bi bi-box-arrow-in-right"></i> Cancelar check-in
-              <% end %>
-            <% end %>
-          </div>
-        <% end %>
-
+<%# ── Lista de presenças ──────────────────────────────────────────────────── %>
+<% show_checkins = params[:inside] != "pending" %>
+<% if show_checkins %>
+  <% if @attendances.empty? %>
+    <div class="content-card" style="text-align:center; padding:3rem; color:#a1a1aa;">
+      <i class="bi bi-qr-code" style="font-size:2rem; display:block; margin-bottom:0.5rem;"></i>
+      <p style="margin:0; font-size:0.88rem;">Nenhum check-in registrado ainda.</p>
+    </div>
+  <% else %>
+    <% if params[:inside].blank? && @attendances.any? %>
+      <div style="font-size:0.78rem; font-weight:700; color:#15803d; text-transform:uppercase; letter-spacing:0.06em; margin-bottom:0.5rem;">
+        <i class="bi bi-check-circle"></i> Check-ins realizados — <%= @attendances.size %>
       </div>
     <% end %>
-  </div>
+    <div style="display:flex; flex-direction:column; gap:0.5rem;">
+      <% @attendances.each_with_index do |att, idx| %>
+        <% credential_code  = @credential_codes[att.user_id] %>
+        <% expected_end     = @expected_end_by_user[att.user_id] %>
+        <% is_inside        = att.checked_out_at.nil? %>
+        <div class="content-card" style="padding:0.9rem 1.1rem; display:flex; align-items:center; gap:1rem; <%= is_inside ? 'border-left:3px solid #0ea5e9;' : '' %>">
+
+          <%# Número de ordem %>
+          <div style="width:28px; text-align:center; font-size:0.7rem; font-weight:700; color:#a1a1aa; flex-shrink:0;">
+            <%= idx + 1 %>
+          </div>
+
+          <%# Avatar %>
+          <div style="width:42px; height:42px; border-radius:50%; background:#f4f4f5; border:2px solid <%= is_inside ? '#0ea5e9' : '#16a34a' %>; display:flex; align-items:center; justify-content:center; font-size:0.75rem; font-weight:700; color:#52525b; flex-shrink:0; overflow:hidden;">
+            <% if att.user.avatar.attached? %>
+              <%= image_tag att.user.avatar, style:"width:100%;height:100%;object-fit:cover;" %>
+            <% else %>
+              <%= att.user.name.split.map(&:first).first(2).join.upcase %>
+            <% end %>
+          </div>
+
+          <%# Nome + equipe + setor + credencial %>
+          <div style="min-width:0; flex:1;">
+            <div style="font-size:0.88rem; font-weight:600; color:#18181b; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+              <%= att.user.name %>
+            </div>
+            <div style="display:flex; align-items:center; gap:0.4rem; flex-wrap:wrap; margin-top:2px;">
+              <% if att.team %>
+                <span style="font-size:0.7rem; color:#71717a;">
+                  <i class="bi bi-grid-3x3-gap" style="font-size:0.6rem;"></i> <%= att.team.sector&.name %>
+                </span>
+                <span style="color:#d4d4d8; font-size:0.65rem;">·</span>
+                <span style="font-size:0.7rem; color:#71717a;"><%= att.team.name %></span>
+              <% end %>
+              <% if credential_code.present? %>
+                <span style="color:#d4d4d8; font-size:0.65rem;">·</span>
+                <span style="font-size:0.68rem; font-family:monospace; color:#71717a; letter-spacing:0.04em;"><%= credential_code %></span>
+              <% end %>
+            </div>
+          </div>
+
+          <%# Horários + previsão de saída %>
+          <div style="text-align:right; flex-shrink:0; display:flex; flex-direction:column; gap:4px; align-items:flex-end;">
+            <div style="display:inline-flex; align-items:center; gap:0.35rem; background:#dcfce7; border:1px solid #86efac; border-radius:6px; padding:3px 10px;">
+              <i class="bi bi-box-arrow-in-right" style="color:#16a34a; font-size:0.7rem;"></i>
+              <span style="font-size:0.75rem; font-weight:600; color:#15803d;"><%= l(att.checked_in_at, format: :short) %></span>
+            </div>
+            <% if att.checked_out_at %>
+              <div style="display:inline-flex; align-items:center; gap:0.35rem; background:#fff7ed; border:1px solid #fed7aa; border-radius:6px; padding:3px 10px;">
+                <i class="bi bi-box-arrow-right" style="color:#c2410c; font-size:0.7rem;"></i>
+                <span style="font-size:0.75rem; font-weight:600; color:#c2410c;"><%= l(att.checked_out_at, format: :short) %></span>
+              </div>
+              <% dur_mins = ((att.checked_out_at - att.checked_in_at) / 60).to_i %>
+              <% dur_h = dur_mins / 60; dur_m = dur_mins % 60 %>
+              <div style="display:inline-flex; align-items:center; gap:0.35rem; background:#f5f3ff; border:1px solid #ddd6fe; border-radius:6px; padding:3px 10px;">
+                <i class="bi bi-clock" style="color:#7c3aed; font-size:0.7rem;"></i>
+                <span style="font-size:0.75rem; font-weight:600; color:#7c3aed;"><%= dur_h %>h<%= dur_m > 0 ? " #{dur_m}min" : "" %></span>
+              </div>
+            <% elsif expected_end %>
+              <div style="display:inline-flex; align-items:center; gap:0.35rem; background:#eff6ff; border:1px solid #bfdbfe; border-radius:6px; padding:3px 10px;" title="Previsão de saída pela escala">
+                <i class="bi bi-clock-history" style="color:#2563eb; font-size:0.7rem;"></i>
+                <span style="font-size:0.72rem; font-weight:600; color:#2563eb;">saída prev. <%= expected_end.strftime("%H:%M") %></span>
+              </div>
+            <% end %>
+            <% if att.checked_in_by %>
+              <div style="font-size:0.65rem; color:#a1a1aa;">por <%= att.checked_in_by.name.split.first %></div>
+            <% end %>
+          </div>
+
+          <%# Ações %>
+          <div style="display:flex; flex-direction:column; gap:4px; flex-shrink:0;">
+            <%# Checkout inline para quem está dentro agora %>
+            <% if is_inside && policy(att).checkout? %>
+              <%= button_to manual_checkout_attendance_path(att), method: :patch,
+                  params: { sector_id: params[:sector_id], inside: params[:inside], q: params[:q] },
+                  form: { data: { turbo_confirm: "Registrar checkout de #{att.user.name}?" } },
+                  style: "background:#0ea5e9; border:none; border-radius:7px; padding:0.3rem 0.7rem; cursor:pointer; color:#fff; font-size:0.72rem; font-weight:600; white-space:nowrap;" do %>
+                <i class="bi bi-box-arrow-right"></i> Checkout
+              <% end %>
+            <% end %>
+            <% if policy(att).destroy? %>
+              <% if att.checked_out_at %>
+                <%= button_to cancel_checkout_attendance_path(att), method: :delete,
+                    form: { data: { turbo_confirm: "Cancelar checkout de #{att.user.name}?" } },
+                    style: "background:#fff7ed; border:1px solid #fed7aa; border-radius:7px; padding:0.3rem 0.55rem; cursor:pointer; color:#c2410c; font-size:0.72rem; font-weight:600; white-space:nowrap;" do %>
+                  <i class="bi bi-x"></i> Cancelar checkout
+                <% end %>
+              <% end %>
+              <% if att.checked_out_at %>
+                <span style="background:#f4f4f5; border:1px solid #e4e4e7; border-radius:7px; padding:0.3rem 0.55rem; color:#a1a1aa; font-size:0.72rem; font-weight:600; white-space:nowrap; cursor:not-allowed;" title="Cancele o checkout primeiro">
+                  <i class="bi bi-box-arrow-in-right"></i> Cancelar check-in
+                </span>
+              <% else %>
+                <%= button_to attendance_path(att), method: :delete,
+                    form: { data: { turbo_confirm: "Cancelar check-in de #{att.user.name}?" } },
+                    style: "background:#fef2f2; border:1px solid #fecaca; border-radius:7px; padding:0.3rem 0.55rem; cursor:pointer; color:#dc2626; font-size:0.72rem; font-weight:600; white-space:nowrap;" do %>
+                  <i class="bi bi-box-arrow-in-right"></i> Cancelar check-in
+                <% end %>
+              <% end %>
+            <% end %>
+          </div>
+
+        </div>
+      <% end %>
+    </div>
+  <% end %>
 <% end %>

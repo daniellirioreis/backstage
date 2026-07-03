@@ -3,9 +3,10 @@ class TeamMembership < ApplicationRecord
   belongs_to :user
   belongs_to :event_function, optional: true
 
+  enum :role, { member: 0, coordinator: 1 }, default: :member
+
   before_create :generate_credential_code
 
-  # credential_code já armazena o código completo: "BOO-XXXXXXXX"
   def full_credential_code
     credential_code
   end

@@ -12,14 +12,9 @@ class ShiftsController < ApplicationController
     @shifts_by_team = shifts.group_by(&:team)
 
     team_ids = @shifts_by_team.keys.compact.map(&:id)
-    memberships = TeamMembership.where(team_id: team_ids)
-    @credential_map = memberships.each_with_object({}) do |tm, h|
+    @credential_map = TeamMembership.where(team_id: team_ids)
+                                    .each_with_object({}) do |tm, h|
       h[[tm.team_id, tm.user_id]] = tm.full_credential_code
-    end
-    @shifts_by_team.keys.compact.each do |team|
-      if team.coordinator_id.present? && team.coordinator_full_credential_code.present?
-        @credential_map[[team.id, team.coordinator_id]] ||= team.coordinator_full_credential_code
-      end
     end
   end
 
@@ -88,14 +83,9 @@ class ShiftsController < ApplicationController
     @shifts_by_team = shifts.group_by(&:team).reject { |team, _| team.nil? }
 
     team_ids = @shifts_by_team.keys.map(&:id)
-    memberships = TeamMembership.where(team_id: team_ids)
-    @credential_map = memberships.each_with_object({}) do |tm, h|
+    @credential_map = TeamMembership.where(team_id: team_ids)
+                                    .each_with_object({}) do |tm, h|
       h[[tm.team_id, tm.user_id]] = tm.full_credential_code
-    end
-    @shifts_by_team.keys.each do |team|
-      if team.coordinator_id.present? && team.coordinator_full_credential_code.present?
-        @credential_map[[team.id, team.coordinator_id]] ||= team.coordinator_full_credential_code
-      end
     end
     @print_back_path = shifts_path
     @print_title = "Escalas · #{@event&.name}"

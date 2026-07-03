@@ -9,6 +9,7 @@ class Event < ApplicationRecord
                                 reject_if: :all_blank,
                                 allow_destroy: true
 
+  has_many :attendances, dependent: :destroy
   has_many :payments, dependent: :destroy
   has_many :event_days, dependent: :destroy
   accepts_nested_attributes_for :event_days,

@@ -112,16 +112,17 @@
 
       <%# Linhas de equipe %>
       <% teams.each_with_index do |team, i| %>
-        <% memberships = team.team_memberships.reject { |tm| tm.user_id == team.coordinator_id } %>
-        <% search_text = ([team.name, sector.name, team.coordinator&.name] + memberships.map { |tm| tm.user.name }).compact.join(" ").downcase %>
+        <% memberships = team.team_memberships.select(&:member?) %>
+        <% coord_tm    = team.team_memberships.find(&:coordinator?) %>
+        <% search_text = ([team.name, sector.name, coord_tm&.user&.name] + memberships.map { |tm| tm.user.name }).compact.join(" ").downcase %>
         <div class="team-card" data-search="<%= search_text %>"
              style="display: flex; align-items: center; gap: 1rem; padding: 0.75rem 1rem; <%= i < teams.size - 1 ? 'border-bottom: 1px solid #f4f4f5;' : '' %>">
 
           <%# Dados para o popover %>
           <% popover_members = [] %>
-          <% if team.coordinator %>
-            <% u = team.coordinator %>
-            <% popover_members << { name: u.name, initials: u.name.split.map(&:first).first(2).join.upcase, avatar_url: (url_for(u.avatar) if u.avatar.attached?), coordinator: true, credential: team.coordinator_full_credential_code, function: nil } %>
+          <% if coord_tm %>
+            <% u = coord_tm.user %>
+            <% popover_members << { name: u.name, initials: u.name.split.map(&:first).first(2).join.upcase, avatar_url: (url_for(u.avatar) if u.avatar.attached?), coordinator: true, credential: coord_tm.full_credential_code, function: nil } %>
           <% end %>
           <% memberships.each do |tm| %>
             <% u = tm.user %>
@@ -166,16 +167,31 @@
                   <%= fms.size %> <%= fn_name || "s/ função" %>
                 </span>
               <% end %>
+              <% can_edit_shifts = policy(Shift).create? %>
+              <% shift_date_params = { date: current_event.start_date, end_date: current_event.end_date } %>
               <% if @teams_with_shifts.include?(team.id) %>
-                <span onclick="openShiftModal('<%= edit_team_shifts_path(team_id: team.id, modal: 1) %>')"
-                      style="display: inline-flex; align-items: center; gap: 0.2rem; background: #f0fdf4; border: 1px solid #86efac; border-radius: 4px; padding: 1px 6px; font-size: 0.68rem; font-weight: 600; color: #15803d; cursor: pointer;">
-                  <i class="bi bi-calendar-check" style="font-size: 0.6rem;"></i> Com escala
-                </span>
+                <% if can_edit_shifts %>
+                  <span onclick="openShiftModal('<%= edit_team_shifts_path(team_id: team.id, modal: 1, **shift_date_params) %>')"
+                        style="display: inline-flex; align-items: center; gap: 0.2rem; background: #f0fdf4; border: 1px solid #86efac; border-radius: 4px; padding: 1px 6px; font-size: 0.68rem; font-weight: 600; color: #15803d; cursor: pointer;">
+                    <i class="bi bi-calendar-check" style="font-size: 0.6rem;"></i> Com escala
+                  </span>
+                <% else %>
+                  <span onclick="openShiftModal('<%= schedule_team_path(team, modal: 1) %>')"
+                        style="display: inline-flex; align-items: center; gap: 0.2rem; background: #f0fdf4; border: 1px solid #86efac; border-radius: 4px; padding: 1px 6px; font-size: 0.68rem; font-weight: 600; color: #15803d; cursor: pointer;">
+                    <i class="bi bi-calendar-check" style="font-size: 0.6rem;"></i> Com escala
+                  </span>
+                <% end %>
               <% else %>
-                <span onclick="openShiftModal('<%= new_shift_path(team_id: team.id, modal: 1) %>')"
-                      style="display: inline-flex; align-items: center; gap: 0.2rem; background: #fef2f2; border: 1px solid #fca5a5; border-radius: 4px; padding: 1px 6px; font-size: 0.68rem; font-weight: 600; color: #dc2626; cursor: pointer;">
-                  <i class="bi bi-calendar-x" style="font-size: 0.6rem;"></i> Sem escala
-                </span>
+                <% if can_edit_shifts %>
+                  <span onclick="openShiftModal('<%= new_shift_path(team_id: team.id, modal: 1, **shift_date_params) %>')"
+                        style="display: inline-flex; align-items: center; gap: 0.2rem; background: #fef2f2; border: 1px solid #fca5a5; border-radius: 4px; padding: 1px 6px; font-size: 0.68rem; font-weight: 600; color: #dc2626; cursor: pointer;">
+                    <i class="bi bi-calendar-x" style="font-size: 0.6rem;"></i> Sem escala
+                  </span>
+                <% else %>
+                  <span style="display: inline-flex; align-items: center; gap: 0.2rem; background: #f4f4f5; border: 1px solid #e4e4e7; border-radius: 4px; padding: 1px 6px; font-size: 0.68rem; font-weight: 600; color: #a1a1aa;">
+                    <i class="bi bi-calendar-x" style="font-size: 0.6rem;"></i> Sem escala
+                  </span>
+                <% end %>
               <% end %>
             </div>
           </div>

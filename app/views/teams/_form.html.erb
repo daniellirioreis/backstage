@@ -71,7 +71,7 @@
       </div>
 
       <div id="memberships-rows">
-        <% team.team_memberships.each do |tm| %>
+        <% team.team_memberships.reject(&:coordinator?).each do |tm| %>
           <%= f.fields_for :team_memberships, tm do |ff| %>
             <% current_fn = @event_functions.find { |ef| ef.id == ff.object.event_function_id } %>
             <div class="membership-row" style="display:grid;grid-template-columns:1fr 180px 36px;gap:0.5rem;align-items:center;padding:0.5rem 0.75rem;border-bottom:1px solid #f4f4f5;flex-wrap:wrap;">

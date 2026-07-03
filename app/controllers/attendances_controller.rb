@@ -14,16 +14,14 @@ class AttendancesController < ApplicationController
     authorize :attendance, :scan?
     code = params[:code].to_s.strip.upcase
 
-    membership      = TeamMembership.includes(user: { avatar_attachment: :blob }).find_by(credential_code: code)
-    team_from_coord = Team.includes(coordinator: { avatar_attachment: :blob }).find_by(coordinator_credential_code: code) unless membership
+    membership = TeamMembership.includes(user: { avatar_attachment: :blob }).find_by(credential_code: code)
 
-    user = membership&.user || team_from_coord&.coordinator
-    team = membership&.team || team_from_coord
-
-    unless user
+    unless membership
       return render json: { status: :not_found, message: "Credencial não encontrada (#{code})" }, status: :unprocessable_entity
     end
 
+    user = membership.user
+    team = membership.team
     avatar_url = user.avatar.attached? ? url_for(user.avatar) : nil
 
     # Verifica escala do colaborador para hoje
@@ -113,16 +111,14 @@ class AttendancesController < ApplicationController
     authorize :attendance, :checkout?
     code = params[:code].to_s.strip.upcase
 
-    membership      = TeamMembership.includes(user: { avatar_attachment: :blob }).find_by(credential_code: code)
-    team_from_coord = Team.includes(coordinator: { avatar_attachment: :blob }).find_by(coordinator_credential_code: code) unless membership
+    membership = TeamMembership.includes(user: { avatar_attachment: :blob }).find_by(credential_code: code)
 
-    user = membership&.user || team_from_coord&.coordinator
-    team = membership&.team || team_from_coord
-
-    unless user
+    unless membership
       return render json: { status: :not_found, message: "Credencial não encontrada (#{code})" }, status: :unprocessable_entity
     end
 
+    user     = membership.user
+    team     = membership.team
     avatar_url = user.avatar.attached? ? url_for(user.avatar) : nil
     initials   = user.name.split.map(&:first).first(2).join.upcase
 
@@ -169,6 +165,18 @@ class AttendancesController < ApplicationController
     render json: { status: :error, message: "#{e.class}: #{e.message}" }, status: :unprocessable_entity
   end
 
+  def manual_checkout
+    attendance = Attendance.find(params[:id])
+    authorize attendance, :checkout?
+    if attendance.checked_out_at.present?
+      redirect_to attendances_path, alert: "#{attendance.user.name} já possui checkout registrado."
+    else
+      attendance.update!(checked_out_at: Time.current, checked_out_by_id: current_user.id)
+      redirect_to attendances_path(sector_id: params[:sector_id], inside: params[:inside], q: params[:q]),
+        notice: "Checkout de #{attendance.user.name} registrado."
+    end
+  end
+
   def cancel_checkout
     attendance = Attendance.find(params[:id])
     authorize attendance, :destroy?
@@ -186,7 +194,17 @@ class AttendancesController < ApplicationController
   def index
     authorize :attendance, :index?
 
-    scope = Attendance.where(event: @event)
+    # ── Filtro de data ─────────────────────────────────────────────────────────
+    @event_days = EventDay.where(event: @event).order(:date)
+    @selected_date = if params[:date].present?
+                       Date.parse(params[:date]) rescue Date.today
+                     elsif @event_days.any? { |ed| ed.date == Date.today }
+                       Date.today
+                     else
+                       @event_days.first&.date || Date.today
+                     end
+
+    scope = Attendance.where(event: @event, checked_in_date: @selected_date)
                       .includes(:user, :checked_in_by, team: :sector)
 
     if params[:sector_id].present?
@@ -203,7 +221,7 @@ class AttendancesController < ApplicationController
 
     @attendances = scope.order(checked_in_at: :desc)
 
-    # Credential codes por user (membership ou coordenador)
+    # Credential codes por user — coordenadores agora são TeamMembership com role :coordinator
     user_ids = @attendances.map { |a| a.user_id }
     @credential_codes = TeamMembership
       .joins(team: :sector)
@@ -211,23 +229,48 @@ class AttendancesController < ApplicationController
       .pluck(:user_id, :credential_code)
       .to_h
 
-    # Coordenadores: pegar coordinator_credential_code da team
-    coordinator_codes = Team
-      .joins(:sector)
-      .where(sectors: { event_id: @event.id }, coordinator_id: user_ids)
-      .pluck(:coordinator_id, :coordinator_credential_code)
-      .to_h
-
-    @credential_codes = coordinator_codes.merge(@credential_codes)
-
-    # Totais para estatísticas
-    @total_collaborators = TeamMembership
-      .joins(team: :sector)
-      .where(sectors: { event_id: @event.id })
-      .count +
-      Team.joins(:sector).where(sectors: { event_id: @event.id }).where.not(coordinator_id: nil).count
+    # Totais para estatísticas (respeitam filtro de setor)
+    # Coordenadores agora são TeamMembership com role :coordinator — não precisa contar separado
+    membership_scope = TeamMembership.joins(team: :sector).where(sectors: { event_id: @event.id })
+    membership_scope = membership_scope.where(sectors: { id: params[:sector_id] }) if params[:sector_id].present?
+    @total_collaborators = membership_scope.count
 
     @sectors = Sector.where(event_id: @event.id).order(:name)
+
+    # Colaboradores escalados no dia selecionado mas sem check-in (respeita filtro de setor)
+    shifts_today = Shift.joins(:sector)
+                        .where(sectors: { event_id: @event.id })
+                        .where("shifts.date <= :day AND (shifts.end_date IS NULL OR shifts.end_date >= :day)", day: @selected_date)
+                        .includes(:user, team: :sector)
+    shifts_today = shifts_today.where(sectors: { id: params[:sector_id] }) if params[:sector_id].present?
+
+    checked_in_user_ids = Attendance.where(event: @event, checked_in_date: @selected_date).pluck(:user_id).to_set
+
+    # Horário previsto de saída por user (primeiro shift encontrado)
+    @expected_end_by_user = shifts_today.each_with_object({}) do |shift, h|
+      h[shift.user_id] ||= shift.end_time
+    end
+
+    # Agrupa por user e monta lista de não chegaram
+    not_in_codes = TeamMembership
+      .joins(team: :sector)
+      .where(sectors: { event_id: @event.id })
+      .pluck(:user_id, :credential_code)
+      .to_h
+
+    @not_checked_in = shifts_today
+      .reject { |s| checked_in_user_ids.include?(s.user_id) }
+      .group_by(&:user_id)
+      .map do |_uid, shifts|
+        s = shifts.first
+        {
+          user:            s.user,
+          team:            s.team,
+          shifts:          shifts,
+          credential_code: not_in_codes[s.user_id]
+        }
+      end
+      .sort_by { |r| r[:user].name }
   end
 
   private

@@ -1,3 +1,5 @@
+<% in_modal = params[:modal] == "1" %>
+
 <div class="page-header">
   <div style="display: flex; align-items: center; gap: 0.75rem;">
     <%= link_to team_path(@team), class: "btn-secondary", style: "padding: 0.35rem 0.6rem;" do %>
@@ -13,7 +15,7 @@
   </div>
 </div>
 
-<%= form_with url: schedule_team_path(@team), method: :post, local: true do |f| %>
+<%= form_with url: schedule_team_path(@team, modal: (in_modal ? "1" : nil)), method: :post, local: true do |f| %>
   <%# ── Período ──────────────────────────────────────────────────────────── %>
   <div class="content-card" style="margin-bottom: 1rem;">
     <h3 style="font-size: 0.82rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: #71717a; margin: 0 0 1rem;">
@@ -88,7 +90,7 @@
             <div style="flex: 1; min-width: 0;">
               <div style="font-size: 0.88rem; font-weight: 500; color: #18181b;">
                 <%= tm.user.name %>
-                <% if tm.user_id == @team.coordinator_id %>
+                <% if tm.coordinator? %>
                   <span style="font-size: 0.65rem; background: #fef3c7; color: #92400e; border: 1px solid #fcd34d; border-radius: 4px; padding: 1px 5px; margin-left: 4px;">Coordenador</span>
                 <% end %>
               </div>
@@ -104,8 +106,14 @@
     <button type="submit" class="btn-primary">
       <i class="bi bi-calendar-plus"></i> Criar Turnos
     </button>
-    <%= link_to team_path(@team), class: "btn-secondary" do %>
-      <%= t("actions.cancel") %>
+    <% if in_modal %>
+      <button type="button" class="btn-secondary" onclick="window.parent.closeShiftModal()">
+        <%= t("actions.cancel") %>
+      </button>
+    <% else %>
+      <%= link_to team_path(@team), class: "btn-secondary" do %>
+        <%= t("actions.cancel") %>
+      <% end %>
     <% end %>
   </div>
 <% end %>

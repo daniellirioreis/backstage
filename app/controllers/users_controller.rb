@@ -75,19 +75,13 @@ class UsersController < ApplicationController
                  .where(sectors: { event_id: event_id })
                  .includes(:sector)
                  .first
-    @is_coordinator = @team&.coordinator_id == @user.id
-    @badge_config   = @event&.badge_config || BadgeConfig.defaults
+    @badge_config = @event&.badge_config || BadgeConfig.defaults
 
-    if @is_coordinator
-      @credential_code     = @team&.coordinator_full_credential_code
-      @credential_qr_code  = @team&.coordinator_credential_code
-      @function_name       = nil
-    else
-      membership           = TeamMembership.includes(:event_function).find_by(team: @team, user: @user)
-      @credential_code     = membership&.full_credential_code
-      @credential_qr_code  = membership&.credential_code
-      @function_name       = membership&.event_function&.name
-    end
+    membership       = TeamMembership.includes(:event_function).find_by(team: @team, user: @user)
+    @is_coordinator  = membership&.coordinator?
+    @credential_code    = membership&.full_credential_code
+    @credential_qr_code = membership&.credential_code
+    @function_name      = membership&.event_function&.name
 
     respond_to do |format|
       format.html { render layout: "credential" }

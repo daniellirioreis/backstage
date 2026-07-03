@@ -89,6 +89,7 @@ Rails.application.routes.draw do
     end
     member do
       delete :cancel_checkout
+      patch  :manual_checkout
     end
   end
 

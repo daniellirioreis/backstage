@@ -200,34 +200,92 @@
 
     <%# Rodapé totais %>
     <% if total_assigned_cost > 0 %>
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-top:1rem; padding-top:0.75rem; border-top:1px solid #e4e4e7;">
-        <div style="display:flex; gap:1.5rem;">
-          <div>
-            <div style="font-size:0.68rem; font-weight:600; text-transform:uppercase; letter-spacing:0.05em; color:#a1a1aa; margin-bottom:1px;">Atribuído</div>
-            <div style="font-size:0.88rem; font-weight:700; color:<%= hc_total_color %>;">
-              <%= number_to_currency(total_assigned_cost, unit: "R$", separator: ",", delimiter: ".", precision: 2) %>
-            </div>
-          </div>
-          <div>
-            <div style="font-size:0.68rem; font-weight:600; text-transform:uppercase; letter-spacing:0.05em; color:#a1a1aa; margin-bottom:1px;">Planejado</div>
-            <div style="font-size:0.88rem; font-weight:700; color:#7c3aed;">
-              <%= number_to_currency(@plan_total_cost, unit: "R$", separator: ",", delimiter: ".", precision: 2) %>
-            </div>
-          </div>
-          <% gap = @plan_total_cost - total_assigned_cost %>
-          <% if gap > 0 %>
+      <%
+        covered_pct  = @plan_total_cost > 0 ? [(total_assigned_cost / @plan_total_cost * 100).round, 100].min : 0
+        payable_cost = @estimated_cost - @absent_cost.to_f
+        paid_pct     = payable_cost > 0 ? [(@total_paid / payable_cost * 100).round, 100].min : 0
+        gap          = @plan_total_cost - total_assigned_cost
+      %>
+      <div style="margin-top:1rem; padding-top:0.75rem; border-top:1px solid #e4e4e7;">
+        <div style="display:flex; justify-content:space-between; align-items:flex-end;">
+          <div style="display:flex; gap:1.5rem; flex-wrap:wrap;">
             <div>
-              <div style="font-size:0.68rem; font-weight:600; text-transform:uppercase; letter-spacing:0.05em; color:#a1a1aa; margin-bottom:1px;">Faltam</div>
-              <div style="font-size:0.88rem; font-weight:700; color:#dc2626;">
-                <%= number_to_currency(gap, unit: "R$", separator: ",", delimiter: ".", precision: 2) %>
+              <div style="font-size:0.68rem; font-weight:600; text-transform:uppercase; letter-spacing:0.05em; color:#a1a1aa; margin-bottom:1px;">Atribuído</div>
+              <div style="font-size:0.88rem; font-weight:700; color:<%= hc_total_color %>;">
+                <%= number_to_currency(total_assigned_cost, unit: "R$", separator: ",", delimiter: ".", precision: 2) %>
               </div>
             </div>
-          <% end %>
+            <div>
+              <div style="font-size:0.68rem; font-weight:600; text-transform:uppercase; letter-spacing:0.05em; color:#a1a1aa; margin-bottom:1px;">Planejado</div>
+              <div style="font-size:0.88rem; font-weight:700; color:#7c3aed;">
+                <%= number_to_currency(@plan_total_cost, unit: "R$", separator: ",", delimiter: ".", precision: 2) %>
+              </div>
+            </div>
+            <% if @total_paid > 0 %>
+              <div>
+                <div style="font-size:0.68rem; font-weight:600; text-transform:uppercase; letter-spacing:0.05em; color:#a1a1aa; margin-bottom:1px;">Pago</div>
+                <div style="font-size:0.88rem; font-weight:700; color:#15803d;">
+                  <%= number_to_currency(@total_paid, unit: "R$", separator: ",", delimiter: ".", precision: 2) %>
+                </div>
+              </div>
+              <% if @absent_cost.to_f > 0 %>
+                <div>
+                  <div style="font-size:0.68rem; font-weight:600; text-transform:uppercase; letter-spacing:0.05em; color:#a1a1aa; margin-bottom:1px;">Ausências</div>
+                  <div style="font-size:0.88rem; font-weight:700; color:#6b7280;" title="Custo não incorrido — colaboradores escalados que não compareceram">
+                    <%= number_to_currency(@absent_cost, unit: "R$", separator: ",", delimiter: ".", precision: 2) %>
+                    <span style="font-size:0.65rem; font-weight:500; color:#a1a1aa;">economia</span>
+                  </div>
+                </div>
+              <% end %>
+              <% truly_pending = @estimated_cost - @total_paid - @absent_cost.to_f %>
+              <% if truly_pending > 0.01 %>
+                <div>
+                  <div style="font-size:0.68rem; font-weight:600; text-transform:uppercase; letter-spacing:0.05em; color:#a1a1aa; margin-bottom:1px;">A pagar</div>
+                  <div style="font-size:0.88rem; font-weight:700; color:#d97706;">
+                    <%= number_to_currency(truly_pending, unit: "R$", separator: ",", delimiter: ".", precision: 2) %>
+                  </div>
+                </div>
+              <% end %>
+            <% elsif gap > 0 %>
+              <div>
+                <div style="font-size:0.68rem; font-weight:600; text-transform:uppercase; letter-spacing:0.05em; color:#a1a1aa; margin-bottom:1px;">Faltam</div>
+                <div style="font-size:0.88rem; font-weight:700; color:#dc2626;">
+                  <%= number_to_currency(gap, unit: "R$", separator: ",", delimiter: ".", precision: 2) %>
+                </div>
+              </div>
+            <% end %>
+          </div>
+          <span style="font-size:0.78rem; font-weight:700; color:<%= covered_pct >= 100 ? '#15803d' : covered_pct >= 60 ? '#92400e' : '#71717a' %>;">
+            <%= covered_pct %>% coberto
+          </span>
         </div>
-        <% covered_pct = @plan_total_cost > 0 ? [(total_assigned_cost / @plan_total_cost * 100).round, 100].min : 0 %>
-        <span style="font-size:0.78rem; font-weight:700; color:<%= covered_pct >= 100 ? '#15803d' : covered_pct >= 60 ? '#92400e' : '#71717a' %>;">
-          <%= covered_pct %>% coberto
-        </span>
+
+        <% if @total_paid > 0 %>
+          <%
+            absent_pct  = @estimated_cost > 0 ? [(@absent_cost.to_f / @estimated_cost * 100).round, 100].min : 0
+            truly_pending_pct = [100 - paid_pct - absent_pct, 0].max
+          %>
+          <div style="margin-top:0.75rem;">
+            <div style="display:flex; justify-content:space-between; margin-bottom:3px;">
+              <span style="font-size:0.68rem; color:#71717a;">Pagamentos realizados</span>
+              <span style="font-size:0.68rem; font-weight:700; color:#15803d;"><%= paid_pct %>%</span>
+            </div>
+            <div style="height:6px; background:#e4e4e7; border-radius:4px; overflow:hidden; display:flex;">
+              <div style="height:100%; width:<%= paid_pct %>%; background:#16a34a; transition:width 0.3s;"></div>
+              <div style="height:100%; width:<%= absent_pct %>%; background:#d1d5db; transition:width 0.3s;" title="Ausências"></div>
+              <div style="height:100%; width:<%= truly_pending_pct %>%; background:#fbbf24; transition:width 0.3s;" title="A pagar"></div>
+            </div>
+            <div style="display:flex; gap:0.75rem; margin-top:4px;">
+              <span style="font-size:0.62rem; color:#15803d; display:flex; align-items:center; gap:3px;"><span style="width:8px;height:8px;border-radius:50%;background:#16a34a;display:inline-block;"></span>Pago</span>
+              <% if absent_pct > 0 %>
+                <span style="font-size:0.62rem; color:#6b7280; display:flex; align-items:center; gap:3px;"><span style="width:8px;height:8px;border-radius:50%;background:#d1d5db;display:inline-block;"></span>Ausências</span>
+              <% end %>
+              <% if truly_pending_pct > 0 %>
+                <span style="font-size:0.62rem; color:#d97706; display:flex; align-items:center; gap:3px;"><span style="width:8px;height:8px;border-radius:50%;background:#fbbf24;display:inline-block;"></span>A pagar</span>
+              <% end %>
+            </div>
+          </div>
+        <% end %>
       </div>
     <% end %>
   </div>
@@ -273,7 +331,10 @@
 <% end %>
 
 <%# ── Coordenadores ───────────────────────────────────────────────────────── %>
-<% coordinators = @sectors.flat_map(&:teams).select(&:coordinator).map { |t| { team: t, user: t.coordinator } } %>
+<% coordinators = @sectors.flat_map(&:teams).select(&:coordinator).map { |t|
+     coord_tm = t.team_memberships.find(&:coordinator?)
+     { team: t, user: t.coordinator, credential: coord_tm&.credential_code }
+   } %>
 <% if coordinators.any? %>
   <div class="content-card" style="margin-bottom: 2rem;">
     <h2 style="font-size: 0.9rem; font-weight: 600; color: #18181b; margin: 0 0 0.75rem;">
@@ -314,7 +375,7 @@
               <% end %>
             </td>
             <td style="font-family: monospace; font-size: 0.78rem; color: #71717a;">
-              <%= c[:team].coordinator_full_credential_code || "—" %>
+              <%= c[:credential] || "—" %>
             </td>
           </tr>
         <% end %>

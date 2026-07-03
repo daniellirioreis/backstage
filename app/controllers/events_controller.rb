@@ -80,6 +80,30 @@ class EventsController < ApplicationController
     end
 
     @estimated_cost = @cost_by_function.values.sum
+
+    # ── Total pago (payments registrados para este evento) ────────────────────
+    @total_paid = Payment.where(event: @event).sum(:amount)
+
+    # ── Economia: colaboradores escalados que não compareceram ────────────────
+    if @event.closed?
+      attended_user_ids = Attendance.where(event: @event).where.not(checked_out_at: nil).pluck(:user_id).uniq
+
+      absent_cost = 0.0
+      shifts.each do |shift|
+        next if attended_user_ids.include?(shift.user_id)
+        next unless shift.team_id
+        membership = memberships_map[[shift.user_id, shift.team_id]]
+        next unless membership&.event_function
+        rate  = membership.event_function.hourly_rate.to_f
+        next if rate.zero?
+        s_min = shift.start_time.hour * 60 + shift.start_time.min
+        e_min = shift.end_time.hour   * 60 + shift.end_time.min
+        hours = e_min > s_min ? (e_min - s_min) / 60.0 : (1440 - s_min + e_min) / 60.0
+        days  = shift.end_date.present? ? (shift.end_date - shift.date).to_i + 1 : 1
+        absent_cost += hours * days * rate
+      end
+      @absent_cost = absent_cost
+    end
   end
 
   def print
