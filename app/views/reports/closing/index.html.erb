@@ -5,28 +5,57 @@
       <i class="bi bi-calendar-event" style="font-size:0.7rem;"></i> <%= @event.name %>
     </div>
   </div>
-  <div style="display:flex;gap:0.5rem;">
-    <%= link_to reports_closing_print_path(basis: @basis), class: "btn-secondary" do %>
+  <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
+    <%= link_to reports_closing_export_path(basis: @basis, sector_id: @sector_id), class: "btn-secondary" do %>
+      <i class="bi bi-file-earmark-spreadsheet"></i> Exportar CSV
+    <% end %>
+    <%= link_to reports_closing_print_path(basis: @basis, sector_id: @sector_id), class: "btn-secondary" do %>
       <i class="bi bi-printer"></i> Imprimir PDF
     <% end %>
   </div>
 </div>
 
-<%# Toggle de modo %>
+<%# Toggle de modo + filtro de setor %>
 <div class="content-card" style="padding:0.75rem 1rem;margin-bottom:1rem;display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap;">
   <span style="font-size:0.78rem;font-weight:700;color:#71717a;">Base de cálculo:</span>
   <div style="display:flex;gap:4px;background:#f4f4f5;border-radius:10px;padding:4px;">
-    <%= link_to reports_closing_path(basis: "shifts"),
+    <%= link_to reports_closing_path(basis: "cross", sector_id: @sector_id),
+        style: "font-size:0.8rem;font-weight:700;padding:0.3rem 0.9rem;border-radius:7px;text-decoration:none;transition:all 0.15s;" +
+               (@basis == "cross" ? "background:#18181b;color:#fff;" : "color:#71717a;") do %>
+      <i class="bi bi-intersect"></i> Cruzamento
+    <% end %>
+    <%= link_to reports_closing_path(basis: "shifts", sector_id: @sector_id),
         style: "font-size:0.8rem;font-weight:700;padding:0.3rem 0.9rem;border-radius:7px;text-decoration:none;transition:all 0.15s;" +
                (@basis == "shifts" ? "background:#18181b;color:#fff;" : "color:#71717a;") do %>
-      <i class="bi bi-calendar2-week"></i> Escalas cadastradas
+      <i class="bi bi-calendar2-week"></i> Escalas
     <% end %>
-    <%= link_to reports_closing_path(basis: "attendance"),
+    <%= link_to reports_closing_path(basis: "attendance", sector_id: @sector_id),
         style: "font-size:0.8rem;font-weight:700;padding:0.3rem 0.9rem;border-radius:7px;text-decoration:none;transition:all 0.15s;" +
                (@basis == "attendance" ? "background:#18181b;color:#fff;" : "color:#71717a;") do %>
-      <i class="bi bi-qr-code-scan"></i> Check-in / Check-out
+      <i class="bi bi-qr-code-scan"></i> Check-in/out
     <% end %>
   </div>
+
+  <% if @sectors.any? %>
+    <div style="display:flex;align-items:center;gap:0.4rem;margin-left:auto;">
+      <i class="bi bi-diagram-3" style="font-size:0.8rem;color:#71717a;"></i>
+      <span style="font-size:0.78rem;font-weight:700;color:#71717a;">Setor:</span>
+      <%= form_with url: reports_closing_path, method: :get, data: { turbo: false }, style: "margin:0;" do |f| %>
+        <%= f.hidden_field :basis, value: @basis %>
+        <%= f.select :sector_id,
+            [["Todos os setores", ""]] + @sectors.map { |s| [s.name, s.id] },
+            { selected: @sector_id },
+            onchange: "this.form.submit()",
+            style: "font-size:0.8rem;border:1px solid #e4e4e7;border-radius:7px;padding:0.3rem 0.6rem;color:#18181b;background:#fff;cursor:pointer;" %>
+      <% end %>
+    </div>
+    <% if @sector %>
+      <span style="font-size:0.72rem;background:#f0fdf4;border:1px solid #bbf7d0;color:#15803d;border-radius:6px;padding:2px 10px;font-weight:600;">
+        <i class="bi bi-funnel-fill"></i> <%= @sector.name %>
+      </span>
+    <% end %>
+  <% end %>
+
   <% if @basis == "attendance" %>
     <span style="font-size:0.72rem;color:#a1a1aa;">Considera apenas colaboradores com check-in e check-out registrados.</span>
   <% end %>
@@ -36,20 +65,228 @@
   <div class="content-card" style="text-align:center;padding:3rem;color:#a1a1aa;">
     <i class="bi bi-clipboard-x" style="font-size:2rem;display:block;margin-bottom:0.75rem;"></i>
     <p style="margin:0;font-size:0.9rem;">
-      <% if @basis == "attendance" %>
+      <% if @basis == "cross" %>
+        Nenhum dado de escala ou presença encontrado.
+      <% elsif @basis == "attendance" %>
         Nenhum colaborador com check-in e check-out registrados.
       <% else %>
         Nenhum turno cadastrado para este evento.
       <% end %>
     </p>
   </div>
+<% elsif @basis == "cross" %>
+
+<%# ── Tabela de Cruzamento ──────────────────────────────────────── %>
+<% paid_rows    = @rows.select { |r| @payment_by_user[r[:user].id] } %>
+<% pending_rows = @rows.reject { |r| @payment_by_user[r[:user].id] } %>
+<% present_rows     = @rows.select { |r| r[:status] == :present } %>
+<% absent_rows      = @rows.select { |r| r[:status] == :absent } %>
+<% unscheduled_rows = @rows.select { |r| r[:status] == :unscheduled } %>
+
+<%# Resumo de status %>
+<div class="content-card" style="padding:0.75rem 1.25rem;margin-bottom:1rem;display:flex;gap:1rem;flex-wrap:wrap;align-items:center;">
+  <% if present_rows.any? %>
+    <div style="display:flex;align-items:center;gap:0.4rem;">
+      <div style="width:9px;height:9px;border-radius:50%;background:#16a34a;"></div>
+      <span style="font-size:0.8rem;color:#15803d;font-weight:700;"><%= present_rows.size %> presente<%= present_rows.size == 1 ? "" : "s" %></span>
+    </div>
+    <div style="color:#e4e4e7;">|</div>
+  <% end %>
+  <% if absent_rows.any? %>
+    <div style="display:flex;align-items:center;gap:0.4rem;">
+      <div style="width:9px;height:9px;border-radius:50%;background:#ef4444;"></div>
+      <span style="font-size:0.8rem;color:#dc2626;font-weight:700;"><%= absent_rows.size %> ausente<%= absent_rows.size == 1 ? "" : "s" %></span>
+    </div>
+    <div style="color:#e4e4e7;">|</div>
+  <% end %>
+  <% if unscheduled_rows.any? %>
+    <div style="display:flex;align-items:center;gap:0.4rem;">
+      <div style="width:9px;height:9px;border-radius:50%;background:#d97706;"></div>
+      <span style="font-size:0.8rem;color:#b45309;font-weight:700;"><%= unscheduled_rows.size %> não escalado<%= unscheduled_rows.size == 1 ? "" : "s" %></span>
+      <span style="font-size:0.72rem;color:#a1a1aa;">(revisão necessária)</span>
+    </div>
+    <div style="color:#e4e4e7;">|</div>
+  <% end %>
+  <div style="display:flex;align-items:center;gap:0.4rem;">
+    <span style="font-size:0.8rem;color:#15803d;font-weight:700;"><%= paid_rows.size %> pago<%= paid_rows.size == 1 ? "" : "s" %></span>
+    <span style="font-size:0.8rem;color:#a1a1aa;">/</span>
+    <span style="font-size:0.8rem;color:#b45309;font-weight:700;"><%= pending_rows.size %> pendente<%= pending_rows.size == 1 ? "" : "s" %></span>
+  </div>
+  <div style="margin-left:auto;font-size:0.85rem;font-weight:700;color:#18181b;">Total: R$ <%= "%.2f" % @grand_total %></div>
+</div>
+
+<div class="content-card" style="padding:0;overflow:hidden;">
+  <table class="data-table" style="width:100%;">
+    <thead>
+      <tr>
+        <th>Colaborador</th>
+        <th>Função</th>
+        <th style="text-align:center;">Status</th>
+        <th style="text-align:right;">Hs. Escaladas</th>
+        <th style="text-align:right;">Hs. Reais</th>
+        <th style="text-align:right;">Hs. a Pagar</th>
+        <th style="text-align:right;">Valor/h</th>
+        <th style="text-align:right;">Total</th>
+        <th style="text-align:center;min-width:190px;">Pagamento</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @rows.each do |row| %>
+        <% payment = @payment_by_user[row[:user].id] %>
+        <% row_bg = case row[:status]
+                    when :absent       then "background:#fff5f5;"
+                    when :unscheduled  then "background:#fffbeb;"
+                    else ""
+                    end %>
+        <tr id="payment-row-<%= row[:user].id %>" style="<%= row_bg %>">
+          <td>
+            <div style="font-size:0.85rem;font-weight:600;color:#18181b;"><%= row[:user].name %></div>
+            <div style="font-size:0.72rem;color:#a1a1aa;"><%= row[:user].cpf.to_s.gsub(/(\d{3})(\d{3})(\d{3})(\d{2})/, '\1.\2.\3-\4') %></div>
+          </td>
+          <td>
+            <span style="font-size:0.75rem;font-weight:600;color:#7c3aed;background:#f5f3ff;border:1px solid #ddd6fe;border-radius:4px;padding:2px 7px;">
+              <%= row[:function_name] %>
+            </span>
+          </td>
+          <td style="text-align:center;">
+            <% case row[:status]
+               when :present %>
+              <span style="display:inline-flex;align-items:center;gap:4px;background:#dcfce7;border:1px solid #86efac;border-radius:6px;padding:3px 9px;font-size:0.72rem;font-weight:700;color:#15803d;">
+                <i class="bi bi-check-circle-fill"></i> Presente
+              </span>
+            <% when :absent %>
+              <span style="display:inline-flex;align-items:center;gap:4px;background:#fee2e2;border:1px solid #fca5a5;border-radius:6px;padding:3px 9px;font-size:0.72rem;font-weight:700;color:#dc2626;">
+                <i class="bi bi-x-circle-fill"></i> Ausente
+              </span>
+            <% when :unscheduled %>
+              <span style="display:inline-flex;align-items:center;gap:4px;background:#fff7ed;border:1px solid #fed7aa;border-radius:6px;padding:3px 9px;font-size:0.72rem;font-weight:700;color:#c2410c;">
+                <i class="bi bi-exclamation-triangle-fill"></i> Não escalado
+              </span>
+            <% end %>
+          </td>
+          <td style="text-align:right;">
+            <% if row[:scheduled_hours] > 0 %>
+              <span style="font-size:0.82rem;color:#52525b;"><%= format_hours(row[:scheduled_hours]) %></span>
+            <% else %>
+              <span style="color:#d4d4d8;font-size:0.8rem;">—</span>
+            <% end %>
+          </td>
+          <td style="text-align:right;">
+            <% if row[:actual_hours] %>
+              <span style="font-size:0.82rem;color:#52525b;"><%= format_hours(row[:actual_hours]) %></span>
+            <% else %>
+              <span style="color:#ef4444;font-size:0.8rem;" title="Sem registro de presença">—</span>
+            <% end %>
+          </td>
+          <td style="text-align:right;">
+            <span style="font-size:0.85rem;font-weight:700;color:<%= row[:payable_hours] > 0 ? '#18181b' : '#d4d4d8' %>;">
+              <%= format_hours(row[:payable_hours]) %>
+            </span>
+          </td>
+          <td style="text-align:right;">
+            <span style="font-size:0.82rem;color:#52525b;">
+              <% if row[:hourly_rate] > 0 %>R$ <%= "%.2f" % row[:hourly_rate] %><% else %>—<% end %>
+            </span>
+          </td>
+          <td style="text-align:right;">
+            <% if row[:total_value] > 0 %>
+              <span style="font-size:0.9rem;font-weight:700;color:#15803d;">R$ <%= "%.2f" % row[:total_value] %></span>
+            <% else %>
+              <span style="color:#d4d4d8;font-size:0.82rem;">R$ 0,00</span>
+            <% end %>
+          </td>
+          <td style="text-align:center;padding:0.5rem 0.75rem;">
+            <% if payment %>
+              <div style="display:flex;flex-direction:column;gap:4px;align-items:center;">
+                <span style="display:inline-flex;align-items:center;gap:0.3rem;background:#dcfce7;border:1px solid #86efac;border-radius:6px;padding:3px 10px;font-size:0.75rem;font-weight:700;color:#15803d;">
+                  <i class="bi bi-check-circle-fill"></i> Pago
+                </span>
+                <span style="font-size:0.68rem;color:#71717a;"><%= payment.method_label %> &middot; <%= l(payment.paid_at.to_date, format: :short) %></span>
+                <div style="display:flex;gap:6px;margin-top:2px;align-items:center;">
+                  <%= link_to receipt_reports_payment_path(payment), target: "_blank",
+                      style: "font-size:0.7rem;color:#3b82f6;text-decoration:none;display:inline-flex;align-items:center;gap:3px;font-weight:600;" do %>
+                    <i class="bi bi-file-earmark-text"></i> Comprovante
+                  <% end %>
+                  <%= button_to reports_payment_path(payment), method: :delete,
+                      style: "font-size:0.68rem;color:#ef4444;background:none;border:none;cursor:pointer;padding:0;display:inline-flex;align-items:center;gap:3px;font-weight:600;",
+                      data: { turbo: false, turbo_confirm: "Remover registro de pagamento de #{row[:user].name}?" } do %>
+                    <i class="bi bi-x-circle"></i> Desfazer
+                  <% end %>
+                </div>
+              </div>
+            <% elsif row[:status] == :absent %>
+              <span style="font-size:0.72rem;color:#a1a1aa;">Ausente — sem pagamento</span>
+            <% else %>
+              <%= form_with url: reports_payments_path, method: :post, scope: :payment, data: { turbo: false }, style: "display:inline;" do |f| %>
+                <%= f.hidden_field :user_id,       value: row[:user].id %>
+                <%= f.hidden_field :amount,        value: "%.2f" % row[:total_value] %>
+                <%= f.hidden_field :hours,         value: "%.2f" % row[:payable_hours] %>
+                <%= f.hidden_field :hourly_rate,   value: "%.2f" % row[:hourly_rate] %>
+                <%= f.hidden_field :function_name, value: row[:function_name] %>
+                <%= f.hidden_field :basis,         value: "cross" %>
+                <div style="display:flex;flex-direction:column;gap:5px;align-items:stretch;">
+                  <span style="display:inline-flex;align-items:center;gap:0.3rem;background:#fff7ed;border:1px solid #fed7aa;border-radius:6px;padding:3px 10px;font-size:0.75rem;font-weight:700;color:#b45309;justify-content:center;">
+                    <i class="bi bi-hourglass-split"></i> Pendente
+                  </span>
+                  <%= f.select :payment_method,
+                      [["PIX", "pix"], ["Dinheiro", "cash"], ["Transferência Bancária", "bank_transfer"]],
+                      {},
+                      style: "font-size:0.72rem;border:1px solid #e4e4e7;border-radius:5px;padding:3px 6px;color:#18181b;width:100%;" %>
+                  <%= f.text_field :notes, placeholder: "Observação (opcional)",
+                      style: "font-size:0.72rem;border:1px solid #e4e4e7;border-radius:5px;padding:3px 6px;color:#18181b;width:100%;box-sizing:border-box;" %>
+                  <%= f.submit "Marcar como Pago",
+                      style: "font-size:0.72rem;background:#18181b;color:#fff;border:none;border-radius:5px;padding:5px 12px;cursor:pointer;font-weight:600;width:100%;" %>
+                </div>
+              <% end %>
+            <% end %>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+    <tfoot>
+      <tr style="background:#f9fafb;border-top:2px solid #18181b;">
+        <td colspan="5" style="font-size:0.82rem;font-weight:700;color:#18181b;padding:0.75rem 1rem;">
+          Total — <%= @rows.size %> colaborador<%= @rows.size == 1 ? "" : "es" %>
+        </td>
+        <td style="text-align:right;font-size:0.85rem;font-weight:700;color:#18181b;">
+          <%= format_hours(@rows.sum { |r| r[:payable_hours] }) %>
+        </td>
+        <td></td>
+        <td style="text-align:right;font-size:0.95rem;font-weight:700;color:#15803d;">
+          R$ <%= "%.2f" % @grand_total %>
+        </td>
+        <td></td>
+      </tr>
+    </tfoot>
+  </table>
+</div>
+
 <% else %>
 
-<%# Resumo por função %>
+<%# Resumo por status de pagamento %>
+<% paid_rows    = @rows.select { |r| @payment_by_user[r[:user].id] } %>
+<% pending_rows = @rows.reject { |r| @payment_by_user[r[:user].id] } %>
+<div class="content-card" style="padding:0.75rem 1.25rem;margin-bottom:1rem;display:flex;gap:1rem;flex-wrap:wrap;align-items:center;">
+  <div style="display:flex;align-items:center;gap:0.5rem;">
+    <div style="width:10px;height:10px;border-radius:50%;background:#16a34a;"></div>
+    <span style="font-size:0.8rem;color:#15803d;font-weight:700;"><%= paid_rows.size %> pago<%= paid_rows.size == 1 ? "" : "s" %></span>
+    <span style="font-size:0.8rem;color:#15803d;">&middot; R$ <%= "%.2f" % paid_rows.sum { |r| r[:total_value] } %></span>
+  </div>
+  <div style="color:#e4e4e7;">|</div>
+  <div style="display:flex;align-items:center;gap:0.5rem;">
+    <div style="width:10px;height:10px;border-radius:50%;background:#d97706;"></div>
+    <span style="font-size:0.8rem;color:#b45309;font-weight:700;"><%= pending_rows.size %> pendente<%= pending_rows.size == 1 ? "" : "s" %></span>
+    <span style="font-size:0.8rem;color:#b45309;">&middot; R$ <%= "%.2f" % pending_rows.sum { |r| r[:total_value] } %></span>
+  </div>
+  <div style="color:#e4e4e7;">|</div>
+  <div style="font-size:0.8rem;font-weight:700;color:#18181b;">Total: R$ <%= "%.2f" % @grand_total %></div>
+</div>
+
+<%# Resumo por funcao %>
 <% by_function = @rows.group_by { |r| r[:function_name] }.sort_by { |fn, _| fn.to_s } %>
 <div class="content-card" style="margin-bottom:1rem;padding:1rem 1.25rem;">
   <div style="font-size:0.75rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#71717a;margin-bottom:0.75rem;">
-    <i class="bi bi-bar-chart-fill"></i> Resumo por Função
+    <i class="bi bi-bar-chart-fill"></i> Resumo por Funcao
   </div>
   <div style="display:flex;flex-wrap:wrap;gap:0.75rem;">
     <% by_function.each do |fn_name, fn_rows| %>
@@ -57,13 +294,13 @@
       <% fn_total = fn_rows.sum { |r| r[:total_value] } %>
       <div style="background:#f9fafb;border:1px solid #e4e4e7;border-radius:8px;padding:0.6rem 1rem;min-width:160px;">
         <div style="font-size:0.72rem;font-weight:700;color:#7c3aed;margin-bottom:0.25rem;"><%= fn_name %></div>
-        <div style="font-size:0.78rem;color:#3f3f46;"><%= fn_rows.size %> pessoa<%= fn_rows.size == 1 ? "" : "s" %> · <%= format_hours(fn_hours) %></div>
+        <div style="font-size:0.78rem;color:#3f3f46;"><%= fn_rows.size %> pessoa<%= fn_rows.size == 1 ? "" : "s" %> &middot; <%= format_hours(fn_hours) %></div>
         <div style="font-size:0.85rem;font-weight:700;color:#18181b;margin-top:0.1rem;">R$ <%= "%.2f" % fn_total %></div>
       </div>
     <% end %>
     <div style="background:#18181b;border-radius:8px;padding:0.6rem 1rem;min-width:160px;">
       <div style="font-size:0.72rem;font-weight:700;color:#a1a1aa;margin-bottom:0.25rem;">TOTAL GERAL</div>
-      <div style="font-size:0.78rem;color:#d4d4d8;"><%= @rows.size %> pessoas · <%= format_hours(@rows.sum { |r| r[:total_hours] }) %></div>
+      <div style="font-size:0.78rem;color:#d4d4d8;"><%= @rows.size %> pessoas &middot; <%= format_hours(@rows.sum { |r| r[:total_hours] }) %></div>
       <div style="font-size:0.85rem;font-weight:700;color:#fff;margin-top:0.1rem;">R$ <%= "%.2f" % @grand_total %></div>
     </div>
   </div>
@@ -75,7 +312,7 @@
     <thead>
       <tr>
         <th>Colaborador</th>
-        <th>Função</th>
+        <th>Funcao</th>
         <% if @basis == "attendance" %>
           <th style="text-align:center;">Data</th>
           <th style="text-align:center;">Check-in</th>
@@ -86,11 +323,13 @@
         <th style="text-align:right;">Total Horas</th>
         <th style="text-align:right;">Valor/h</th>
         <th style="text-align:right;">Total</th>
+        <th style="text-align:center;min-width:180px;">Pagamento</th>
       </tr>
     </thead>
     <tbody>
       <% @rows.each do |row| %>
-        <tr>
+        <% payment = @payment_by_user[row[:user].id] %>
+        <tr id="payment-row-<%= row[:user].id %>">
           <td>
             <div style="font-size:0.85rem;font-weight:600;color:#18181b;"><%= row[:user].name %></div>
             <div style="font-size:0.72rem;color:#a1a1aa;"><%= row[:user].cpf.gsub(/(\d{3})(\d{3})(\d{3})(\d{2})/, '\1.\2.\3-\4') %></div>
@@ -139,14 +378,38 @@
           </td>
           <td style="text-align:right;">
             <span style="font-size:0.82rem;color:#52525b;">
-              <% if row[:hourly_rate] > 0 %>R$ <%= "%.2f" % row[:hourly_rate] %><% else %><span style="color:#d4d4d8;">—</span><% end %>
+              <% if row[:hourly_rate] > 0 %>R$ <%= "%.2f" % row[:hourly_rate] %><% else %><span style="color:#d4d4d8;">-</span><% end %>
             </span>
           </td>
           <td style="text-align:right;">
             <% if row[:total_value] > 0 %>
               <span style="font-size:0.9rem;font-weight:700;color:#15803d;">R$ <%= "%.2f" % row[:total_value] %></span>
             <% else %>
-              <span style="color:#d4d4d8;font-size:0.82rem;">—</span>
+              <span style="color:#d4d4d8;font-size:0.82rem;">-</span>
+            <% end %>
+          </td>
+          <td style="text-align:center;padding:0.5rem 0.75rem;">
+            <% if payment %>
+              <div style="display:flex;flex-direction:column;gap:4px;align-items:center;">
+                <span style="display:inline-flex;align-items:center;gap:0.3rem;background:#dcfce7;border:1px solid #86efac;border-radius:6px;padding:3px 10px;font-size:0.75rem;font-weight:700;color:#15803d;">
+                  <i class="bi bi-check-circle-fill"></i> Pago
+                </span>
+                <span style="font-size:0.68rem;color:#71717a;"><%= payment.method_label %> &middot; <%= l(payment.paid_at.to_date, format: :short) %></span>
+                <%= link_to receipt_reports_payment_path(payment), target: "_blank",
+                    style: "font-size:0.7rem;color:#3b82f6;text-decoration:none;display:inline-flex;align-items:center;gap:3px;font-weight:600;margin-top:2px;" do %>
+                  <i class="bi bi-file-earmark-text"></i> Comprovante
+                <% end %>
+              </div>
+            <% else %>
+              <div style="display:flex;flex-direction:column;align-items:center;gap:4px;">
+                <span style="display:inline-flex;align-items:center;gap:0.3rem;background:#f4f4f5;border:1px solid #e4e4e7;border-radius:6px;padding:3px 10px;font-size:0.75rem;font-weight:700;color:#a1a1aa;">
+                  <i class="bi bi-hourglass-split"></i> Pendente
+                </span>
+                <%= link_to reports_closing_path(basis: "cross", sector_id: @sector_id),
+                    style: "font-size:0.68rem;color:#7c3aed;text-decoration:none;display:inline-flex;align-items:center;gap:3px;font-weight:600;" do %>
+                  <i class="bi bi-intersect"></i> Pagar via Cruzamento
+                <% end %>
+              </div>
             <% end %>
           </td>
         </tr>
@@ -155,7 +418,7 @@
     <tfoot>
       <tr style="background:#f9fafb;border-top:2px solid #18181b;">
         <td colspan="<%= @basis == 'attendance' ? 5 : 3 %>" style="font-size:0.82rem;font-weight:700;color:#18181b;padding:0.75rem 1rem;">
-          Total — <%= @rows.size %> colaboradore<%= @rows.size == 1 ? "" : "s" %>
+          Total - <%= @rows.size %> colaboradore<%= @rows.size == 1 ? "" : "s" %>
         </td>
         <td style="text-align:right;font-size:0.85rem;font-weight:700;color:#18181b;">
           <%= format_hours(@rows.sum { |r| r[:total_hours] }) %>
@@ -164,6 +427,7 @@
         <td style="text-align:right;font-size:0.95rem;font-weight:700;color:#15803d;">
           R$ <%= "%.2f" % @grand_total %>
         </td>
+        <td></td>
       </tr>
     </tfoot>
   </table>
@@ -171,8 +435,7 @@
 
 <% end %>
 
-<%# Pendentes de checkout (só no modo attendance) %>
-<% if @basis == "attendance" && @pending_rows.present? %>
+<% if @basis == "attendance" && defined?(@pending_rows) && @pending_rows.present? %>
 <div class="content-card" style="margin-top:1rem;padding:0;overflow:hidden;">
   <div style="padding:0.75rem 1rem;border-bottom:1px solid #e4e4e7;display:flex;align-items:center;gap:0.5rem;">
     <i class="bi bi-hourglass-split" style="color:#d97706;"></i>
@@ -182,14 +445,14 @@
     <thead>
       <tr>
         <th>Colaborador</th>
-        <th>Função</th>
+        <th>Funcao</th>
         <th style="text-align:center;">Check-in</th>
         <th>Status</th>
       </tr>
     </thead>
     <tbody>
       <% @pending_rows.each do |row| %>
-        <tr>
+        <tr id="pending-row-<%= row[:user].id %>">
           <td style="font-size:0.85rem;font-weight:600;color:#18181b;"><%= row[:user].name %></td>
           <td>
             <span style="font-size:0.75rem;font-weight:600;color:#7c3aed;background:#f5f3ff;border:1px solid #ddd6fe;border-radius:4px;padding:2px 7px;">
@@ -224,7 +487,7 @@
       </div>
     <% end %>
     <div style="flex:1;min-width:0;">
-      <div style="font-size:0.68rem;font-weight:700;color:#a1a1aa;text-transform:uppercase;letter-spacing:0.07em;">Empresa responsável</div>
+      <div style="font-size:0.68rem;font-weight:700;color:#a1a1aa;text-transform:uppercase;letter-spacing:0.07em;">Empresa responsavel</div>
       <div style="font-size:0.9rem;font-weight:700;color:#18181b;"><%= @company.name %></div>
       <div style="font-size:0.75rem;color:#71717a;display:flex;flex-wrap:wrap;gap:0.75rem;margin-top:0.15rem;">
         <% if @company.cnpj.present? %><span><i class="bi bi-file-earmark-text"></i> <%= @company.cnpj %></span><% end %>
@@ -235,11 +498,3 @@
     </div>
   </div>
 <% end %>
-
-<style>
-@media print {
-  .page-header button, .sidebar, nav { display: none !important; }
-  body { background: #fff !important; }
-  .content-card { box-shadow: none !important; border: 1px solid #e4e4e7 !important; }
-}
-</style>

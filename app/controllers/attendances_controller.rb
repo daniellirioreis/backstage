@@ -193,6 +193,10 @@ class AttendancesController < ApplicationController
       scope = scope.joins(team: :sector).where(sectors: { id: params[:sector_id] })
     end
 
+    if params[:q].present?
+      scope = scope.joins(:user).where("users.name ILIKE ?", "%#{params[:q].strip}%")
+    end
+
     if params[:inside] == "1"
       scope = scope.where(checked_out_at: nil)
     end

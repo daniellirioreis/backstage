@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_07_02_000010) do
+ActiveRecord::Schema[7.1].define(version: 2026_07_02_000013) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -137,6 +137,26 @@ ActiveRecord::Schema[7.1].define(version: 2026_07_02_000010) do
     t.string "code"
     t.bigint "company_id"
     t.index ["company_id"], name: "index_events_on_company_id"
+  end
+
+  create_table "payments", force: :cascade do |t|
+    t.bigint "event_id", null: false
+    t.bigint "user_id", null: false
+    t.bigint "paid_by_id", null: false
+    t.decimal "amount", precision: 10, scale: 2, null: false
+    t.decimal "hours", precision: 8, scale: 2
+    t.decimal "hourly_rate", precision: 10, scale: 2
+    t.string "function_name"
+    t.string "payment_method", default: "pix", null: false
+    t.string "basis", default: "shifts", null: false
+    t.text "notes"
+    t.datetime "paid_at", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["event_id", "user_id"], name: "index_payments_on_event_id_and_user_id", unique: true
+    t.index ["event_id"], name: "index_payments_on_event_id"
+    t.index ["paid_by_id"], name: "index_payments_on_paid_by_id"
+    t.index ["user_id"], name: "index_payments_on_user_id"
   end
 
   create_table "permissions", force: :cascade do |t|
@@ -277,6 +297,9 @@ ActiveRecord::Schema[7.1].define(version: 2026_07_02_000010) do
   add_foreign_key "event_days", "events"
   add_foreign_key "event_functions", "events"
   add_foreign_key "events", "companies"
+  add_foreign_key "payments", "events"
+  add_foreign_key "payments", "users"
+  add_foreign_key "payments", "users", column: "paid_by_id"
   add_foreign_key "permissions", "roles"
   add_foreign_key "sector_functions", "event_functions"
   add_foreign_key "sector_functions", "sectors"

@@ -1,3 +1,5 @@
+require "csv"
+
 module Reports
   class ClosingController < ApplicationController
     def index
@@ -7,7 +9,8 @@ module Reports
         redirect_to event_path(current_event), alert: "O Fechamento só está disponível após o evento ser encerrado."
         return
       end
-      @basis = params[:basis].presence_in(%w[shifts attendance]) || "shifts"
+      @basis      = params[:basis].presence_in(%w[shifts attendance cross]) || "cross"
+      @sector_id  = params[:sector_id].presence
       load_report_data
     end
 
@@ -18,7 +21,8 @@ module Reports
         redirect_to event_path(current_event), alert: "O Fechamento só está disponível após o evento ser encerrado."
         return
       end
-      @basis = params[:basis].presence_in(%w[shifts attendance]) || "shifts"
+      @basis     = params[:basis].presence_in(%w[shifts attendance cross]) || "cross"
+      @sector_id = params[:sector_id].presence
       load_report_data
       render pdf:         "fechamento-#{@event.name.parameterize}-#{@basis}",
              template:    "reports/closing/print",
@@ -30,18 +34,91 @@ module Reports
              disposition: "attachment"
     end
 
+    def export
+      return redirect_to(select_event_path, alert: "Selecione um evento para continuar.") unless current_event
+      authorize :report, :closing?
+      unless current_event.closed?
+        redirect_to event_path(current_event), alert: "O Fechamento só está disponível após o evento ser encerrado."
+        return
+      end
+      @basis     = params[:basis].presence_in(%w[shifts attendance cross]) || "cross"
+      @sector_id = params[:sector_id].presence
+      load_report_data
+
+      is_cross = @basis == "cross"
+      headers = ["Nome", "CPF", "Função", "Valor/hora (R$)"]
+      headers += ["Hs. Escaladas", "Hs. Reais", "Hs. a Pagar", "Status Presença"] if is_cross
+      headers += ["Total Horas", "Total a Pagar (R$)"] unless is_cross
+      headers += ["Total a Pagar (R$)"] if is_cross
+      headers += ["Status Pagamento", "Forma Pagamento", "Data Pagamento"]
+
+      csv_data = CSV.generate(col_sep: ";", encoding: "UTF-8") do |csv|
+        csv << headers
+        @rows.each do |row|
+          payment = @payment_by_user[row[:user].id]
+          hourly_rate = row[:hourly_rate].to_f
+          line = [
+            row[:user].name,
+            row[:user].cpf.to_s.gsub(/(\d{3})(\d{3})(\d{3})(\d{2})/, '\1.\2.\3-\4'),
+            row[:function_name],
+            format("%.2f", hourly_rate)
+          ]
+          if is_cross
+            status_label = { present: "Presente", absent: "Ausente", unscheduled: "Não escalado" }[row[:status]] || ""
+            line += [
+              format("%.2f", row[:scheduled_hours].to_f),
+              format("%.2f", row[:actual_hours].to_f),
+              format("%.2f", row[:payable_hours].to_f),
+              status_label,
+              format("%.2f", row[:total_value].to_f)
+            ]
+          else
+            line += [
+              format("%.2f", row[:total_hours].to_f),
+              format("%.2f", row[:total_value].to_f)
+            ]
+          end
+          line += [
+            payment ? "Pago" : "Pendente",
+            payment&.method_label || "",
+            payment ? l(payment.paid_at.to_date, format: :short) : ""
+          ]
+          csv << line
+        end
+      end
+
+      filename = "pagamentos-#{@event.name.parameterize}-#{@basis}-#{Date.today.strftime('%Y%m%d')}.csv"
+      send_data "\xEF\xBB\xBF" + csv_data,
+                filename: filename,
+                type: "text/csv; charset=utf-8",
+                disposition: "attachment"
+    end
+
     private
 
     def load_report_data
-      @event   = current_event
-      @company = @event.company
-      @basis == "attendance" ? load_by_attendance : load_by_shifts
+      @event    = current_event
+      @company  = @event.company
+      @sectors  = Sector.where(event: @event).order(:name)
+      @sector   = @sectors.find_by(id: @sector_id)
+      case @basis
+      when "attendance" then load_by_attendance
+      when "cross"      then load_by_cross
+      else                   load_by_shifts
+      end
+      load_payments
+    end
+
+    def load_payments
+      payments = Payment.where(event: @event).includes(:user)
+      @payment_by_user = payments.index_by(&:user_id)
     end
 
     # ── Opção 1: por escalas cadastradas ──────────────────────────
     def load_by_shifts
       shifts = Shift.joins(team: :sector)
                     .where(sectors: { event_id: @event.id })
+                    .then { |q| @sector ? q.where(sectors: { id: @sector.id }) : q }
                     .includes(:user, team: :sector)
 
       memberships    = event_memberships
@@ -71,6 +148,7 @@ module Reports
     def load_by_attendance
       attendances = Attendance.where(event: @event)
                               .where.not(checked_out_at: nil)
+                              .then { |q| @sector ? q.joins(:team).where(teams: { sector_id: @sector.id }) : q }
                               .includes(:user, :team)
 
       memberships    = event_memberships
@@ -104,6 +182,94 @@ module Reports
       end.sort_by { |r| r[:user].name }
 
       @rows        = rows.values.sort_by { |r| r[:user].name }
+      @grand_total = @rows.sum { |r| r[:total_value] }
+    end
+
+    # ── Opção 3: cruzamento escalas + presença ────────────────────
+    def load_by_cross
+      # Carregar shifts
+      shifts = Shift.joins(team: :sector)
+                    .where(sectors: { event_id: @event.id })
+                    .then { |q| @sector ? q.where(sectors: { id: @sector.id }) : q }
+                    .includes(:user, team: :sector)
+
+      # Carregar attendances com check-out
+      attendances = Attendance.where(event: @event)
+                              .where.not(checked_out_at: nil)
+                              .then { |q| @sector ? q.joins(:team).where(teams: { sector_id: @sector.id }) : q }
+                              .includes(:user, :team)
+
+      memberships    = event_memberships
+      membership_map = memberships.index_by { |tm| [tm.team_id, tm.user_id] }
+      fn_by_user     = memberships.index_by(&:user_id)
+
+      # Indexar shifts por user
+      shift_rows = {}
+      shifts.each do |shift|
+        tm    = membership_map[[shift.team_id, shift.user_id]]
+        fn    = tm&.event_function
+        hours = hours_from_shift(shift)
+        key   = shift.user_id
+        shift_rows[key] ||= { user: shift.user, fn: fn, scheduled_hours: 0.0, shift_entries: [] }
+        shift_rows[key][:scheduled_hours] += hours
+        shift_rows[key][:shift_entries] << { label: format_shift_label(shift), hours: hours }
+      end
+
+      # Indexar attendances por user
+      att_rows = {}
+      attendances.each do |att|
+        hours = (att.checked_out_at - att.checked_in_at) / 3600.0
+        key   = att.user_id
+        att_rows[key] ||= { user: att.user, actual_hours: 0.0, att_entries: [] }
+        att_rows[key][:actual_hours] += hours
+        att_rows[key][:att_entries] << {
+          date:        l(att.checked_in_date, format: :short),
+          checked_in:  att.checked_in_at.strftime("%H:%M"),
+          checked_out: att.checked_out_at.strftime("%H:%M"),
+          hours:       hours
+        }
+      end
+
+      all_user_ids = (shift_rows.keys + att_rows.keys).uniq
+      rows = all_user_ids.map do |uid|
+        sr  = shift_rows[uid]
+        ar  = att_rows[uid]
+        tm  = fn_by_user[uid]
+        fn  = sr&.dig(:fn) || tm&.event_function
+        user = sr&.dig(:user) || ar&.dig(:user)
+
+        scheduled = sr&.dig(:scheduled_hours) || 0.0
+        actual    = ar&.dig(:actual_hours)
+
+        status =
+          if sr && ar   then :present       # tem escala E presença
+          elsif sr       then :absent        # tem escala, SEM presença
+          else            :unscheduled      # tem presença, SEM escala
+          end
+
+        # Horas a pagar: presente → escala; ausente → 0; não escalado → real (gestor decide)
+        payable = case status
+                  when :present      then scheduled
+                  when :absent       then 0.0
+                  when :unscheduled  then actual || 0.0
+                  end
+
+        {
+          user:             user,
+          function_name:    fn&.name || "—",
+          hourly_rate:      fn&.hourly_rate || 0,
+          scheduled_hours:  scheduled,
+          actual_hours:     actual,
+          payable_hours:    payable,
+          total_value:      payable * (fn&.hourly_rate || 0),
+          status:           status,
+          shift_entries:    sr&.dig(:shift_entries) || [],
+          att_entries:      ar&.dig(:att_entries) || []
+        }
+      end
+
+      # Status priority: unscheduled primeiro (precisam atenção), depois ausentes, depois presentes
+      @rows        = rows.sort_by { |r| [[:unscheduled, :absent, :present].index(r[:status]), r[:user].name] }
       @grand_total = @rows.sum { |r| r[:total_value] }
     end
 

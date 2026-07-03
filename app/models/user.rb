@@ -7,6 +7,7 @@ class User < ApplicationRecord
   belongs_to :role
   has_many :team_memberships, dependent: :destroy
   has_many :teams, through: :team_memberships
+  has_many :payments, dependent: :destroy
   has_many :company_users, dependent: :destroy
   has_many :companies, through: :company_users
   has_one_attached :avatar

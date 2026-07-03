@@ -40,7 +40,7 @@
     <div data-controller="autocomplete-single"
          data-autocomplete-single-url-value="<%= search_users_path %>"
          data-autocomplete-single-param-value="team[coordinator_id]"
-         data-autocomplete-single-existing-value="<%= team.coordinator ? { id: team.coordinator.id, name: team.coordinator.name, cpf: team.coordinator.cpf.gsub(/(\d{3})(\d{3})(\d{3})(\d{2})/, '\1.\2.\3-\4') }.to_json : '{}'.to_json %>"
+         data-autocomplete-single-existing-value="<%= team.coordinator ? { id: team.coordinator.id, name: team.coordinator.name, cpf: team.coordinator.cpf.gsub(/(\d{3})(\d{3})(\d{3})(\d{2})/, '\1.\2.\3-\4') }.to_json : '{}' %>"
          style="position: relative; margin-bottom: 1.5rem;">
       <div data-autocomplete-single-target="selected"></div>
       <input type="text"

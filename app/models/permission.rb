@@ -14,6 +14,6 @@ class Permission < ApplicationRecord
     "events"      => %w[print],
     "users"       => %w[my_schedule],
     "attendances" => %w[scan checkout],
-    "reports"     => %w[closing]
+    "reports"     => %w[closing manage_payments]
   }.freeze
 end

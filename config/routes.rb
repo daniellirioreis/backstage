@@ -92,8 +92,18 @@ Rails.application.routes.draw do
     end
   end
 
-  get "reports/closing",       to: "reports/closing#index", as: :reports_closing
-  get "reports/closing/print", to: "reports/closing#print", as: :reports_closing_print
+  get "reports/closing",        to: "reports/closing#index",  as: :reports_closing
+  get "reports/closing/print",  to: "reports/closing#print",  as: :reports_closing_print
+  get "reports/closing/export", to: "reports/closing#export", as: :reports_closing_export
+
+  namespace :reports do
+    resources :payments, only: [:create, :destroy] do
+      member do
+        get  :receipt
+        get  :receipt_pdf, format: :pdf
+      end
+    end
+  end
 
   root "dashboard#index"
 end

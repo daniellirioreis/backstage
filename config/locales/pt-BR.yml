@@ -36,6 +36,17 @@ pt-BR:
     scan: "Registrar Check-in (QR)"
     checkout: "Registrar Check-out (QR)"
     closing: "Relatório de Fechamento"
+    manage_payments: "Gerenciar Pagamentos"
+
+  payment_methods:
+    pix: "PIX"
+    cash: "Dinheiro"
+    bank_transfer: "Transferência Bancária"
+
+  payment_bases:
+    shifts: "Por Escalas"
+    attendance: "Por Check-in/Check-out"
+    cross: "Cruzamento Escalas + Presença"
 
   badge_config:
     configure: "Configurar Credencial"

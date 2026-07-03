@@ -79,15 +79,35 @@
       <span style="font-size:0.78rem; font-weight:600; color:#71717a; white-space:nowrap; width:52px;">
         <i class="bi bi-grid-3x3-gap"></i> Setor:
       </span>
-      <%= link_to "Todos", attendances_path(inside: params[:inside]),
+      <%= link_to "Todos", attendances_path(inside: params[:inside], q: params[:q]),
           style: "font-size:0.78rem; padding:0.25rem 0.65rem; border-radius:6px; border:1px solid #{params[:sector_id].blank? ? '#18181b' : '#e4e4e7'}; background:#{params[:sector_id].blank? ? '#18181b' : 'transparent'}; color:#{params[:sector_id].blank? ? '#fff' : '#3f3f46'}; text-decoration:none; white-space:nowrap;" %>
       <% @sectors.each do |sector| %>
         <% active_sector = params[:sector_id].to_s == sector.id.to_s %>
-        <%= link_to sector.name, attendances_path(sector_id: sector.id, inside: params[:inside]),
+        <%= link_to sector.name, attendances_path(sector_id: sector.id, inside: params[:inside], q: params[:q]),
             style: "font-size:0.78rem; padding:0.25rem 0.65rem; border-radius:6px; border:1px solid #{active_sector ? '#18181b' : '#e4e4e7'}; background:#{active_sector ? '#18181b' : 'transparent'}; color:#{active_sector ? '#fff' : '#3f3f46'}; text-decoration:none; white-space:nowrap;" %>
       <% end %>
     </div>
   <% end %>
+
+  <%# Filtro colaborador %>
+  <div style="display:flex; align-items:center; gap:0.5rem;">
+    <span style="font-size:0.78rem; font-weight:600; color:#71717a; white-space:nowrap; width:52px;">
+      <i class="bi bi-person"></i> Nome:
+    </span>
+    <%= form_with url: attendances_path, method: :get, data: { turbo: false }, style: "margin:0; display:flex; gap:0.4rem; flex:1;" do |f| %>
+      <%= f.hidden_field :sector_id, value: params[:sector_id] %>
+      <%= f.hidden_field :inside,    value: params[:inside] %>
+      <%= f.text_field :q, value: params[:q], placeholder: "Buscar colaborador...",
+          style: "font-size:0.78rem; border:1px solid #e4e4e7; border-radius:6px; padding:0.25rem 0.65rem; color:#18181b; flex:1; max-width:260px;",
+          autocomplete: "off" %>
+      <% if params[:q].present? %>
+        <%= link_to attendances_path(sector_id: params[:sector_id], inside: params[:inside]),
+            style: "font-size:0.78rem; padding:0.25rem 0.65rem; border-radius:6px; border:1px solid #e4e4e7; color:#71717a; text-decoration:none; display:inline-flex; align-items:center; gap:3px;" do %>
+          <i class="bi bi-x"></i> Limpar
+        <% end %>
+      <% end %>
+    <% end %>
+  </div>
 </div>
 
 <%# Lista de presenças %>
