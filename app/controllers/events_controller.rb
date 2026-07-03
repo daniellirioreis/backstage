@@ -13,18 +13,47 @@ class EventsController < ApplicationController
     all_team_ids = @sectors.flat_map { |s| s.teams.map(&:id) }
     @teams_with_shifts = Shift.where(team_id: all_team_ids).distinct.pluck(:team_id).to_set
     @event_functions = @event.event_functions.order(:name)
-    @event_days = (@event.end_date - @event.start_date).to_i + 1
+    @event_days_records = @event.event_days.ordered
+    @total_event_hours  = @event.total_hours
+    # fallback: se ainda não há event_days, usa dias × 8h
+    if @total_event_hours.zero?
+      @total_event_hours = ((@event.end_date - @event.start_date).to_i + 1) * 8.0
+    end
 
-    # ── Estimativa de planejamento (sector_functions × dias × 8h) ─────────────
+    # ── Estimativa de planejamento (sector_functions × horas totais do evento) ─
     @plan_cost_by_function = Hash.new(0.0)
     @sectors.each do |sector|
       sector.sector_functions.each do |sf|
         ef = sf.event_function
         next unless ef.hourly_rate.to_f > 0
-        @plan_cost_by_function[ef] += sf.quantity * ef.hourly_rate.to_f * @event_days * 8
+        @plan_cost_by_function[ef] += sf.quantity * ef.hourly_rate.to_f * @total_event_hours
       end
     end
     @plan_total_cost = @plan_cost_by_function.values.sum
+
+    # ── Cruzamento: planejado vs atribuído por função ─────────────────────────
+    headcount_planned = Hash.new(0)
+    @sectors.each do |sector|
+      sector.sector_functions.each do |sf|
+        headcount_planned[sf.event_function] += sf.quantity
+      end
+    end
+
+    if headcount_planned.any?
+      headcount_assigned = TeamMembership
+        .joins(team: :sector)
+        .where(sectors: { event_id: @event.id })
+        .where.not(event_function_id: nil)
+        .group(:event_function_id)
+        .count
+      @headcount_by_function = headcount_planned
+        .sort_by { |ef, _| ef.name }
+        .each_with_object({}) do |(ef, planned), hash|
+          hash[ef] = { planned: planned, assigned: headcount_assigned[ef.id] || 0 }
+        end
+    else
+      @headcount_by_function = {}
+    end
 
     # ── Custo realizado (baseado nas escalas reais) ───────────────────────────
     shifts = Shift.joins(:sector).where(sectors: { event_id: @event.id }).includes(:sector)
@@ -123,7 +152,8 @@ class EventsController < ApplicationController
   def event_params
     params.require(:event).permit(
       :name, :code, :location, :start_date, :end_date, :status, :company_id,
-      event_functions_attributes: [:id, :name, :hourly_rate, :_destroy]
+      event_functions_attributes: [:id, :name, :hourly_rate, :_destroy],
+      event_days_attributes: [:id, :date, :hours, :_destroy]
     )
   end
 end

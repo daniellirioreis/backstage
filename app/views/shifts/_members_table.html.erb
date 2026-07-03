@@ -1,0 +1,345 @@
+<%
+  # selected_days: array de EventDay objects
+  # existing_shifts: { [user_id, date_str] => Shift } OU {} (novo)
+  # submitted_members: params preservados em caso de erro
+  per_day = selected_days.any?
+%>
+
+<div class="content-card" style="margin-bottom: 1.5rem; overflow-x: auto;">
+  <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem;">
+    <h3 style="font-size: 0.82rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: #71717a; margin: 0;">
+      <i class="bi bi-people"></i> Colaboradores — <strong style="color: #18181b;"><%= team.name %></strong>
+    </h3>
+    <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+      <label style="font-size: 0.78rem; color: #71717a; margin: 0;">Horário padrão:</label>
+      <input type="time" id="bulk_start"
+             style="font-size: 0.82rem; padding: 0.3rem 0.5rem; border: 1px solid #e4e4e7; border-radius: 6px; color: #18181b;"
+             oninput="document.querySelectorAll('.col-start').forEach(i=>i.value=this.value)">
+      <span style="color: #a1a1aa;">→</span>
+      <input type="time" id="bulk_end"
+             style="font-size: 0.82rem; padding: 0.3rem 0.5rem; border: 1px solid #e4e4e7; border-radius: 6px; color: #18181b;"
+             oninput="document.querySelectorAll('.col-end').forEach(i=>i.value=this.value)">
+      <span style="font-size: 0.72rem; color: #a1a1aa;">(aplica a todos)</span>
+    </div>
+  </div>
+
+  <% if team_members.empty? %>
+    <div style="text-align: center; color: #a1a1aa; font-size: 0.85rem; padding: 1.5rem;">
+      Nenhum colaborador nesta equipe.
+    </div>
+  <% else %>
+    <table class="data-table" style="min-width: 100%;">
+      <thead>
+        <tr>
+          <th style="width: 36px;">
+            <input type="checkbox" id="check_all" checked
+                   style="width: 15px; height: 15px; cursor: pointer;"
+                   onchange="document.querySelectorAll('.member-check').forEach(c=>c.checked=this.checked)">
+          </th>
+          <th>Colaborador</th>
+
+          <% if per_day %>
+            <% selected_days.each do |ed| %>
+              <th colspan="2" style="text-align: center; white-space: nowrap; background: #f5f3ff; color: #7c3aed; border-left: 2px solid #ddd6fe;">
+                <%= I18n.l(ed.date, format: "%a %d/%m") %>
+                <span style="font-size:0.68rem; font-weight:400; color:#a78bfa;">
+                  · <%= ed.hours.to_f == ed.hours.to_i ? ed.hours.to_i : ed.hours %>h
+                </span>
+              </th>
+            <% end %>
+          <% else %>
+            <th style="width: 130px;">Hora início</th>
+            <th style="width: 130px;">Hora fim</th>
+          <% end %>
+
+          <% if existing_shifts.any? %>
+            <th style="width: 70px; color: #a1a1aa; font-size: 0.72rem;">Status</th>
+          <% end %>
+        </tr>
+
+        <% if per_day %>
+          <tr style="background: #fafafa;">
+            <th></th>
+            <th></th>
+            <% selected_days.each do %>
+              <th style="font-size: 0.68rem; font-weight: 500; color: #a1a1aa; border-left: 2px solid #ddd6fe; width: 105px;">Início</th>
+              <th style="font-size: 0.68rem; font-weight: 500; color: #a1a1aa; width: 105px;">Fim</th>
+            <% end %>
+            <% if existing_shifts.any? %><th></th><% end %>
+          </tr>
+        <% end %>
+      </thead>
+
+      <tbody>
+        <% team_members.each do |tm| %>
+          <%
+            submitted   = submitted_members&.dig(tm.user_id.to_s)
+            was_checked = submitted_members.nil? || submitted&.dig("selected") == "1" || submitted&.dig(:selected) == "1"
+          %>
+          <tr>
+            <td>
+              <input type="checkbox" name="members[<%= tm.user_id %>][selected]" value="1"
+                     class="member-check" <%= "checked" if was_checked %>
+                     style="width: 15px; height: 15px; cursor: pointer;">
+            </td>
+
+            <%# Info do colaborador %>
+            <td>
+              <div style="display: flex; align-items: center; gap: 0.6rem;">
+                <div style="width: 28px; height: 28px; border-radius: 50%; overflow: hidden; background: #f4f4f5; border: 1px solid #e4e4e7; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                  <% if tm.user.avatar.attached? %>
+                    <%= image_tag tm.user.avatar, style: "width:100%;height:100%;object-fit:cover;" %>
+                  <% else %>
+                    <span style="font-size: 0.55rem; font-weight: 700; color: #52525b;">
+                      <%= tm.user.name.split.map(&:first).first(2).join.upcase %>
+                    </span>
+                  <% end %>
+                </div>
+                <div>
+                  <div style="font-size: 0.83rem; font-weight: 500; color: #18181b; white-space: nowrap;">
+                    <%= tm.user.name %>
+                    <% if tm.user_id == team.coordinator_id %>
+                      <span style="font-size: 0.6rem; background: #fef3c7; color: #92400e; border: 1px solid #fcd34d; border-radius: 4px; padding: 1px 4px;">Coord.</span>
+                    <% end %>
+                  </div>
+                  <% if tm.event_function.present? %>
+                    <span style="font-size:0.65rem; color:#7c3aed; font-weight:600; background:#f5f3ff; border:1px solid #ddd6fe; border-radius:3px; padding:0 4px;"><%= tm.event_function.name %></span>
+                  <% end %>
+                </div>
+              </div>
+            </td>
+
+            <% if per_day %>
+              <% selected_days.each do |ed| %>
+                <%
+                  date_str  = ed.date.to_s
+                  existing  = existing_shifts[[tm.user_id, date_str]]
+                  sub_day   = submitted&.dig(date_str)
+                  start_val = sub_day&.dig("start_time") || sub_day&.dig(:start_time) ||
+                              existing&.start_time&.strftime("%H:%M") || ""
+                  end_val   = sub_day&.dig("end_time")   || sub_day&.dig(:end_time)   ||
+                              existing&.end_time&.strftime("%H:%M")   || ""
+                %>
+                <td style="border-left: 2px solid #ddd6fe; padding: 0.3rem 0.4rem;">
+                  <input type="time"
+                         name="members[<%= tm.user_id %>][<%= date_str %>][start_time]"
+                         value="<%= start_val %>"
+                         class="col-start form-control day-time-pair"
+                         data-max-hours="<%= ed.hours %>"
+                         data-pair-role="start"
+                         data-date-label="<%= I18n.l(ed.date, format: '%a %d/%m') %>"
+                         style="padding: 0.25rem 0.4rem; font-size: 0.8rem; min-width: 95px;">
+                </td>
+                <td style="padding: 0.3rem 0.4rem;">
+                  <input type="time"
+                         name="members[<%= tm.user_id %>][<%= date_str %>][end_time]"
+                         value="<%= end_val %>"
+                         class="col-end form-control day-time-pair"
+                         data-max-hours="<%= ed.hours %>"
+                         data-pair-role="end"
+                         data-date-label="<%= I18n.l(ed.date, format: '%a %d/%m') %>"
+                         style="padding: 0.25rem 0.4rem; font-size: 0.8rem; min-width: 95px;">
+                </td>
+              <% end %>
+
+              <% if existing_shifts.any? %>
+                <td style="text-align: center;">
+                  <% days_saved = selected_days.count { |ed| existing_shifts[[tm.user_id, ed.date.to_s]] } %>
+                  <% if days_saved == selected_days.size %>
+                    <span style="font-size:0.65rem; font-weight:600; color:#15803d; background:#dcfce7; border:1px solid #86efac; border-radius:4px; padding:1px 6px; white-space:nowrap;">
+                      <i class="bi bi-check2"></i> salvo
+                    </span>
+                  <% elsif days_saved > 0 %>
+                    <span style="font-size:0.65rem; font-weight:600; color:#92400e; background:#fef3c7; border:1px solid #fcd34d; border-radius:4px; padding:1px 6px; white-space:nowrap;">
+                      <%= days_saved %>/<%= selected_days.size %>
+                    </span>
+                  <% else %>
+                    <span style="font-size:0.65rem; font-weight:600; color:#92400e; background:#fef3c7; border:1px solid #fcd34d; border-radius:4px; padding:1px 6px; white-space:nowrap;">
+                      <i class="bi bi-plus"></i> novo
+                    </span>
+                  <% end %>
+                </td>
+              <% end %>
+
+            <% else %>
+              <%# Modo legado: um único par de horários %>
+              <%
+                existing  = existing_shifts[tm.user_id]
+                start_val = submitted&.dig("start_time") || submitted&.dig(:start_time) ||
+                            existing&.start_time&.strftime("%H:%M") || ""
+                end_val   = submitted&.dig("end_time")   || submitted&.dig(:end_time)   ||
+                            existing&.end_time&.strftime("%H:%M")   || ""
+              %>
+              <td>
+                <input type="time" name="members[<%= tm.user_id %>][start_time]"
+                       value="<%= start_val %>" class="col-start form-control"
+                       style="padding: 0.3rem 0.5rem; font-size: 0.82rem;">
+              </td>
+              <td>
+                <input type="time" name="members[<%= tm.user_id %>][end_time]"
+                       value="<%= end_val %>" class="col-end form-control"
+                       style="padding: 0.3rem 0.5rem; font-size: 0.82rem;">
+              </td>
+              <% if existing_shifts.any? %>
+                <td style="text-align: center;">
+                  <% if existing %>
+                    <span style="font-size:0.65rem; font-weight:600; color:#15803d; background:#dcfce7; border:1px solid #86efac; border-radius:4px; padding:1px 6px;"><i class="bi bi-check2"></i> salvo</span>
+                  <% else %>
+                    <span style="font-size:0.65rem; font-weight:600; color:#92400e; background:#fef3c7; border:1px solid #fcd34d; border-radius:4px; padding:1px 6px;"><i class="bi bi-plus"></i> novo</span>
+                  <% end %>
+                </td>
+              <% end %>
+            <% end %>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  <% end %>
+</div>
+
+<% if per_day %>
+<div id="duration-error-box" style="display:none; background:#fef2f2; border:1px solid #fca5a5; border-radius:8px; padding:0.75rem 1rem; margin-top:0.5rem;">
+  <div style="font-weight:700; color:#dc2626; font-size:0.85rem; margin-bottom:0.25rem;">
+    <i class="bi bi-clock-fill"></i> Horário inválido
+  </div>
+  <div id="duration-error-list" style="font-size:0.8rem; color:#991b1b;"></div>
+</div>
+
+<script>
+(function () {
+  // Valida duração de cada par início/fim contra o limite do dia (data-max-hours)
+  function validateDurations(form) {
+    var errors = [];
+
+    // Agrupa inputs por (user_id, date): encontra pares start+end na mesma célula (mesma linha, mesma coluna)
+    form.querySelectorAll('input.day-time-pair[data-pair-role="start"]').forEach(function (startInput) {
+      // O end_time está na próxima <td>
+      var startTd = startInput.closest('td');
+      var endTd   = startTd && startTd.nextElementSibling;
+      var endInput = endTd && endTd.querySelector('input.day-time-pair[data-pair-role="end"]');
+      if (!endInput) return;
+
+      // Verifica se o colaborador desta linha está marcado
+      var row   = startInput.closest('tr');
+      var check = row && row.querySelector('.member-check');
+      if (check && !check.checked) {
+        // Reseta bordas
+        startInput.style.borderColor = '';
+        endInput.style.borderColor   = '';
+        return;
+      }
+
+      var sv = startInput.value;
+      var ev = endInput.value;
+      if (!sv || !ev) {
+        startInput.style.borderColor = '';
+        endInput.style.borderColor   = '';
+        return;
+      }
+
+      var maxHours  = parseFloat(startInput.getAttribute('data-max-hours') || '0');
+      var dateLabel = startInput.getAttribute('data-date-label') || '';
+
+      var sp = sv.split(':').map(Number);
+      var ep = ev.split(':').map(Number);
+      var startMin = sp[0] * 60 + sp[1];
+      var endMin   = ep[0] * 60 + ep[1];
+
+      // Duração: se end <= start assume overnight (+24h)
+      var durationMin = endMin > startMin
+        ? endMin - startMin
+        : (endMin === startMin ? 0 : (1440 - startMin) + endMin);
+
+      var maxMin = maxHours * 60;
+
+      if (durationMin === 0) {
+        startInput.style.borderColor = '#ef4444';
+        endInput.style.borderColor   = '#ef4444';
+        errors.push('<strong>' + dateLabel + '</strong>: início e fim iguais');
+      } else if (durationMin > maxMin) {
+        startInput.style.borderColor = '#ef4444';
+        endInput.style.borderColor   = '#ef4444';
+        var dh = Math.floor(durationMin / 60);
+        var dm = durationMin % 60;
+        var durStr = dm === 0 ? dh + 'h' : dh + 'h' + dm + 'min';
+        var limStr = maxHours === Math.floor(maxHours) ? Math.floor(maxHours) + 'h' : maxHours + 'h';
+        errors.push('<strong>' + dateLabel + '</strong>: ' + durStr + ' excede o limite de ' + limStr);
+      } else {
+        startInput.style.borderColor = '';
+        endInput.style.borderColor   = '';
+      }
+    });
+
+    var box  = document.getElementById('duration-error-box');
+    var list = document.getElementById('duration-error-list');
+    if (!box || !list) return errors.length === 0;
+
+    if (errors.length > 0) {
+      list.innerHTML = errors.map(function(e) { return '<div style="padding:2px 0;">' + e + '</div>'; }).join('');
+      box.style.display = 'block';
+      box.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    } else {
+      box.style.display = 'none';
+    }
+
+    return errors.length === 0;
+  }
+
+  // Sugere hora fim quando o usuário preenche hora início (só se fim estiver vazio)
+  function suggestEndTime(startInput) {
+    var maxHours = parseFloat(startInput.getAttribute('data-max-hours') || '0');
+    if (!maxHours || !startInput.value) return;
+
+    var startTd  = startInput.closest('td');
+    var endTd    = startTd && startTd.nextElementSibling;
+    var endInput = endTd && endTd.querySelector('input.day-time-pair[data-pair-role="end"]');
+    if (!endInput || endInput.value) return; // só sugere se fim estiver vazio
+
+    var sp = startInput.value.split(':').map(Number);
+    var totalMin = sp[0] * 60 + sp[1] + Math.round(maxHours * 60);
+    var endH = Math.floor(totalMin / 60) % 24;
+    var endM = totalMin % 60;
+    endInput.value = String(endH).padStart(2, '0') + ':' + String(endM).padStart(2, '0');
+  }
+
+  // Sugere para o horário padrão (bulk) também
+  var bulkStart = document.getElementById('bulk_start');
+  var bulkEnd   = document.getElementById('bulk_end');
+  if (bulkStart && bulkEnd) {
+    bulkStart.addEventListener('change', function () {
+      if (!bulkStart.value || bulkEnd.value) return;
+      // Pega max-hours do primeiro input de início disponível para estimar
+      var first = document.querySelector('input.day-time-pair[data-pair-role="start"]');
+      if (!first) return;
+      var maxHours = parseFloat(first.getAttribute('data-max-hours') || '0');
+      if (!maxHours) return;
+      var sp = bulkStart.value.split(':').map(Number);
+      var totalMin = sp[0] * 60 + sp[1] + Math.round(maxHours * 60);
+      var endH = Math.floor(totalMin / 60) % 24;
+      var endM = totalMin % 60;
+      bulkEnd.value = String(endH).padStart(2, '0') + ':' + String(endM).padStart(2, '0');
+      // Propaga para todos os .col-end vazios
+      document.querySelectorAll('.col-end').forEach(function(i) { if (!i.value) i.value = bulkEnd.value; });
+    });
+  }
+
+  // Revalida ao mudar qualquer horário (feedback imediato) + sugere fim ao preencher início
+  document.addEventListener('change', function (e) {
+    if (!e.target.classList.contains('day-time-pair')) return;
+    if (e.target.getAttribute('data-pair-role') === 'start') suggestEndTime(e.target);
+    var form = e.target.closest('form');
+    if (form) validateDurations(form);
+  });
+
+  // Bloqueia submit se houver erros
+  document.addEventListener('submit', function (e) {
+    var form = e.target;
+    if (!form.querySelector('input.day-time-pair')) return;
+    if (!validateDurations(form)) {
+      e.preventDefault();
+      e.stopImmediatePropagation();
+    }
+  }, true);
+})();
+</script>
+<% end %>

@@ -45,6 +45,63 @@
       </div>
     </div>
 
+    <%# ── Dias do evento ─────────────────────────────────────────────────── %>
+    <div style="border-top: 1px solid #f4f4f5; padding-top: 1.25rem; margin-top: 0.5rem; margin-bottom: 1.25rem;">
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:0.75rem;">
+        <div style="font-size:0.88rem; font-weight:700; color:#18181b;">
+          <i class="bi bi-calendar3"></i> Duração por dia
+        </div>
+        <button type="button" onclick="autoPopulateDays()" class="btn-secondary" style="font-size:0.78rem; padding:0.3rem 0.7rem;">
+          <i class="bi bi-magic"></i> Gerar a partir das datas
+        </button>
+      </div>
+
+      <div id="ed-rows">
+        <% event.event_days.ordered.each do |ed| %>
+          <%= f.fields_for :event_days, ed do |ff| %>
+            <div class="ed-row" style="display:flex; gap:0.6rem; align-items:center; margin-bottom:0.4rem;">
+              <%= ff.date_field :date, class: "form-control", style: "max-width:160px;" %>
+              <div style="position:relative; max-width:120px;">
+                <%= ff.number_field :hours, class: "form-control", step: "0.5", min: "0.5", max: "24",
+                      style: "padding-right:2rem;" %>
+                <span style="position:absolute; right:10px; top:50%; transform:translateY(-50%); font-size:0.78rem; color:#71717a; pointer-events:none;">h</span>
+              </div>
+              <% if ed.persisted? %>
+                <%= ff.check_box :_destroy, { style: "display:none;", class: "ed-destroy-cb" }, "1", "0" %>
+                <button type="button" onclick="toggleEdDestroy(this)" class="btn-danger" style="padding:0.3rem 0.55rem; font-size:0.8rem;">
+                  <i class="bi bi-x"></i>
+                </button>
+              <% else %>
+                <button type="button" onclick="this.closest('.ed-row').remove()" class="btn-danger" style="padding:0.3rem 0.55rem; font-size:0.8rem;">
+                  <i class="bi bi-x"></i>
+                </button>
+              <% end %>
+            </div>
+          <% end %>
+        <% end %>
+      </div>
+
+      <template id="ed-template">
+        <div class="ed-row" style="display:flex; gap:0.6rem; align-items:center; margin-bottom:0.4rem;">
+          <input type="date" name="event[event_days_attributes][__IDX__][date]"
+                 class="form-control" style="max-width:160px;">
+          <div style="position:relative; max-width:120px;">
+            <input type="number" name="event[event_days_attributes][__IDX__][hours]"
+                   class="form-control ed-hours" step="0.5" min="0.5" max="24" value="8"
+                   style="padding-right:2rem;">
+            <span style="position:absolute; right:10px; top:50%; transform:translateY(-50%); font-size:0.78rem; color:#71717a; pointer-events:none;">h</span>
+          </div>
+          <button type="button" onclick="this.closest('.ed-row').remove()" class="btn-danger" style="padding:0.3rem 0.55rem; font-size:0.8rem;">
+            <i class="bi bi-x"></i>
+          </button>
+        </div>
+      </template>
+
+      <button type="button" onclick="addEdRow()" class="btn-secondary" style="font-size:0.82rem; margin-top:0.25rem;">
+        <i class="bi bi-plus"></i> Adicionar dia
+      </button>
+    </div>
+
     <%# ── Funções e valores por hora ──────────────────────────────────────── %>
     <div style="border-top: 1px solid #f4f4f5; padding-top: 1.25rem; margin-top: 0.5rem;">
       <div style="font-size: 0.88rem; font-weight: 700; color: #18181b; margin-bottom: 0.75rem;">
@@ -104,6 +161,56 @@
 (function() {
   var newIdx = Date.now();
 
+  // ── Dias do evento ────────────────────────────────────────────────────────
+  window.addEdRow = function(dateVal, hoursVal) {
+    var tpl   = document.getElementById("ed-template").content.cloneNode(true);
+    var row   = tpl.querySelector(".ed-row");
+    var idx   = newIdx++;
+    row.innerHTML = row.innerHTML.replace(/__IDX__/g, idx);
+    if (dateVal)  row.querySelector("input[type=date]").value   = dateVal;
+    if (hoursVal) row.querySelector(".ed-hours").value = hoursVal;
+    document.getElementById("ed-rows").appendChild(row);
+  };
+
+  window.toggleEdDestroy = function(btn) {
+    var row = btn.closest(".ed-row");
+    var cb  = row.querySelector(".ed-destroy-cb");
+    cb.checked        = !cb.checked;
+    row.style.opacity = cb.checked ? "0.35" : "1";
+    btn.innerHTML     = cb.checked
+      ? '<i class="bi bi-arrow-counterclockwise"></i>'
+      : '<i class="bi bi-x"></i>';
+  };
+
+  window.autoPopulateDays = function() {
+    var startEl = document.querySelector("input[name='event[start_date]']");
+    var endEl   = document.querySelector("input[name='event[end_date]']");
+    if (!startEl?.value || !endEl?.value) {
+      alert("Preencha as datas de início e fim primeiro.");
+      return;
+    }
+    var start = new Date(startEl.value + "T00:00:00");
+    var end   = new Date(endEl.value   + "T00:00:00");
+    if (end < start) { alert("Data de fim deve ser após o início."); return; }
+
+    // Coletar datas já existentes (não marcadas para destruir)
+    var existing = new Set();
+    document.querySelectorAll("#ed-rows .ed-row").forEach(function(row) {
+      var cb = row.querySelector(".ed-destroy-cb");
+      if (cb && cb.checked) return;
+      var d = row.querySelector("input[type=date]")?.value;
+      if (d) existing.add(d);
+    });
+
+    var cur = new Date(start);
+    while (cur <= end) {
+      var iso = cur.toISOString().slice(0, 10);
+      if (!existing.has(iso)) addEdRow(iso, 8);
+      cur.setDate(cur.getDate() + 1);
+    }
+  };
+
+  // ── Funções ───────────────────────────────────────────────────────────────
   window.addFnRow = function() {
     var tpl = document.getElementById("fn-template").content.cloneNode(true);
     var row = tpl.querySelector(".fn-row");

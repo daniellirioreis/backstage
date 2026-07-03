@@ -9,6 +9,15 @@ class Event < ApplicationRecord
                                 reject_if: :all_blank,
                                 allow_destroy: true
 
+  has_many :event_days, dependent: :destroy
+  accepts_nested_attributes_for :event_days,
+                                reject_if: :all_blank,
+                                allow_destroy: true
+
+  def total_hours
+    event_days.sum(:hours).to_f
+  end
+
   enum :status, { draft: "draft", active: "active", closed: "closed" }, validate: true
 
   validates :name, presence: true

@@ -10,6 +10,7 @@ class Shift < ApplicationRecord
   validate :end_date_not_before_start_date
   validate :end_time_not_equal_start_time
   validate :date_within_event
+  validate :duration_within_event_day_limit
   validate :no_schedule_conflict
 
   # Retorna todas as datas cobertas pelo turno (suporte a turnos multi-dia)
@@ -41,6 +42,30 @@ class Shift < ApplicationRecord
   def end_time_not_equal_start_time
     return if start_time.blank? || end_time.blank?
     errors.add(:end_time, "não pode ser igual ao horário de início") if end_time == start_time
+  end
+
+  # Duração do turno não pode exceder as horas do dia do evento
+  def duration_within_event_day_limit
+    return if date.blank? || start_time.blank? || end_time.blank? || sector_id.blank?
+
+    event = sector&.event
+    return unless event
+
+    event_day = EventDay.find_by(event: event, date: date)
+    return unless event_day
+
+    max_min = (event_day.hours * 60).to_i
+    start_min = start_time.hour * 60 + start_time.min
+    end_min   = end_time.hour   * 60 + end_time.min
+
+    # Turnos overnight: end < start → duração passa da meia-noite
+    duration_min = end_min > start_min ? end_min - start_min : (1440 - start_min) + end_min
+    return if duration_min == 0 # já capturado por end_time_not_equal_start_time
+
+    if duration_min > max_min
+      lim = event_day.hours.to_f == event_day.hours.to_i ? "#{event_day.hours.to_i}h" : "#{event_day.hours}h"
+      errors.add(:end_time, "gera um turno maior que o limite de #{lim} do dia #{date.strftime('%d/%m/%Y')}")
+    end
   end
 
   # date e end_date dentro do período do evento

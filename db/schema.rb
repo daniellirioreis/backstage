@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_07_02_000009) do
+ActiveRecord::Schema[7.1].define(version: 2026_07_02_000010) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -104,6 +104,16 @@ ActiveRecord::Schema[7.1].define(version: 2026_07_02_000009) do
     t.index ["company_id", "user_id"], name: "index_company_users_on_company_id_and_user_id", unique: true
     t.index ["company_id"], name: "index_company_users_on_company_id"
     t.index ["user_id"], name: "index_company_users_on_user_id"
+  end
+
+  create_table "event_days", force: :cascade do |t|
+    t.bigint "event_id", null: false
+    t.date "date", null: false
+    t.decimal "hours", precision: 4, scale: 1, default: "8.0", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["event_id", "date"], name: "index_event_days_on_event_id_and_date", unique: true
+    t.index ["event_id"], name: "index_event_days_on_event_id"
   end
 
   create_table "event_functions", force: :cascade do |t|
@@ -264,6 +274,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_07_02_000009) do
   add_foreign_key "companies", "plans"
   add_foreign_key "company_users", "companies"
   add_foreign_key "company_users", "users"
+  add_foreign_key "event_days", "events"
   add_foreign_key "event_functions", "events"
   add_foreign_key "events", "companies"
   add_foreign_key "permissions", "roles"

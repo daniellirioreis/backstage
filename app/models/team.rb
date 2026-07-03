@@ -17,7 +17,6 @@ class Team < ApplicationRecord
   end
 
   validates :name, presence: true
-  validate :coordinator_unique_per_event
   validate :coordinator_not_in_collaborators
   validate :collaborators_unique_per_event
 
@@ -65,15 +64,4 @@ class Team < ApplicationRecord
     end
   end
 
-  def coordinator_unique_per_event
-    return unless coordinator_id.present? && sector.present?
-
-    conflict = Team.joins(:sector)
-                   .where(sectors: { event_id: sector.event_id })
-                   .where(coordinator_id: coordinator_id)
-                   .where.not(id: id)
-                   .exists?
-
-    errors.add(:coordinator_id, "já é coordenador de outra equipe neste evento") if conflict
-  end
 end
