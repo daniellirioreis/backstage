@@ -48,6 +48,11 @@
           <span style="font-size:0.65rem;font-weight:700;background:<%= ev_status_color %>22;border:1px solid <%= ev_status_color %>55;color:<%= ev_status_color %>;border-radius:5px;padding:2px 8px;letter-spacing:0.06em;text-transform:uppercase;">
             <%= t("event_statuses.#{current_event.status}") %>
           </span>
+          <% if current_event.closing_finalized_at? %>
+            <span style="font-size:0.65rem;font-weight:700;background:#dcfce7;border:1px solid #86efac;color:#15803d;border-radius:5px;padding:2px 8px;letter-spacing:0.04em;display:inline-flex;align-items:center;gap:3px;">
+              <i class="bi bi-check-circle-fill"></i> Fechamento finalizado
+            </span>
+          <% end %>
         </div>
         <div style="display:flex;gap:1rem;flex-wrap:wrap;">
           <span style="font-size:0.75rem;color:#71717a;">
@@ -168,10 +173,17 @@
           <% end %>
         <% end %>
       <% elsif current_event.closed? %>
-        <% if policy(:report).closing? %>
+        <% if current_event.closing_finalized_at? %>
+          <span style="display:inline-flex;align-items:center;gap:0.4rem;background:#dcfce7;border:1px solid #86efac;color:#15803d;font-size:0.78rem;font-weight:700;border-radius:7px;padding:0.4rem 0.9rem;">
+            <i class="bi bi-check-circle-fill"></i> Fechamento concluído
+          </span>
+        <% elsif policy(:report).closing? %>
           <%= link_to reports_closing_path, style: "display:inline-flex;align-items:center;gap:0.4rem;background:#f59e0b;color:#1c1004;font-size:0.78rem;font-weight:700;border-radius:7px;padding:0.4rem 0.9rem;text-decoration:none;" do %>
             <i class="bi bi-receipt"></i> Relatório de fechamento
           <% end %>
+        <% end %>
+        <%= link_to reports_closing_path, style: "display:inline-flex;align-items:center;gap:0.4rem;background:#1f1f1f;color:#71717a;font-size:0.78rem;font-weight:600;border-radius:7px;padding:0.4rem 0.9rem;text-decoration:none;" do %>
+          <i class="bi bi-receipt"></i> <%= current_event.closing_finalized_at? ? "Ver fechamento" : "Relatório de fechamento" %>
         <% end %>
         <%= link_to reports_closing_export_path(basis: "cross"), style: "display:inline-flex;align-items:center;gap:0.4rem;background:#1f1f1f;color:#71717a;font-size:0.78rem;font-weight:600;border-radius:7px;padding:0.4rem 0.9rem;text-decoration:none;" do %>
           <i class="bi bi-file-earmark-spreadsheet"></i> Exportar CSV
@@ -266,7 +278,14 @@
                   </div>
                 </div>
                 <div style="display:flex;flex-direction:column;align-items:flex-end;gap:0.4rem;flex-shrink:0;">
-                  <span class="badge-status badge-<%= event.status %>"><%= t("event_statuses.#{event.status}") %></span>
+                  <div style="display:flex;align-items:center;gap:0.35rem;flex-wrap:wrap;justify-content:flex-end;">
+                    <span class="badge-status badge-<%= event.status %>"><%= t("event_statuses.#{event.status}") %></span>
+                    <% if event.closing_finalized_at? %>
+                      <span style="font-size:0.6rem;font-weight:700;background:#dcfce7;border:1px solid #86efac;color:#15803d;border-radius:4px;padding:1px 6px;display:inline-flex;align-items:center;gap:2px;">
+                        <i class="bi bi-check-circle-fill"></i> Fechamento ok
+                      </span>
+                    <% end %>
+                  </div>
                   <div style="display:flex;gap:0.75rem;">
                     <span style="font-size:0.72rem;color:#a1a1aa;"><i class="bi bi-grid-3x3-gap"></i> <%= sectors_count %></span>
                     <span style="font-size:0.72rem;color:#a1a1aa;"><i class="bi bi-people"></i> <%= teams_count %></span>
