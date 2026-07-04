@@ -11,8 +11,8 @@ class ReportPolicy < ApplicationPolicy
   # Finalizar fechamento: admin ou quem tem permissão específica
   def finalize_closing? = (user.admin? || can?("finalize_closing")) && event_closed?
 
-  # Reabrir fechamento: somente admin
-  def reopen_closing? = user.admin? && event_closed?
+  # Reabrir fechamento: admin ou quem tem permissão específica
+  def reopen_closing? = (user.admin? || can?("reopen_closing")) && event_closed?
 
   private
 

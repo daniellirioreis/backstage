@@ -38,6 +38,7 @@ pt-BR:
     closing: "Relatório de Fechamento"
     manage_payments: "Gerenciar Pagamentos"
     finalize_closing: "Finalizar Fechamento"
+    reopen_closing: "Reabrir Fechamento"
 
   payment_methods:
     pix: "PIX"
