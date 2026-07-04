@@ -163,6 +163,19 @@
   </tfoot>
 </table>
 
+<%# Assinatura do responsável %>
+<% owner = @company&.owner %>
+<% if owner %>
+  <div style="margin-top:16px; display:flex; justify-content:flex-end;">
+    <div style="text-align:center;">
+      <div style="width:240px; border-top:1px solid #18181b; padding-top:5px;">
+        <div style="font-size:8px; font-weight:700; color:#18181b;"><%= owner.name %></div>
+        <div style="font-size:7px; color:#71717a;">Responsável pela empresa</div>
+      </div>
+    </div>
+  </div>
+<% end %>
+
 <%# Pendentes de checkout (só para attendance) %>
 <% if is_attendance && @pending_rows.present? %>
   <div style="margin-top:14px; padding-top:8px; border-top:1px solid #e4e4e7;">
@@ -210,15 +223,6 @@
     <% if parts.any? %>
       <div style="font-size:7px; color:#71717a; margin-top:3px;"><%= parts.join(" · ") %></div>
     <% end %>
-  <% end %>
-  <% owner = @company&.owner %>
-  <% if owner %>
-    <div style="margin-top:20px; display:inline-block; text-align:center;">
-      <div style="width:220px; border-top:1px solid #18181b; padding-top:4px; margin:0 auto;">
-        <div style="font-size:8px; font-weight:700; color:#18181b;"><%= owner.name %></div>
-        <div style="font-size:7px; color:#71717a;">Responsável pela empresa</div>
-      </div>
-    </div>
   <% end %>
   <div style="font-size:6px; color:#a1a1aa; margin-top:10px; letter-spacing:0.05em;">
     Gerado pelo Backstage · <%= l(Time.current, format: :short) %>
