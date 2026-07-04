@@ -399,7 +399,7 @@
   <h2 style="font-size: 1rem; font-weight: 600; color: #18181b; margin: 0;">
     <%= Sector.model_name.human(count: 2) %>
   </h2>
-  <% if policy(Sector).new? %>
+  <% if !@event.closed? && policy(Sector).new? %>
     <%= link_to new_sector_path(event_id: @event.id), class: "btn-primary" do %>
       <i class="bi bi-plus"></i> <%= t("actions.new", model: Sector.model_name.human) %>
     <% end %>
