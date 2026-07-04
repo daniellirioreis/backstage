@@ -345,29 +345,6 @@
       <% end %>
     </div>
 
-    <%# Resumo geral %>
-    <div class="content-card" style="padding:1.1rem;">
-      <div style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:#a1a1aa;margin-bottom:0.85rem;">
-        <i class="bi bi-bar-chart"></i> Visão geral
-      </div>
-      <div style="display:flex;flex-direction:column;gap:0.5rem;">
-        <% [
-          ["bi-grid-3x3-gap-fill", @total_sectors,  "setores",        "#7c3aed"],
-          ["bi-people-fill",       @total_teams,    "equipes",        "#2563eb"],
-          ["bi-person-badge-fill", @total_members,  "escalados",      "#ea580c"],
-          ["bi-car-front-fill",    @total_vehicles, "veículos",       "#52525b"],
-        ].each do |icon, value, label, color| %>
-          <div style="display:flex;align-items:center;gap:0.6rem;padding:0.45rem 0.65rem;background:#f9f9f9;border-radius:7px;">
-            <div style="width:28px;height:28px;background:<%= color %>18;border-radius:6px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-              <i class="bi <%= icon %>" style="font-size:0.8rem;color:<%= color %>;"></i>
-            </div>
-            <span style="font-size:0.78rem;color:#52525b;flex:1;"><%= label %></span>
-            <span style="font-size:0.9rem;font-weight:700;color:#18181b;"><%= value %></span>
-          </div>
-        <% end %>
-      </div>
-    </div>
-
     <%# Gasto médio por tipo de setor %>
     <% if @sectors_by_type.any? %>
       <div class="content-card" style="padding:1.1rem;">
