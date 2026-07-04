@@ -39,20 +39,40 @@
 
 <%# Resumo por função %>
 <% by_function = @rows.group_by { |r| r[:function_name] }.sort_by { |fn, _| fn.to_s } %>
-<div style="display:flex; flex-wrap:wrap; gap:12px; margin-bottom:14px; padding:8px 10px; background:#f9fafb; border-radius:4px; border:1px solid #e4e4e7;">
-  <% by_function.each do |fn_name, fn_rows| %>
-    <% fn_hours = fn_rows.sum { |r| row_hours.call(r) } %>
-    <% fn_total = fn_rows.sum { |r| r[:total_value].to_f } %>
-    <div>
-      <div style="font-size:7px; font-weight:700; color:#71717a; text-transform:uppercase; letter-spacing:0.06em;"><%= fn_name %></div>
-      <div style="font-size:9px; color:#18181b;"><%= fn_rows.size %> pessoa<%= fn_rows.size == 1 ? "" : "s" %> · <%= format_hours(fn_hours) %> · <strong>R$ <%= "%.2f" % fn_total %></strong></div>
-    </div>
-  <% end %>
-  <div style="margin-left:auto; border-left:1px solid #e4e4e7; padding-left:12px;">
-    <div style="font-size:7px; font-weight:700; color:#71717a; text-transform:uppercase; letter-spacing:0.06em;">Total geral</div>
-    <div style="font-size:9px; color:#18181b;"><%= @rows.size %> pessoas · <%= format_hours(@rows.sum { |r| row_hours.call(r) }) %> · <strong>R$ <%= "%.2f" % @grand_total %></strong></div>
-  </div>
-</div>
+<table style="margin-bottom:14px; font-size:8px;">
+  <thead>
+    <tr>
+      <th>Função</th>
+      <th style="text-align:center;">Pessoas</th>
+      <th style="text-align:right;">Horas</th>
+      <th style="text-align:right;">R$/h (méd.)</th>
+      <th style="text-align:right;">Total</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% by_function.each do |fn_name, fn_rows| %>
+      <% fn_hours = fn_rows.sum { |r| row_hours.call(r) } %>
+      <% fn_total = fn_rows.sum { |r| r[:total_value].to_f } %>
+      <% fn_rate  = fn_rows.map { |r| r[:hourly_rate].to_f }.reject(&:zero?).then { |rates| rates.any? ? rates.sum / rates.size : 0 } %>
+      <tr>
+        <td style="font-weight:600;"><%= fn_name %></td>
+        <td style="text-align:center;"><%= fn_rows.size %></td>
+        <td style="text-align:right;"><%= format_hours(fn_hours) %></td>
+        <td style="text-align:right; color:#71717a;"><%= fn_rate > 0 ? "R$ #{"%.2f" % fn_rate}" : "—" %></td>
+        <td style="text-align:right; font-weight:700;">R$ <%= "%.2f" % fn_total %></td>
+      </tr>
+    <% end %>
+  </tbody>
+  <tfoot>
+    <tr>
+      <td style="font-weight:700; background:#18181b; color:#fff;">Total geral</td>
+      <td style="text-align:center; font-weight:700; background:#18181b; color:#fff;"><%= @rows.size %></td>
+      <td style="text-align:right; font-weight:700; background:#18181b; color:#fff;"><%= format_hours(@rows.sum { |r| row_hours.call(r) }) %></td>
+      <td style="background:#18181b;"></td>
+      <td style="text-align:right; font-weight:700; background:#18181b; color:#fff;">R$ <%= "%.2f" % @grand_total %></td>
+    </tr>
+  </tfoot>
+</table>
 
 <%# Tabela %>
 <table>
