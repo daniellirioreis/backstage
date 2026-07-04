@@ -105,6 +105,21 @@ module Reports
         redirect_to reports_closing_path, alert: "O fechamento já está finalizado."
         return
       end
+
+      # Verifica se todos os presentes (e não escalados) foram pagos
+      @basis     = "cross"
+      @sector_id = nil
+      load_report_data
+
+      unpaid = @rows.select { |row| row[:status] != :absent && @payment_by_user[row[:user].id].nil? }
+      if unpaid.any?
+        names = unpaid.first(3).map { |r| r[:user].name }.join(", ")
+        names += " e mais #{unpaid.size - 3}" if unpaid.size > 3
+        redirect_to reports_closing_path,
+          alert: "Não é possível finalizar: #{unpaid.size} colaborador(es) ainda não foram pagos (#{names})."
+        return
+      end
+
       current_event.update!(
         closing_finalized_at:    Time.current,
         closing_finalized_by_id: current_user.id
