@@ -37,6 +37,7 @@ pt-BR:
     checkout: "Registrar Check-out (QR)"
     closing: "Relatório de Fechamento"
     manage_payments: "Gerenciar Pagamentos"
+    finalize_closing: "Finalizar Fechamento"
 
   payment_methods:
     pix: "PIX"
