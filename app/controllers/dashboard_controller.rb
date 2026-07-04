@@ -51,5 +51,31 @@ class DashboardController < ApplicationController
     end
 
     @total_cost = @event_costs.values.sum
+
+    # ── Stats do evento atual ─────────────────────────────────────────────────
+    if current_event
+      @ev_sectors = Sector.where(event: current_event).count
+      @ev_teams   = Team.joins(:sector).where(sectors: { event_id: current_event.id }).count
+      @ev_members = TeamMembership.joins(team: :sector)
+                                  .where(sectors: { event_id: current_event.id })
+                                  .select(:user_id).distinct.count
+      @ev_cost    = @event_costs[current_event.id] || 0.0
+
+      if current_event.active?
+        today = Date.today
+        @ev_checkins_today  = Attendance.where(event: current_event, checked_in_date: today).count
+        @ev_inside_now      = Attendance.where(event: current_event, checked_in_date: today, checked_out_at: nil).count
+        @ev_checkouts_today = Attendance.where(event: current_event, checked_in_date: today).where.not(checked_out_at: nil).count
+        @ev_expected_today  = Shift.joins(:sector)
+                                   .where(sectors: { event_id: current_event.id })
+                                   .where("shifts.date <= :d AND (shifts.end_date IS NULL OR shifts.end_date >= :d)", d: today)
+                                   .select(:user_id).distinct.count
+      elsif current_event.closed?
+        @ev_total_checkins = Attendance.where(event: current_event).count
+        @ev_present        = Attendance.where(event: current_event).select(:user_id).distinct.count
+        paid               = Payment.where(event: current_event).sum(:amount)
+        @ev_paid           = paid
+      end
+    end
   end
 end

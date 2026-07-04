@@ -910,4 +910,20 @@ body {
   .metric-grid {
     grid-template-columns: repeat(2, 1fr) !important;
   }
+
+  // ── Dashboard ─────────────────────────────────────────────────────────────
+  // Painel do evento atual: stats em 2 colunas
+  .ev-stats-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+
+  // Métricas globais: 2 colunas
+  .dash-metrics-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+
+  // Layout principal: coluna única
+  .dash-main-grid {
+    grid-template-columns: 1fr !important;
+  }
 }
