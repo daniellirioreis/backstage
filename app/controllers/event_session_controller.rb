@@ -35,8 +35,7 @@ class EventSessionController < ApplicationController
   def set_event
     event = Event.find(params[:event_id])
     session[:current_event_id] = event.id
-    return_to = params[:return_to].presence || root_path
-    redirect_to return_to, notice: "Trabalhando no evento: #{event.name}"
+    redirect_to root_path, notice: "Trabalhando no evento: #{event.name}"
   end
 
   def clear_event
