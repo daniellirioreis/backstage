@@ -1,3 +1,8 @@
+<%# helpers inline %>
+<% is_cross      = @basis == "cross" %>
+<% is_attendance = @basis == "attendance" %>
+<% row_hours = ->(r) { (is_cross ? r[:payable_hours] : r[:total_hours]).to_f } %>
+
 <%# Cabeçalho %>
 <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:16px; padding-bottom:10px; border-bottom:2px solid #18181b;">
   <div>
@@ -8,7 +13,11 @@
       · <%= l(@event.start_date, format: :short) %> → <%= l(@event.end_date, format: :short) %>
     </div>
     <div style="font-size:8px; color:#a1a1aa; margin-top:2px;">
-      Base: <%= @basis == "attendance" ? "Check-in / Check-out" : "Escalas cadastradas" %>
+      Base:
+      <% if is_cross %>Cruzamento Escalas + Presença
+      <% elsif is_attendance %>Check-in / Check-out
+      <% else %>Escalas cadastradas
+      <% end %>
     </div>
   </div>
   <div style="display:flex; align-items:center; gap:10px;">
@@ -28,12 +37,12 @@
   </div>
 </div>
 
-<%# Resumo por função — linha simples %>
+<%# Resumo por função %>
 <% by_function = @rows.group_by { |r| r[:function_name] }.sort_by { |fn, _| fn.to_s } %>
 <div style="display:flex; flex-wrap:wrap; gap:12px; margin-bottom:14px; padding:8px 10px; background:#f9fafb; border-radius:4px; border:1px solid #e4e4e7;">
   <% by_function.each do |fn_name, fn_rows| %>
-    <% fn_hours = fn_rows.sum { |r| r[:total_hours] } %>
-    <% fn_total = fn_rows.sum { |r| r[:total_value] } %>
+    <% fn_hours = fn_rows.sum { |r| row_hours.call(r) } %>
+    <% fn_total = fn_rows.sum { |r| r[:total_value].to_f } %>
     <div>
       <div style="font-size:7px; font-weight:700; color:#71717a; text-transform:uppercase; letter-spacing:0.06em;"><%= fn_name %></div>
       <div style="font-size:9px; color:#18181b;"><%= fn_rows.size %> pessoa<%= fn_rows.size == 1 ? "" : "s" %> · <%= format_hours(fn_hours) %> · <strong>R$ <%= "%.2f" % fn_total %></strong></div>
@@ -41,7 +50,7 @@
   <% end %>
   <div style="margin-left:auto; border-left:1px solid #e4e4e7; padding-left:12px;">
     <div style="font-size:7px; font-weight:700; color:#71717a; text-transform:uppercase; letter-spacing:0.06em;">Total geral</div>
-    <div style="font-size:9px; color:#18181b;"><%= @rows.size %> pessoas · <%= format_hours(@rows.sum { |r| r[:total_hours] }) %> · <strong>R$ <%= "%.2f" % @grand_total %></strong></div>
+    <div style="font-size:9px; color:#18181b;"><%= @rows.size %> pessoas · <%= format_hours(@rows.sum { |r| row_hours.call(r) }) %> · <strong>R$ <%= "%.2f" % @grand_total %></strong></div>
   </div>
 </div>
 
@@ -51,15 +60,21 @@
     <tr>
       <th style="width:22%;">Colaborador</th>
       <th style="width:13%;">CPF</th>
-      <th style="width:13%;">Função</th>
-      <% if @basis == "attendance" %>
+      <th style="width:12%;">Função</th>
+      <% if is_cross %>
+        <th style="width:8%; text-align:center;">Status</th>
+        <th style="width:8%; text-align:right;">Escaladas</th>
+        <th style="width:8%; text-align:right;">Reais</th>
+        <th style="width:8%; text-align:right;">A Pagar</th>
+      <% elsif is_attendance %>
         <th style="width:9%; text-align:center;">Data</th>
         <th style="width:9%; text-align:center;">Entrada</th>
         <th style="width:9%; text-align:center;">Saída</th>
+        <th style="width:8%; text-align:right;">Horas</th>
       <% else %>
         <th style="width:20%;">Turnos</th>
+        <th style="width:8%; text-align:right;">Horas</th>
       <% end %>
-      <th style="width:8%; text-align:right;">Horas</th>
       <th style="width:7%; text-align:right;">R$/h</th>
       <th style="width:8%; text-align:right;">Total</th>
     </tr>
@@ -70,7 +85,16 @@
         <td style="font-weight:600;"><%= row[:user].name %></td>
         <td style="font-family:monospace; color:#71717a;"><%= row[:user].formatted_cpf %></td>
         <td style="color:#52525b;"><%= row[:function_name] %></td>
-        <% if @basis == "attendance" %>
+
+        <% if is_cross %>
+          <% status_label = { present: "Presente", absent: "Ausente", unscheduled: "Não escalado" }[row[:status]] %>
+          <% status_color = { present: "#15803d", absent: "#b91c1c", unscheduled: "#b45309" }[row[:status]] %>
+          <td style="text-align:center; font-size:8px; font-weight:700; color:<%= status_color %>;"><%= status_label %></td>
+          <td style="text-align:right; color:#71717a;"><%= format_hours(row[:scheduled_hours].to_f) %></td>
+          <td style="text-align:right; color:#71717a;"><%= format_hours(row[:actual_hours].to_f) %></td>
+          <td style="text-align:right; font-weight:700;"><%= format_hours(row[:payable_hours].to_f) %></td>
+
+        <% elsif is_attendance %>
           <td style="text-align:center; color:#52525b;">
             <% row[:entries].each do |entry| %><div><%= entry[:date] %></div><% end %>
           </td>
@@ -80,33 +104,47 @@
           <td style="text-align:center;">
             <% row[:entries].each do |entry| %><div style="color:#b91c1c; font-weight:600;"><%= entry[:checked_out] %></div><% end %>
           </td>
+          <td style="text-align:right; font-weight:700;"><%= format_hours(row[:total_hours].to_f) %></td>
+
         <% else %>
           <td style="color:#71717a; font-size:8px;">
             <% row[:entries].each do |entry| %>
               <div><%= entry[:label] %> · <%= format_hours(entry[:hours]) %></div>
             <% end %>
           </td>
+          <td style="text-align:right; font-weight:700;"><%= format_hours(row[:total_hours].to_f) %></td>
         <% end %>
-        <td style="text-align:right; font-weight:700;"><%= format_hours(row[:total_hours]) %></td>
-        <td style="text-align:right; color:#71717a;"><%= row[:hourly_rate] > 0 ? "R$ #{"%.2f" % row[:hourly_rate]}" : "—" %></td>
-        <td style="text-align:right; font-weight:700;"><%= row[:total_value] > 0 ? "R$ #{"%.2f" % row[:total_value]}" : "—" %></td>
+
+        <td style="text-align:right; color:#71717a;"><%= row[:hourly_rate].to_f > 0 ? "R$ #{"%.2f" % row[:hourly_rate]}" : "—" %></td>
+        <td style="text-align:right; font-weight:700;"><%= row[:total_value].to_f > 0 ? "R$ #{"%.2f" % row[:total_value]}" : "—" %></td>
       </tr>
     <% end %>
   </tbody>
   <tfoot>
     <tr>
-      <td colspan="<%= @basis == 'attendance' ? 6 : 4 %>" style="font-weight:700; background:#18181b; color:#fff;">
-        Total · <%= @rows.size %> colaboradore<%= @rows.size == 1 ? "" : "s" %>
-      </td>
-      <td style="text-align:right; font-weight:700; background:#18181b; color:#fff;"><%= format_hours(@rows.sum { |r| r[:total_hours] }) %></td>
+      <% if is_cross %>
+        <td colspan="3" style="font-weight:700; background:#18181b; color:#fff;">Total · <%= @rows.size %> colaboradore<%= @rows.size == 1 ? "" : "s" %></td>
+        <td style="background:#18181b;"></td>
+        <td style="background:#18181b;"></td>
+        <td style="background:#18181b;"></td>
+        <td style="text-align:right; font-weight:700; background:#18181b; color:#fff;"><%= format_hours(@rows.sum { |r| r[:payable_hours].to_f }) %></td>
+      <% elsif is_attendance %>
+        <td colspan="3" style="font-weight:700; background:#18181b; color:#fff;">Total · <%= @rows.size %> colaboradore<%= @rows.size == 1 ? "" : "s" %></td>
+        <td style="background:#18181b;"></td><td style="background:#18181b;"></td><td style="background:#18181b;"></td>
+        <td style="text-align:right; font-weight:700; background:#18181b; color:#fff;"><%= format_hours(@rows.sum { |r| r[:total_hours].to_f }) %></td>
+      <% else %>
+        <td colspan="3" style="font-weight:700; background:#18181b; color:#fff;">Total · <%= @rows.size %> colaboradore<%= @rows.size == 1 ? "" : "s" %></td>
+        <td style="background:#18181b;"></td>
+        <td style="text-align:right; font-weight:700; background:#18181b; color:#fff;"><%= format_hours(@rows.sum { |r| r[:total_hours].to_f }) %></td>
+      <% end %>
       <td style="background:#18181b;"></td>
       <td style="text-align:right; font-weight:700; background:#18181b; color:#fff;">R$ <%= "%.2f" % @grand_total %></td>
     </tr>
   </tfoot>
 </table>
 
-<%# Pendentes de checkout %>
-<% if @basis == "attendance" && @pending_rows.present? %>
+<%# Pendentes de checkout (só para attendance) %>
+<% if is_attendance && @pending_rows.present? %>
   <div style="margin-top:14px; padding-top:8px; border-top:1px solid #e4e4e7;">
     <div style="font-size:8px; font-weight:700; color:#b45309; margin-bottom:6px; text-transform:uppercase; letter-spacing:0.06em;">
       Aguardando checkout (<%= @pending_rows.size %>)
@@ -134,7 +172,7 @@
   </div>
 <% end %>
 
-<%# Rodapé — empresa %>
+<%# Rodapé %>
 <% if @company %>
   <div style="margin-top:16px; padding-top:8px; border-top:1px solid #e4e4e7; display:flex; justify-content:space-between; align-items:flex-end;">
     <div>
