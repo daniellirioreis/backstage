@@ -8,6 +8,12 @@ class ReportPolicy < ApplicationPolicy
   # Comprovante: visualizar/baixar PDF — acesso mais amplo (quem pode ver fechamento pode ver comprovante)
   def view_receipt? = can?("closing") && (user.admin? || event_closed?)
 
+  # Finalizar fechamento: admin ou quem gerencia pagamentos
+  def finalize_closing? = (user.admin? || can?("manage_payments")) && event_closed?
+
+  # Reabrir fechamento: somente admin
+  def reopen_closing? = user.admin? && event_closed?
+
   private
 
   def resource_name = "reports"

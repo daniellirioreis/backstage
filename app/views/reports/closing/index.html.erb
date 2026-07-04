@@ -1,3 +1,34 @@
+<%# ── Banner de fechamento finalizado ─────────────────────────────────────── %>
+<% if current_event.closing_finalized_at? %>
+  <div style="background:#f0fdf4;border:1px solid #86efac;border-radius:10px;padding:1rem 1.25rem;margin-bottom:1.25rem;display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;">
+    <div style="display:flex;align-items:center;gap:0.75rem;">
+      <div style="width:36px;height:36px;background:#16a34a;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+        <i class="bi bi-check-circle-fill" style="color:#fff;font-size:1.1rem;"></i>
+      </div>
+      <div>
+        <div style="font-size:0.9rem;font-weight:700;color:#15803d;">Fechamento finalizado</div>
+        <div style="font-size:0.78rem;color:#16a34a;">
+          Concluído em <%= l(current_event.closing_finalized_at, format: :short) %>
+          por <strong><%= current_event.closing_finalized_by&.name || "—" %></strong>
+        </div>
+      </div>
+    </div>
+    <div style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;">
+      <%= link_to reports_closing_print_path(basis: @basis, sector_id: @sector_id), class: "btn-secondary", style: "font-size:0.78rem;" do %>
+        <i class="bi bi-printer"></i> Imprimir PDF
+      <% end %>
+      <% if policy(:report).reopen_closing? %>
+        <%= button_to reports_closing_reopen_path,
+            method: :post,
+            style: "font-size:0.78rem;background:none;border:1px solid #86efac;color:#15803d;border-radius:7px;padding:0.35rem 0.85rem;cursor:pointer;font-weight:600;display:inline-flex;align-items:center;gap:0.3rem;",
+            data: { turbo_confirm: "Reabrir o fechamento? Os pagamentos voltarão a ser editáveis." } do %>
+          <i class="bi bi-arrow-counterclockwise"></i> Reabrir
+        <% end %>
+      <% end %>
+    </div>
+  </div>
+<% end %>
+
 <div class="page-header">
   <div>
     <h1>Relatório de Fechamento</h1>
@@ -9,8 +40,18 @@
     <%= link_to reports_closing_export_path(basis: @basis, sector_id: @sector_id), class: "btn-secondary" do %>
       <i class="bi bi-file-earmark-spreadsheet"></i> Exportar CSV
     <% end %>
-    <%= link_to reports_closing_print_path(basis: @basis, sector_id: @sector_id), class: "btn-secondary" do %>
-      <i class="bi bi-printer"></i> Imprimir PDF
+    <% unless current_event.closing_finalized_at? %>
+      <%= link_to reports_closing_print_path(basis: @basis, sector_id: @sector_id), class: "btn-secondary" do %>
+        <i class="bi bi-printer"></i> Imprimir PDF
+      <% end %>
+      <% if policy(:report).finalize_closing? %>
+        <%= button_to reports_closing_finalize_path,
+            method: :post,
+            style: "display:inline-flex;align-items:center;gap:0.4rem;background:#15803d;color:#fff;border:none;border-radius:7px;padding:0.45rem 1rem;font-size:0.82rem;font-weight:700;cursor:pointer;",
+            data: { turbo_confirm: "Finalizar o fechamento de #{current_event.name}? Os pagamentos não poderão ser alterados após a finalização (somente admin pode reabrir)." } do %>
+          <i class="bi bi-check-circle-fill"></i> Finalizar Fechamento
+        <% end %>
+      <% end %>
     <% end %>
   </div>
 </div>
@@ -209,6 +250,7 @@
             <% end %>
           </td>
           <td style="text-align:center;padding:0.5rem 0.75rem;">
+            <% finalized = current_event.closing_finalized_at? %>
             <% if payment %>
               <div style="display:flex;flex-direction:column;gap:4px;align-items:center;">
                 <span style="display:inline-flex;align-items:center;gap:0.3rem;background:#dcfce7;border:1px solid #86efac;border-radius:6px;padding:3px 10px;font-size:0.75rem;font-weight:700;color:#15803d;">
@@ -220,15 +262,21 @@
                       style: "font-size:0.7rem;color:#3b82f6;text-decoration:none;display:inline-flex;align-items:center;gap:3px;font-weight:600;" do %>
                     <i class="bi bi-file-earmark-text"></i> Comprovante
                   <% end %>
-                  <%= button_to reports_payment_path(payment), method: :delete,
-                      style: "font-size:0.68rem;color:#ef4444;background:none;border:none;cursor:pointer;padding:0;display:inline-flex;align-items:center;gap:3px;font-weight:600;",
-                      data: { turbo: false, turbo_confirm: "Remover registro de pagamento de #{row[:user].name}?" } do %>
-                    <i class="bi bi-x-circle"></i> Desfazer
+                  <% unless finalized %>
+                    <%= button_to reports_payment_path(payment), method: :delete,
+                        style: "font-size:0.68rem;color:#ef4444;background:none;border:none;cursor:pointer;padding:0;display:inline-flex;align-items:center;gap:3px;font-weight:600;",
+                        data: { turbo: false, turbo_confirm: "Remover registro de pagamento de #{row[:user].name}?" } do %>
+                      <i class="bi bi-x-circle"></i> Desfazer
+                    <% end %>
                   <% end %>
                 </div>
               </div>
             <% elsif row[:status] == :absent %>
               <span style="font-size:0.72rem;color:#a1a1aa;">Ausente — sem pagamento</span>
+            <% elsif finalized %>
+              <span style="display:inline-flex;align-items:center;gap:0.3rem;background:#f4f4f5;border:1px solid #e4e4e7;border-radius:6px;padding:3px 10px;font-size:0.72rem;font-weight:600;color:#a1a1aa;">
+                <i class="bi bi-lock"></i> Fechamento concluído
+              </span>
             <% else %>
               <%= form_with url: reports_payments_path, method: :post, scope: :payment, data: { turbo: false }, style: "display:inline;" do |f| %>
                 <%= f.hidden_field :user_id,       value: row[:user].id %>

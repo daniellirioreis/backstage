@@ -95,9 +95,11 @@ Rails.application.routes.draw do
     end
   end
 
-  get "reports/closing",        to: "reports/closing#index",  as: :reports_closing
-  get "reports/closing/print",  to: "reports/closing#print",  as: :reports_closing_print
-  get "reports/closing/export", to: "reports/closing#export", as: :reports_closing_export
+  get  "reports/closing",                 to: "reports/closing#index",            as: :reports_closing
+  get  "reports/closing/print",           to: "reports/closing#print",            as: :reports_closing_print
+  get  "reports/closing/export",          to: "reports/closing#export",           as: :reports_closing_export
+  post "reports/closing/finalize",        to: "reports/closing#finalize",         as: :reports_closing_finalize
+  post "reports/closing/reopen",          to: "reports/closing#reopen",           as: :reports_closing_reopen
 
   namespace :reports do
     resources :payments, only: [:create, :destroy] do

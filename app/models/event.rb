@@ -1,5 +1,6 @@
 class Event < ApplicationRecord
   belongs_to :company, optional: true
+  belongs_to :closing_finalized_by, class_name: "User", optional: true
 
   has_many :sectors, dependent: :destroy
   has_many :teams, through: :sectors

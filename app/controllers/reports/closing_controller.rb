@@ -94,6 +94,31 @@ module Reports
                 disposition: "attachment"
     end
 
+    def finalize
+      return redirect_to(select_event_path, alert: "Selecione um evento.") unless current_event
+      authorize :report, :finalize_closing?
+      unless current_event.closed?
+        redirect_to reports_closing_path, alert: "Só é possível finalizar o fechamento de eventos encerrados."
+        return
+      end
+      if current_event.closing_finalized_at?
+        redirect_to reports_closing_path, alert: "O fechamento já está finalizado."
+        return
+      end
+      current_event.update!(
+        closing_finalized_at:    Time.current,
+        closing_finalized_by_id: current_user.id
+      )
+      redirect_to reports_closing_path, notice: "Fechamento finalizado com sucesso!"
+    end
+
+    def reopen
+      return redirect_to(select_event_path, alert: "Selecione um evento.") unless current_event
+      authorize :report, :reopen_closing?
+      current_event.update!(closing_finalized_at: nil, closing_finalized_by_id: nil)
+      redirect_to reports_closing_path, notice: "Fechamento reaberto."
+    end
+
     private
 
     def load_report_data
