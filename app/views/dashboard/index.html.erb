@@ -193,6 +193,31 @@
   </div>
 <% end %>
 
+<%# ── Cards de métricas globais ───────────────────────────────────────────── %>
+<div class="dash-metrics-grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:0.75rem;margin-bottom:1.75rem;">
+  <div class="metric-card" style="border-top:3px solid #18181b;">
+    <div class="metric-label"><i class="bi bi-calendar-event"></i> Eventos</div>
+    <div class="metric-value"><%= @total_events %></div>
+    <div class="metric-sub">no total</div>
+  </div>
+  <div class="metric-card" style="border-top:3px solid #4ade80;">
+    <div class="metric-label"><i class="bi bi-broadcast"></i> Ativos</div>
+    <div class="metric-value metric-accent"><%= @active_events %></div>
+    <div class="metric-sub">em andamento</div>
+  </div>
+  <div class="metric-card" style="border-top:3px solid #f59e0b;">
+    <div class="metric-label"><i class="bi bi-person-badge"></i> Colaboradores</div>
+    <div class="metric-value metric-warn"><%= @total_users %></div>
+    <div class="metric-sub">cadastrados</div>
+  </div>
+  <div class="metric-card" style="border-top:3px solid #16a34a;">
+    <div class="metric-label"><i class="bi bi-cash-stack"></i> Custo médio</div>
+    <div class="metric-value" style="font-size:1.1rem;color:#15803d;">
+      <%= number_to_currency(@total_events > 0 ? @total_cost / @total_events : 0, unit:"R$", separator:",", delimiter:".", precision:0) %>
+    </div>
+    <div class="metric-sub">por evento</div>
+  </div>
+</div>
 
 <%# ── Layout em duas colunas ─────────────────────────────────────────────── %>
 <div class="dash-main-grid" style="display:grid;grid-template-columns:1fr 260px;gap:1.25rem;align-items:start;">
