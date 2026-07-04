@@ -211,7 +211,16 @@
       <div style="font-size:7px; color:#71717a; margin-top:3px;"><%= parts.join(" · ") %></div>
     <% end %>
   <% end %>
-  <div style="font-size:6px; color:#a1a1aa; margin-top:6px; letter-spacing:0.05em;">
+  <% owner = @company&.owner %>
+  <% if owner %>
+    <div style="margin-top:20px; display:inline-block; text-align:center;">
+      <div style="width:220px; border-top:1px solid #18181b; padding-top:4px; margin:0 auto;">
+        <div style="font-size:8px; font-weight:700; color:#18181b;"><%= owner.name %></div>
+        <div style="font-size:7px; color:#71717a;">Responsável pela empresa</div>
+      </div>
+    </div>
+  <% end %>
+  <div style="font-size:6px; color:#a1a1aa; margin-top:10px; letter-spacing:0.05em;">
     Gerado pelo Backstage · <%= l(Time.current, format: :short) %>
   </div>
 </div>
