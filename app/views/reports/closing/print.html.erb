@@ -192,21 +192,26 @@
   </div>
 <% end %>
 
-<%# Rodapé %>
-<% if @company %>
-  <div style="margin-top:16px; padding-top:8px; border-top:1px solid #e4e4e7; display:flex; justify-content:space-between; align-items:flex-end;">
-    <div>
-      <div style="font-size:6px; font-weight:700; color:#a1a1aa; text-transform:uppercase; letter-spacing:0.1em; margin-bottom:2px;">Empresa responsável</div>
-      <div style="font-size:9px; font-weight:700; color:#18181b;"><%= @company.name %></div>
-      <div style="font-size:7px; color:#71717a; margin-top:1px;">
-        <% parts = [] %>
-        <% parts << "CNPJ: #{@company.cnpj}" if @company.cnpj.present? %>
-        <% parts << "Tel: #{@company.phone}" if @company.phone.present? %>
-        <% parts << @company.email if @company.email.present? %>
-        <% parts << [@company.city, @company.state].compact.join(", ") if @company.city.present? %>
-        <%= parts.join(" · ") %>
+<%# Rodapé centralizado %>
+<div style="margin-top:20px; padding-top:10px; border-top:2px solid #18181b; text-align:center;">
+  <% if @company %>
+    <% if @company.logo.attached? %>
+      <div style="margin-bottom:6px;">
+        <%= image_tag url_for(@company.logo), style:"height:32px; object-fit:contain;" %>
       </div>
-    </div>
-    <div style="font-size:7px; color:#a1a1aa;">Backstage · <%= l(Date.today, format: :short) %></div>
+    <% end %>
+    <div style="font-size:10px; font-weight:800; color:#18181b; letter-spacing:-0.01em;"><%= @company.name %></div>
+    <% parts = [] %>
+    <% parts << "CNPJ: #{@company.cnpj}" if @company.cnpj.present? %>
+    <% parts << @company.address if @company.address.present? %>
+    <% parts << [@company.city, @company.state].compact.join(" – ") if @company.city.present? %>
+    <% parts << "Tel: #{@company.phone}" if @company.phone.present? %>
+    <% parts << @company.email if @company.email.present? %>
+    <% if parts.any? %>
+      <div style="font-size:7px; color:#71717a; margin-top:3px;"><%= parts.join(" · ") %></div>
+    <% end %>
+  <% end %>
+  <div style="font-size:6px; color:#a1a1aa; margin-top:6px; letter-spacing:0.05em;">
+    Gerado pelo Backstage · <%= l(Time.current, format: :short) %>
   </div>
-<% end %>
+</div>
