@@ -1,7 +1,7 @@
-<div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1.5rem;">
+<div class="page-header">
   <div>
-    <h1 style="font-size:1.25rem; font-weight:700; color:#18181b; margin:0 0 0.15rem;">Convites enviados</h1>
-    <p style="font-size:0.82rem; color:#71717a; margin:0;">Usuários convidados para o sistema</p>
+    <h1>Convites enviados</h1>
+    <p style="font-size:0.82rem; color:#71717a; margin:0.15rem 0 0;">Usuários convidados para o sistema</p>
   </div>
   <% if policy(:invitation).create? %>
     <%= link_to new_invitation_path, class: "btn-primary" do %>
@@ -10,9 +10,10 @@
   <% end %>
 </div>
 
-<div class="content-card" style="overflow:hidden; padding:0;">
+<div class="content-card" style="overflow:clip; padding:0;">
   <% if @invitations.any? %>
-    <table style="width:100%; border-collapse:collapse; font-size:0.85rem;">
+    <div class="table-responsive">
+    <table style="width:100%; border-collapse:collapse; font-size:0.85rem; min-width:600px;">
       <thead>
         <tr style="background:#f9f9f9; border-bottom:1px solid #e4e4e7;">
           <th style="padding:0.65rem 1.25rem; text-align:left; font-size:0.72rem; font-weight:600; color:#71717a; text-transform:uppercase; letter-spacing:0.05em;">Usuário</th>
@@ -55,6 +56,7 @@
         <% end %>
       </tbody>
     </table>
+    </div>
   <% else %>
     <div style="text-align:center; padding:3rem 1rem; color:#a1a1aa;">
       <i class="bi bi-envelope" style="font-size:2rem; display:block; margin-bottom:0.75rem;"></i>
