@@ -211,11 +211,11 @@
     <div class="metric-sub">cadastrados</div>
   </div>
   <div class="metric-card" style="border-top:3px solid #16a34a;">
-    <div class="metric-label"><i class="bi bi-cash-stack"></i> Custo total</div>
+    <div class="metric-label"><i class="bi bi-cash-stack"></i> Custo médio</div>
     <div class="metric-value" style="font-size:1.1rem;color:#15803d;">
-      <%= number_to_currency(@total_cost, unit:"R$", separator:",", delimiter:".", precision:0) %>
+      <%= number_to_currency(@total_events > 0 ? @total_cost / @total_events : 0, unit:"R$", separator:",", delimiter:".", precision:0) %>
     </div>
-    <div class="metric-sub">todos os eventos</div>
+    <div class="metric-sub">por evento</div>
   </div>
 </div>
 
