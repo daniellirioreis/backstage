@@ -219,86 +219,8 @@
   </div>
 </div>
 
-<%# ── Layout em duas colunas ─────────────────────────────────────────────── %>
-<div class="dash-main-grid" style="display:grid;grid-template-columns:1fr 260px;gap:1.25rem;align-items:start;">
-
-  <%# ── Lista de eventos ──────────────────────────────────────────────────── %>
-  <div>
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem;">
-      <h2 style="font-size:0.9rem;font-weight:700;color:#18181b;margin:0;text-transform:uppercase;letter-spacing:0.05em;">
-        <i class="bi bi-calendar-event" style="color:#a1a1aa;"></i> Eventos
-      </h2>
-      <% if policy(Event).index? %>
-        <%= link_to "Ver todos →", events_path, style: "font-size:0.75rem;color:#71717a;text-decoration:none;" %>
-      <% end %>
-    </div>
-
-    <% if @events.empty? %>
-      <div class="content-card" style="text-align:center;color:#a1a1aa;font-size:0.85rem;padding:2.5rem;">
-        <i class="bi bi-calendar-event" style="font-size:2rem;display:block;margin-bottom:0.75rem;color:#d4d4d8;"></i>
-        Nenhum evento cadastrado ainda.
-        <% if policy(Event).new? %>
-          <div style="margin-top:0.75rem;">
-            <%= link_to new_event_path, class: "btn-primary" do %><i class="bi bi-plus"></i> Criar evento<% end %>
-          </div>
-        <% end %>
-      </div>
-    <% else %>
-      <div style="display:flex;flex-direction:column;gap:0.5rem;">
-        <% @events.each do |event|
-             sectors_count = event.sectors.size
-             teams_count   = event.sectors.sum { |s| s.teams.size }
-             members_count = event.sectors.flat_map(&:teams).flat_map(&:team_memberships).map(&:user_id).uniq.size
-             is_current    = event.id == current_event&.id
-             status_color  = event.active? ? "#4ade80" : event.draft? ? "#d4d4d8" : "#27272a"
-             days_label    = if event.start_date > Date.today
-               diff = (event.start_date - Date.today).to_i
-               diff == 1 ? "amanhã" : "em #{diff} dias"
-             elsif event.end_date >= Date.today
-               "em andamento"
-             else
-               diff = (Date.today - event.end_date).to_i
-               diff == 1 ? "ontem" : "há #{diff} dias"
-             end
-        %>
-          <%= link_to event_path(event), style: "text-decoration:none;display:block;" do %>
-            <div class="content-card" style="padding:0;overflow:hidden;<%= is_current ? 'box-shadow:0 0 0 2px #18181b;' : '' %>;transition:box-shadow 0.15s;">
-              <div style="height:3px;background:<%= status_color %>;"></div>
-              <div style="padding:0.85rem 1rem;display:flex;align-items:center;gap:1rem;">
-                <div style="flex:1;min-width:0;">
-                  <div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;margin-bottom:0.25rem;">
-                    <span style="font-size:0.88rem;font-weight:600;color:#18181b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"><%= event.name %></span>
-                    <% if is_current %>
-                      <span style="font-size:0.6rem;font-weight:700;background:#18181b;color:#fff;border-radius:3px;padding:1px 5px;letter-spacing:0.04em;">ATUAL</span>
-                    <% end %>
-                  </div>
-                  <div style="display:flex;gap:0.75rem;flex-wrap:wrap;">
-                    <span style="font-size:0.72rem;color:#a1a1aa;"><i class="bi bi-calendar3"></i> <%= l(event.start_date, format: :short) %> → <%= l(event.end_date, format: :short) %></span>
-                    <span style="font-size:0.72rem;color:#a1a1aa;font-style:italic;"><%= days_label %></span>
-                  </div>
-                </div>
-                <div style="display:flex;flex-direction:column;align-items:flex-end;gap:0.4rem;flex-shrink:0;">
-                  <div style="display:flex;align-items:center;gap:0.35rem;flex-wrap:wrap;justify-content:flex-end;">
-                    <span class="badge-status badge-<%= event.status %>"><%= t("event_statuses.#{event.status}") %></span>
-                    <% if event.closing_finalized_at? %>
-                      <span style="font-size:0.6rem;font-weight:700;background:#dcfce7;border:1px solid #86efac;color:#15803d;border-radius:4px;padding:1px 6px;display:inline-flex;align-items:center;gap:2px;">
-                        <i class="bi bi-check-circle-fill"></i> Fechamento ok
-                      </span>
-                    <% end %>
-                  </div>
-                  <div style="display:flex;gap:0.75rem;">
-                    <span style="font-size:0.72rem;color:#a1a1aa;"><i class="bi bi-grid-3x3-gap"></i> <%= sectors_count %></span>
-                    <span style="font-size:0.72rem;color:#a1a1aa;"><i class="bi bi-people"></i> <%= teams_count %></span>
-                    <span style="font-size:0.72rem;color:#a1a1aa;"><i class="bi bi-person-badge"></i> <%= members_count %></span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          <% end %>
-        <% end %>
-      </div>
-    <% end %>
-  </div>
+<%# ── Coluna lateral ───────────────────────────────────────────────────────── %>
+<div class="dash-main-grid" style="display:grid;grid-template-columns:260px;gap:1.25rem;align-items:start;justify-content:end;">
 
   <%# ── Coluna direita ─────────────────────────────────────────────────────── %>
   <div style="display:flex;flex-direction:column;gap:1rem;">
