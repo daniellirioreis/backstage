@@ -37,7 +37,9 @@ class DashboardController < ApplicationController
                                     .where(team_id: all_shifts.map(&:team_id).compact.uniq)
                                     .each_with_object({}) { |m, h| h[[m.user_id, m.team_id]] = m }
 
-    @event_costs = Hash.new(0.0)
+    @event_costs        = Hash.new(0.0)
+    @cost_by_sector_type = Hash.new(0.0)
+
     all_shifts.each do |shift|
       next unless shift.team_id
       rate = memberships_map[[shift.user_id, shift.team_id]]&.event_function&.hourly_rate.to_f
@@ -47,10 +49,19 @@ class DashboardController < ApplicationController
       e = shift.end_time.hour   * 60 + shift.end_time.min
       hours_per_day = (e > s ? e - s : 1440 - s + e) / 60.0
       days = shift.end_date.present? ? (shift.end_date - shift.date).to_i + 1 : 1
-      @event_costs[shift.sector.event_id] += hours_per_day * days * rate
+      cost = hours_per_day * days * rate
+
+      @event_costs[shift.sector.event_id] += cost
+      @cost_by_sector_type[shift.sector.sector_type] += cost if shift.sector.sector_type.present?
     end
 
     @total_cost = @event_costs.values.sum
+
+    # Contagem de setores por tipo (para calcular média)
+    @sectors_by_type = Sector.where(event_id: event_ids)
+                              .where.not(sector_type: nil)
+                              .group(:sector_type)
+                              .count
 
     # ── Stats do evento atual ─────────────────────────────────────────────────
     if current_event
