@@ -1,5 +1,5 @@
 class TeamsController < ApplicationController
-  before_action :set_team, only: %i[show edit update destroy credentials import_members set_function schedule]
+  before_action :set_team, only: %i[show edit update destroy credentials import_members set_function schedule quick_add_member]
 
   def search
     authorize Team, :index?
@@ -200,6 +200,81 @@ class TeamsController < ApplicationController
     membership = @team.team_memberships.find(params[:membership_id])
     membership.update!(event_function_id: params[:event_function_id].presence)
     redirect_to edit_team_path(@team), notice: "Função atualizada."
+  end
+
+  # GET AJAX: usuários da empresa disponíveis para adicionar à equipe
+  def search_available
+    authorize Team, :index?
+    q            = params[:q].to_s.strip
+    team         = Team.find(params[:team_id])
+    existing_ids = team.team_memberships.pluck(:user_id)
+    company      = current_event&.company
+
+    scope = company ? company_users_scope : User.all
+    scope = scope.where.not(id: existing_ids)
+    scope = scope.where("users.name ILIKE ? OR users.phone ILIKE ?", "%#{q}%", "%#{q}%") if q.present?
+
+    users = scope.order("users.name").limit(10)
+    render json: users.map { |u|
+      { id: u.id, name: u.name, phone: u.phone,
+        initials: u.name.split.map(&:first).first(2).join.upcase }
+    }
+  end
+
+  # POST: adiciona substituto (existente ou novo) à equipe durante evento ativo
+  def quick_add_member
+    authorize @team, :quick_add_member?
+
+    event_function_id = params[:event_function_id].presence
+
+    if params[:user_id].present?
+      user = User.find(params[:user_id])
+    else
+      # Cria usuário simplificado (substituto sem conta)
+      collaborator_role = Role.find_by(collaborator: true) || Role.first
+      temp_email = "sub.#{SecureRandom.hex(5)}@substituto.backstage"
+
+      user = User.new(
+        name:                      params[:name].to_s.strip,
+        phone:                     params[:phone].to_s.strip.presence,
+        email:                     temp_email,
+        password:                  SecureRandom.hex(16),
+        role:                      collaborator_role,
+        skip_required_validations: true
+      )
+
+      unless user.save
+        return render json: { status: :error, errors: user.errors.full_messages }, status: :unprocessable_entity
+      end
+
+      # Vincula à empresa do evento
+      company = @team.sector.event.company
+      CompanyUser.find_or_create_by!(user: user, company: company) if company
+    end
+
+    if @team.team_memberships.exists?(user_id: user.id)
+      return render json: { status: :error, errors: ["#{user.name} já está na equipe"] }, status: :unprocessable_entity
+    end
+
+    membership = @team.team_memberships.create!(
+      user_id:           user.id,
+      event_function_id: event_function_id,
+      substitute:        true
+    )
+
+    render json: {
+      status:       :ok,
+      message:      "#{user.name} adicionado(a) à equipe com sucesso.",
+      membership: {
+        user_id:         user.id,
+        name:            user.name,
+        phone:           user.phone,
+        initials:        user.name.split.map(&:first).first(2).join.upcase,
+        credential_code: membership.full_credential_code,
+        function_name:   membership.event_function&.name || "—",
+        is_new_user:     params[:user_id].blank?
+      }
+    }
   end
 
   # POST: importa membros selecionados

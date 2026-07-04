@@ -193,9 +193,8 @@ module Reports
                     .then { |q| @sector ? q.where(sectors: { id: @sector.id }) : q }
                     .includes(:user, team: :sector)
 
-      # Carregar attendances com check-out
+      # Carregar attendances — check-in já basta para presença
       attendances = Attendance.where(event: @event)
-                              .where.not(checked_out_at: nil)
                               .then { |q| @sector ? q.joins(:team).where(teams: { sector_id: @sector.id }) : q }
                               .includes(:user, :team)
 
@@ -215,18 +214,20 @@ module Reports
         shift_rows[key][:shift_entries] << { label: format_shift_label(shift), hours: hours }
       end
 
-      # Indexar attendances por user
+      # Indexar attendances por user — check-in já conta como presença
       att_rows = {}
       attendances.each do |att|
-        hours = (att.checked_out_at - att.checked_in_at) / 3600.0
+        hours = att.checked_out_at ? (att.checked_out_at - att.checked_in_at) / 3600.0 : nil
         key   = att.user_id
-        att_rows[key] ||= { user: att.user, actual_hours: 0.0, att_entries: [] }
-        att_rows[key][:actual_hours] += hours
+        att_rows[key] ||= { user: att.user, actual_hours: 0.0, att_entries: [], missing_checkout: false }
+        att_rows[key][:actual_hours] += hours || 0.0
+        att_rows[key][:missing_checkout] = true unless att.checked_out_at
         att_rows[key][:att_entries] << {
-          date:        l(att.checked_in_date, format: :short),
-          checked_in:  att.checked_in_at.strftime("%H:%M"),
-          checked_out: att.checked_out_at.strftime("%H:%M"),
-          hours:       hours
+          date:            l(att.checked_in_date, format: :short),
+          checked_in:      att.checked_in_at.strftime("%H:%M"),
+          checked_out:     att.checked_out_at&.strftime("%H:%M"),
+          hours:           hours,
+          missing_checkout: att.checked_out_at.nil?
         }
       end
 
@@ -238,20 +239,28 @@ module Reports
         fn  = sr&.dig(:fn) || tm&.event_function
         user = sr&.dig(:user) || ar&.dig(:user)
 
-        scheduled = sr&.dig(:scheduled_hours) || 0.0
-        actual    = ar&.dig(:actual_hours)
+        scheduled        = sr&.dig(:scheduled_hours) || 0.0
+        actual           = ar&.dig(:actual_hours) || 0.0
+        missing_checkout = ar&.dig(:missing_checkout)
 
         status =
-          if sr && ar   then :present       # tem escala E presença
-          elsif sr       then :absent        # tem escala, SEM presença
-          else            :unscheduled      # tem presença, SEM escala
+          if ar && sr    then :present       # fez check-in (com ou sem escala)
+          elsif ar        then :unscheduled  # check-in sem escala (ex: substituto)
+          else             :absent           # tem escala, SEM check-in
           end
 
-        # Horas a pagar: presente → escala; ausente → 0; não escalado → real (gestor decide)
+        # Horas a pagar:
+        #   presente com checkout  → horas reais
+        #   presente sem checkout  → horas da escala como referência
+        #   ausente                → 0
+        #   não escalado           → horas reais (se tem checkout), senão 0
         payable = case status
-                  when :present      then scheduled
-                  when :absent       then 0.0
-                  when :unscheduled  then actual || 0.0
+                  when :present
+                    missing_checkout ? scheduled : actual
+                  when :absent
+                    0.0
+                  when :unscheduled
+                    actual
                   end
 
         {

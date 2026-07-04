@@ -59,6 +59,7 @@ Rails.application.routes.draw do
       get  :search
       get  :import_source_teams    # AJAX: teams de um evento
       get  :import_source_members  # AJAX: membros de uma equipe
+      get  :search_available       # AJAX: usuários disponíveis para adicionar
     end
     member do
       get   :credentials
@@ -66,6 +67,7 @@ Rails.application.routes.draw do
       post  :schedule
       post  :import_members
       patch :set_function
+      post  :quick_add_member
     end
   end
   resources :sectors do

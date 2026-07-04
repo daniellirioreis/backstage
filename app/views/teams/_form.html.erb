@@ -85,6 +85,9 @@
                     <% end %>
                   </div>
                   <span style="font-size:0.85rem;font-weight:500;color:#18181b;"><%= tm.user.name %></span>
+                  <% if tm.substitute? %>
+                    <span style="font-size:0.65rem;font-weight:700;background:#fdf4ff;border:1px solid #e9d5ff;color:#7c3aed;border-radius:4px;padding:1px 6px;letter-spacing:0.04em;">Substituto</span>
+                  <% end %>
                   <%= ff.hidden_field :user_id %>
                 </div>
               <% else %>

@@ -22,6 +22,11 @@ class User < ApplicationRecord
     role&.name == "admin"
   end
 
+  def formatted_cpf
+    return "—" if cpf.blank?
+    cpf.gsub(/(\d{3})(\d{3})(\d{3})(\d{2})/, '\1.\2.\3-\4')
+  end
+
   def company_role_for(company)
     company_users.find_by(company: company)&.role
   end

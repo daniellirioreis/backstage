@@ -20,6 +20,7 @@
 <% inside_now = @attendances.reject(&:checked_out_at) %>
 <% finished   = @attendances.select(&:checked_out_at) %>
 <% pct = @total_collaborators > 0 ? [(@attendances.size * 100.0 / @total_collaborators).round, 100].min : 0 %>
+<% filter_done = params[:inside] == "done" %>
 
 <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:0.75rem; margin-bottom:1.25rem;">
   <div class="content-card" style="padding:1rem 1.25rem; text-align:center;">
@@ -34,10 +35,23 @@
     <div style="font-size:2rem; font-weight:800; color:#0ea5e9; line-height:1;"><%= inside_now.size %></div>
     <div style="font-size:0.72rem; color:#71717a; margin-top:3px;">em atividade</div>
   </div>
+  <%= link_to attendances_path(date: @selected_date, sector_id: params[:sector_id], inside: filter_done ? nil : "done", q: params[:q]),
+      style: "text-decoration:none;" do %>
+    <div class="content-card" style="padding:1rem 1.25rem; text-align:center; border:2px solid <%= filter_done ? '#c2410c' : 'transparent' %>; cursor:pointer;">
+      <div style="font-size:2rem; font-weight:800; color:#c2410c; line-height:1;"><%= finished.size %></div>
+      <div style="font-size:0.72rem; color:#71717a; margin-top:3px;">checkout<%= finished.size == 1 ? "" : "s" %> realizados</div>
+    </div>
+  <% end %>
   <div class="content-card" style="padding:1rem 1.25rem; text-align:center;">
     <div style="font-size:2rem; font-weight:800; color:#f59e0b; line-height:1;"><%= @not_checked_in.size %></div>
     <div style="font-size:0.72rem; color:#71717a; margin-top:3px;">aguardando check-in</div>
   </div>
+  <% if @total_substitutes > 0 %>
+    <div class="content-card" style="padding:1rem 1.25rem; text-align:center; border-left:3px solid #a78bfa;">
+      <div style="font-size:2rem; font-weight:800; color:#7c3aed; line-height:1;"><%= @total_substitutes %></div>
+      <div style="font-size:0.72rem; color:#71717a; margin-top:3px;">substituto<%= @total_substitutes == 1 ? "" : "s" %></div>
+    </div>
+  <% end %>
   <div class="content-card" style="padding:1rem 1.25rem; text-align:center;">
     <div style="font-size:2rem; font-weight:800; color:<%= pct >= 80 ? '#16a34a' : pct >= 50 ? '#d97706' : '#dc2626' %>; line-height:1;"><%= pct %>%</div>
     <div style="font-size:0.72rem; color:#71717a; margin-top:3px;">de presença</div>
@@ -102,6 +116,8 @@
         style: "font-size:0.78rem; padding:0.25rem 0.65rem; border-radius:6px; border:1px solid #{current_filter == '1' ? '#0ea5e9' : '#e4e4e7'}; background:#{current_filter == '1' ? '#0ea5e9' : 'transparent'}; color:#{current_filter == '1' ? '#fff' : '#3f3f46'}; text-decoration:none; white-space:nowrap;" %>
     <%= link_to "Aguardando Check-in", attendances_path(date: @selected_date, sector_id: params[:sector_id], inside: "pending", q: params[:q]),
         style: "font-size:0.78rem; padding:0.25rem 0.65rem; border-radius:6px; border:1px solid #{current_filter == 'pending' ? '#f59e0b' : '#e4e4e7'}; background:#{current_filter == 'pending' ? '#f59e0b' : 'transparent'}; color:#{current_filter == 'pending' ? '#fff' : '#3f3f46'}; text-decoration:none; white-space:nowrap;" %>
+    <%= link_to "Checkout Realizado", attendances_path(date: @selected_date, sector_id: params[:sector_id], inside: "done", q: params[:q]),
+        style: "font-size:0.78rem; padding:0.25rem 0.65rem; border-radius:6px; border:1px solid #{current_filter == 'done' ? '#c2410c' : '#e4e4e7'}; background:#{current_filter == 'done' ? '#c2410c' : 'transparent'}; color:#{current_filter == 'done' ? '#fff' : '#3f3f46'}; text-decoration:none; white-space:nowrap;" %>
   </div>
 
   <%# Filtro setor %>
@@ -158,7 +174,12 @@
           </div>
           <%# Info %>
           <div style="min-width:0; flex:1;">
-            <div style="font-size:0.86rem; font-weight:600; color:#18181b;"><%= r[:user].name %></div>
+            <div style="display:flex; align-items:center; gap:0.4rem; flex-wrap:wrap;">
+              <span style="font-size:0.86rem; font-weight:600; color:#18181b;"><%= r[:user].name %></span>
+              <% if r[:substitute] %>
+                <span style="font-size:0.65rem; font-weight:700; background:#fdf4ff; border:1px solid #e9d5ff; color:#7c3aed; border-radius:4px; padding:1px 6px; letter-spacing:0.04em;">Substituto</span>
+              <% end %>
+            </div>
             <div style="display:flex; align-items:center; gap:0.4rem; flex-wrap:wrap; margin-top:2px;">
               <% if r[:team] %>
                 <span style="font-size:0.7rem; color:#71717a;"><i class="bi bi-grid-3x3-gap" style="font-size:0.6rem;"></i> <%= r[:team].sector&.name %></span>
@@ -173,10 +194,16 @@
           </div>
           <%# Horários de escala %>
           <div style="text-align:right; flex-shrink:0;">
-            <% r[:shifts].each do |shift| %>
-              <div style="display:inline-flex; align-items:center; gap:0.3rem; background:#fef3c7; border:1px solid #fcd34d; border-radius:6px; padding:2px 8px; font-size:0.72rem; font-weight:600; color:#92400e; margin-bottom:2px;">
-                <i class="bi bi-clock" style="font-size:0.65rem;"></i>
-                <%= shift.start_time.strftime("%H:%M") %> – <%= shift.end_time.strftime("%H:%M") %>
+            <% if r[:shifts].any? %>
+              <% r[:shifts].each do |shift| %>
+                <div style="display:inline-flex; align-items:center; gap:0.3rem; background:#fef3c7; border:1px solid #fcd34d; border-radius:6px; padding:2px 8px; font-size:0.72rem; font-weight:600; color:#92400e; margin-bottom:2px;">
+                  <i class="bi bi-clock" style="font-size:0.65rem;"></i>
+                  <%= shift.start_time.strftime("%H:%M") %> – <%= shift.end_time.strftime("%H:%M") %>
+                </div>
+              <% end %>
+            <% elsif r[:substitute] %>
+              <div style="display:inline-flex; align-items:center; gap:0.3rem; background:#fdf4ff; border:1px solid #e9d5ff; border-radius:6px; padding:2px 8px; font-size:0.72rem; font-weight:600; color:#7c3aed;">
+                <i class="bi bi-person-fill-up" style="font-size:0.65rem;"></i> Sem escala
               </div>
             <% end %>
           </div>
@@ -223,8 +250,11 @@
 
           <%# Nome + equipe + setor + credencial %>
           <div style="min-width:0; flex:1;">
-            <div style="font-size:0.88rem; font-weight:600; color:#18181b; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
-              <%= att.user.name %>
+            <div style="display:flex; align-items:center; gap:0.4rem; flex-wrap:wrap;">
+              <span style="font-size:0.88rem; font-weight:600; color:#18181b; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;"><%= att.user.name %></span>
+              <% if @substitute_user_ids&.include?(att.user_id) %>
+                <span style="font-size:0.65rem; font-weight:700; background:#fdf4ff; border:1px solid #e9d5ff; color:#7c3aed; border-radius:4px; padding:1px 6px; letter-spacing:0.04em;">Substituto</span>
+              <% end %>
             </div>
             <div style="display:flex; align-items:center; gap:0.4rem; flex-wrap:wrap; margin-top:2px;">
               <% if att.team %>

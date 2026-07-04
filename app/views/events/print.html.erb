@@ -99,7 +99,7 @@
               <tr>
                 <td style="color: #a1a1aa;"><%= i + 1 %></td>
                 <td><%= u.name %></td>
-                <td style="font-family: monospace; font-size: 0.68rem; color: #71717a;"><%= u.cpf.gsub(/(\d{3})(\d{3})(\d{3})(\d{2})/, '\1.\2.\3-\4') %></td>
+                <td style="font-family: monospace; font-size: 0.68rem; color: #71717a;"><%= u.formatted_cpf %></td>
                 <td style="font-family: monospace; font-size: 0.68rem; color: #71717a;"><%= membership&.full_credential_code %></td>
                 <td style="border-bottom: 1px solid #a1a1aa; height: 40px;"></td>
               </tr>

@@ -68,7 +68,7 @@
     <% @rows.each_with_index do |row, idx| %>
       <tr style="<%= idx.odd? ? 'background:#fafafa;' : '' %>">
         <td style="font-weight:600;"><%= row[:user].name %></td>
-        <td style="font-family:monospace; color:#71717a;"><%= row[:user].cpf.gsub(/(\d{3})(\d{3})(\d{3})(\d{2})/, '\1.\2.\3-\4') %></td>
+        <td style="font-family:monospace; color:#71717a;"><%= row[:user].formatted_cpf %></td>
         <td style="color:#52525b;"><%= row[:function_name] %></td>
         <% if @basis == "attendance" %>
           <td style="text-align:center; color:#52525b;">

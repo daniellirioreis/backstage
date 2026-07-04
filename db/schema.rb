@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_07_03_000001) do
+ActiveRecord::Schema[7.1].define(version: 2026_07_03_000002) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -232,6 +232,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_07_03_000001) do
     t.string "credential_code"
     t.bigint "event_function_id"
     t.integer "role", default: 0, null: false
+    t.boolean "substitute", default: false, null: false
     t.index ["credential_code"], name: "index_team_memberships_on_credential_code", unique: true
     t.index ["event_function_id"], name: "index_team_memberships_on_event_function_id"
     t.index ["team_id", "user_id"], name: "index_team_memberships_on_team_id_and_user_id", unique: true

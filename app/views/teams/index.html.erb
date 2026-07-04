@@ -126,7 +126,7 @@
           <% end %>
           <% memberships.each do |tm| %>
             <% u = tm.user %>
-            <% popover_members << { name: u.name, initials: u.name.split.map(&:first).first(2).join.upcase, avatar_url: (url_for(u.avatar) if u.avatar.attached?), coordinator: false, credential: tm.full_credential_code, function: tm.event_function&.name } %>
+            <% popover_members << { name: u.name, initials: u.name.split.map(&:first).first(2).join.upcase, avatar_url: (url_for(u.avatar) if u.avatar.attached?), coordinator: false, credential: tm.full_credential_code, function: tm.event_function&.name, substitute: tm.substitute? } %>
           <% end %>
 
           <%# Nome + coordenador %>
@@ -176,8 +176,7 @@
                     <i class="bi bi-calendar-check" style="font-size: 0.6rem;"></i> Com escala
                   </span>
                 <% else %>
-                  <span onclick="openShiftModal('<%= schedule_team_path(team, modal: 1) %>')"
-                        style="display: inline-flex; align-items: center; gap: 0.2rem; background: #f0fdf4; border: 1px solid #86efac; border-radius: 4px; padding: 1px 6px; font-size: 0.68rem; font-weight: 600; color: #15803d; cursor: pointer;">
+                  <span style="display: inline-flex; align-items: center; gap: 0.2rem; background: #f0fdf4; border: 1px solid #86efac; border-radius: 4px; padding: 1px 6px; font-size: 0.68rem; font-weight: 600; color: #15803d;">
                     <i class="bi bi-calendar-check" style="font-size: 0.6rem;"></i> Com escala
                   </span>
                 <% end %>
@@ -203,8 +202,8 @@
                 <% memberships.first(5).each_with_index do |tm, j| %>
                   <% user = tm.user %>
                   <div class="member-row" data-member-name="<%= user.name.downcase %>"
-                       title="<%= user.name %>"
-                       style="width: 28px; height: 28px; border-radius: 50%; overflow: hidden; background: #f4f4f5; border: 2px solid #fff; display: flex; align-items: center; justify-content: center; font-size: 0.55rem; font-weight: 700; color: #52525b; flex-shrink: 0; margin-left: <%= j > 0 ? '-8px' : '0' %>; z-index: <%= 10 - j %>; position: relative;">
+                       title="<%= user.name %><%= tm.substitute? ? ' (Substituto)' : '' %>"
+                       style="width: 28px; height: 28px; border-radius: 50%; overflow: hidden; background: #f4f4f5; border: 2px solid <%= tm.substitute? ? '#a78bfa' : '#fff' %>; display: flex; align-items: center; justify-content: center; font-size: 0.55rem; font-weight: 700; color: #52525b; flex-shrink: 0; margin-left: <%= j > 0 ? '-8px' : '0' %>; z-index: <%= 10 - j %>; position: relative;">
                     <% if user.avatar.attached? %>
                       <%= image_tag user.avatar, style: "width: 100%; height: 100%; object-fit: cover;" %>
                     <% else %>
@@ -226,6 +225,13 @@
 
           <%# Ações %>
           <div style="display: flex; gap: 0.35rem; flex-shrink: 0;">
+            <% if policy(team).quick_add_member? || policy(team).manage_members? %>
+              <button onclick="abrirModalSubstituto(<%= team.id %>, '<%= j team.name %>')"
+                      class="btn-secondary" style="padding: 0.25rem 0.5rem; font-size: 0.8rem;"
+                      title="Adicionar Substituto">
+                <i class="bi bi-person-plus"></i>
+              </button>
+            <% end %>
             <% if policy(team).show? %>
               <%= link_to credentials_team_path(team, format: :pdf), class: "btn-secondary", style: "padding: 0.25rem 0.5rem; font-size: 0.8rem;", title: "Credenciais PDF" do %>
                 <i class="bi bi-file-earmark-pdf"></i>
@@ -341,11 +347,11 @@
         var avatar = m.avatar_url
           ? '<img src="' + m.avatar_url + '" style="width:100%;height:100%;object-fit:cover;">'
           : '<span style="font-size:0.55rem;font-weight:700;">' + m.initials + '</span>';
-        var bg    = m.coordinator ? '#dcfce7' : '#f4f4f5';
-        var color = m.coordinator ? '#15803d' : '#52525b';
+        var bg    = m.coordinator ? '#dcfce7' : (m.substitute ? '#fdf4ff' : '#f4f4f5');
+        var color = m.coordinator ? '#15803d' : (m.substitute ? '#7c3aed' : '#52525b');
         var badge = m.coordinator
           ? '<span style="font-size:0.6rem;background:#fef3c7;color:#92400e;border:1px solid #fcd34d;border-radius:3px;padding:0 4px;margin-left:4px;">Coord.</span>'
-          : '';
+          : (m.substitute ? '<span style="font-size:0.6rem;background:#fdf4ff;color:#7c3aed;border:1px solid #e9d5ff;border-radius:3px;padding:0 4px;margin-left:4px;">Substituto</span>' : '');
         var fnBadge = m.function
           ? '<span style="font-size:0.6rem;color:#7c3aed;font-weight:600;background:#f5f3ff;border:1px solid #ddd6fe;border-radius:3px;padding:0 4px;margin-left:4px;">' + m.function + '</span>'
           : '';
@@ -620,5 +626,236 @@
   <% if preset_import_team %>
     openImportModal(<%= preset_import_team.id %>, "<%= j preset_import_team.name %>");
   <% end %>
+})();
+</script>
+
+<%# ─── Modal: Adicionar Substituto ──────────────────────────────────────── %>
+<div id="substituto-modal"
+     style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.45); z-index:1050; align-items:center; justify-content:center;"
+     onclick="if(event.target===this) fecharModalSubstituto()">
+  <div style="background:#fff; border-radius:12px; box-shadow:0 16px 48px rgba(0,0,0,0.18); width:100%; max-width:480px; max-height:92vh; display:flex; flex-direction:column; overflow:hidden;">
+
+    <div style="display:flex; align-items:center; justify-content:space-between; padding:1.1rem 1.5rem; border-bottom:1px solid #f4f4f5;">
+      <div>
+        <h3 style="margin:0; font-size:1rem; font-weight:700; color:#18181b;">
+          <i class="bi bi-person-plus"></i> Adicionar Substituto
+        </h3>
+        <div id="sub-team-name" style="font-size:0.78rem; color:#71717a; margin-top:2px;"></div>
+      </div>
+      <button onclick="fecharModalSubstituto()" style="background:none; border:none; cursor:pointer; color:#71717a; font-size:1.2rem; padding:0.2rem;">
+        <i class="bi bi-x-lg"></i>
+      </button>
+    </div>
+
+    <div style="display:flex; border-bottom:1px solid #f4f4f5;">
+      <button id="tab-buscar" onclick="trocarAbaSubstituto('buscar')"
+              style="flex:1; padding:0.75rem; font-size:0.82rem; font-weight:600; border:none; background:none; cursor:pointer; border-bottom:2px solid #7c3aed; color:#7c3aed;">
+        <i class="bi bi-search"></i> Buscar existente
+      </button>
+      <button id="tab-novo" onclick="trocarAbaSubstituto('novo')"
+              style="flex:1; padding:0.75rem; font-size:0.82rem; font-weight:600; border:none; background:none; cursor:pointer; border-bottom:2px solid transparent; color:#71717a;">
+        <i class="bi bi-person-plus-fill"></i> Cadastrar novo
+      </button>
+    </div>
+
+    <div style="padding:1.25rem 1.5rem; overflow-y:auto; flex:1;">
+      <div id="sub-feedback" style="display:none; margin-bottom:1rem; padding:0.75rem 1rem; border-radius:8px; font-size:0.85rem; font-weight:500;"></div>
+
+      <%# Aba buscar %>
+      <div id="aba-buscar">
+        <div style="margin-bottom:1rem;">
+          <label class="form-label">Buscar colaborador</label>
+          <input type="text" id="sub-busca" placeholder="Nome ou telefone..."
+                 class="form-control" autocomplete="off" oninput="subBuscarUsuarios(this.value)">
+          <div id="sub-busca-resultados" style="display:none; border:1px solid #e4e4e7; border-radius:8px; margin-top:4px; background:#fff; max-height:200px; overflow-y:auto; box-shadow:0 4px 12px rgba(0,0,0,0.08);"></div>
+        </div>
+        <div id="sub-usuario-selecionado" style="display:none; padding:0.75rem; background:#f5f3ff; border:1px solid #ddd6fe; border-radius:8px; margin-bottom:1rem;">
+          <div style="display:flex; align-items:center; justify-content:space-between;">
+            <div>
+              <div id="sub-sel-nome" style="font-size:0.88rem; font-weight:600; color:#18181b;"></div>
+              <div id="sub-sel-tel" style="font-size:0.75rem; color:#71717a;"></div>
+            </div>
+            <button onclick="subLimparSelecao()" style="background:none; border:none; cursor:pointer; color:#71717a;"><i class="bi bi-x"></i></button>
+          </div>
+        </div>
+        <div style="margin-bottom:1.25rem;">
+          <label class="form-label">Função no evento</label>
+          <select id="sub-funcao-buscar" class="form-control form-select" style="font-size:0.85rem;">
+            <option value="">— Sem função —</option>
+            <% @event_functions = current_event.event_functions.order(:name) %>
+            <% @event_functions.each do |ef| %>
+              <option value="<%= ef.id %>"><%= ef.name %> · R$<%= format('%.2f', ef.hourly_rate) %>/h</option>
+            <% end %>
+          </select>
+        </div>
+        <button onclick="subAdicionarExistente()" class="btn-primary" style="width:100%;">
+          <i class="bi bi-person-check"></i> Adicionar à equipe
+        </button>
+      </div>
+
+      <%# Aba novo %>
+      <div id="aba-novo" style="display:none;">
+        <div style="margin-bottom:1rem;">
+          <label class="form-label">Nome completo <span style="color:#ef4444;">*</span></label>
+          <input type="text" id="sub-nome" class="form-control" placeholder="Ex: João da Silva">
+        </div>
+        <div style="margin-bottom:1rem;">
+          <label class="form-label">Telefone</label>
+          <input type="text" id="sub-telefone" class="form-control" placeholder="Ex: 31 99999-9999">
+        </div>
+        <div style="margin-bottom:1.25rem;">
+          <label class="form-label">Função no evento</label>
+          <select id="sub-funcao-novo" class="form-control form-select" style="font-size:0.85rem;">
+            <option value="">— Sem função —</option>
+            <% @event_functions.each do |ef| %>
+              <option value="<%= ef.id %>"><%= ef.name %> · R$<%= format('%.2f', ef.hourly_rate) %>/h</option>
+            <% end %>
+          </select>
+        </div>
+        <button onclick="subCadastrarNovo()" class="btn-primary" style="width:100%;">
+          <i class="bi bi-person-plus-fill"></i> Cadastrar e adicionar
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+  var currentTeamId  = null;
+  var selectedUserId = null;
+  var searchTimeout  = null;
+
+  window.abrirModalSubstituto = function(teamId, teamName) {
+    currentTeamId = teamId;
+    selectedUserId = null;
+    document.getElementById('sub-team-name').textContent = teamName;
+    document.getElementById('sub-feedback').style.display = 'none';
+    document.getElementById('sub-busca').value = '';
+    document.getElementById('sub-busca-resultados').style.display = 'none';
+    document.getElementById('sub-usuario-selecionado').style.display = 'none';
+    document.getElementById('sub-busca').style.display = 'block';
+    trocarAbaSubstituto('buscar');
+    document.getElementById('substituto-modal').style.display = 'flex';
+  };
+
+  window.fecharModalSubstituto = function() {
+    document.getElementById('substituto-modal').style.display = 'none';
+    currentTeamId = null;
+  };
+
+  window.trocarAbaSubstituto = function(aba) {
+    ['buscar', 'novo'].forEach(function(a) {
+      var el  = document.getElementById('aba-' + a);
+      var tab = document.getElementById('tab-' + a);
+      if (!el || !tab) return;
+      var active = a === aba;
+      el.style.display          = active ? 'block' : 'none';
+      tab.style.borderBottomColor = active ? '#7c3aed' : 'transparent';
+      tab.style.color           = active ? '#7c3aed' : '#71717a';
+    });
+    document.getElementById('sub-feedback').style.display = 'none';
+  };
+
+  window.subBuscarUsuarios = function(q) {
+    clearTimeout(searchTimeout);
+    var res = document.getElementById('sub-busca-resultados');
+    if (q.length < 1) { res.style.display = 'none'; return; }
+    searchTimeout = setTimeout(function() {
+      fetch('<%= search_available_teams_path %>?q=' + encodeURIComponent(q) + '&team_id=' + currentTeamId, {
+        headers: { 'X-CSRF-Token': document.querySelector('meta[name=csrf-token]').content }
+      })
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (data.length === 0) {
+          res.innerHTML = '<div style="padding:0.75rem 1rem; font-size:0.82rem; color:#a1a1aa;">Nenhum resultado</div>';
+        } else {
+          res.innerHTML = data.map(function(u) {
+            return '<div onclick="subSelecionarUsuario(' + u.id + ',\'' + u.name.replace(/'/g,"\\'") + '\',\'' + (u.phone||'').replace(/'/g,"\\'") + '\')" ' +
+              'style="padding:0.65rem 1rem; cursor:pointer; font-size:0.85rem; border-bottom:1px solid #f4f4f5;" ' +
+              'onmouseover="this.style.background=\'#f5f3ff\'" onmouseout="this.style.background=\'#fff\'">' +
+              '<span style="font-weight:600;">' + u.name + '</span>' +
+              (u.phone ? '<span style="color:#71717a; margin-left:0.5rem; font-size:0.78rem;">' + u.phone + '</span>' : '') +
+              '</div>';
+          }).join('');
+        }
+        res.style.display = 'block';
+      });
+    }, 250);
+  };
+
+  window.subSelecionarUsuario = function(id, nome, telefone) {
+    selectedUserId = id;
+    document.getElementById('sub-sel-nome').textContent = nome;
+    document.getElementById('sub-sel-tel').textContent  = telefone || '';
+    document.getElementById('sub-usuario-selecionado').style.display = 'block';
+    document.getElementById('sub-busca-resultados').style.display   = 'none';
+    document.getElementById('sub-busca').style.display = 'none';
+  };
+
+  window.subLimparSelecao = function() {
+    selectedUserId = null;
+    document.getElementById('sub-usuario-selecionado').style.display = 'none';
+    document.getElementById('sub-busca').style.display = 'block';
+    document.getElementById('sub-busca').value = '';
+  };
+
+  function subFeedback(msg, ok) {
+    var el = document.getElementById('sub-feedback');
+    el.textContent   = msg;
+    el.style.background = ok ? '#f0fdf4' : '#fef2f2';
+    el.style.color      = ok ? '#15803d' : '#dc2626';
+    el.style.border     = '1px solid ' + (ok ? '#86efac' : '#fca5a5');
+    el.style.display    = 'block';
+  }
+
+  function subPostar(body) {
+    return fetch('/teams/' + currentTeamId + '/quick_add_member', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRF-Token': document.querySelector('meta[name=csrf-token]').content
+      },
+      body: JSON.stringify(body)
+    }).then(function(r) { return r.json(); });
+  }
+
+  window.subAdicionarExistente = function() {
+    if (!selectedUserId) { subFeedback('Selecione um colaborador.', false); return; }
+    subPostar({ user_id: selectedUserId, event_function_id: document.getElementById('sub-funcao-buscar').value })
+    .then(function(data) {
+      if (data.status === 'ok') {
+        subFeedback(data.message, true);
+        subLimparSelecao();
+        document.getElementById('sub-funcao-buscar').value = '';
+      } else {
+        subFeedback((data.errors || ['Erro desconhecido']).join(', '), false);
+      }
+    });
+  };
+
+  window.subCadastrarNovo = function() {
+    var nome = document.getElementById('sub-nome').value.trim();
+    if (!nome) { subFeedback('Informe o nome do colaborador.', false); return; }
+    subPostar({
+      name:              nome,
+      phone:             document.getElementById('sub-telefone').value.trim(),
+      event_function_id: document.getElementById('sub-funcao-novo').value
+    })
+    .then(function(data) {
+      if (data.status === 'ok') {
+        subFeedback(data.message + ' Credencial: ' + data.membership.credential_code, true);
+        document.getElementById('sub-nome').value = '';
+        document.getElementById('sub-telefone').value = '';
+        document.getElementById('sub-funcao-novo').value = '';
+      } else {
+        subFeedback((data.errors || ['Erro desconhecido']).join(', '), false);
+      }
+    });
+  };
+
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') fecharModalSubstituto();
+  });
 })();
 </script>

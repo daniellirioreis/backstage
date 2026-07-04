@@ -37,38 +37,31 @@ class AttendancesController < ApplicationController
                           today: today, yesterday: yesterday
                         )
 
-    unless shifts_today.exists?
-      return render json: {
-        status:    :no_shift_today,
-        message:   "#{user.name.split.first} não tem escala cadastrada para hoje (#{I18n.l(today, format: :short)})",
-        user_name: user.name,
-        team_name: team&.name,
-        avatar_initials: user.name.split.map(&:first).first(2).join.upcase,
-        avatar_url: avatar_url
-      }, status: :unprocessable_entity
-    end
+    if shifts_today.exists?
+      # Tem escala: verifica se está no horário
+      in_schedule = shifts_today.any? do |s|
+        s_min = s.start_time.hour * 60 + s.start_time.min
+        e_min = s.end_time.hour   * 60 + s.end_time.min
+        if e_min < s_min # overnight
+          now_minutes >= s_min || now_minutes < e_min
+        else
+          now_minutes >= s_min && now_minutes < e_min
+        end
+      end
 
-    in_schedule = shifts_today.any? do |s|
-      s_min = s.start_time.hour * 60 + s.start_time.min
-      e_min = s.end_time.hour   * 60 + s.end_time.min
-      if e_min < s_min # overnight
-        now_minutes >= s_min || now_minutes < e_min
-      else
-        now_minutes >= s_min && now_minutes < e_min
+      unless in_schedule
+        ranges = shifts_today.map { |s| "#{s.start_time.strftime('%H:%M')}–#{s.end_time.strftime('%H:%M')}" }.join(", ")
+        return render json: {
+          status:          :out_of_schedule,
+          message:         "Fora do horário de escala (#{ranges})",
+          user_name:       user.name,
+          team_name:       team&.name,
+          avatar_initials: user.name.split.map(&:first).first(2).join.upcase,
+          avatar_url:      avatar_url
+        }, status: :unprocessable_entity
       end
     end
-
-    unless in_schedule
-      ranges = shifts_today.map { |s| "#{s.start_time.strftime('%H:%M')}–#{s.end_time.strftime('%H:%M')}" }.join(", ")
-      return render json: {
-        status:    :out_of_schedule,
-        message:   "Fora do horário de escala (#{ranges})",
-        user_name: user.name,
-        team_name: team&.name,
-        avatar_initials: user.name.split.map(&:first).first(2).join.upcase,
-        avatar_url: avatar_url
-      }, status: :unprocessable_entity
-    end
+    # Sem escala (ex: substituto) → credencial válida, check-in liberado
 
     attendance = Attendance.find_by(user: user, event: @event, checked_in_date: today)
 
@@ -217,23 +210,26 @@ class AttendancesController < ApplicationController
 
     if params[:inside] == "1"
       scope = scope.where(checked_out_at: nil)
+    elsif params[:inside] == "done"
+      scope = scope.where.not(checked_out_at: nil)
     end
 
     @attendances = scope.order(checked_in_at: :desc)
 
-    # Credential codes por user — coordenadores agora são TeamMembership com role :coordinator
-    user_ids = @attendances.map { |a| a.user_id }
-    @credential_codes = TeamMembership
+    # Credential codes e substitutos — carrega de uma vez para todos os membros do evento
+    all_memberships = TeamMembership
       .joins(team: :sector)
-      .where(sectors: { event_id: @event.id }, user_id: user_ids)
-      .pluck(:user_id, :credential_code)
-      .to_h
+      .where(sectors: { event_id: @event.id })
+      .pluck(:user_id, :credential_code, :substitute)
+
+    @credential_codes    = all_memberships.to_h { |uid, code, _| [uid, code] }
+    @substitute_user_ids = all_memberships.select { |_, _, sub| sub }.map(&:first).to_set
 
     # Totais para estatísticas (respeitam filtro de setor)
-    # Coordenadores agora são TeamMembership com role :coordinator — não precisa contar separado
     membership_scope = TeamMembership.joins(team: :sector).where(sectors: { event_id: @event.id })
     membership_scope = membership_scope.where(sectors: { id: params[:sector_id] }) if params[:sector_id].present?
     @total_collaborators = membership_scope.count
+    @total_substitutes   = membership_scope.where(substitute: true).count
 
     @sectors = Sector.where(event_id: @event.id).order(:name)
 
@@ -252,13 +248,7 @@ class AttendancesController < ApplicationController
     end
 
     # Agrupa por user e monta lista de não chegaram
-    not_in_codes = TeamMembership
-      .joins(team: :sector)
-      .where(sectors: { event_id: @event.id })
-      .pluck(:user_id, :credential_code)
-      .to_h
-
-    @not_checked_in = shifts_today
+    from_shifts = shifts_today
       .reject { |s| checked_in_user_ids.include?(s.user_id) }
       .group_by(&:user_id)
       .map do |_uid, shifts|
@@ -267,10 +257,31 @@ class AttendancesController < ApplicationController
           user:            s.user,
           team:            s.team,
           shifts:          shifts,
-          credential_code: not_in_codes[s.user_id]
+          credential_code: @credential_codes[s.user_id],
+          substitute:      @substitute_user_ids.include?(s.user_id)
         }
       end
-      .sort_by { |r| r[:user].name }
+
+    # Substitutos sem escala que ainda não fizeram check-in
+    shift_user_ids = from_shifts.map { |r| r[:user].id }.to_set
+    substitute_scope = TeamMembership
+      .joins(team: :sector)
+      .where(sectors: { event_id: @event.id }, substitute: true)
+      .where.not(user_id: checked_in_user_ids + shift_user_ids)
+      .includes(:event_function, user: { avatar_attachment: :blob }, team: :sector)
+    substitute_scope = substitute_scope.where(sectors: { id: params[:sector_id] }) if params[:sector_id].present?
+
+    from_substitutes = substitute_scope.map do |tm|
+      {
+        user:            tm.user,
+        team:            tm.team,
+        shifts:          [],
+        credential_code: @credential_codes[tm.user_id],
+        substitute:      true
+      }
+    end
+
+    @not_checked_in = (from_shifts + from_substitutes).sort_by { |r| r[:user].name }
   end
 
   private

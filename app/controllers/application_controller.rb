@@ -156,8 +156,7 @@ class ApplicationController < ActionController::Base
       record_class = record.is_a?(Class) ? record : record.class
       case record_class
       when ->(c) { c <= Shift }
-        return "Escalas não podem ser alteradas com o evento Encerrado." if event_status == "closed"
-        return "Escalas só podem ser alteradas com o evento em Rascunho ou Ativo."
+        return "Escalas só podem ser alteradas quando o evento está em Rascunho."
       when ->(c) { c <= Sector }
         return "Setores só podem ser alterados quando o evento está em Rascunho."
       when ->(c) { c <= Team }
