@@ -7,10 +7,10 @@ class EventPolicy < ApplicationPolicy
     end
   end
 
-  # Editar/excluir evento só no rascunho
-  def edit?    = can?("update")  && (user.admin? || record.draft?)
-  def update?  = can?("update")  && (user.admin? || record.draft?)
-  def destroy? = can?("destroy") && (user.admin? || record.draft?)
+  # Editar/excluir evento: bloqueado para todos quando encerrado
+  def edit?    = can?("update")  && !record.closed? && (user.admin? || record.draft?)
+  def update?  = can?("update")  && !record.closed? && (user.admin? || record.draft?)
+  def destroy? = can?("destroy") && !record.closed? && (user.admin? || record.draft?)
 
   # Transições de status: independente do status atual
   def transition? = can?("update")

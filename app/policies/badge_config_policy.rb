@@ -1,4 +1,5 @@
 class BadgeConfigPolicy < ApplicationPolicy
-  def edit?   = user.present? && (user.admin? || user.can?("badge_configs", "update"))
+  # Bloqueado quando o evento está encerrado
+  def edit?   = !record.event.closed? && user.present? && (user.admin? || user.can?("badge_configs", "update"))
   def update? = edit?
 end
