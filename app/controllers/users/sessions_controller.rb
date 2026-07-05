@@ -10,7 +10,8 @@ class Users::SessionsController < Devise::SessionsController
       yield resource if block_given?
       respond_with resource, location: after_sign_in_path_for(resource)
     else
-      clean_up_passwords(build_resource)
+      self.resource = build_resource
+      clean_up_passwords(self.resource)
       flash.now[:alert] = I18n.t("devise.failure.invalid", authentication_keys: "e-mail")
       render :new, status: :unprocessable_entity
     end
