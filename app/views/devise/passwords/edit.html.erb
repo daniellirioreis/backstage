@@ -1,26 +1,28 @@
-<div class="row justify-content-center mt-5">
-  <div class="col-md-4">
-    <div class="card shadow-sm">
-      <div class="card-body p-4">
-        <h4 class="card-title text-center mb-4">Nova senha</h4>
+<div class="auth-card">
+  <div style="display:flex; flex-direction:column; align-items:center; margin-bottom:1.75rem;">
+    <%= render "shared/logo", size: :lg, stacked: true, dark: true %>
+  </div>
+  <div class="auth-subtitle">Nova senha</div>
 
-        <%= form_for(resource, as: resource_name, url: password_path(resource_name), html: { method: :put }) do |f| %>
-          <%= render "devise/shared/error_messages", resource: resource %>
-          <%= f.hidden_field :reset_password_token %>
+  <%= render "devise/shared/error_messages", resource: resource %>
 
-          <div class="mb-3">
-            <%= f.label :password, "Nova senha", class: "form-label" %>
-            <%= f.password_field :password, autofocus: true, autocomplete: "new-password", class: "form-control" %>
-          </div>
+  <%= form_for(resource, as: resource_name, url: password_path(resource_name), html: { method: :put, data: { turbo: false } }) do |f| %>
+    <%= f.hidden_field :reset_password_token %>
 
-          <div class="mb-3">
-            <%= f.label :password_confirmation, "Confirmar senha", class: "form-label" %>
-            <%= f.password_field :password_confirmation, autocomplete: "new-password", class: "form-control" %>
-          </div>
-
-          <%= f.submit "Alterar senha", class: "btn btn-dark w-100" %>
-        <% end %>
-      </div>
+    <div class="mb-3">
+      <%= f.label :password, "Nova senha", class: "form-label" %>
+      <%= f.password_field :password, autofocus: true, autocomplete: "new-password", class: "form-control" %>
     </div>
+
+    <div class="mb-3">
+      <%= f.label :password_confirmation, "Confirmar nova senha", class: "form-label" %>
+      <%= f.password_field :password_confirmation, autocomplete: "new-password", class: "form-control" %>
+    </div>
+
+    <%= f.submit "Alterar senha", class: "btn-primary" %>
+  <% end %>
+
+  <div style="text-align:center; margin-top:1.25rem;">
+    <%= link_to "Voltar ao login", new_session_path(resource_name) %>
   </div>
 </div>

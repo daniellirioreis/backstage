@@ -1,24 +1,24 @@
-<div class="row justify-content-center mt-5">
-  <div class="col-md-4">
-    <div class="card shadow-sm">
-      <div class="card-body p-4">
-        <h4 class="card-title text-center mb-4">Redefinir senha</h4>
+<div class="auth-card">
+  <div style="display:flex; flex-direction:column; align-items:center; margin-bottom:1.75rem;">
+    <%= render "shared/logo", size: :lg, stacked: true, dark: true %>
+  </div>
+  <div class="auth-subtitle">Redefinir senha</div>
+  <p style="color:#71717a; font-size:0.875rem; text-align:center; margin-bottom:1.5rem;">
+    Informe seu e-mail e enviaremos as instruções para redefinir sua senha.
+  </p>
 
-        <%= form_for(resource, as: resource_name, url: password_path(resource_name), html: { method: :post }) do |f| %>
-          <%= render "devise/shared/error_messages", resource: resource %>
+  <%= render "devise/shared/error_messages", resource: resource %>
 
-          <div class="mb-3">
-            <%= f.label :email, "E-mail", class: "form-label" %>
-            <%= f.email_field :email, autofocus: true, autocomplete: "email", class: "form-control" %>
-          </div>
-
-          <%= f.submit "Enviar instruções", class: "btn btn-dark w-100" %>
-        <% end %>
-
-        <div class="text-center mt-3">
-          <%= link_to "Voltar ao login", new_session_path(resource_name) %>
-        </div>
-      </div>
+  <%= form_for(resource, as: resource_name, url: password_path(resource_name), html: { method: :post, data: { turbo: false } }) do |f| %>
+    <div class="mb-3">
+      <%= f.label :email, "E-mail", class: "form-label" %>
+      <%= f.email_field :email, autofocus: true, autocomplete: "email", class: "form-control" %>
     </div>
+
+    <%= f.submit "Enviar instruções", class: "btn-primary" %>
+  <% end %>
+
+  <div style="text-align:center; margin-top:1.25rem;">
+    <%= link_to "Voltar ao login", new_session_path(resource_name) %>
   </div>
 </div>
