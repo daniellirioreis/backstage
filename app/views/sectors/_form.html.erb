@@ -14,6 +14,45 @@
             data: { controller: "tom-select", placeholder: "Buscar tipo de setor..." } %>
     </div>
 
+    <%# ── Painel de análise histórica por tipo de setor ──────────────────── %>
+    <div id="sector-type-stats-panel" style="display:none;margin-top:-0.5rem;margin-bottom:1.25rem;">
+      <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:1rem 1.1rem;">
+
+        <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.85rem;">
+          <i class="bi bi-bar-chart-line" style="color:#15803d;font-size:0.9rem;"></i>
+          <span style="font-size:0.8rem;font-weight:700;color:#15803d;">
+            Histórico — <span id="sts-tipo-label"></span>
+          </span>
+          <span id="sts-sec-count" style="margin-left:auto;font-size:0.7rem;background:#dcfce7;color:#15803d;border:1px solid #bbf7d0;border-radius:6px;padding:2px 8px;font-weight:600;"></span>
+        </div>
+
+        <%# Métricas %>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;margin-bottom:0.85rem;">
+          <div style="background:white;border-radius:8px;padding:0.65rem 0.75rem;border:1px solid #d1fae5;">
+            <div style="font-size:0.62rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#16a34a;margin-bottom:3px;">Colaboradores</div>
+            <div id="sts-avg-collab" style="font-size:1.2rem;font-weight:700;color:#18181b;"></div>
+            <div id="sts-range-collab" style="font-size:0.65rem;color:#71717a;"></div>
+          </div>
+          <div style="background:white;border-radius:8px;padding:0.65rem 0.75rem;border:1px solid #d1fae5;">
+            <div style="font-size:0.62rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#16a34a;margin-bottom:3px;">Funções identificadas</div>
+            <div id="sts-fn-count" style="font-size:1.2rem;font-weight:700;color:#18181b;"></div>
+            <div style="font-size:0.65rem;color:#71717a;">tipos distintos</div>
+          </div>
+        </div>
+
+        <%# Funções mais usadas %>
+        <div style="font-size:0.65rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#71717a;margin-bottom:6px;">
+          Funções mais usadas neste tipo de setor
+        </div>
+        <div id="sts-functions-chart"></div>
+
+        <div style="margin-top:0.65rem;padding-top:0.55rem;border-top:1px solid #bbf7d0;font-size:0.65rem;color:#16a34a;">
+          <i class="bi bi-info-circle"></i>
+          Qtd. média planejada por setor, baseada em setores similares já cadastrados.
+        </div>
+      </div>
+    </div>
+
     <div style="margin-bottom: 1.25rem;">
       <%= f.label :name, Sector.human_attribute_name(:name), class: "form-label" %>
       <%= f.text_field :name, class: "form-control", id: "sector_name" %>
@@ -140,14 +179,61 @@
   (function () {
     var typeSelect = document.getElementById("sector_sector_type");
     var nameInput  = document.getElementById("sector_name");
+    var STS_URL    = "<%= sector_type_stats_sectors_path %>";
+
+    function stsBuildBars(rows) {
+      if (!rows || !rows.length) return '<div style="font-size:0.72rem;color:#a1a1aa;">Sem dados suficientes.</div>';
+      var max = rows[0].avg_qty;
+      if (!max) return '<div style="font-size:0.72rem;color:#a1a1aa;">Sem dados suficientes.</div>';
+      return rows.map(function(r) {
+        var pct = Math.round(r.avg_qty / max * 100);
+        return '<div style="display:grid;grid-template-columns:140px 1fr 60px;align-items:center;gap:6px;margin-bottom:5px;">'
+          + '<div style="font-size:0.72rem;color:#374151;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="' + r.label + '">' + r.label + '</div>'
+          + '<div style="background:#d1fae5;border-radius:4px;height:10px;overflow:hidden;">'
+          +   '<div style="width:' + pct + '%;height:100%;background:#16a34a;border-radius:4px;"></div>'
+          + '</div>'
+          + '<div style="font-size:0.72rem;font-weight:700;color:#15803d;text-align:right;white-space:nowrap;">' + r.avg_qty + ' col.</div>'
+          + '</div>';
+      }).join('');
+    }
+
+    function loadSectorTypeStats(sectorType) {
+      var panel = document.getElementById('sector-type-stats-panel');
+      if (!sectorType) { panel.style.display = 'none'; return; }
+
+      fetch(STS_URL + '?sector_type=' + encodeURIComponent(sectorType), {
+        headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+      })
+      .then(function(r) { return r.json(); })
+      .then(function(d) {
+        if (!d.total_sectors) { panel.style.display = 'none'; return; }
+
+        var label = typeSelect.options[typeSelect.selectedIndex].text;
+        document.getElementById('sts-tipo-label').textContent   = label;
+        document.getElementById('sts-sec-count').textContent    = d.total_sectors + ' setor' + (d.total_sectors > 1 ? 'es' : '');
+        document.getElementById('sts-avg-collab').textContent   = d.avg_collaborators;
+        document.getElementById('sts-range-collab').textContent = 'mín ' + d.min_collaborators + ' · máx ' + d.max_collaborators;
+        document.getElementById('sts-fn-count').textContent     = d.functions.length;
+        document.getElementById('sts-functions-chart').innerHTML = stsBuildBars(d.functions);
+        panel.style.display = '';
+      })
+      .catch(function() { panel.style.display = 'none'; });
+    }
+
     if (typeSelect && nameInput) {
       typeSelect.addEventListener("change", function () {
         var selected = typeSelect.options[typeSelect.selectedIndex];
         if (selected && selected.value && !nameInput.value.trim()) {
           nameInput.value = selected.text;
         }
+        loadSectorTypeStats(selected ? selected.value : '');
       });
     }
+
+    // Carrega ao editar setor que já tem tipo definido
+    (function() {
+      if (typeSelect && typeSelect.value) loadSectorTypeStats(typeSelect.value);
+    })();
 
     // ── Funções planejadas ──────────────────────────────────────────────────
     var sfIdx    = Date.now();

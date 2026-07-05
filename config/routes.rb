@@ -74,6 +74,9 @@ Rails.application.routes.draw do
     end
   end
   resources :sectors do
+    collection do
+      get :sector_type_stats
+    end
     resources :sector_functions, only: [:create, :update, :destroy]
   end
   resources :shifts do

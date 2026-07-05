@@ -10,6 +10,63 @@ class SectorsController < ApplicationController
                                    .paginate(page: params[:page], per_page: 10)
   end
 
+  def sector_type_stats
+    authorize Sector, :new?
+
+    sector_type = params[:sector_type].presence
+    unless sector_type
+      render json: { error: "sector_type obrigatório" }, status: :unprocessable_entity and return
+    end
+
+    # Escopo: setores visíveis para o usuário (via empresa)
+    company_ids = current_user.admin? ? Company.pluck(:id) : current_user.company_users.pluck(:company_id)
+    event_ids   = Event.where(company_id: company_ids).pluck(:id)
+    sector_ids  = Sector.where(event_id: event_ids, sector_type: sector_type).pluck(:id)
+    total       = sector_ids.size
+
+    if total == 0
+      render json: { total_sectors: 0 } and return
+    end
+
+    # ── Colaboradores por setor (avg / min / max) ───────────────────────────
+    collab_pairs = TeamMembership
+      .joins(team: :sector)
+      .where(sectors: { id: sector_ids })
+      .distinct
+      .pluck("sectors.id", "team_memberships.user_id")
+
+    collab_per_sector = collab_pairs.group_by(&:first).transform_values(&:size)
+    counts     = collab_per_sector.values
+    avg_collab = counts.any? ? (counts.sum.to_f / counts.size).round(1) : 0
+    min_collab = counts.min || 0
+    max_collab = counts.max || 0
+
+    # ── Funções mais usadas neste tipo de setor ─────────────────────────────
+    # Agrupa por nome da função: { fn_name => [qty, qty, ...] }
+    fn_raw = SectorFunction
+      .joins(:sector, :event_function)
+      .where(sectors: { id: sector_ids })
+      .pluck("event_functions.name", "sector_functions.quantity")
+
+    fn_grouped = fn_raw.each_with_object(Hash.new { |h, k| h[k] = [] }) do |(name, qty), h|
+      h[name] << qty.to_i
+    end
+
+    functions = fn_grouped
+      .transform_values { |qtys| { avg_qty: (qtys.sum.to_f / qtys.size).round(1), usage_count: qtys.size } }
+      .sort_by { |_, v| -v[:usage_count] }
+      .first(8)
+      .map { |name, v| { label: name, avg_qty: v[:avg_qty], usage_count: v[:usage_count] } }
+
+    render json: {
+      total_sectors:     total,
+      avg_collaborators: avg_collab,
+      min_collaborators: min_collab,
+      max_collaborators: max_collab,
+      functions:         functions
+    }
+  end
+
   def new
     authorize Sector
     @sector = Sector.new(event_id: current_event.id)
