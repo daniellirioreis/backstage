@@ -1,0 +1,108 @@
+<div class="page-header">
+  <div>
+    <h1><%= t("nav.report_hours_worked") %></h1>
+    <div style="font-size:0.78rem; color:#71717a; margin-top:0.1rem;"><%= @event.name %></div>
+  </div>
+</div>
+
+<%# Stats %>
+<div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:1rem; margin-bottom:1.5rem;">
+  <div class="content-card" style="padding:1rem; text-align:center;">
+    <div style="font-size:1.6rem; font-weight:800; color:#18181b;"><%= @rows.size %></div>
+    <div style="font-size:0.7rem; color:#71717a; margin-top:0.1rem;">colaboradores</div>
+  </div>
+  <div class="content-card" style="padding:1rem; text-align:center;">
+    <div style="font-size:1.6rem; font-weight:800; color:#18181b;"><%= "%.1f" % @total_scheduled %> h</div>
+    <div style="font-size:0.7rem; color:#71717a; margin-top:0.1rem;">horas escaladas</div>
+  </div>
+  <div class="content-card" style="padding:1rem; text-align:center;">
+    <div style="font-size:1.6rem; font-weight:800; color:#16a34a;"><%= "%.1f" % @total_actual %> h</div>
+    <div style="font-size:0.7rem; color:#71717a; margin-top:0.1rem;">horas realizadas</div>
+  </div>
+  <div class="content-card" style="padding:1rem; text-align:center;">
+    <% diff = @total_actual - @total_scheduled %>
+    <div style="font-size:1.6rem; font-weight:800; color:<%= diff >= 0 ? '#16a34a' : '#dc2626' %>;">
+      <%= diff >= 0 ? "+" : "" %><%= "%.1f" % diff %> h
+    </div>
+    <div style="font-size:0.7rem; color:#71717a; margin-top:0.1rem;">variação</div>
+  </div>
+</div>
+
+<%# Filtro por setor %>
+<div class="content-card" style="padding:0.75rem 1.25rem; margin-bottom:1rem; display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
+  <span style="font-size:0.75rem; color:#71717a; font-weight:600;">Setor:</span>
+  <%= link_to "Todos", reports_hours_worked_path,
+        style: "font-size:0.78rem; padding:3px 12px; border-radius:6px; text-decoration:none; font-weight:600; #{@sector.nil? ? 'background:#18181b; color:#fff;' : 'background:#f4f4f5; color:#52525b;'}" %>
+  <% @sectors.each do |s| %>
+    <%= link_to s.name, reports_hours_worked_path(sector_id: s.id),
+          style: "font-size:0.78rem; padding:3px 12px; border-radius:6px; text-decoration:none; font-weight:600; #{@sector&.id == s.id ? 'background:#18181b; color:#fff;' : 'background:#f4f4f5; color:#52525b;'}" %>
+  <% end %>
+</div>
+
+<%# Tabela %>
+<div class="content-card" style="padding:0; overflow:hidden;">
+  <% if @rows.empty? %>
+    <div style="text-align:center; padding:3rem; color:#a1a1aa;">
+      <i class="bi bi-clock-history" style="font-size:2rem; display:block; margin-bottom:0.5rem;"></i>
+      <p style="margin:0; font-size:0.88rem;">Nenhum check-out registrado ainda.</p>
+    </div>
+  <% else %>
+    <table style="width:100%; border-collapse:collapse; font-size:0.82rem;">
+      <thead>
+        <tr style="background:#f4f4f5; border-bottom:2px solid #e4e4e7;">
+          <th style="padding:0.6rem 1rem; text-align:left; font-weight:700; color:#52525b; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.05em;">Colaborador</th>
+          <th style="padding:0.6rem 1rem; text-align:left; font-weight:700; color:#52525b; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.05em;">Setor / Equipe</th>
+          <th style="padding:0.6rem 1rem; text-align:center; font-weight:700; color:#52525b; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.05em;">Escalado</th>
+          <th style="padding:0.6rem 1rem; text-align:center; font-weight:700; color:#52525b; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.05em;">Realizado</th>
+          <th style="padding:0.6rem 1rem; text-align:center; font-weight:700; color:#52525b; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.05em;">Variação</th>
+          <th style="padding:0.6rem 1rem; text-align:center; font-weight:700; color:#52525b; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.05em;">Registros</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @rows.each_with_index do |row, i| %>
+          <% diff = row[:diff_hours] %>
+          <% diff_color = diff >= 0 ? '#16a34a' : '#dc2626' %>
+          <tr style="border-bottom:1px solid #f4f4f5; <%= i.odd? ? 'background:#fafafa;' : '' %>">
+            <td style="padding:0.65rem 1rem;">
+              <div style="font-weight:600; color:#18181b;"><%= row[:user]&.name %></div>
+              <div style="font-size:0.7rem; color:#a1a1aa; font-family:monospace;"><%= row[:user]&.formatted_cpf %></div>
+              <% if row[:pending_checkout] %>
+                <span style="font-size:0.65rem; background:#fef3c7; color:#92400e; border:1px solid #fcd34d; border-radius:4px; padding:1px 6px; font-weight:700;">em atividade</span>
+              <% end %>
+            </td>
+            <td style="padding:0.65rem 1rem;">
+              <div style="font-size:0.78rem; color:#52525b;"><%= row[:sector] %></div>
+              <div style="font-size:0.7rem; color:#a1a1aa;"><%= row[:team] %></div>
+            </td>
+            <td style="padding:0.65rem 1rem; text-align:center; font-weight:600; color:#52525b;">
+              <%= row[:scheduled_hours] > 0 ? "#{("%.1f" % row[:scheduled_hours])} h" : "—" %>
+            </td>
+            <td style="padding:0.65rem 1rem; text-align:center; font-weight:700; color:#16a34a;">
+              <%= row[:actual_hours] > 0 ? "#{("%.1f" % row[:actual_hours])} h" : "—" %>
+            </td>
+            <td style="padding:0.65rem 1rem; text-align:center;">
+              <% if row[:scheduled_hours] > 0 && row[:actual_hours] > 0 %>
+                <span style="font-weight:700; color:<%= diff_color %>;">
+                  <%= diff >= 0 ? "+" : "" %><%= "%.1f" % diff %> h
+                </span>
+              <% else %>
+                <span style="color:#a1a1aa;">—</span>
+              <% end %>
+            </td>
+            <td style="padding:0.65rem 1rem; text-align:center;">
+              <% if row[:entries].any? %>
+                <div style="font-size:0.7rem; color:#71717a; line-height:1.6;">
+                  <% row[:entries].each do |e| %>
+                    <div><%= l(e[:date], format: :short) %> · <%= e[:checked_in] %>–<%= e[:checked_out] %> <span style="color:#52525b; font-weight:600;">(<%= "%.1f" % e[:hours] %>h)</span></div>
+                  <% end %>
+                </div>
+              <% else %>
+                <span style="color:#a1a1aa; font-size:0.75rem;">—</span>
+              <% end %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  <% end %>
+</div>

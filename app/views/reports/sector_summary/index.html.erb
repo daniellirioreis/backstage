@@ -1,0 +1,91 @@
+<div class="page-header">
+  <div>
+    <h1><%= t("nav.report_sector_summary") %></h1>
+    <div style="font-size:0.78rem; color:#71717a; margin-top:0.1rem;"><%= @event.name %></div>
+  </div>
+</div>
+
+<%# Stats gerais %>
+<div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:1rem; margin-bottom:1.5rem;">
+  <div class="content-card" style="padding:1rem; text-align:center;">
+    <div style="font-size:1.6rem; font-weight:800; color:#18181b;"><%= @rows.size %></div>
+    <div style="font-size:0.7rem; color:#71717a; margin-top:0.1rem;">setores</div>
+  </div>
+  <div class="content-card" style="padding:1rem; text-align:center;">
+    <div style="font-size:1.6rem; font-weight:800; color:#18181b;"><%= @total_expected %></div>
+    <div style="font-size:0.7rem; color:#71717a; margin-top:0.1rem;">colaboradores escalados</div>
+  </div>
+  <div class="content-card" style="padding:1rem; text-align:center;">
+    <div style="font-size:1.6rem; font-weight:800; color:#16a34a;"><%= @total_present %></div>
+    <div style="font-size:0.7rem; color:#71717a; margin-top:0.1rem;">fizeram check-in</div>
+  </div>
+  <div class="content-card" style="padding:1rem; text-align:center;">
+    <div style="font-size:1.6rem; font-weight:800; color:<%= @overall_pct >= 80 ? '#16a34a' : @overall_pct >= 60 ? '#d97706' : '#dc2626' %>;"><%= @overall_pct %>%</div>
+    <div style="font-size:0.7rem; color:#71717a; margin-top:0.1rem;">presença geral</div>
+  </div>
+  <div class="content-card" style="padding:1rem; text-align:center;">
+    <div style="font-size:1.6rem; font-weight:800; color:#18181b;"><%= "%.1f" % @total_sched_h %> h</div>
+    <div style="font-size:0.7rem; color:#71717a; margin-top:0.1rem;">horas escaladas</div>
+  </div>
+  <div class="content-card" style="padding:1rem; text-align:center;">
+    <div style="font-size:1.6rem; font-weight:800; color:#16a34a;"><%= "%.1f" % @total_actual_h %> h</div>
+    <div style="font-size:0.7rem; color:#71717a; margin-top:0.1rem;">horas realizadas</div>
+  </div>
+</div>
+
+<%# Cards por setor %>
+<% if @rows.empty? %>
+  <div class="content-card" style="text-align:center; padding:3rem; color:#a1a1aa;">
+    <i class="bi bi-diagram-3" style="font-size:2rem; display:block; margin-bottom:0.5rem;"></i>
+    <p style="margin:0; font-size:0.88rem;">Nenhum setor cadastrado neste evento.</p>
+  </div>
+<% else %>
+  <div style="display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:1rem;">
+    <% @rows.each do |row| %>
+      <% pct = row[:pct] %>
+      <% pct_color = pct.nil? ? '#a1a1aa' : pct >= 80 ? '#16a34a' : pct >= 60 ? '#d97706' : '#dc2626' %>
+      <% pct_bg    = pct.nil? ? '#f4f4f5' : pct >= 80 ? '#f0fdf4' : pct >= 60 ? '#fffbeb' : '#fef2f2' %>
+      <div class="content-card" style="padding:0; overflow:hidden;">
+        <%# Header do card %>
+        <div style="background:#18181b; padding:0.75rem 1rem; display:flex; align-items:center; justify-content:space-between;">
+          <div>
+            <div style="font-size:0.88rem; font-weight:700; color:#fff;"><%= row[:sector].name %></div>
+            <div style="font-size:0.68rem; color:#71717a; margin-top:0.1rem;"><%= t("sector_types.#{row[:sector].sector_type}", default: row[:sector].sector_type) %></div>
+          </div>
+          <% if pct %>
+            <span style="font-size:0.85rem; font-weight:800; color:<%= pct_color %>; background:<%= pct_bg %>; padding:3px 12px; border-radius:20px;">
+              <%= pct %>%
+            </span>
+          <% end %>
+        </div>
+
+        <%# Métricas %>
+        <div style="padding:0.85rem 1rem;">
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.5rem; margin-bottom:0.75rem;">
+            <div style="text-align:center; background:#f4f4f5; border-radius:8px; padding:0.5rem;">
+              <div style="font-size:1.1rem; font-weight:800; color:#18181b;"><%= row[:expected] %></div>
+              <div style="font-size:0.62rem; color:#71717a;">escalados</div>
+            </div>
+            <div style="text-align:center; background:#f0fdf4; border-radius:8px; padding:0.5rem;">
+              <div style="font-size:1.1rem; font-weight:800; color:#16a34a;"><%= row[:present] %></div>
+              <div style="font-size:0.62rem; color:#71717a;">presentes</div>
+            </div>
+          </div>
+
+          <%# Barra de progresso %>
+          <% if row[:expected] > 0 %>
+            <div style="background:#e4e4e7; border-radius:4px; height:6px; overflow:hidden; margin-bottom:0.6rem;">
+              <div style="background:<%= pct_color %>; height:100%; width:<%= pct %>%; transition:width 0.3s;"></div>
+            </div>
+          <% end %>
+
+          <%# Horas %>
+          <div style="display:flex; justify-content:space-between; font-size:0.72rem; color:#71717a;">
+            <span><i class="bi bi-calendar-week" style="font-size:0.65rem;"></i> <%= "%.1f" % row[:scheduled_hours] %>h escaladas</span>
+            <span><i class="bi bi-check-circle" style="font-size:0.65rem; color:#16a34a;"></i> <%= "%.1f" % row[:actual_hours] %>h realizadas</span>
+          </div>
+        </div>
+      </div>
+    <% end %>
+  </div>
+<% end %>

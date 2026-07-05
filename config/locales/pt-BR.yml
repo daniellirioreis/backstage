@@ -3,6 +3,11 @@ pt-BR:
     home: "Início"
     sign_out: "Sair"
     closing: "Fechamento"
+    reports: "Relatórios"
+    report_attendance: "Presença por Colaborador"
+    report_absences: "Ausências"
+    report_hours_worked: "Horas Trabalhadas"
+    report_sector_summary: "Resumo por Setor"
 
   actions:
     new: "Novo %{model}"
@@ -39,6 +44,10 @@ pt-BR:
     manage_payments: "Gerenciar Pagamentos"
     finalize_closing: "Finalizar Fechamento"
     reopen_closing: "Reabrir Fechamento"
+    attendance_report: "Relatório de Presença"
+    absences_report: "Relatório de Ausências"
+    hours_worked_report: "Relatório de Horas Trabalhadas"
+    sector_summary_report: "Relatório por Setor"
 
   payment_methods:
     pix: "PIX"

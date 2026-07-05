@@ -1,0 +1,93 @@
+<div class="page-header">
+  <div>
+    <h1><%= t("nav.report_absences") %></h1>
+    <div style="font-size:0.78rem; color:#71717a; margin-top:0.1rem;"><%= @event.name %></div>
+  </div>
+</div>
+
+<%# Stats %>
+<div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:1rem; margin-bottom:1.5rem;">
+  <div class="content-card" style="padding:1rem; text-align:center;">
+    <div style="font-size:1.6rem; font-weight:800; color:#18181b;"><%= @total_scheduled %></div>
+    <div style="font-size:0.7rem; color:#71717a; margin-top:0.1rem;">escalados hoje</div>
+  </div>
+  <div class="content-card" style="padding:1rem; text-align:center;">
+    <div style="font-size:1.6rem; font-weight:800; color:#16a34a;"><%= @total_present %></div>
+    <div style="font-size:0.7rem; color:#71717a; margin-top:0.1rem;">fizeram check-in</div>
+  </div>
+  <div class="content-card" style="padding:1rem; text-align:center;">
+    <div style="font-size:1.6rem; font-weight:800; color:<%= @total_absent > 0 ? '#dc2626' : '#18181b' %>;"><%= @total_absent %></div>
+    <div style="font-size:0.7rem; color:#71717a; margin-top:0.1rem;">ausentes</div>
+  </div>
+</div>
+
+<%# Filtros %>
+<div class="content-card" style="padding:0.75rem 1.25rem; margin-bottom:1rem; display:flex; align-items:center; gap:1rem; flex-wrap:wrap;">
+  <%# Filtro de data %>
+  <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
+    <span style="font-size:0.75rem; color:#71717a; font-weight:600;"><i class="bi bi-calendar3"></i> Dia:</span>
+    <% @event_dates.each do |d| %>
+      <%= link_to reports_absences_path(date: d, sector_id: params[:sector_id]),
+            style: "font-size:0.78rem; padding:3px 10px; border-radius:6px; text-decoration:none; font-weight:600; #{@date == d ? 'background:#18181b; color:#fff;' : 'background:#f4f4f5; color:#52525b;'}" do %>
+        <%= l(d, format: :short) %><%= d == Date.today ? " hoje" : "" %>
+      <% end %>
+    <% end %>
+    <% if @event_dates.empty? %>
+      <span style="font-size:0.75rem; color:#a1a1aa;">Nenhuma escala cadastrada</span>
+    <% end %>
+  </div>
+
+  <%# Filtro de setor %>
+  <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
+    <span style="font-size:0.75rem; color:#71717a; font-weight:600;"><i class="bi bi-diagram-3"></i> Setor:</span>
+    <%= link_to "Todos", reports_absences_path(date: @date),
+          style: "font-size:0.78rem; padding:3px 10px; border-radius:6px; text-decoration:none; font-weight:600; #{@sector.nil? ? 'background:#18181b; color:#fff;' : 'background:#f4f4f5; color:#52525b;'}" %>
+    <% @sectors.each do |s| %>
+      <%= link_to s.name, reports_absences_path(date: @date, sector_id: s.id),
+            style: "font-size:0.78rem; padding:3px 10px; border-radius:6px; text-decoration:none; font-weight:600; #{@sector&.id == s.id ? 'background:#18181b; color:#fff;' : 'background:#f4f4f5; color:#52525b;'}" %>
+    <% end %>
+  </div>
+</div>
+
+<%# Lista de ausentes %>
+<div class="content-card" style="padding:0; overflow:hidden;">
+  <% if @rows.empty? %>
+    <div style="text-align:center; padding:3rem; color:#a1a1aa;">
+      <i class="bi bi-check-circle" style="font-size:2rem; display:block; margin-bottom:0.5rem; color:#16a34a;"></i>
+      <p style="margin:0; font-size:0.88rem; color:#16a34a; font-weight:600;">
+        <%= @total_scheduled > 0 ? "Todos os colaboradores fizeram check-in!" : "Nenhuma escala para este dia." %>
+      </p>
+    </div>
+  <% else %>
+    <div style="background:#fef2f2; border-bottom:2px solid #fecaca; padding:0.6rem 1rem; font-size:0.75rem; font-weight:700; color:#dc2626; text-transform:uppercase; letter-spacing:0.05em;">
+      <i class="bi bi-exclamation-triangle"></i> Ausentes em <%= l(@date, format: :short) %> — <%= @total_absent %>
+    </div>
+    <table style="width:100%; border-collapse:collapse; font-size:0.82rem;">
+      <thead>
+        <tr style="background:#f4f4f5; border-bottom:1px solid #e4e4e7;">
+          <th style="padding:0.6rem 1rem; text-align:left; font-weight:700; color:#52525b; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.05em;">Colaborador</th>
+          <th style="padding:0.6rem 1rem; text-align:left; font-weight:700; color:#52525b; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.05em;">Setor / Equipe</th>
+          <th style="padding:0.6rem 1rem; text-align:center; font-weight:700; color:#52525b; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.05em;">Turno</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @rows.each_with_index do |row, i| %>
+          <tr style="border-bottom:1px solid #f4f4f5; <%= i.odd? ? 'background:#fafafa;' : '' %>">
+            <td style="padding:0.65rem 1rem;">
+              <div style="font-weight:600; color:#18181b;"><%= row[:user]&.name %></div>
+              <div style="font-size:0.7rem; color:#a1a1aa; font-family:monospace;"><%= row[:user]&.formatted_cpf %></div>
+            </td>
+            <td style="padding:0.65rem 1rem;">
+              <div style="font-size:0.78rem; color:#52525b;"><%= row[:sector] %></div>
+              <div style="font-size:0.7rem; color:#a1a1aa;"><%= row[:team] %></div>
+            </td>
+            <td style="padding:0.65rem 1rem; text-align:center; color:#52525b; font-size:0.78rem;">
+              <i class="bi bi-clock" style="font-size:0.7rem; opacity:0.6;"></i>
+              <%= row[:start_time].strftime("%H:%M") %> – <%= row[:end_time].strftime("%H:%M") %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  <% end %>
+</div>

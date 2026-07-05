@@ -106,6 +106,10 @@ Rails.application.routes.draw do
   get  "reports/closing/export",          to: "reports/closing#export",           as: :reports_closing_export
   post "reports/closing/finalize",        to: "reports/closing#finalize",         as: :reports_closing_finalize
   post "reports/closing/reopen",          to: "reports/closing#reopen",           as: :reports_closing_reopen
+  get  "reports/attendance",              to: "reports/attendance#index",          as: :reports_attendance
+  get  "reports/absences",                to: "reports/absences#index",            as: :reports_absences
+  get  "reports/hours_worked",            to: "reports/hours_worked#index",        as: :reports_hours_worked
+  get  "reports/sector_summary",          to: "reports/sector_summary#index",      as: :reports_sector_summary
 
   namespace :reports do
     resources :payments, only: [:create, :destroy] do

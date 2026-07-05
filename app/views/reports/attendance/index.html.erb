@@ -1,0 +1,92 @@
+<div class="page-header">
+  <div>
+    <h1><%= t("nav.report_attendance") %></h1>
+    <div style="font-size:0.78rem; color:#71717a; margin-top:0.1rem;"><%= @event.name %></div>
+  </div>
+</div>
+
+<%# Stats %>
+<div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:1rem; margin-bottom:1.5rem;">
+  <div class="content-card" style="padding:1rem; text-align:center;">
+    <div style="font-size:1.6rem; font-weight:800; color:#18181b;"><%= @rows.size %></div>
+    <div style="font-size:0.7rem; color:#71717a; margin-top:0.1rem;">colaboradores</div>
+  </div>
+  <div class="content-card" style="padding:1rem; text-align:center;">
+    <div style="font-size:1.6rem; font-weight:800; color:#18181b;"><%= @total_scheduled %></div>
+    <div style="font-size:0.7rem; color:#71717a; margin-top:0.1rem;">turnos escalados</div>
+  </div>
+  <div class="content-card" style="padding:1rem; text-align:center;">
+    <div style="font-size:1.6rem; font-weight:800; color:#16a34a;"><%= @total_present %></div>
+    <div style="font-size:0.7rem; color:#71717a; margin-top:0.1rem;">check-ins realizados</div>
+  </div>
+  <div class="content-card" style="padding:1rem; text-align:center;">
+    <div style="font-size:1.6rem; font-weight:800; color:<%= @overall_pct >= 80 ? '#16a34a' : @overall_pct >= 60 ? '#d97706' : '#dc2626' %>;"><%= @overall_pct %>%</div>
+    <div style="font-size:0.7rem; color:#71717a; margin-top:0.1rem;">presença geral</div>
+  </div>
+</div>
+
+<%# Filtro por setor %>
+<div class="content-card" style="padding:0.75rem 1.25rem; margin-bottom:1rem; display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
+  <span style="font-size:0.75rem; color:#71717a; font-weight:600;">Setor:</span>
+  <%= link_to t("nav.report_attendance"), reports_attendance_path,
+        style: "font-size:0.78rem; padding:3px 12px; border-radius:6px; text-decoration:none; font-weight:600; #{@sector.nil? ? 'background:#18181b; color:#fff;' : 'background:#f4f4f5; color:#52525b;'}" %>
+  <% @sectors.each do |s| %>
+    <%= link_to s.name, reports_attendance_path(sector_id: s.id),
+          style: "font-size:0.78rem; padding:3px 12px; border-radius:6px; text-decoration:none; font-weight:600; #{@sector&.id == s.id ? 'background:#18181b; color:#fff;' : 'background:#f4f4f5; color:#52525b;'}" %>
+  <% end %>
+</div>
+
+<%# Tabela %>
+<div class="content-card" style="padding:0; overflow:hidden;">
+  <% if @rows.empty? %>
+    <div style="text-align:center; padding:3rem; color:#a1a1aa;">
+      <i class="bi bi-person-x" style="font-size:2rem; display:block; margin-bottom:0.5rem;"></i>
+      <p style="margin:0; font-size:0.88rem;">Nenhum dado encontrado para este evento.</p>
+    </div>
+  <% else %>
+    <table style="width:100%; border-collapse:collapse; font-size:0.82rem;">
+      <thead>
+        <tr style="background:#f4f4f5; border-bottom:2px solid #e4e4e7;">
+          <th style="padding:0.6rem 1rem; text-align:left; font-weight:700; color:#52525b; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.05em;">Colaborador</th>
+          <th style="padding:0.6rem 1rem; text-align:left; font-weight:700; color:#52525b; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.05em;">Setor / Equipe</th>
+          <th style="padding:0.6rem 1rem; text-align:center; font-weight:700; color:#52525b; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.05em;">Escalados</th>
+          <th style="padding:0.6rem 1rem; text-align:center; font-weight:700; color:#52525b; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.05em;">Presentes</th>
+          <th style="padding:0.6rem 1rem; text-align:center; font-weight:700; color:#52525b; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.05em;">Ausentes</th>
+          <th style="padding:0.6rem 1rem; text-align:center; font-weight:700; color:#52525b; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.05em;">Presença</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @rows.each_with_index do |row, i| %>
+          <% pct = row[:pct] %>
+          <% pct_color = pct.nil? ? '#a1a1aa' : pct >= 80 ? '#16a34a' : pct >= 60 ? '#d97706' : '#dc2626' %>
+          <tr style="border-bottom:1px solid #f4f4f5; <%= i.odd? ? 'background:#fafafa;' : '' %>">
+            <td style="padding:0.65rem 1rem;">
+              <div style="font-weight:600; color:#18181b;"><%= row[:user]&.name %></div>
+              <div style="font-size:0.7rem; color:#a1a1aa; font-family:monospace;"><%= row[:user]&.formatted_cpf %></div>
+            </td>
+            <td style="padding:0.65rem 1rem; color:#52525b;">
+              <% if row[:sector] %>
+                <div style="font-size:0.78rem;"><%= row[:sector] %></div>
+                <div style="font-size:0.7rem; color:#a1a1aa;"><%= row[:team] %></div>
+              <% else %>
+                <span style="color:#a1a1aa;">—</span>
+              <% end %>
+            </td>
+            <td style="padding:0.65rem 1rem; text-align:center; font-weight:600; color:#18181b;"><%= row[:scheduled] %></td>
+            <td style="padding:0.65rem 1rem; text-align:center; font-weight:700; color:#16a34a;"><%= row[:present] %></td>
+            <td style="padding:0.65rem 1rem; text-align:center; font-weight:700; color:<%= row[:absent] > 0 ? '#dc2626' : '#a1a1aa' %>;"><%= row[:absent] %></td>
+            <td style="padding:0.65rem 1rem; text-align:center;">
+              <% if pct %>
+                <span style="font-size:0.82rem; font-weight:800; color:<%= pct_color %>; background:<%= pct >= 80 ? '#f0fdf4' : pct >= 60 ? '#fffbeb' : '#fef2f2' %>; padding:2px 10px; border-radius:20px;">
+                  <%= pct %>%
+                </span>
+              <% else %>
+                <span style="color:#a1a1aa; font-size:0.75rem;">sem escala</span>
+              <% end %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  <% end %>
+</div>

@@ -99,6 +99,35 @@
             <% end %>
           <% end %>
 
+          <%# Relatórios operacionais %>
+          <% show_att = policy(:report).attendance_report?
+             show_abs = policy(:report).absences_report?
+             show_hrs = policy(:report).hours_worked_report?
+             show_sec = policy(:report).sector_summary_report? %>
+          <% if show_att || show_abs || show_hrs || show_sec %>
+            <div class="sidebar-section"><%= t("nav.reports") %></div>
+            <% if show_att %>
+              <%= link_to reports_attendance_path, class: "sidebar-link #{controller_path == 'reports/attendance' ? 'active' : ''}" do %>
+                <i class="bi bi-person-check"></i> <%= t("nav.report_attendance") %>
+              <% end %>
+            <% end %>
+            <% if show_abs %>
+              <%= link_to reports_absences_path, class: "sidebar-link #{controller_path == 'reports/absences' ? 'active' : ''}" do %>
+                <i class="bi bi-person-x"></i> <%= t("nav.report_absences") %>
+              <% end %>
+            <% end %>
+            <% if show_hrs %>
+              <%= link_to reports_hours_worked_path, class: "sidebar-link #{controller_path == 'reports/hours_worked' ? 'active' : ''}" do %>
+                <i class="bi bi-clock-history"></i> <%= t("nav.report_hours_worked") %>
+              <% end %>
+            <% end %>
+            <% if show_sec %>
+              <%= link_to reports_sector_summary_path, class: "sidebar-link #{controller_path == 'reports/sector_summary' ? 'active' : ''}" do %>
+                <i class="bi bi-diagram-3"></i> <%= t("nav.report_sector_summary") %>
+              <% end %>
+            <% end %>
+          <% end %>
+
           <% if policy(User).index? || current_user.admin? %>
             <div class="sidebar-section">Administração</div>
           <% end %>
