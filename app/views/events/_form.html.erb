@@ -48,7 +48,68 @@
         <%= f.select :event_type,
             Event::EVENT_TYPES.map { |et| [I18n.t("event_types.#{et}"), et] },
             { include_blank: "— Selecione um tipo —" },
-            class: "form-select form-control" %>
+            class: "form-select form-control",
+            id: "event-type-select",
+            onchange: "loadEventTypeStats(this.value)" %>
+      </div>
+    </div>
+
+    <%# ── Painel de análise histórica por tipo de evento ──────────────────── %>
+    <div id="event-type-stats-panel" style="display:none;margin-top:0.25rem;margin-bottom:1rem;">
+      <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:1rem 1.1rem;">
+
+        <%# Header %>
+        <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.85rem;">
+          <i class="bi bi-bar-chart-line" style="color:#1d4ed8;font-size:0.9rem;"></i>
+          <span style="font-size:0.8rem;font-weight:700;color:#1d4ed8;">
+            Histórico — <span id="ets-tipo-label"></span>
+          </span>
+          <span id="ets-ev-count" style="margin-left:auto;font-size:0.7rem;background:#dbeafe;color:#1d4ed8;border:1px solid #bfdbfe;border-radius:6px;padding:2px 8px;font-weight:600;"></span>
+        </div>
+
+        <%# Métricas %>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:0.5rem;margin-bottom:0.85rem;">
+          <div style="background:white;border-radius:8px;padding:0.65rem 0.75rem;border:1px solid #e0e7ff;">
+            <div style="font-size:0.62rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#6366f1;margin-bottom:3px;">Colaboradores</div>
+            <div id="ets-avg-collab" style="font-size:1.1rem;font-weight:700;color:#18181b;"></div>
+            <div id="ets-range-collab" style="font-size:0.65rem;color:#71717a;"></div>
+          </div>
+          <div style="background:white;border-radius:8px;padding:0.65rem 0.75rem;border:1px solid #e0e7ff;">
+            <div style="font-size:0.62rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#6366f1;margin-bottom:3px;">Custo médio</div>
+            <div id="ets-avg-cost" style="font-size:1.1rem;font-weight:700;color:#18181b;"></div>
+            <div style="font-size:0.65rem;color:#71717a;">por evento</div>
+          </div>
+          <div style="background:white;border-radius:8px;padding:0.65rem 0.75rem;border:1px solid #e0e7ff;">
+            <div style="font-size:0.62rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#6366f1;margin-bottom:3px;">Duração média</div>
+            <div id="ets-avg-days" style="font-size:1.1rem;font-weight:700;color:#18181b;"></div>
+            <div style="font-size:0.65rem;color:#71717a;">dias por evento</div>
+          </div>
+        </div>
+
+        <%# Abas %>
+        <div style="display:flex;gap:5px;margin-bottom:0.65rem;">
+          <button type="button" id="ets-tab-setores"    onclick="etsSwitch('setores')"       style="font-size:0.72rem;padding:3px 10px;border-radius:6px;border:1px solid #93c5fd;background:#1d4ed8;color:white;font-weight:600;cursor:pointer;">Setores</button>
+          <button type="button" id="ets-tab-funcoes"    onclick="etsSwitch('funcoes')"       style="font-size:0.72rem;padding:3px 10px;border-radius:6px;border:1px solid #bfdbfe;background:white;color:#1d4ed8;font-weight:600;cursor:pointer;">Custo por função</button>
+          <button type="button" id="ets-tab-collab-sec" onclick="etsSwitch('collab-sec')"    style="font-size:0.72rem;padding:3px 10px;border-radius:6px;border:1px solid #bfdbfe;background:white;color:#1d4ed8;font-weight:600;cursor:pointer;">Colaboradores por setor</button>
+        </div>
+
+        <div id="ets-pane-setores">
+          <div style="font-size:0.65rem;color:#71717a;margin-bottom:6px;">% de eventos com este setor</div>
+          <div id="ets-sectors-chart"></div>
+        </div>
+        <div id="ets-pane-funcoes" style="display:none;">
+          <div style="font-size:0.65rem;color:#71717a;margin-bottom:6px;">Custo médio por colaborador/função por evento</div>
+          <div id="ets-funcoes-chart"></div>
+        </div>
+        <div id="ets-pane-collab-sec" style="display:none;">
+          <div style="font-size:0.65rem;color:#71717a;margin-bottom:6px;">Média de colaboradores alocados por setor</div>
+          <div id="ets-collab-sec-chart"></div>
+        </div>
+
+        <div style="margin-top:0.65rem;padding-top:0.55rem;border-top:1px solid #bfdbfe;font-size:0.65rem;color:#3b82f6;">
+          <i class="bi bi-info-circle"></i>
+          Dados calculados a partir dos eventos já realizados nesta plataforma.
+        </div>
       </div>
     </div>
 
@@ -226,6 +287,79 @@
     document.getElementById("fn-fields").appendChild(row);
     document.getElementById("fn-fields").lastElementChild.querySelector("input[type=text]").focus();
   };
+
+  // ── Análise histórica por tipo de evento ──────────────────────────────────
+  var ETS_STATS_URL = "<%= event_type_stats_events_path %>";
+
+  function etsBuildBars(rows, valueKey, fmtFn, fillColor) {
+    if (!rows || !rows.length) return '<div style="font-size:0.72rem;color:#a1a1aa;">Sem dados suficientes.</div>';
+    var max = rows[0][valueKey];
+    if (!max) return '<div style="font-size:0.72rem;color:#a1a1aa;">Sem dados suficientes.</div>';
+    return rows.map(function(r) {
+      var pct = Math.round(r[valueKey] / max * 100);
+      return '<div style="display:grid;grid-template-columns:130px 1fr 80px;align-items:center;gap:6px;margin-bottom:5px;">'
+        + '<div style="font-size:0.72rem;color:#374151;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="' + r.label + '">' + r.label + '</div>'
+        + '<div style="background:#dbeafe;border-radius:4px;height:10px;overflow:hidden;">'
+        +   '<div style="width:' + pct + '%;height:100%;background:' + fillColor + ';border-radius:4px;"></div>'
+        + '</div>'
+        + '<div style="font-size:0.72rem;font-weight:700;color:#1d4ed8;text-align:right;white-space:nowrap;">' + fmtFn(r[valueKey]) + '</div>'
+        + '</div>';
+    }).join('');
+  }
+
+  window.etsSwitch = function(tab) {
+    ['setores', 'funcoes', 'collab-sec'].forEach(function(t) {
+      var pane = document.getElementById('ets-pane-' + t);
+      var btn  = document.getElementById('ets-tab-' + t);
+      if (!pane || !btn) return;
+      var active = t === tab;
+      pane.style.display    = active ? '' : 'none';
+      btn.style.background  = active ? '#1d4ed8' : 'white';
+      btn.style.color       = active ? 'white'   : '#1d4ed8';
+    });
+  };
+
+  window.loadEventTypeStats = function(eventType) {
+    var panel = document.getElementById('event-type-stats-panel');
+    if (!eventType) { panel.style.display = 'none'; return; }
+
+    fetch(ETS_STATS_URL + '?event_type=' + encodeURIComponent(eventType), {
+      headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      if (!d.total_events) { panel.style.display = 'none'; return; }
+
+      var fmt = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 });
+
+      document.getElementById('ets-tipo-label').textContent    = document.getElementById('event-type-select').options[document.getElementById('event-type-select').selectedIndex].text;
+      document.getElementById('ets-ev-count').textContent      = d.total_events + ' eventos';
+      document.getElementById('ets-avg-collab').textContent    = d.avg_collaborators;
+      document.getElementById('ets-range-collab').textContent  = 'mín ' + d.min_collaborators + ' · máx ' + d.max_collaborators;
+      document.getElementById('ets-avg-cost').textContent      = d.avg_cost > 0 ? fmt.format(d.avg_cost) : '—';
+      document.getElementById('ets-avg-days').textContent      = d.avg_days ? d.avg_days : '—';
+
+      document.getElementById('ets-sectors-chart').innerHTML = etsBuildBars(
+        d.sectors, 'pct', function(v) { return v + '%'; }, '#6366f1'
+      );
+      document.getElementById('ets-funcoes-chart').innerHTML = etsBuildBars(
+        d.functions, 'avg_cost', function(v) { return fmt.format(v); }, '#10b981'
+      );
+      document.getElementById('ets-collab-sec-chart').innerHTML = etsBuildBars(
+        d.collab_by_sector, 'avg', function(v) { return v + ' col.'; }, '#8b5cf6'
+      );
+
+      etsSwitch('setores');
+      panel.style.display = '';
+    })
+    .catch(function() { panel.style.display = 'none'; });
+  };
+
+  // Carrega ao abrir o form de edição se já houver tipo selecionado
+  (function() {
+    var sel = document.getElementById('event-type-select');
+    if (sel && sel.value) loadEventTypeStats(sel.value);
+  })();
 
   window.removeFnRow = function(btn) {
     var row = btn.closest(".fn-row");

@@ -173,6 +173,141 @@ class EventsController < ApplicationController
     end
   end
 
+  def event_type_stats
+    authorize Event, :new?
+
+    event_type = params[:event_type].presence
+    unless event_type
+      render json: { error: "event_type obrigatório" }, status: :unprocessable_entity and return
+    end
+
+    # Escopo de eventos visíveis pelo usuário
+    company_ids = current_user.admin? ? Company.pluck(:id) : current_user.company_users.pluck(:company_id)
+    event_ids   = Event.where(company_id: company_ids, event_type: event_type).pluck(:id)
+    total_ev    = event_ids.size
+
+    if total_ev == 0
+      render json: { total_events: 0 } and return
+    end
+
+    # ── Colaboradores por evento (avg/min/max) ──────────────────────────────
+    collab_pairs = TeamMembership
+      .joins(team: :sector)
+      .where(sectors: { event_id: event_ids })
+      .distinct
+      .pluck("sectors.event_id", "team_memberships.user_id")
+
+    collab_per_event = collab_pairs.group_by(&:first).transform_values(&:size)
+    counts = collab_per_event.values
+    avg_collab = counts.any? ? (counts.sum.to_f / counts.size).round(1) : 0
+    min_collab = counts.min || 0
+    max_collab = counts.max || 0
+
+    # ── Custo médio por evento ──────────────────────────────────────────────
+    all_shifts = Shift.joins(:sector).where(sectors: { event_id: event_ids }).includes(:sector)
+    team_ids   = all_shifts.map(&:team_id).compact.uniq
+    memberships_map = TeamMembership.includes(:event_function)
+      .where(team_id: team_ids)
+      .each_with_object({}) { |m, h| h[[m.user_id, m.team_id]] = m }
+
+    event_costs          = Hash.new(0.0)
+    cost_by_fn_raw       = Hash.new { |h, k| h[k] = { total: 0.0, event_ids: Set.new } }
+    collab_by_sector_raw = Hash.new { |h, k| h[k] = Hash.new { |hh, kk| hh[kk] = Set.new } }
+
+    all_shifts.each do |shift|
+      next unless shift.team_id
+      membership  = memberships_map[[shift.user_id, shift.team_id]]
+      rate        = membership&.event_function&.hourly_rate.to_f
+      next unless rate > 0
+
+      s    = shift.start_time.hour * 60 + shift.start_time.min
+      e    = shift.end_time.hour   * 60 + shift.end_time.min
+      hrs  = (e > s ? e - s : 1440 - s + e) / 60.0
+      days = shift.end_date.present? ? (shift.end_date - shift.date).to_i + 1 : 1
+      cost = hrs * days * rate
+
+      event_costs[shift.sector.event_id] += cost
+
+      fn_name = membership&.event_function&.name
+      if fn_name.present?
+        cost_by_fn_raw[fn_name][:total]     += cost
+        cost_by_fn_raw[fn_name][:event_ids] << shift.sector.event_id
+      end
+    end
+
+    total_cost = event_costs.values.sum
+    avg_cost   = total_ev > 0 ? (total_cost / total_ev).round(2) : 0
+
+    # Custo médio por função por evento (top 8)
+    avg_cost_by_fn = cost_by_fn_raw
+      .transform_values { |v| (v[:total] / v[:event_ids].size).round(2) }
+      .sort_by { |_, v| -v }
+      .first(8)
+      .map { |name, avg| { label: name, avg_cost: avg } }
+
+    # ── Setores mais usados (por sector_type, % dos eventos) ───────────────
+    sector_rows = Sector
+      .where(event_id: event_ids)
+      .where.not(sector_type: nil)
+      .group(:sector_type)
+      .select("sector_type, COUNT(DISTINCT event_id) AS ev_count")
+
+    sectors = sector_rows
+      .sort_by { |r| -r.ev_count }
+      .first(8)
+      .map do |r|
+        {
+          sector_type: r.sector_type,
+          label:       I18n.t("sector_types.#{r.sector_type}", default: r.sector_type.humanize),
+          pct:         (r.ev_count.to_f / total_ev * 100).round
+        }
+      end
+
+    # ── Colaboradores por sector_type (avg por evento) ─────────────────────
+    cs_rows = TeamMembership
+      .joins(team: :sector)
+      .where(sectors: { event_id: event_ids })
+      .where.not(sectors: { sector_type: nil })
+      .distinct
+      .pluck("sectors.sector_type", "sectors.event_id", "team_memberships.user_id")
+
+    # { sector_type => { event_id => Set<user_id> } }
+    cs_map = cs_rows.each_with_object(Hash.new { |h, k| h[k] = Hash.new { |hh, kk| hh[kk] = Set.new } }) do |(st, eid, uid), h|
+      h[st][eid] << uid
+    end
+
+    collab_by_sector = cs_map
+      .transform_values do |ev_map|
+        counts_arr = ev_map.values.map(&:size)
+        (counts_arr.sum.to_f / counts_arr.size).round(1)
+      end
+      .sort_by { |_, avg| -avg }
+      .first(8)
+      .map do |st, avg|
+        {
+          sector_type: st,
+          label:       I18n.t("sector_types.#{st}", default: st.humanize),
+          avg:         avg
+        }
+      end
+
+    # ── Duração média (dias) ────────────────────────────────────────────────
+    dur_rows  = Event.where(id: event_ids).pluck(:start_date, :end_date)
+    avg_days  = dur_rows.any? ? (dur_rows.map { |s, e| (e - s).to_i + 1 }.sum.to_f / dur_rows.size).round(1) : nil
+
+    render json: {
+      total_events:     total_ev,
+      avg_collaborators: avg_collab,
+      min_collaborators: min_collab,
+      max_collaborators: max_collab,
+      avg_cost:          avg_cost,
+      avg_days:          avg_days,
+      sectors:           sectors,
+      functions:         avg_cost_by_fn,
+      collab_by_sector:  collab_by_sector
+    }
+  end
+
   def new
     authorize Event
     @event = Event.new
