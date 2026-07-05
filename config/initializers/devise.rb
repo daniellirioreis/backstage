@@ -17,5 +17,5 @@ Devise.setup do |config|
   config.sign_out_via = :delete
 
   # Usar Colaborador como o modelo de autenticação
-  config.navigational_formats = ["*/*", :html, :turbo_stream]
+  config.navigational_formats = ["*/*", :html]
 end
