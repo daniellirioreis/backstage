@@ -24,6 +24,13 @@ class DashboardController < ApplicationController
 
     @events_by_status = Event.where(id: event_ids).group(:status).count
 
+    # Próximos eventos (ativos ou rascunho, a partir de hoje)
+    @upcoming_events = Event.where(id: event_ids, status: %w[active draft])
+                            .where("start_date >= ?", Date.today)
+                            .includes(:company)
+                            .order(:start_date)
+                            .limit(5)
+
     # Média de colaboradores por evento
     if @total_events > 0
       pairs = TeamMembership.joins(team: :sector)
@@ -53,6 +60,7 @@ class DashboardController < ApplicationController
     @cost_by_sector_type = Hash.new(0.0)
     @cost_by_event_type  = Hash.new(0.0)
     @cost_matrix         = Hash.new { |h, k| h[k] = Hash.new(0.0) }
+    @cost_by_month       = Hash.new(0.0)
     # { fn_name => { total: Float, event_ids: Set } }
     cost_by_function_raw = Hash.new { |h, k| h[k] = { total: 0.0, event_ids: Set.new } }
 
@@ -85,6 +93,8 @@ class DashboardController < ApplicationController
         cost_by_function_raw[fn_name][:total]     += cost
         cost_by_function_raw[fn_name][:event_ids] << shift.sector.event_id
       end
+
+      @cost_by_month[shift.date.strftime("%Y-%m")] += cost
     end
 
     # Média de gasto por função por evento (total acumulado / nº eventos que usaram a função)
@@ -92,6 +102,19 @@ class DashboardController < ApplicationController
       .transform_values { |v| (v[:total] / v[:event_ids].size).round(2) }
       .sort_by { |_, avg| -avg }
       .to_h
+
+    # Últimos 12 meses para o gráfico de evolução
+    @last_12_months = (11.downto(0)).map { |n| (Date.today << n).strftime("%Y-%m") }
+
+    # Top 5 colaboradores por número de turnos
+    top_shifts = Shift.joins(:sector)
+                      .where(sectors: { event_id: event_ids })
+                      .group(:user_id)
+                      .count
+                      .sort_by { |_, c| -c }
+                      .first(5)
+    user_map = User.where(id: top_shifts.map(&:first)).index_by(&:id)
+    @top_collaborators = top_shifts.map { |uid, count| [user_map[uid], count] }.compact
 
     @total_cost = @event_costs.values.sum
 
