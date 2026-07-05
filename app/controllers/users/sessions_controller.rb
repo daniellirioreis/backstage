@@ -6,7 +6,8 @@ class Users::SessionsController < Devise::SessionsController
 
     if resource
       set_flash_message!(:notice, :signed_in)
-      sign_in(resource_name, resource)
+      resource.remember_me = Devise::TRUE_VALUES.include?(sign_in_params[:remember_me])
+      sign_in(resource_name, resource, force: true)
       yield resource if block_given?
       respond_with resource, location: after_sign_in_path_for(resource)
     else
