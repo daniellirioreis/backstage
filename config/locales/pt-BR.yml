@@ -239,6 +239,9 @@ pt-BR:
       team_membership:
         one: "Membro de equipe"
         other: "Membros de equipe"
+      event_day:
+        one: "Dia do evento"
+        other: "Dias do evento"
 
     attributes:
       user:
@@ -296,6 +299,9 @@ pt-BR:
       team_membership:
         credential_code: "Código de credencial"
         event_function_id: "Função"
+      event_day:
+        date: "Data"
+        hours: "Horas"
       plan:
         name: "Nome do plano"
         events_limit: "Limite de eventos"
