@@ -114,7 +114,7 @@ class UsersController < ApplicationController
                   .order("events.start_date, shifts.date, shifts.start_time")
 
     @shifts_by_event = shifts.group_by { |s| s.sector.event }
-                             .sort_by { |ev, _| ev.start_date }
+                             .sort_by { |ev, _| [{ "active" => 0, "draft" => 1, "closed" => 2 }[ev.status] || 3, -ev.start_date.to_time.to_i] }
                              .to_h
   end
 
@@ -148,6 +148,7 @@ class UsersController < ApplicationController
     if @user.update(params_to_update)
       redirect_to users_path, notice: t("notices.updated", model: User.model_name.human)
     else
+      @company_memberships = @user.company_users.eager_load(:company).order("companies.name")
       render :edit, status: :unprocessable_entity
     end
   end

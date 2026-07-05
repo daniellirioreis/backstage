@@ -59,6 +59,12 @@ class EventsController < ApplicationController
 
   def show
     authorize @event
+
+    if current_event.nil?
+      session[:current_event_id] = @event.id
+      @current_event = @event
+    end
+
     @sectors = @event.sectors.includes(sector_functions: :event_function,
                                        teams: [:users, :coordinator]).order(:name)
     all_team_ids = @sectors.flat_map { |s| s.teams.map(&:id) }
