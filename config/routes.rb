@@ -8,7 +8,7 @@ Rails.application.routes.draw do
                sign_out: "logout",
                password: "password"
              },
-             controllers: { registrations: "users/registrations", sessions: "users/sessions" }
+             controllers: { registrations: "users/registrations", sessions: "users/sessions", passwords: "users/passwords" }
 
   # Convites
   resources :invitations, only: [:index, :new, :create]

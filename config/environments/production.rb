@@ -83,8 +83,10 @@ Rails.application.configure do
     domain:               ENV.fetch("APP_HOST",      "localhost"),
     user_name:            ENV["SMTP_USERNAME"],
     password:             ENV["SMTP_PASSWORD"],
-    authentication:       :plain,
-    enable_starttls_auto: true
+    authentication:       :login,
+    enable_starttls_auto: true,
+    open_timeout:         10,
+    read_timeout:         10
   }
 
   # Enable locale fallbacks for I18n (makes lookups for any locale fall back to
