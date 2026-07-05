@@ -17,6 +17,9 @@ gem "tzinfo-data", platforms: %i[windows jruby]
 gem "devise"
 gem "pundit"
 
+# Email (HTTP-based, sem SMTP)
+gem "resend"
+
 # PDF
 gem "wicked_pdf"
 gem "wkhtmltopdf-binary"

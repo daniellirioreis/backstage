@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 Devise.setup do |config|
-  config.mailer_sender = "noreply@backstage.local"
+  config.mailer_sender = ENV.fetch("MAILER_FROM", "onboarding@resend.dev")
 
   require "devise/orm/active_record"
 
