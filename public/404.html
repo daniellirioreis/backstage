@@ -1,67 +1,184 @@
 <!DOCTYPE html>
-<html>
+<html lang="pt-BR">
 <head>
-  <title>The page you were looking for doesn't exist (404)</title>
-  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Página não encontrada — Backstage</title>
   <style>
-  .rails-default-error-page {
-    background-color: #EFEFEF;
-    color: #2E2F30;
-    text-align: center;
-    font-family: arial, sans-serif;
-    margin: 0;
-  }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-  .rails-default-error-page div.dialog {
-    width: 95%;
-    max-width: 33em;
-    margin: 4em auto 0;
-  }
+    body {
+      background: #18181b;
+      color: #fafafa;
+      font-family: system-ui, -apple-system, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem 1rem;
+    }
 
-  .rails-default-error-page div.dialog > div {
-    border: 1px solid #CCC;
-    border-right-color: #999;
-    border-left-color: #999;
-    border-bottom-color: #BBB;
-    border-top: #B00100 solid 4px;
-    border-top-left-radius: 9px;
-    border-top-right-radius: 9px;
-    background-color: white;
-    padding: 7px 12% 0;
-    box-shadow: 0 3px 8px rgba(50, 50, 50, 0.17);
-  }
+    .container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      max-width: 420px;
+      width: 100%;
+    }
 
-  .rails-default-error-page h1 {
-    font-size: 100%;
-    color: #730E15;
-    line-height: 1.5em;
-  }
+    .illustration { margin-bottom: 1.75rem; }
 
-  .rails-default-error-page div.dialog > p {
-    margin: 0 0 1em;
-    padding: 1em;
-    background-color: #F7F7F7;
-    border: 1px solid #CCC;
-    border-right-color: #999;
-    border-left-color: #999;
-    border-bottom-color: #999;
-    border-bottom-left-radius: 4px;
-    border-bottom-right-radius: 4px;
-    border-top-color: #DADADA;
-    color: #666;
-    box-shadow: 0 3px 8px rgba(50, 50, 50, 0.17);
-  }
+    .code {
+      font-size: 80px;
+      font-weight: 700;
+      color: #27272a;
+      line-height: 1;
+      font-family: Georgia, serif;
+      margin-bottom: 0.5rem;
+    }
+
+    .title {
+      font-size: 22px;
+      font-weight: 600;
+      color: #fafafa;
+      margin-bottom: 0.75rem;
+    }
+
+    .subtitle {
+      font-size: 14px;
+      color: #71717a;
+      line-height: 1.65;
+      margin-bottom: 2rem;
+      max-width: 300px;
+    }
+
+    .actions {
+      display: flex;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .btn-primary {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      background: #fafafa;
+      color: #18181b;
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 600;
+      padding: 10px 24px;
+      border-radius: 8px;
+    }
+
+    .btn-secondary {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      background: transparent;
+      color: #a1a1aa;
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 500;
+      padding: 10px 24px;
+      border-radius: 8px;
+      border: 1px solid #3f3f46;
+    }
+
+    footer {
+      margin-top: 3rem;
+      font-size: 12px;
+      color: #3f3f46;
+    }
   </style>
 </head>
+<body>
+  <div class="container">
 
-<body class="rails-default-error-page">
-  <!-- This file lives in public/404.html -->
-  <div class="dialog">
-    <div>
-      <h1>The page you were looking for doesn't exist.</h1>
-      <p>You may have mistyped the address or the page may have moved.</p>
+    <div class="illustration">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 210" width="300" height="210" role="img" aria-label="Dois holofotes procurando uma página que não existe">
+        <title>Página não encontrada</title>
+
+        <!-- Piso do palco -->
+        <rect x="15" y="192" width="270" height="8" rx="2" fill="#27272a"/>
+        <line x1="15" y1="195" x2="285" y2="195" stroke="#3f3f46" stroke-width="0.8" stroke-dasharray="10,8"/>
+
+        <!-- Holofote 1 — esquerda -->
+        <g transform="translate(80,10) rotate(155,0,0)">
+          <rect x="-9" y="0" width="18" height="28" rx="3" fill="#3f3f46"/>
+          <rect x="-7" y="2" width="14" height="24" rx="2" fill="#52525b"/>
+          <circle cx="0" cy="14" r="4" fill="#fbbf24" opacity="0.3"/>
+          <polygon points="-16,28 16,28 26,78 -26,78" fill="#52525b" opacity="0.45"/>
+        </g>
+
+        <!-- Holofote 2 — direita -->
+        <g transform="translate(220,10) rotate(125,0,0)">
+          <rect x="-9" y="0" width="18" height="28" rx="3" fill="#3f3f46"/>
+          <rect x="-7" y="2" width="14" height="24" rx="2" fill="#52525b"/>
+          <circle cx="0" cy="14" r="4" fill="#fbbf24" opacity="0.3"/>
+          <polygon points="-16,28 16,28 26,78 -26,78" fill="#52525b" opacity="0.45"/>
+        </g>
+
+        <!-- Feixes se cruzando no centro vazio -->
+        <polygon points="62,10 78,10 165,192 140,192" fill="#4ade80" opacity="0.04"/>
+        <polygon points="222,10 238,10 158,192 132,192" fill="#4ade80" opacity="0.04"/>
+
+        <!-- Círculo de luz no chão (vazio) -->
+        <ellipse cx="150" cy="190" rx="38" ry="7" fill="#4ade80" opacity="0.06"/>
+
+        <!-- "?" grande no centro -->
+        <text x="150" y="160" text-anchor="middle" font-family="Georgia,serif" font-size="52" font-weight="700" fill="#4ade80" opacity="0.08">?</text>
+
+        <!-- Personagem hexágono coçando a cabeça -->
+        <g transform="translate(36,110)">
+          <ellipse cx="18" cy="74" rx="18" ry="3.5" fill="#000" opacity="0.2"/>
+          <polygon points="18,0 32.12,8.5 32.12,25.5 18,34 3.88,25.5 3.88,8.5" fill="#18181b"/>
+          <polygon points="18,2.5 29.62,9.5 29.62,24.5 18,31.5 6.38,24.5 6.38,9.5" fill="none" stroke="#4ade80" stroke-width="1.5"/>
+          <text x="18" y="22" text-anchor="middle" font-family="Georgia,serif" font-size="14" font-weight="700" fill="#fafafa">B</text>
+          <!-- olhos olhando para cima (pensativo) -->
+          <line x1="11" y1="11" x2="15" y2="10" stroke="#4ade80" stroke-width="1.2" stroke-linecap="round"/>
+          <line x1="21" y1="11" x2="25" y2="10" stroke="#4ade80" stroke-width="1.2" stroke-linecap="round"/>
+          <!-- boca torta -->
+          <path d="M13,25 Q16,27 21,24" fill="none" stroke="#4ade80" stroke-width="1" stroke-linecap="round"/>
+          <!-- braço coçando a cabeça -->
+          <line x1="32.12" y1="14" x2="44" y2="4" stroke="#4ade80" stroke-width="2" stroke-linecap="round"/>
+          <line x1="44" y1="4" x2="46" y2="-2" stroke="#4ade80" stroke-width="2" stroke-linecap="round"/>
+          <!-- outro braço -->
+          <line x1="3.88" y1="18" x2="-6" y2="24" stroke="#4ade80" stroke-width="2" stroke-linecap="round"/>
+          <!-- pernas paradas -->
+          <line x1="12" y1="34" x2="10" y2="58" stroke="#4ade80" stroke-width="2.2" stroke-linecap="round"/>
+          <line x1="24" y1="34" x2="26" y2="58" stroke="#4ade80" stroke-width="2.2" stroke-linecap="round"/>
+          <line x1="10" y1="58" x2="2" y2="58" stroke="#4ade80" stroke-width="2.2" stroke-linecap="round"/>
+          <line x1="26" y1="58" x2="34" y2="58" stroke="#4ade80" stroke-width="2.2" stroke-linecap="round"/>
+        </g>
+
+        <!-- "..." de dúvida -->
+        <text x="78" y="102" font-size="14" fill="#52525b" letter-spacing="2">...</text>
+
+        <!-- Estrelas -->
+        <text x="140" y="35" font-size="13" fill="#fbbf24" opacity="0.6">★</text>
+        <text x="262" y="58" font-size="10" fill="#fbbf24" opacity="0.5">✦</text>
+        <text x="28" y="82" font-size="10" fill="#fbbf24" opacity="0.4">✦</text>
+
+        <!-- Notas musicais -->
+        <text x="252" y="140" font-size="14" fill="#52525b" transform="rotate(10,252,140)">♪</text>
+        <text x="240" y="170" font-size="11" fill="#3f3f46" transform="rotate(-8,240,170)">♫</text>
+      </svg>
     </div>
-    <p>If you are the application owner check the logs for more information.</p>
+
+    <div class="code">404</div>
+    <div class="title">Esta página não está no roteiro</div>
+    <p class="subtitle">O endereço que você buscou não existe ou foi removido do evento.</p>
+
+    <div class="actions">
+      <a href="/" class="btn-primary">← Voltar ao início</a>
+      <a href="javascript:history.back()" class="btn-secondary">Voltar</a>
+    </div>
+
+    <footer>© 2025 Backstage — Gestão de Eventos</footer>
   </div>
 </body>
 </html>
