@@ -3,11 +3,13 @@ class EventSessionController < ApplicationController
 
   def select_event
     @events = if current_user.admin?
-      Event.includes(:company).order(start_date: :desc)
+      Event.includes(:company)
     else
       company_ids = current_user.company_users.pluck(:company_id)
-      Event.includes(:company).where(company_id: company_ids).order(start_date: :desc)
+      Event.includes(:company).where(company_id: company_ids)
     end
+
+    @events = @events.where(status: %w[active draft]).order(start_date: :desc)
 
     if @events.empty?
       if policy(Event).new?

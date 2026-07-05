@@ -18,7 +18,7 @@
 <% end %>
 
 <%# ── Header ──────────────────────────────────────────────────────────────── %>
-<div class="page-header" style="margin-bottom:1.5rem;">
+<div class="page-header" style="margin-bottom:2rem;">
   <div>
     <h1 style="margin:0;"><%= greeting %>, <%= current_user.name.split.first %> 👋</h1>
     <div style="font-size:0.82rem;color:#71717a;margin-top:0.2rem;">
@@ -32,184 +32,86 @@
   <% end %>
 </div>
 
-<%# ── Painel do evento atual ──────────────────────────────────────────────── %>
-<% if current_event %>
-  <%
-    ev_status_color = current_event.active? ? "#4ade80" : current_event.draft? ? "#a1a1aa" : "#71717a"
-    ev_status_bg    = current_event.active? ? "#052e16" : current_event.draft? ? "#27272a" : "#18181b"
-  %>
-  <div style="background:#18181b;border-radius:14px;padding:0;margin-bottom:1.5rem;overflow:hidden;">
+<%# ═══════════════════════════════════════════════════════════════════════════
+    BLOCO 1 — VISÃO GERAL
+════════════════════════════════════════════════════════════════════════════ %>
+<div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:1rem;">
+  <div style="display:flex;align-items:center;gap:0.5rem;background:#f4f4f5;border-radius:8px;padding:0.4rem 0.85rem;">
+    <i class="bi bi-grid-1x2" style="color:#52525b;font-size:0.9rem;"></i>
+    <span style="font-size:0.85rem;font-weight:700;color:#18181b;">Visão Geral</span>
+  </div>
+  <div style="flex:1;height:1px;background:#e4e4e7;"></div>
+</div>
 
-    <%# Cabeçalho do evento %>
-    <div style="padding:1.25rem 1.5rem;border-bottom:1px solid #27272a;display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;">
-      <div style="min-width:0;">
-        <div style="display:flex;align-items:center;gap:0.6rem;flex-wrap:wrap;margin-bottom:0.3rem;">
-          <span style="font-size:1.1rem;font-weight:700;color:#f4f4f5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"><%= current_event.name %></span>
-          <span style="font-size:0.65rem;font-weight:700;background:<%= ev_status_color %>22;border:1px solid <%= ev_status_color %>55;color:<%= ev_status_color %>;border-radius:5px;padding:2px 8px;letter-spacing:0.06em;text-transform:uppercase;">
-            <%= t("event_statuses.#{current_event.status}") %>
-          </span>
-          <% if current_event.closing_finalized_at? %>
-            <span style="font-size:0.65rem;font-weight:700;background:#dcfce7;border:1px solid #86efac;color:#15803d;border-radius:5px;padding:2px 8px;letter-spacing:0.04em;display:inline-flex;align-items:center;gap:3px;">
-              <i class="bi bi-check-circle-fill"></i> Fechamento finalizado
-            </span>
-          <% end %>
-        </div>
-        <div style="display:flex;gap:1rem;flex-wrap:wrap;">
-          <span style="font-size:0.75rem;color:#71717a;">
-            <i class="bi bi-calendar3"></i>
-            <%= l(current_event.start_date, format: :short) %> → <%= l(current_event.end_date, format: :short) %>
-          </span>
-          <% if current_event.location.present? %>
-            <span style="font-size:0.75rem;color:#71717a;">
-              <i class="bi bi-geo-alt"></i> <%= current_event.location %>
-            </span>
-          <% end %>
-        </div>
-      </div>
-      <%= link_to event_path(current_event), style: "font-size:0.78rem;color:#71717a;text-decoration:none;display:flex;align-items:center;gap:0.3rem;white-space:nowrap;flex-shrink:0;" do %>
-        Ver evento <i class="bi bi-arrow-right"></i>
-      <% end %>
+<div style="display:grid;grid-template-columns:1fr 1fr 230px;gap:1rem;align-items:start;margin-bottom:2rem;">
+
+  <%# Métricas: total + ativos %>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;grid-column:1/3;">
+    <div class="metric-card" style="border-top:3px solid #18181b;">
+      <div class="metric-label"><i class="bi bi-calendar-event"></i> Eventos</div>
+      <div class="metric-value"><%= @total_events %></div>
+      <div class="metric-sub">no total</div>
     </div>
+    <div class="metric-card" style="border-top:3px solid #4ade80;">
+      <div class="metric-label"><i class="bi bi-broadcast"></i> Ativos</div>
+      <div class="metric-value metric-accent"><%= @active_events %></div>
+      <div class="metric-sub">em andamento</div>
+    </div>
+  </div>
 
-    <%# Stats contextuais por status %>
-    <% if current_event.active? %>
-      <%# Stats de presença (evento ativo) %>
-      <div class="ev-stats-grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:0;">
-        <% [
-          ["bi-box-arrow-in-right", @ev_checkins_today,  "check-ins hoje",  "#4ade80", "#052e16"],
-          ["bi-person-check-fill",  @ev_inside_now,      "dentro agora",    "#60a5fa", "#0c1a2e"],
-          ["bi-box-arrow-right",    @ev_checkouts_today, "checkouts",       "#a78bfa", "#1a0f2e"],
-          ["bi-calendar-week",      @ev_expected_today,  "escalados hoje",  "#f59e0b", "#1c1004"],
-        ].each do |icon, val, label, color, bg| %>
-          <div style="padding:1.1rem 1rem;text-align:center;background:<%= bg %>;border-right:1px solid #27272a;">
-            <div style="font-size:1.6rem;font-weight:800;color:<%= color %>;line-height:1;"><%= val %></div>
-            <div style="font-size:0.68rem;color:#52525b;margin-top:4px;white-space:nowrap;"><i class="bi <%= icon %>" style="color:<%= color %>;opacity:0.7;"></i> <%= label %></div>
-          </div>
-        <% end %>
+  <%# Donut — status dos eventos %>
+  <div class="content-card" style="padding:1.1rem;">
+    <div style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:#a1a1aa;margin-bottom:0.85rem;">
+      <i class="bi bi-pie-chart"></i> Status
+    </div>
+    <% if @total_events > 0
+         total_ev   = @total_events.to_f
+         statuses   = [
+           ["active", @events_by_status["active"].to_i,  "#4ade80", "Ativos"],
+           ["draft",  @events_by_status["draft"].to_i,   "#d4d4d8", "Rascunho"],
+           ["closed", @events_by_status["closed"].to_i,  "#27272a", "Encerrados"],
+         ]
+         cumulative = 0
+         stops = statuses.map do |_key, count, color, _label|
+           s = (cumulative / total_ev * 100).round(2)
+           cumulative += count
+           e = (cumulative / total_ev * 100).round(2)
+           "#{color} #{s}% #{e}%"
+         end.join(", ")
+    %>
+      <div style="display:flex;align-items:center;gap:1rem;">
+        <div style="width:72px;height:72px;border-radius:50%;background:conic-gradient(<%= stops %>);position:relative;flex-shrink:0;">
+          <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:44px;height:44px;background:white;border-radius:50%;"></div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:0.4rem;flex:1;">
+          <% statuses.each do |_key, count, color, label| %>
+            <div style="display:flex;align-items:center;gap:0.4rem;">
+              <div style="width:8px;height:8px;border-radius:2px;background:<%= color %>;flex-shrink:0;"></div>
+              <span style="font-size:0.72rem;color:#52525b;flex:1;"><%= label %></span>
+              <span style="font-size:0.8rem;font-weight:700;color:#18181b;"><%= count %></span>
+            </div>
+          <% end %>
+        </div>
       </div>
-
-    <% elsif current_event.draft? %>
-      <%# Stats de configuração (rascunho) %>
-      <div class="ev-stats-grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:0;">
-        <% [
-          ["bi-grid-3x3-gap", @ev_sectors, "setores",      "#60a5fa"],
-          ["bi-people",       @ev_teams,   "equipes",      "#a78bfa"],
-          ["bi-person-badge", @ev_members, "colaboradores","#4ade80"],
-          ["bi-cash-stack",   nil,         "custo est.",   "#f59e0b"],
-        ].each_with_index do |(icon, val, label, color), i| %>
-          <div style="padding:1.1rem 1rem;text-align:center;border-right:1px solid #27272a;">
-            <% if i == 3 %>
-              <div style="font-size:1.1rem;font-weight:800;color:<%= color %>;line-height:1;">
-                <%= number_to_currency(@ev_cost, unit:"R$", separator:",", delimiter:".", precision:0) %>
-              </div>
-            <% else %>
-              <div style="font-size:1.6rem;font-weight:800;color:<%= color %>;line-height:1;"><%= val %></div>
-            <% end %>
-            <div style="font-size:0.68rem;color:#52525b;margin-top:4px;"><i class="bi <%= icon %>" style="color:<%= color %>;opacity:0.7;"></i> <%= label %></div>
-          </div>
-        <% end %>
-      </div>
-
-    <% elsif current_event.closed? %>
-      <%# Stats de fechamento %>
-      <div class="ev-stats-grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:0;">
-        <% [
-          ["bi-people",           @ev_members,         "colaboradores",   "#60a5fa"],
-          ["bi-person-check",     @ev_present.to_i,    "compareceram",    "#4ade80"],
-          ["bi-receipt",          @ev_total_checkins.to_i, "check-ins",   "#a78bfa"],
-          ["bi-cash-stack",       nil,                 "pago",            "#f59e0b"],
-        ].each_with_index do |(icon, val, label, color), i| %>
-          <div style="padding:1.1rem 1rem;text-align:center;border-right:1px solid #27272a;">
-            <% if i == 3 %>
-              <div style="font-size:1.1rem;font-weight:800;color:<%= color %>;line-height:1;">
-                <%= number_to_currency(@ev_paid.to_f, unit:"R$", separator:",", delimiter:".", precision:0) %>
-              </div>
-            <% else %>
-              <div style="font-size:1.6rem;font-weight:800;color:<%= color %>;line-height:1;"><%= val %></div>
-            <% end %>
-            <div style="font-size:0.68rem;color:#52525b;margin-top:4px;"><i class="bi <%= icon %>" style="color:<%= color %>;opacity:0.7;"></i> <%= label %></div>
-          </div>
-        <% end %>
-      </div>
+    <% else %>
+      <div style="text-align:center;color:#a1a1aa;font-size:0.82rem;padding:0.5rem 0;">Nenhum evento.</div>
     <% end %>
+  </div>
 
-    <%# Ações rápidas %>
-    <div style="padding:0.85rem 1.25rem;border-top:1px solid #27272a;display:flex;gap:0.5rem;flex-wrap:wrap;">
-      <% if current_event.active? %>
-        <% if policy(:attendance).scan? %>
-          <%= link_to scan_attendances_path, style: "display:inline-flex;align-items:center;gap:0.4rem;background:#4ade80;color:#052e16;font-size:0.78rem;font-weight:700;border-radius:7px;padding:0.4rem 0.9rem;text-decoration:none;" do %>
-            <i class="bi bi-qr-code-scan"></i> Check-in
-          <% end %>
-        <% end %>
-        <% if policy(:attendance).index? %>
-          <%= link_to attendances_path, style: "display:inline-flex;align-items:center;gap:0.4rem;background:#1f1f1f;color:#a1a1aa;font-size:0.78rem;font-weight:600;border-radius:7px;padding:0.4rem 0.9rem;text-decoration:none;" do %>
-            <i class="bi bi-person-check"></i> Presenças
-          <% end %>
-        <% end %>
-        <% if policy(Team).index? %>
-          <%= link_to teams_path, style: "display:inline-flex;align-items:center;gap:0.4rem;background:#1f1f1f;color:#a1a1aa;font-size:0.78rem;font-weight:600;border-radius:7px;padding:0.4rem 0.9rem;text-decoration:none;" do %>
-            <i class="bi bi-people"></i> Equipes
-          <% end %>
-        <% end %>
-      <% elsif current_event.draft? %>
-        <% if policy(Sector).index? %>
-          <%= link_to sectors_path, style: "display:inline-flex;align-items:center;gap:0.4rem;background:#60a5fa22;color:#60a5fa;border:1px solid #60a5fa44;font-size:0.78rem;font-weight:600;border-radius:7px;padding:0.4rem 0.9rem;text-decoration:none;" do %>
-            <i class="bi bi-diagram-3"></i> Setores
-          <% end %>
-        <% end %>
-        <% if policy(Team).index? %>
-          <%= link_to teams_path, style: "display:inline-flex;align-items:center;gap:0.4rem;background:#a78bfa22;color:#a78bfa;border:1px solid #a78bfa44;font-size:0.78rem;font-weight:600;border-radius:7px;padding:0.4rem 0.9rem;text-decoration:none;" do %>
-            <i class="bi bi-people"></i> Equipes
-          <% end %>
-        <% end %>
-        <% if policy(Shift).index? %>
-          <%= link_to timeline_shifts_path, style: "display:inline-flex;align-items:center;gap:0.4rem;background:#4ade8022;color:#4ade80;border:1px solid #4ade8044;font-size:0.78rem;font-weight:600;border-radius:7px;padding:0.4rem 0.9rem;text-decoration:none;" do %>
-            <i class="bi bi-calendar-range"></i> Escalas
-          <% end %>
-        <% end %>
-        <% if policy(current_event).edit? %>
-          <%= link_to edit_event_path(current_event), style: "display:inline-flex;align-items:center;gap:0.4rem;background:#1f1f1f;color:#71717a;font-size:0.78rem;font-weight:600;border-radius:7px;padding:0.4rem 0.9rem;text-decoration:none;" do %>
-            <i class="bi bi-pencil"></i> Editar evento
-          <% end %>
-        <% end %>
-      <% elsif current_event.closed? %>
-        <% if current_event.closing_finalized_at? %>
-          <span style="display:inline-flex;align-items:center;gap:0.4rem;background:#dcfce7;border:1px solid #86efac;color:#15803d;font-size:0.78rem;font-weight:700;border-radius:7px;padding:0.4rem 0.9rem;">
-            <i class="bi bi-check-circle-fill"></i> Fechamento concluído
-          </span>
-        <% elsif policy(:report).closing? %>
-          <%= link_to reports_closing_path, style: "display:inline-flex;align-items:center;gap:0.4rem;background:#f59e0b;color:#1c1004;font-size:0.78rem;font-weight:700;border-radius:7px;padding:0.4rem 0.9rem;text-decoration:none;" do %>
-            <i class="bi bi-receipt"></i> Relatório de fechamento
-          <% end %>
-        <% end %>
-        <%= link_to reports_closing_path, style: "display:inline-flex;align-items:center;gap:0.4rem;background:#1f1f1f;color:#71717a;font-size:0.78rem;font-weight:600;border-radius:7px;padding:0.4rem 0.9rem;text-decoration:none;" do %>
-          <i class="bi bi-receipt"></i> <%= current_event.closing_finalized_at? ? "Ver fechamento" : "Relatório de fechamento" %>
-        <% end %>
-        <%= link_to reports_closing_export_path(basis: "cross"), style: "display:inline-flex;align-items:center;gap:0.4rem;background:#1f1f1f;color:#71717a;font-size:0.78rem;font-weight:600;border-radius:7px;padding:0.4rem 0.9rem;text-decoration:none;" do %>
-          <i class="bi bi-file-earmark-spreadsheet"></i> Exportar CSV
-        <% end %>
-      <% end %>
-    </div>
-  </div>
-<% end %>
+</div>
 
-<%# ── Cards de métricas globais ───────────────────────────────────────────── %>
-<div class="dash-metrics-grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:0.75rem;margin-bottom:1.75rem;">
-  <div class="metric-card" style="border-top:3px solid #18181b;">
-    <div class="metric-label"><i class="bi bi-calendar-event"></i> Eventos</div>
-    <div class="metric-value"><%= @total_events %></div>
-    <div class="metric-sub">no total</div>
+<%# ═══════════════════════════════════════════════════════════════════════════
+    BLOCO 2 — FINANCEIRO
+════════════════════════════════════════════════════════════════════════════ %>
+<div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:1rem;">
+  <div style="display:flex;align-items:center;gap:0.5rem;background:#f0fdf4;border-radius:8px;padding:0.4rem 0.85rem;">
+    <i class="bi bi-cash-stack" style="color:#15803d;font-size:0.9rem;"></i>
+    <span style="font-size:0.85rem;font-weight:700;color:#15803d;">Financeiro</span>
   </div>
-  <div class="metric-card" style="border-top:3px solid #4ade80;">
-    <div class="metric-label"><i class="bi bi-broadcast"></i> Ativos</div>
-    <div class="metric-value metric-accent"><%= @active_events %></div>
-    <div class="metric-sub">em andamento</div>
-  </div>
-  <div class="metric-card" style="border-top:3px solid #f59e0b;">
-    <div class="metric-label"><i class="bi bi-person-badge"></i> Colaboradores</div>
-    <div class="metric-value metric-warn"><%= @total_users %></div>
-    <div class="metric-sub">cadastrados</div>
-  </div>
+  <div style="flex:1;height:1px;background:#e4e4e7;"></div>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;margin-bottom:0.75rem;">
   <div class="metric-card" style="border-top:3px solid #16a34a;">
     <div class="metric-label"><i class="bi bi-cash-stack"></i> Custo médio</div>
     <div class="metric-value" style="font-size:1.1rem;color:#15803d;">
@@ -217,89 +119,312 @@
     </div>
     <div class="metric-sub">por evento</div>
   </div>
-</div>
-
-<%# ── Coluna lateral ───────────────────────────────────────────────────────── %>
-<div class="dash-main-grid" style="display:grid;grid-template-columns:260px;gap:1.25rem;align-items:start;justify-content:end;">
-
-  <%# ── Coluna direita ─────────────────────────────────────────────────────── %>
-  <div style="display:flex;flex-direction:column;gap:1rem;">
-
-    <%# Distribuição de status %>
-    <div class="content-card" style="padding:1.1rem;">
-      <div style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:#a1a1aa;margin-bottom:0.85rem;">
-        <i class="bi bi-pie-chart"></i> Status dos eventos
-      </div>
-      <% if @total_events > 0
-           total_ev = @total_events.to_f
-           circ     = 2 * Math::PI * 40
-           statuses = [
-             ["active",  @events_by_status["active"].to_i,  "#4ade80", "Ativos"],
-             ["draft",   @events_by_status["draft"].to_i,   "#d4d4d8", "Rascunho"],
-             ["closed",  @events_by_status["closed"].to_i,  "#27272a", "Encerrados"],
-           ]
-           offset = circ * 0.25
-      %>
-        <div style="display:flex;align-items:center;gap:1rem;">
-          <svg viewBox="0 0 100 100" width="80" height="80" style="flex-shrink:0;transform:rotate(-90deg);">
-            <circle cx="50" cy="50" r="40" fill="none" stroke="#f4f4f5" stroke-width="16"/>
-            <% statuses.each do |_key, count, color, _label|
-                 next if count == 0
-                 dash = (count / total_ev) * circ %>
-              <circle cx="50" cy="50" r="40" fill="none" stroke="<%= color %>" stroke-width="16"
-                      stroke-dasharray="<%= dash.round(2) %> <%= circ.round(2) %>"
-                      stroke-dashoffset="<%= offset.round(2) %>"/>
-            <% offset -= (count / total_ev) * circ rescue nil %>
-            <% end %>
-          </svg>
-          <div style="display:flex;flex-direction:column;gap:0.45rem;flex:1;">
-            <% statuses.each do |_key, count, color, label| %>
-              <div style="display:flex;align-items:center;gap:0.4rem;">
-                <div style="width:8px;height:8px;border-radius:2px;background:<%= color %>;flex-shrink:0;"></div>
-                <span style="font-size:0.75rem;color:#52525b;flex:1;"><%= label %></span>
-                <span style="font-size:0.82rem;font-weight:700;color:#18181b;"><%= count %></span>
-              </div>
-            <% end %>
-          </div>
-        </div>
-      <% else %>
-        <div style="text-align:center;color:#a1a1aa;font-size:0.82rem;padding:0.5rem 0;">Nenhum evento.</div>
-      <% end %>
+  <div class="metric-card" style="border-top:3px solid #15803d;">
+    <div class="metric-label"><i class="bi bi-currency-dollar"></i> Custo total</div>
+    <div class="metric-value" style="font-size:1.1rem;color:#15803d;">
+      <%= number_to_currency(@total_cost, unit:"R$", separator:",", delimiter:".", precision:0) %>
     </div>
-
-    <%# Gasto médio por tipo de setor %>
-    <% if @sectors_by_type.any? %>
-      <div class="content-card" style="padding:1.1rem;">
-        <div style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:#a1a1aa;margin-bottom:0.85rem;">
-          <i class="bi bi-grid-3x3-gap"></i> Gasto médio por tipo de setor
-        </div>
-        <div style="display:flex;flex-direction:column;gap:0.4rem;">
-          <% @sectors_by_type
-               .sort_by { |type, _| -(@cost_by_sector_type[type] || 0) }
-               .each do |type, count| %>
-            <% total = @cost_by_sector_type[type].to_f %>
-            <% avg   = count > 0 ? total / count : 0 %>
-            <% max_avg = @sectors_by_type.keys.map { |t| @cost_by_sector_type[t].to_f / @sectors_by_type[t] }.max.to_f %>
-            <% pct = max_avg > 0 ? [(avg / max_avg * 100).round, 100].min : 0 %>
-            <div style="padding:0.45rem 0.65rem;background:#f9f9f9;border-radius:7px;">
-              <div style="margin-bottom:3px;">
-                <span style="font-size:0.75rem;font-weight:600;color:#18181b;">
-                  <%= I18n.t("sector_types.#{type}", default: type.humanize) %>
-                </span>
-              </div>
-              <div style="display:flex;align-items:center;gap:0.5rem;">
-                <div style="flex:1;height:4px;background:#e4e4e7;border-radius:99px;overflow:hidden;">
-                  <div style="height:100%;width:<%= pct %>%;background:#18181b;border-radius:99px;"></div>
-                </div>
-                <span style="font-size:0.72rem;font-weight:700;color:#18181b;flex-shrink:0;min-width:52px;text-align:right;">
-                  <%= number_to_currency(avg, unit:"R$", separator:",", delimiter:".", precision:0) %>
-                </span>
-              </div>
-            </div>
-          <% end %>
-        </div>
-      </div>
-    <% end %>
-
+    <div class="metric-sub">acumulado</div>
   </div>
 </div>
+
+<%# Gasto médio por função — barras horizontais %>
+<% if @avg_cost_by_function.any? %>
+  <%
+    fn_rows  = @avg_cost_by_function.first(12)
+    fn_max   = fn_rows.map(&:last).max.to_f
+  %>
+  <div class="content-card" style="padding:1.1rem;margin-bottom:0.75rem;">
+    <div style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:#a1a1aa;margin-bottom:1rem;">
+      <i class="bi bi-person-workspace"></i> Gasto médio por função por evento
+    </div>
+    <div style="display:flex;flex-direction:column;gap:0.45rem;">
+      <% fn_rows.each do |fn_name, avg| %>
+        <% pct = fn_max > 0 ? (avg / fn_max * 100).round(1) : 0 %>
+        <div style="display:grid;grid-template-columns:160px 1fr 90px;align-items:center;gap:0.65rem;">
+          <div style="font-size:0.73rem;color:#27272a;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"
+               title="<%= fn_name %>">
+            <%= fn_name %>
+          </div>
+          <div style="background:#f4f4f5;border-radius:4px;height:16px;overflow:hidden;">
+            <div style="width:<%= pct %>%;height:100%;background:#6366f1;border-radius:4px;transition:width 0.3s;"></div>
+          </div>
+          <div style="font-size:0.78rem;font-weight:700;color:#4338ca;text-align:right;white-space:nowrap;">
+            <%= number_to_currency(avg, unit:"R$", separator:",", delimiter:".", precision:0) %>
+          </div>
+        </div>
+      <% end %>
+    </div>
+    <% if @avg_cost_by_function.size > 12 %>
+      <div style="margin-top:0.5rem;font-size:0.65rem;color:#a1a1aa;text-align:right;">
+        + <%= @avg_cost_by_function.size - 12 %> função(ões) não exibida(s)
+      </div>
+    <% end %>
+  </div>
+<% end %>
+
+<%# Gasto médio por tipo de evento %>
+<div class="content-card" style="padding:1.1rem;margin-bottom:0.75rem;">
+  <div style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:#a1a1aa;margin-bottom:1rem;">
+    <i class="bi bi-bar-chart-line"></i> Gasto médio por tipo de evento
+  </div>
+  <% if @events_by_type.any? %>
+    <%
+      ev_sorted  = @events_by_type
+                     .sort_by { |type, _| -(@cost_by_event_type[type] || 0) }
+                     .first(10)
+      ev_max_avg = ev_sorted.map { |type, count| count > 0 ? @cost_by_event_type[type].to_f / count : 0 }.max.to_f
+      ev_rest    = @events_by_type.size - ev_sorted.size
+    %>
+    <div style="overflow-x:auto;">
+      <div style="display:flex;align-items:flex-end;gap:0.5rem;height:110px;min-width:<%= [ev_sorted.size * 60, 200].max %>px;">
+        <% ev_sorted.each do |type, count| %>
+          <% avg = count > 0 ? @cost_by_event_type[type].to_f / count : 0 %>
+          <% pct = ev_max_avg > 0 ? [(avg / ev_max_avg * 100).round, 100].min : 4 %>
+          <div style="flex:1;min-width:52px;display:flex;flex-direction:column;align-items:center;height:100%;">
+            <div style="font-size:0.6rem;font-weight:700;color:#18181b;margin-bottom:4px;white-space:nowrap;">
+              <%= avg > 0 ? number_to_currency(avg, unit:"R$", separator:",", delimiter:".", precision:0) : "—" %>
+            </div>
+            <div style="flex:1;width:100%;display:flex;align-items:flex-end;">
+              <div style="width:100%;height:<%= [pct, 4].max %>%;background:#6366f1;border-radius:4px 4px 0 0;opacity:<%= avg > 0 ? 1 : 0.2 %>;"></div>
+            </div>
+          </div>
+        <% end %>
+      </div>
+      <div style="display:flex;gap:0.5rem;border-top:1px solid #e4e4e7;padding-top:0.45rem;min-width:<%= [ev_sorted.size * 60, 200].max %>px;">
+        <% ev_sorted.each do |type, count| %>
+          <div style="flex:1;min-width:52px;font-size:0.6rem;color:#71717a;text-align:center;line-height:1.3;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">
+            <%= I18n.t("event_types.#{type}", default: type.humanize) %>
+            <span style="display:block;color:#a1a1aa;font-size:0.55rem;"><%= count %> ev.</span>
+          </div>
+        <% end %>
+      </div>
+    </div>
+    <% if ev_rest > 0 %>
+      <div style="margin-top:0.5rem;font-size:0.7rem;color:#a1a1aa;text-align:right;">
+        + <%= ev_rest %> tipo<%= ev_rest > 1 ? "s" : "" %> não exibido<%= ev_rest > 1 ? "s" : "" %>
+      </div>
+    <% end %>
+  <% else %>
+    <div style="text-align:center;padding:1.5rem 0;color:#a1a1aa;font-size:0.82rem;">
+      <i class="bi bi-tag" style="font-size:1.5rem;display:block;margin-bottom:0.5rem;opacity:0.4;"></i>
+      Nenhum evento com tipo definido ainda.
+    </div>
+  <% end %>
+</div>
+
+<%# Gasto médio por tipo de setor %>
+<% if @sectors_by_type.any? %>
+  <div class="content-card" style="padding:1.1rem;margin-bottom:0.75rem;">
+    <div style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:#a1a1aa;margin-bottom:1rem;">
+      <i class="bi bi-bar-chart"></i> Gasto médio por tipo de setor
+    </div>
+    <%
+      sorted_types = @sectors_by_type.sort_by { |type, _| -(@cost_by_sector_type[type] || 0) }
+      max_avg      = sorted_types.map { |type, count| count > 0 ? @cost_by_sector_type[type].to_f / count : 0 }.max.to_f
+    %>
+    <div style="overflow-x:auto;">
+      <div style="display:flex;align-items:flex-end;gap:0.75rem;height:110px;min-width:<%= sorted_types.size * 64 %>px;">
+        <% sorted_types.each do |type, count| %>
+          <% avg = count > 0 ? @cost_by_sector_type[type].to_f / count : 0 %>
+          <% pct = max_avg > 0 ? [(avg / max_avg * 100).round, 100].min : 0 %>
+          <div style="flex:1;display:flex;flex-direction:column;align-items:center;height:100%;">
+            <div style="font-size:0.62rem;font-weight:700;color:#18181b;margin-bottom:4px;white-space:nowrap;">
+              <%= number_to_currency(avg, unit:"R$", separator:",", delimiter:".", precision:0) %>
+            </div>
+            <div style="flex:1;width:100%;display:flex;align-items:flex-end;">
+              <div style="width:100%;height:<%= pct %>%;background:#18181b;border-radius:4px 4px 0 0;min-height:4px;"></div>
+            </div>
+          </div>
+        <% end %>
+      </div>
+      <div style="display:flex;gap:0.75rem;border-top:1px solid #e4e4e7;padding-top:0.5rem;min-width:<%= sorted_types.size * 64 %>px;">
+        <% sorted_types.each do |type, _| %>
+          <div style="flex:1;font-size:0.65rem;color:#71717a;text-align:center;line-height:1.3;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+            <%= I18n.t("sector_types.#{type}", default: type.humanize) %>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  </div>
+<% end %>
+
+<%# Heatmap: Gasto por tipo de evento × tipo de setor %>
+<% if @cost_matrix.any? %>
+  <%
+    matrix_ev_types  = @cost_matrix.keys
+                         .sort_by { |et| -@cost_matrix[et].values.sum }
+                         .first(6)
+    matrix_sec_types = @cost_matrix.values
+                         .flat_map(&:keys).uniq
+                         .sort_by { |st| -@cost_matrix.values.sum { |h| h[st].to_f } }
+                         .first(6)
+    matrix_avg_max   = matrix_ev_types.flat_map { |et|
+      ev_count = @events_by_type[et].to_i
+      matrix_sec_types.map { |st| ev_count > 0 ? @cost_matrix[et][st].to_f / ev_count : 0 }
+    }.max.to_f
+    matrix_total_max = matrix_ev_types.flat_map { |et|
+      matrix_sec_types.map { |st| @cost_matrix[et][st].to_f }
+    }.max.to_f
+    hm_bg    = ->(i)    { i > 0 ? "rgba(99,102,241,#{(0.12 + i * 0.88).round(2)})" : "#f4f4f5" }
+    hm_color = ->(i, v) { i > 0.5 ? "#fff" : (v ? "#27272a" : "#a1a1aa") }
+  %>
+  <div class="content-card" style="padding:1.1rem;margin-bottom:2rem;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
+      <div style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:#a1a1aa;">
+        <i class="bi bi-grid-3x3-gap"></i> Mapa de Gastos — Evento × Setor
+      </div>
+      <div id="heatmap-toggle" style="display:flex;gap:3px;">
+        <button data-mode="avg"   onclick="heatmapSetMode('avg')"   style="font-size:0.68rem;padding:0.2rem 0.6rem;border:none;border-radius:4px;cursor:pointer;background:#6366f1;color:#fff;font-weight:600;">Média</button>
+        <button data-mode="total" onclick="heatmapSetMode('total')" style="font-size:0.68rem;padding:0.2rem 0.6rem;border:none;border-radius:4px;cursor:pointer;background:#f4f4f5;color:#52525b;font-weight:600;">Total</button>
+      </div>
+    </div>
+    <div style="overflow-x:auto;">
+      <table id="heatmap-matrix" style="width:100%;border-collapse:separate;border-spacing:3px;font-size:0.7rem;">
+        <thead>
+          <tr>
+            <th style="text-align:left;padding:0.35rem 0.5rem;color:#71717a;font-weight:600;min-width:110px;"></th>
+            <% matrix_sec_types.each do |st| %>
+              <th style="text-align:center;padding:0.35rem 0.4rem;color:#71717a;font-weight:600;white-space:nowrap;">
+                <%= I18n.t("sector_types.#{st}", default: st.humanize) %>
+              </th>
+            <% end %>
+          </tr>
+        </thead>
+        <tbody>
+          <% matrix_ev_types.each do |et| %>
+            <% ev_count = @events_by_type[et].to_i %>
+            <tr>
+              <td style="padding:0.3rem 0.5rem;color:#27272a;font-weight:500;white-space:nowrap;">
+                <%= I18n.t("event_types.#{et}", default: et.humanize) %>
+                <span style="font-size:0.6rem;color:#a1a1aa;font-weight:400;"> (<%= ev_count %> ev.)</span>
+              </td>
+              <% matrix_sec_types.each do |st| %>
+                <%
+                  total     = @cost_matrix[et][st].to_f
+                  avg       = ev_count > 0 ? total / ev_count : 0
+                  avg_int   = matrix_avg_max   > 0 && avg   > 0 ? avg   / matrix_avg_max   : 0
+                  total_int = matrix_total_max > 0 && total > 0 ? total / matrix_total_max : 0
+                  avg_bg    = hm_bg.(avg_int);   total_bg  = hm_bg.(total_int)
+                  avg_col   = hm_color.(avg_int, avg > 0); total_col = hm_color.(total_int, total > 0)
+                  avg_label   = avg   > 0 ? number_to_currency(avg,   unit:"R$", separator:",", delimiter:".", precision:0) : "—"
+                  total_label = total > 0 ? number_to_currency(total, unit:"R$", separator:",", delimiter:".", precision:0) : "—"
+                %>
+                <td data-avg="<%= avg_label %>"     data-avg-bg="<%= avg_bg %>"     data-avg-color="<%= avg_col %>"   data-avg-fw="<%= avg > 0 ? 600 : 400 %>"
+                    data-total="<%= total_label %>" data-total-bg="<%= total_bg %>" data-total-color="<%= total_col %>" data-total-fw="<%= total > 0 ? 600 : 400 %>"
+                    style="text-align:center;padding:0.3rem 0.5rem;border-radius:4px;background:<%= avg_bg %>;color:<%= avg_col %>;white-space:nowrap;min-width:80px;font-weight:<%= avg > 0 ? 600 : 400 %>;">
+                  <%= avg_label %>
+                </td>
+              <% end %>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+    <div style="margin-top:0.7rem;font-size:0.65rem;color:#a1a1aa;display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;">
+      <span>Intensidade:</span>
+      <div style="display:flex;align-items:center;gap:2px;">
+        <% [0.12, 0.34, 0.56, 0.78, 1.0].each do |op| %>
+          <div style="width:14px;height:14px;border-radius:2px;background:rgba(99,102,241,<%= op %>);"></div>
+        <% end %>
+      </div>
+      <span>menor → maior</span>
+      <span style="margin-left:auto;">top <%= matrix_ev_types.size %> tipos ev. × top <%= matrix_sec_types.size %> tipos set.</span>
+    </div>
+  </div>
+  <script>
+    function heatmapSetMode(mode) {
+      document.querySelectorAll('#heatmap-matrix td[data-avg]').forEach(function(td) {
+        td.textContent       = mode === 'avg' ? td.dataset.avg      : td.dataset.total;
+        td.style.background  = mode === 'avg' ? td.dataset.avgBg    : td.dataset.totalBg;
+        td.style.color       = mode === 'avg' ? td.dataset.avgColor : td.dataset.totalColor;
+        td.style.fontWeight  = mode === 'avg' ? td.dataset.avgFw    : td.dataset.totalFw;
+      });
+      document.querySelectorAll('#heatmap-toggle button').forEach(function(btn) {
+        var active = btn.dataset.mode === mode;
+        btn.style.background = active ? '#6366f1' : '#f4f4f5';
+        btn.style.color      = active ? '#fff'    : '#52525b';
+      });
+    }
+  </script>
+<% end %>
+
+<%# ═══════════════════════════════════════════════════════════════════════════
+    BLOCO 3 — COLABORADORES
+════════════════════════════════════════════════════════════════════════════ %>
+<div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:1rem;">
+  <div style="display:flex;align-items:center;gap:0.5rem;background:#eff6ff;border-radius:8px;padding:0.4rem 0.85rem;">
+    <i class="bi bi-people" style="color:#1d4ed8;font-size:0.9rem;"></i>
+    <span style="font-size:0.85rem;font-weight:700;color:#1d4ed8;">Colaboradores</span>
+  </div>
+  <div style="flex:1;height:1px;background:#e4e4e7;"></div>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;margin-bottom:0.75rem;">
+  <div class="metric-card" style="border-top:3px solid #f59e0b;">
+    <div class="metric-label"><i class="bi bi-person-badge"></i> Cadastrados</div>
+    <div class="metric-value metric-warn"><%= @total_users %></div>
+    <div class="metric-sub">colaboradores no total</div>
+  </div>
+  <div class="metric-card" style="border-top:3px solid #0ea5e9;">
+    <div class="metric-label"><i class="bi bi-people"></i> Média por evento</div>
+    <div class="metric-value" style="color:#0369a1;"><%= @avg_members_per_event %></div>
+    <div class="metric-sub">colaboradores / evento</div>
+  </div>
+</div>
+
+<%# Gráfico: colaboradores por tipo de evento — top 10 %>
+<% if @collab_ref_by_event_type.any? %>
+  <%
+    collab_rows = @collab_ref_by_event_type.first(10)
+    chart_max   = collab_rows.map { |_, s| s[:max] }.max.to_f
+    min_width   = collab_rows.size * 72
+  %>
+  <div class="content-card" style="padding:1.1rem;">
+    <div style="margin-bottom:1rem;">
+      <div style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:#a1a1aa;">
+        <i class="bi bi-bar-chart-steps"></i> Colaboradores por tipo de evento — top 10
+      </div>
+      <div style="font-size:0.75rem;color:#71717a;margin-top:0.2rem;">
+        Referência para planejar um novo evento. Barra escura = média · faixa clara = variação (mín → máx).
+      </div>
+    </div>
+
+    <div style="overflow-x:auto;">
+      <div style="display:flex;align-items:flex-end;gap:0.5rem;height:140px;min-width:<%= min_width %>px;">
+        <% collab_rows.each do |ev_type, stats| %>
+          <%
+            avg_pct = chart_max > 0 ? (stats[:avg] / chart_max * 100).round(1) : 0
+            max_pct = chart_max > 0 ? (stats[:max].to_f / chart_max * 100).round(1) : 0
+          %>
+          <div style="flex:1;min-width:62px;display:flex;flex-direction:column;align-items:center;height:100%;">
+            <div style="font-size:0.62rem;font-weight:700;color:#4338ca;margin-bottom:4px;white-space:nowrap;">
+              <%= number_with_precision(stats[:avg], precision: 1, separator: ",") %>
+            </div>
+            <div style="flex:1;width:100%;position:relative;">
+              <div style="position:absolute;bottom:0;left:0;right:0;height:<%= max_pct %>%;background:#e0e7ff;border-radius:4px 4px 0 0;"></div>
+              <div style="position:absolute;bottom:0;left:0;right:0;height:<%= avg_pct %>%;background:#6366f1;border-radius:4px 4px 0 0;z-index:2;"></div>
+            </div>
+          </div>
+        <% end %>
+      </div>
+      <div style="display:flex;gap:0.5rem;border-top:1px solid #e4e4e7;padding-top:0.45rem;min-width:<%= min_width %>px;">
+        <% collab_rows.each do |ev_type, stats| %>
+          <div style="flex:1;min-width:62px;font-size:0.6rem;color:#71717a;text-align:center;line-height:1.35;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">
+            <%= I18n.t("event_types.#{ev_type}", default: ev_type.humanize) %>
+            <span style="display:block;color:#a1a1aa;font-size:0.56rem;margin-top:1px;"><%= stats[:min] %>–<%= stats[:max] %> · <%= stats[:events] %> ev.</span>
+          </div>
+        <% end %>
+      </div>
+    </div>
+
+    <div style="margin-top:0.85rem;padding-top:0.6rem;border-top:1px solid #f4f4f5;display:flex;align-items:center;gap:1.25rem;flex-wrap:wrap;">
+      <div style="display:flex;align-items:center;gap:0.4rem;font-size:0.68rem;color:#52525b;">
+        <div style="width:20px;height:10px;background:#6366f1;border-radius:2px;"></div> Média
+      </div>
+      <div style="display:flex;align-items:center;gap:0.4rem;font-size:0.68rem;color:#52525b;">
+        <div style="width:20px;height:10px;background:#e0e7ff;border-radius:2px;"></div> Variação (mín → máx)
+      </div>
+    </div>
+  </div>
+<% end %>

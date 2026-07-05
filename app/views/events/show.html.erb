@@ -5,11 +5,16 @@
       <i class="bi bi-arrow-left"></i>
     <% end %>
     <div>
-      <div style="display: flex; align-items: center; gap: 0.6rem;">
+      <div style="display: flex; align-items: center; gap: 0.6rem; flex-wrap:wrap;">
         <h1 style="margin: 0;"><%= @event.name %></h1>
         <span class="badge-status badge-<%= @event.status %>">
           <%= t("event_statuses.#{@event.status}") %>
         </span>
+        <% if @event.event_type.present? %>
+          <span style="font-size:0.7rem;font-weight:600;background:#f4f4f5;color:#52525b;border-radius:5px;padding:3px 9px;border:1px solid #e4e4e7;">
+            <i class="bi bi-tag"></i> <%= t("event_types.#{@event.event_type}", default: @event.event_type.humanize) %>
+          </span>
+        <% end %>
       </div>
       <div style="font-size: 0.82rem; color: #71717a; margin-top: 0.2rem; display: flex; gap: 1rem;">
         <% if @event.location.present? %>

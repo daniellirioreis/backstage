@@ -21,8 +21,10 @@ event = Event.find_or_create_by!(name: "Festival Horizonte 2026") do |e|
   e.end_date   = Date.new(2026, 5, 10)
   e.status     = "closed"
   e.code       = "FH26"
+  e.event_type = "festival"
 end
 event.update!(status: "closed") unless event.closed?
+event.update_columns(event_type: "festival") if event.event_type.blank?
 puts "   Evento: #{event.name} (#{event.status})"
 
 # ── Dias do evento ────────────────────────────────────────────────────────────

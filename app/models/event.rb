@@ -21,9 +21,22 @@ class Event < ApplicationRecord
     event_days.sum(:hours).to_f
   end
 
+  EVENT_TYPES = %w[
+    show festival concert theater dance circus opera stand_up
+    sports race tournament championship
+    corporate conference seminar workshop hackathon trade_show product_launch award_ceremony
+    wedding graduation birthday debutante social_gathering new_year carnival
+    religious church_service
+    cultural art_exhibition gastronomy
+    educational lecture
+    governmental
+    other
+  ].freeze
+
   enum :status, { draft: "draft", active: "active", closed: "closed" }, validate: true
 
   validates :name, presence: true
+  validates :event_type, inclusion: { in: EVENT_TYPES }, allow_blank: true
   validates :code, format: { with: /\A[A-Z0-9]{2,10}\z/i, message: "deve ter 2 a 10 letras/números" }, allow_blank: true
   validates :start_date, presence: true
   validates :end_date, presence: true

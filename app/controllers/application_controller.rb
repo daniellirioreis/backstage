@@ -40,10 +40,10 @@ class ApplicationController < ActionController::Base
     return if skip_event_check?
 
     available = if current_user.admin?
-      Event.order(start_date: :desc)
+      Event.where(status: %w[active draft]).order(start_date: :desc)
     else
       company_ids = current_user.company_users.pluck(:company_id)
-      Event.where(company_id: company_ids).order(start_date: :desc)
+      Event.where(company_id: company_ids).where(status: %w[active draft]).order(start_date: :desc)
     end
 
     if available.empty?

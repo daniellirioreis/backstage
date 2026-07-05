@@ -5,7 +5,56 @@ class EventsController < ApplicationController
 
   def index
     authorize Event
-    @events = policy_scope(Event).includes(:company, sectors: :teams).order(start_date: :desc)
+
+    valid_statuses  = %w[draft active closed]
+    @status_filter  = params[:status].presence_in(valid_statuses)
+    @status_counts  = policy_scope(Event).group(:status).count
+
+    @events = policy_scope(Event)
+                .includes(:company, sectors: { teams: :team_memberships })
+                .then { |s| @status_filter ? s.where(status: @status_filter) : s }
+                .order(start_date: :desc)
+
+    # ── Stats do evento atual (hero card) ───────────────────────────────────
+    if current_event
+      @ev_sectors = Sector.where(event: current_event).count
+      @ev_teams   = Team.joins(:sector).where(sectors: { event_id: current_event.id }).count
+      @ev_members = TeamMembership.joins(team: :sector)
+                                  .where(sectors: { event_id: current_event.id })
+                                  .select(:user_id).distinct.count
+
+      ev_team_ids    = Team.joins(:sector).where(sectors: { event_id: current_event.id }).pluck(:id)
+      ev_shifts      = Shift.joins(:sector).where(sectors: { event_id: current_event.id })
+      ev_memberships = TeamMembership.includes(:event_function)
+                                     .where(team_id: ev_team_ids)
+                                     .each_with_object({}) { |m, h| h[[m.user_id, m.team_id]] = m }
+      @ev_cost = 0.0
+      ev_shifts.each do |shift|
+        next unless shift.team_id
+        rate = ev_memberships[[shift.user_id, shift.team_id]]&.event_function&.hourly_rate.to_f
+        next unless rate > 0
+        s     = shift.start_time.hour * 60 + shift.start_time.min
+        e     = shift.end_time.hour   * 60 + shift.end_time.min
+        hours = (e > s ? e - s : 1440 - s + e) / 60.0
+        days  = shift.end_date.present? ? (shift.end_date - shift.date).to_i + 1 : 1
+        @ev_cost += hours * days * rate
+      end
+
+      if current_event.active?
+        today = Date.today
+        @ev_checkins_today  = Attendance.where(event: current_event, checked_in_date: today).count
+        @ev_inside_now      = Attendance.where(event: current_event, checked_in_date: today, checked_out_at: nil).count
+        @ev_checkouts_today = Attendance.where(event: current_event, checked_in_date: today).where.not(checked_out_at: nil).count
+        @ev_expected_today  = Shift.joins(:sector)
+                                   .where(sectors: { event_id: current_event.id })
+                                   .where("shifts.date <= :d AND (shifts.end_date IS NULL OR shifts.end_date >= :d)", d: today)
+                                   .select(:user_id).distinct.count
+      elsif current_event.closed?
+        @ev_total_checkins = Attendance.where(event: current_event).count
+        @ev_present        = Attendance.where(event: current_event).select(:user_id).distinct.count
+        @ev_paid           = Payment.where(event: current_event).sum(:amount)
+      end
+    end
   end
 
   def show
@@ -212,7 +261,7 @@ class EventsController < ApplicationController
 
   def event_params
     params.require(:event).permit(
-      :name, :code, :location, :start_date, :end_date, :status, :company_id,
+      :name, :code, :location, :start_date, :end_date, :status, :event_type, :company_id,
       event_functions_attributes: [:id, :name, :hourly_rate, :_destroy],
       event_days_attributes: [:id, :date, :hours, :_destroy]
     )

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_07_03_000002) do
+ActiveRecord::Schema[7.1].define(version: 2026_07_04_000002) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -136,6 +136,10 @@ ActiveRecord::Schema[7.1].define(version: 2026_07_03_000002) do
     t.datetime "updated_at", null: false
     t.string "code"
     t.bigint "company_id"
+    t.datetime "closing_finalized_at"
+    t.integer "closing_finalized_by_id"
+    t.string "event_type"
+    t.index ["closing_finalized_by_id"], name: "index_events_on_closing_finalized_by_id"
     t.index ["company_id"], name: "index_events_on_company_id"
   end
 

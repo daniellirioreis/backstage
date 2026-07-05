@@ -7,6 +7,194 @@
   <% end %>
 </div>
 
+<%# ── Filtro por status ───────────────────────────────────────────────────── %>
+<%
+  filter_tabs = [
+    [nil,      "Todos",     @status_counts.values.sum],
+    ["active", "Ativos",    @status_counts["active"].to_i],
+    ["draft",  "Rascunho",  @status_counts["draft"].to_i],
+    ["closed", "Encerrados",@status_counts["closed"].to_i],
+  ]
+%>
+<div style="display:flex;gap:0.4rem;margin-bottom:1.25rem;flex-wrap:wrap;">
+  <% filter_tabs.each do |status, label, count| %>
+    <% active = @status_filter == status %>
+    <%= link_to events_path(status: status), style: "
+      display:inline-flex;align-items:center;gap:0.4rem;
+      padding:0.35rem 0.85rem;border-radius:8px;font-size:0.8rem;font-weight:600;
+      text-decoration:none;transition:background 0.15s;
+      background:#{active ? '#18181b' : '#f4f4f5'};
+      color:#{active ? '#f4f4f5' : '#52525b'};
+      border:1px solid #{active ? '#18181b' : '#e4e4e7'};
+    " do %>
+      <%= label %>
+      <span style="
+        font-size:0.7rem;font-weight:700;padding:1px 6px;border-radius:20px;
+        background:#{active ? '#ffffff22' : '#e4e4e7'};
+        color:#{active ? '#fff' : '#71717a'};
+      "><%= count %></span>
+    <% end %>
+  <% end %>
+</div>
+
+<%# ── Painel do evento atual ──────────────────────────────────────────────── %>
+<% if current_event %>
+  <%
+    ev_status_color = current_event.active? ? "#4ade80" : current_event.draft? ? "#a1a1aa" : "#71717a"
+    ev_status_bg    = current_event.active? ? "#052e16" : current_event.draft? ? "#27272a" : "#18181b"
+  %>
+  <div style="background:#18181b;border-radius:14px;padding:0;margin-bottom:1.5rem;overflow:hidden;">
+
+    <%# Cabeçalho do evento %>
+    <div style="padding:1.25rem 1.5rem;border-bottom:1px solid #27272a;display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;">
+      <div style="min-width:0;">
+        <div style="display:flex;align-items:center;gap:0.6rem;flex-wrap:wrap;margin-bottom:0.3rem;">
+          <span style="font-size:1.1rem;font-weight:700;color:#f4f4f5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"><%= current_event.name %></span>
+          <span style="font-size:0.65rem;font-weight:700;background:<%= ev_status_color %>22;border:1px solid <%= ev_status_color %>55;color:<%= ev_status_color %>;border-radius:5px;padding:2px 8px;letter-spacing:0.06em;text-transform:uppercase;">
+            <%= t("event_statuses.#{current_event.status}") %>
+          </span>
+          <% if current_event.closing_finalized_at? %>
+            <span style="font-size:0.65rem;font-weight:700;background:#dcfce7;border:1px solid #86efac;color:#15803d;border-radius:5px;padding:2px 8px;letter-spacing:0.04em;display:inline-flex;align-items:center;gap:3px;">
+              <i class="bi bi-check-circle-fill"></i> Fechamento finalizado
+            </span>
+          <% end %>
+        </div>
+        <div style="display:flex;gap:1rem;flex-wrap:wrap;">
+          <span style="font-size:0.75rem;color:#71717a;">
+            <i class="bi bi-calendar3"></i>
+            <%= l(current_event.start_date, format: :short) %> → <%= l(current_event.end_date, format: :short) %>
+          </span>
+          <% if current_event.location.present? %>
+            <span style="font-size:0.75rem;color:#71717a;">
+              <i class="bi bi-geo-alt"></i> <%= current_event.location %>
+            </span>
+          <% end %>
+        </div>
+      </div>
+      <%= link_to event_path(current_event), style: "font-size:0.78rem;color:#71717a;text-decoration:none;display:flex;align-items:center;gap:0.3rem;white-space:nowrap;flex-shrink:0;" do %>
+        Ver evento <i class="bi bi-arrow-right"></i>
+      <% end %>
+    </div>
+
+    <%# Stats contextuais por status %>
+    <% if current_event.active? %>
+      <div class="ev-stats-grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:0;">
+        <% [
+          ["bi-box-arrow-in-right", @ev_checkins_today,  "check-ins hoje",  "#4ade80", "#052e16"],
+          ["bi-person-check-fill",  @ev_inside_now,      "dentro agora",    "#60a5fa", "#0c1a2e"],
+          ["bi-box-arrow-right",    @ev_checkouts_today, "checkouts",       "#a78bfa", "#1a0f2e"],
+          ["bi-calendar-week",      @ev_expected_today,  "escalados hoje",  "#f59e0b", "#1c1004"],
+        ].each do |icon, val, label, color, bg| %>
+          <div style="padding:1.1rem 1rem;text-align:center;background:<%= bg %>;border-right:1px solid #27272a;">
+            <div style="font-size:1.6rem;font-weight:800;color:<%= color %>;line-height:1;"><%= val %></div>
+            <div style="font-size:0.68rem;color:#52525b;margin-top:4px;white-space:nowrap;"><i class="bi <%= icon %>" style="color:<%= color %>;opacity:0.7;"></i> <%= label %></div>
+          </div>
+        <% end %>
+      </div>
+
+    <% elsif current_event.draft? %>
+      <div class="ev-stats-grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:0;">
+        <% [
+          ["bi-grid-3x3-gap", @ev_sectors, "setores",      "#60a5fa"],
+          ["bi-people",       @ev_teams,   "equipes",      "#a78bfa"],
+          ["bi-person-badge", @ev_members, "colaboradores","#4ade80"],
+          ["bi-cash-stack",   nil,         "custo est.",   "#f59e0b"],
+        ].each_with_index do |(icon, val, label, color), i| %>
+          <div style="padding:1.1rem 1rem;text-align:center;border-right:1px solid #27272a;">
+            <% if i == 3 %>
+              <div style="font-size:1.1rem;font-weight:800;color:<%= color %>;line-height:1;">
+                <%= number_to_currency(@ev_cost, unit:"R$", separator:",", delimiter:".", precision:0) %>
+              </div>
+            <% else %>
+              <div style="font-size:1.6rem;font-weight:800;color:<%= color %>;line-height:1;"><%= val %></div>
+            <% end %>
+            <div style="font-size:0.68rem;color:#52525b;margin-top:4px;"><i class="bi <%= icon %>" style="color:<%= color %>;opacity:0.7;"></i> <%= label %></div>
+          </div>
+        <% end %>
+      </div>
+
+    <% elsif current_event.closed? %>
+      <div class="ev-stats-grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:0;">
+        <% [
+          ["bi-people",           @ev_members,             "colaboradores",   "#60a5fa"],
+          ["bi-person-check",     @ev_present.to_i,        "compareceram",    "#4ade80"],
+          ["bi-receipt",          @ev_total_checkins.to_i, "check-ins",       "#a78bfa"],
+          ["bi-cash-stack",       nil,                     "pago",            "#f59e0b"],
+        ].each_with_index do |(icon, val, label, color), i| %>
+          <div style="padding:1.1rem 1rem;text-align:center;border-right:1px solid #27272a;">
+            <% if i == 3 %>
+              <div style="font-size:1.1rem;font-weight:800;color:<%= color %>;line-height:1;">
+                <%= number_to_currency(@ev_paid.to_f, unit:"R$", separator:",", delimiter:".", precision:0) %>
+              </div>
+            <% else %>
+              <div style="font-size:1.6rem;font-weight:800;color:<%= color %>;line-height:1;"><%= val %></div>
+            <% end %>
+            <div style="font-size:0.68rem;color:#52525b;margin-top:4px;"><i class="bi <%= icon %>" style="color:<%= color %>;opacity:0.7;"></i> <%= label %></div>
+          </div>
+        <% end %>
+      </div>
+    <% end %>
+
+    <%# Ações rápidas %>
+    <div style="padding:0.85rem 1.25rem;border-top:1px solid #27272a;display:flex;gap:0.5rem;flex-wrap:wrap;">
+      <% if current_event.active? %>
+        <% if policy(:attendance).scan? %>
+          <%= link_to scan_attendances_path, style: "display:inline-flex;align-items:center;gap:0.4rem;background:#4ade80;color:#052e16;font-size:0.78rem;font-weight:700;border-radius:7px;padding:0.4rem 0.9rem;text-decoration:none;" do %>
+            <i class="bi bi-qr-code-scan"></i> Check-in
+          <% end %>
+        <% end %>
+        <% if policy(:attendance).index? %>
+          <%= link_to attendances_path, style: "display:inline-flex;align-items:center;gap:0.4rem;background:#1f1f1f;color:#a1a1aa;font-size:0.78rem;font-weight:600;border-radius:7px;padding:0.4rem 0.9rem;text-decoration:none;" do %>
+            <i class="bi bi-person-check"></i> Presenças
+          <% end %>
+        <% end %>
+        <% if policy(Team).index? %>
+          <%= link_to teams_path, style: "display:inline-flex;align-items:center;gap:0.4rem;background:#1f1f1f;color:#a1a1aa;font-size:0.78rem;font-weight:600;border-radius:7px;padding:0.4rem 0.9rem;text-decoration:none;" do %>
+            <i class="bi bi-people"></i> Equipes
+          <% end %>
+        <% end %>
+      <% elsif current_event.draft? %>
+        <% if policy(Sector).index? %>
+          <%= link_to sectors_path, style: "display:inline-flex;align-items:center;gap:0.4rem;background:#60a5fa22;color:#60a5fa;border:1px solid #60a5fa44;font-size:0.78rem;font-weight:600;border-radius:7px;padding:0.4rem 0.9rem;text-decoration:none;" do %>
+            <i class="bi bi-diagram-3"></i> Setores
+          <% end %>
+        <% end %>
+        <% if policy(Team).index? %>
+          <%= link_to teams_path, style: "display:inline-flex;align-items:center;gap:0.4rem;background:#a78bfa22;color:#a78bfa;border:1px solid #a78bfa44;font-size:0.78rem;font-weight:600;border-radius:7px;padding:0.4rem 0.9rem;text-decoration:none;" do %>
+            <i class="bi bi-people"></i> Equipes
+          <% end %>
+        <% end %>
+        <% if policy(Shift).index? %>
+          <%= link_to timeline_shifts_path, style: "display:inline-flex;align-items:center;gap:0.4rem;background:#4ade8022;color:#4ade80;border:1px solid #4ade8044;font-size:0.78rem;font-weight:600;border-radius:7px;padding:0.4rem 0.9rem;text-decoration:none;" do %>
+            <i class="bi bi-calendar-range"></i> Escalas
+          <% end %>
+        <% end %>
+        <% if policy(current_event).edit? %>
+          <%= link_to edit_event_path(current_event), style: "display:inline-flex;align-items:center;gap:0.4rem;background:#1f1f1f;color:#71717a;font-size:0.78rem;font-weight:600;border-radius:7px;padding:0.4rem 0.9rem;text-decoration:none;" do %>
+            <i class="bi bi-pencil"></i> Editar evento
+          <% end %>
+        <% end %>
+      <% elsif current_event.closed? %>
+        <% if current_event.closing_finalized_at? %>
+          <span style="display:inline-flex;align-items:center;gap:0.4rem;background:#dcfce7;border:1px solid #86efac;color:#15803d;font-size:0.78rem;font-weight:700;border-radius:7px;padding:0.4rem 0.9rem;">
+            <i class="bi bi-check-circle-fill"></i> Fechamento concluído
+          </span>
+        <% elsif policy(:report).closing? %>
+          <%= link_to reports_closing_path, style: "display:inline-flex;align-items:center;gap:0.4rem;background:#f59e0b;color:#1c1004;font-size:0.78rem;font-weight:700;border-radius:7px;padding:0.4rem 0.9rem;text-decoration:none;" do %>
+            <i class="bi bi-receipt"></i> Relatório de fechamento
+          <% end %>
+        <% end %>
+        <%= link_to reports_closing_path, style: "display:inline-flex;align-items:center;gap:0.4rem;background:#1f1f1f;color:#71717a;font-size:0.78rem;font-weight:600;border-radius:7px;padding:0.4rem 0.9rem;text-decoration:none;" do %>
+          <i class="bi bi-receipt"></i> <%= current_event.closing_finalized_at? ? "Ver fechamento" : "Relatório de fechamento" %>
+        <% end %>
+        <%= link_to reports_closing_export_path(basis: "cross"), style: "display:inline-flex;align-items:center;gap:0.4rem;background:#1f1f1f;color:#71717a;font-size:0.78rem;font-weight:600;border-radius:7px;padding:0.4rem 0.9rem;text-decoration:none;" do %>
+          <i class="bi bi-file-earmark-spreadsheet"></i> Exportar CSV
+        <% end %>
+      <% end %>
+    </div>
+  </div>
+<% end %>
+
 <% if @events.empty? %>
   <div class="content-card" style="text-align: center; padding: 3rem; color: #a1a1aa;">
     <i class="bi bi-calendar-event" style="font-size: 2.5rem; display: block; margin-bottom: 0.75rem;"></i>
@@ -22,14 +210,21 @@
 
         <div style="padding: 1.25rem; display: flex; flex-direction: column; gap: 1rem; flex: 1;">
 
-          <%# Nome e badge %>
+          <%# Nome e badges %>
           <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 0.5rem;">
             <h3 style="font-size: 0.95rem; font-weight: 600; color: #18181b; margin: 0; line-height: 1.35;">
               <%= event.name %>
             </h3>
-            <span class="badge-status badge-<%= event.status %>" style="flex-shrink: 0;">
-              <%= t("event_statuses.#{event.status}") %>
-            </span>
+            <div style="display:flex;flex-direction:column;align-items:flex-end;gap:0.3rem;flex-shrink:0;">
+              <span class="badge-status badge-<%= event.status %>">
+                <%= t("event_statuses.#{event.status}") %>
+              </span>
+              <% if event.event_type.present? %>
+                <span style="font-size:0.65rem;font-weight:600;background:#f4f4f5;color:#52525b;border-radius:4px;padding:2px 7px;white-space:nowrap;">
+                  <%= t("event_types.#{event.event_type}", default: event.event_type.humanize) %>
+                </span>
+              <% end %>
+            </div>
           </div>
 
           <%# Empresa %>
@@ -54,9 +249,14 @@
             <span><%= l(event.start_date, format: :short) %> → <%= l(event.end_date, format: :short) %></span>
           </div>
 
-          <%# Setores e equipes %>
-          <% total_teams = event.sectors.sum { |s| s.teams.size } %>
-          <div style="display: flex; gap: 1rem;">
+          <%# Setores, equipes e colaboradores %>
+          <%
+            total_teams   = event.sectors.sum { |s| s.teams.size }
+            collab_count  = event.sectors.flat_map { |s|
+                              s.teams.flat_map { |t| t.team_memberships.map(&:user_id) }
+                            }.uniq.size
+          %>
+          <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
             <div style="display: flex; align-items: center; gap: 0.45rem; color: #71717a; font-size: 0.82rem;">
               <i class="bi bi-grid-3x3-gap"></i>
               <span><%= event.sectors.size %> <%= event.sectors.size == 1 ? "setor" : "setores" %></span>
@@ -64,6 +264,10 @@
             <div style="display: flex; align-items: center; gap: 0.45rem; color: #71717a; font-size: 0.82rem;">
               <i class="bi bi-people"></i>
               <span><%= total_teams %> <%= total_teams == 1 ? "equipe" : "equipes" %></span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 0.45rem; color: #71717a; font-size: 0.82rem;">
+              <i class="bi bi-person-badge"></i>
+              <span><%= collab_count %> <%= collab_count == 1 ? "colaborador" : "colaboradores" %></span>
             </div>
           </div>
 

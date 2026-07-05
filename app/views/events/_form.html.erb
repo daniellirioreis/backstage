@@ -43,6 +43,13 @@
         <%= f.select :status, Event.statuses.keys.map { |s| [t("event_statuses.#{s}"), s] },
             {}, class: "form-select form-control" %>
       </div>
+      <div>
+        <%= f.label :event_type, "Tipo de evento", class: "form-label" %>
+        <%= f.select :event_type,
+            Event::EVENT_TYPES.map { |et| [I18n.t("event_types.#{et}"), et] },
+            { include_blank: "— Selecione um tipo —" },
+            class: "form-select form-control" %>
+      </div>
     </div>
 
     <%# ── Dias do evento ─────────────────────────────────────────────────── %>

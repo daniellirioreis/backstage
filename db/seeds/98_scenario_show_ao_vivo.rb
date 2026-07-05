@@ -23,8 +23,10 @@ event = Event.find_or_create_by!(name: "Show ao Vivo 2026") do |e|
   e.end_date   = Date.today
   e.status     = "active"
   e.code       = "SAV26"
+  e.event_type = "show"
 end
 event.update!(status: "active") unless event.active?
+event.update_columns(event_type: "show") if event.event_type.blank?
 puts "   Evento: #{event.name} (#{event.status})"
 
 # ── Dia do evento ─────────────────────────────────────────────────────────────
