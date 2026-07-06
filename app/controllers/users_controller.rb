@@ -131,6 +131,10 @@ class UsersController < ApplicationController
       @user.password = @user.password_confirmation = SecureRandom.hex(12)
     end
     if @user.save
+      # Vincula automaticamente à empresa do usuário logado (se não for admin sem empresa)
+      company = current_event&.company ||
+                current_user.company_users.includes(:company).first&.company
+      CompanyUser.find_or_create_by!(user: @user, company: company) if company
       redirect_to users_path, notice: t("notices.created", model: User.model_name.human)
     else
       render :new, status: :unprocessable_entity
