@@ -25,10 +25,7 @@
         %>
         <div class="sidebar-brand" style="display:flex; flex-direction:column; align-items:center; gap:0.4rem; padding:1.1rem 1.25rem 0.9rem; position:relative;">
           <% if company_logo %>
-            <div style="width:48px; height:48px; border-radius:10px; background:#fff; overflow:hidden; flex-shrink:0; display:flex; align-items:center; justify-content:center;">
-              <%= image_tag company_logo, style: "max-width:100%; max-height:100%; object-fit:contain;" %>
-            </div>
-            <span style="font-size:0.7rem; font-weight:600; color:#a1a1aa; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:160px; text-align:center;"><%= user_company.name %></span>
+            <%= image_tag company_logo, style: "max-width:160px; max-height:80px; object-fit:contain;" %>
           <% else %>
             <%= render "shared/logo", size: :sm, stacked: false %>
             <span style="font-size:0.7rem; font-weight:600; letter-spacing:0.08em; color:#a1a1aa;">Backstage</span>

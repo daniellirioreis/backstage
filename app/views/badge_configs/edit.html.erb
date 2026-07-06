@@ -147,7 +147,7 @@
         <div id="prev-accent-bar" style="height: 4px; background: <%= @badge_config.event_name_color %>;"></div>
 
         <div id="prev-header" style="background: <%= @badge_config.header_footer_color %>; padding: 8px 11px 7px; display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid <%= @badge_config.event_name_color %>;">
-          <span style="font-size: 7px; font-weight: 800; letter-spacing: 0.2em; text-transform: uppercase; color: #f4f4f5;">Backstage</span>
+          <span style="font-size: 7px; font-weight: 800; letter-spacing: 0.2em; text-transform: uppercase; color: #f4f4f5;"><%= @event&.company&.name || "Backstage" %></span>
           <div>
             <div id="prev-event-name" style="font-size: <%= @badge_config.event_name_font_size %>px; font-weight: 700; color: <%= @badge_config.event_name_color %>; text-transform: uppercase; text-align: right;"><%= @event.name %></div>
             <div id="prev-event-date" style="font-size: <%= @badge_config.event_date_font_size %>px; color: <%= @badge_config.event_name_color %>; margin-top: 1px; text-align: right;"><%= l(@event.start_date, format: :short) %> a <%= l(@event.end_date, format: :short) %><%= @event.location.present? ? " · #{@event.location}" : "" %></div>
