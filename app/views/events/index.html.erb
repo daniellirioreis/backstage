@@ -15,11 +15,12 @@
     ["draft",  "Rascunho",  @status_counts["draft"].to_i],
     ["closed", "Encerrados",@status_counts["closed"].to_i],
   ]
+  other_filters = { q: @q.presence, location: @location_filter.presence, date_from: @date_from, date_to: @date_to }.compact
 %>
-<div style="display:flex;gap:0.4rem;margin-bottom:1.25rem;flex-wrap:wrap;">
+<div style="display:flex;gap:0.4rem;margin-bottom:1rem;flex-wrap:wrap;">
   <% filter_tabs.each do |status, label, count| %>
     <% active = @status_filter == status %>
-    <%= link_to events_path(status: status), style: "
+    <%= link_to events_path(other_filters.merge(status: status)), style: "
       display:inline-flex;align-items:center;gap:0.4rem;
       padding:0.35rem 0.85rem;border-radius:8px;font-size:0.8rem;font-weight:600;
       text-decoration:none;transition:background 0.15s;
@@ -36,6 +37,7 @@
     <% end %>
   <% end %>
 </div>
+
 
 <%# ── Painel do evento atual ──────────────────────────────────────────────── %>
 <% if current_event %>
@@ -195,105 +197,138 @@
   </div>
 <% end %>
 
+<%# ── Filtros de pesquisa ─────────────────────────────────────────────────── %>
+<%= form_with url: events_path, method: :get, local: true, style: "margin-bottom:0.75rem;" do |f| %>
+  <%= hidden_field_tag :status, @status_filter if @status_filter %>
+  <div style="display:flex;flex-direction:row;gap:0.4rem;align-items:center;flex-wrap:nowrap;overflow-x:auto;">
+    <input type="text" name="q" value="<%= @q %>" placeholder="Nome do evento…"
+           style="display:inline-block;width:180px;flex-shrink:0;font-size:0.8rem;height:30px;padding:0.2rem 0.6rem;border:1px solid #e4e4e7;border-radius:7px;outline:none;background:#fff;">
+
+    <input type="text" name="location" value="<%= @location_filter %>" placeholder="Local…"
+           style="display:inline-block;width:140px;flex-shrink:0;font-size:0.8rem;height:30px;padding:0.2rem 0.6rem;border:1px solid #e4e4e7;border-radius:7px;outline:none;background:#fff;">
+
+    <span style="font-size:0.75rem;color:#a1a1aa;white-space:nowrap;flex-shrink:0;">De</span>
+    <input type="date" name="date_from" value="<%= @date_from %>"
+           style="display:inline-block;width:135px;flex-shrink:0;font-size:0.8rem;height:30px;padding:0.2rem 0.5rem;border:1px solid #e4e4e7;border-radius:7px;outline:none;background:#fff;">
+
+    <span style="font-size:0.75rem;color:#a1a1aa;white-space:nowrap;flex-shrink:0;">até</span>
+    <input type="date" name="date_to" value="<%= @date_to %>"
+           style="display:inline-block;width:135px;flex-shrink:0;font-size:0.8rem;height:30px;padding:0.2rem 0.5rem;border:1px solid #e4e4e7;border-radius:7px;outline:none;background:#fff;">
+
+    <button type="submit" style="display:inline-block;background:#18181b;color:#fff;border:none;padding:0 0.85rem;height:30px;border-radius:7px;font-size:0.78rem;font-weight:600;cursor:pointer;white-space:nowrap;flex-shrink:0;">Filtrar</button>
+
+    <% if @q.present? || @location_filter.present? || @date_from.present? || @date_to.present? %>
+      <%= link_to events_path(status: @status_filter),
+            style: "display:inline-flex;align-items:center;gap:0.25rem;height:30px;padding:0 0.65rem;border-radius:7px;font-size:0.78rem;font-weight:600;background:#f4f4f5;color:#71717a;text-decoration:none;border:1px solid #e4e4e7;white-space:nowrap;flex-shrink:0;" do %>
+        <i class="bi bi-x"></i> Limpar
+      <% end %>
+    <% end %>
+  </div>
+<% end %>
+
 <% if @events.empty? %>
   <div class="content-card" style="text-align: center; padding: 3rem; color: #a1a1aa;">
     <i class="bi bi-calendar-event" style="font-size: 2.5rem; display: block; margin-bottom: 0.75rem;"></i>
     <p style="margin: 0; font-size: 0.9rem;">Nenhum evento cadastrado ainda.</p>
   </div>
 <% else %>
-  <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1rem;">
-    <% @events.each do |event| %>
-      <div class="content-card" style="padding: 0; overflow: hidden; display: flex; flex-direction: column;">
+  <div class="content-card" style="padding: 0; overflow: hidden;">
+    <div class="table-responsive">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Nome</th>
+            <th style="width: 110px;">Status</th>
+            <th>Empresa</th>
+            <th style="width: 180px;">Período</th>
+            <th>Local</th>
+            <th style="width: 130px; text-align: center;">Estrutura</th>
+            <th style="width: 80px;"></th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @events.each do |event| %>
+            <%
+              total_teams  = event.sectors.sum { |s| s.teams.size }
+              collab_count = event.sectors.flat_map { |s|
+                               s.teams.flat_map { |t| t.team_memberships.map(&:user_id) }
+                             }.uniq.size
+            %>
+            <tr>
+              <%# Nome + tipo %>
+              <td>
+                <div style="font-weight: 600; color: #18181b; font-size: 0.88rem;"><%= event.name %></div>
+                <% if event.event_type.present? %>
+                  <span style="font-size: 0.68rem; font-weight: 600; background: #f4f4f5; color: #71717a; border-radius: 4px; padding: 1px 6px; margin-top: 2px; display: inline-block;">
+                    <%= t("event_types.#{event.event_type}", default: event.event_type.humanize) %>
+                  </span>
+                <% end %>
+              </td>
 
-        <%# Faixa de status colorida %>
-        <div style="height: 4px; background: <%= event.active? ? '#4ade80' : event.draft? ? '#d4d4d8' : '#27272a' %>;"></div>
-
-        <div style="padding: 1.25rem; display: flex; flex-direction: column; gap: 1rem; flex: 1;">
-
-          <%# Nome e badges %>
-          <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 0.5rem;">
-            <h3 style="font-size: 0.95rem; font-weight: 600; color: #18181b; margin: 0; line-height: 1.35;">
-              <%= event.name %>
-            </h3>
-            <div style="display:flex;flex-direction:column;align-items:flex-end;gap:0.3rem;flex-shrink:0;">
-              <span class="badge-status badge-<%= event.status %>">
-                <%= t("event_statuses.#{event.status}") %>
-              </span>
-              <% if event.event_type.present? %>
-                <span style="font-size:0.65rem;font-weight:600;background:#f4f4f5;color:#52525b;border-radius:4px;padding:2px 7px;white-space:nowrap;">
-                  <%= t("event_types.#{event.event_type}", default: event.event_type.humanize) %>
+              <%# Status %>
+              <td>
+                <span class="badge-status badge-<%= event.status %>">
+                  <%= t("event_statuses.#{event.status}") %>
                 </span>
-              <% end %>
-            </div>
-          </div>
+              </td>
 
-          <%# Empresa %>
-          <% if event.company.present? %>
-            <div style="display: flex; align-items: center; gap: 0.45rem; color: #52525b; font-size: 0.82rem; font-weight: 600;">
-              <i class="bi bi-building" style="opacity:0.6;"></i>
-              <span>Produzido por: <%= event.company.name %></span>
-            </div>
+              <%# Empresa %>
+              <td style="color: #52525b; font-size: 0.82rem;"><%= event.company&.name %></td>
+
+              <%# Período %>
+              <td style="color: #71717a; font-size: 0.82rem; white-space: nowrap;">
+                <i class="bi bi-calendar3" style="opacity: 0.5;"></i>
+                <%= l(event.start_date, format: :short) %> → <%= l(event.end_date, format: :short) %>
+              </td>
+
+              <%# Local %>
+              <td style="color: #71717a; font-size: 0.82rem;">
+                <% if event.location.present? %>
+                  <i class="bi bi-geo-alt" style="opacity: 0.5;"></i> <%= event.location %>
+                <% end %>
+              </td>
+
+              <%# Estrutura: setores · equipes · colab %>
+              <td style="text-align: center;">
+                <div style="display: flex; gap: 0.4rem; justify-content: center; flex-wrap: wrap;">
+                  <span style="font-size: 0.7rem; color: #2563eb; background: #eff6ff; border-radius: 4px; padding: 2px 6px; white-space: nowrap;" title="Setores">
+                    <i class="bi bi-grid-3x3-gap"></i> <%= event.sectors.size %>
+                  </span>
+                  <span style="font-size: 0.7rem; color: #7c3aed; background: #f5f3ff; border-radius: 4px; padding: 2px 6px; white-space: nowrap;" title="Equipes">
+                    <i class="bi bi-people"></i> <%= total_teams %>
+                  </span>
+                  <span style="font-size: 0.7rem; color: #16a34a; background: #f0fdf4; border-radius: 4px; padding: 2px 6px; white-space: nowrap;" title="Colaboradores">
+                    <i class="bi bi-person-badge"></i> <%= collab_count %>
+                  </span>
+                </div>
+              </td>
+
+              <%# Ações %>
+              <td>
+                <div style="display: flex; gap: 0.3rem; justify-content: flex-end;">
+                  <% if policy(event).show? %>
+                    <%= link_to event_path(event), class: "btn-secondary", style: "padding: 0.3rem 0.6rem; font-size: 0.8rem;" do %>
+                      <i class="bi bi-eye"></i>
+                    <% end %>
+                  <% end %>
+                  <% if policy(event).edit? %>
+                    <%= link_to edit_event_path(event), class: "btn-secondary", style: "padding: 0.3rem 0.6rem; font-size: 0.8rem;" do %>
+                      <i class="bi bi-pencil"></i>
+                    <% end %>
+                  <% end %>
+                  <% if policy(event).destroy? %>
+                    <%= button_to event_path(event), method: :delete,
+                        form: { data: { turbo_confirm: t("confirms.delete") } },
+                        class: "btn-danger", style: "padding: 0.3rem 0.6rem; font-size: 0.8rem;" do %>
+                      <i class="bi bi-trash"></i>
+                    <% end %>
+                  <% end %>
+                </div>
+              </td>
+            </tr>
           <% end %>
-
-          <%# Local %>
-          <% if event.location.present? %>
-            <div style="display: flex; align-items: center; gap: 0.45rem; color: #71717a; font-size: 0.82rem;">
-              <i class="bi bi-geo-alt"></i>
-              <span><%= event.location %></span>
-            </div>
-          <% end %>
-
-          <%# Datas %>
-          <div style="display: flex; align-items: center; gap: 0.45rem; color: #71717a; font-size: 0.82rem;">
-            <i class="bi bi-calendar3"></i>
-            <span><%= l(event.start_date, format: :short) %> → <%= l(event.end_date, format: :short) %></span>
-          </div>
-
-          <%# Setores, equipes e colaboradores %>
-          <%
-            total_teams   = event.sectors.sum { |s| s.teams.size }
-            collab_count  = event.sectors.flat_map { |s|
-                              s.teams.flat_map { |t| t.team_memberships.map(&:user_id) }
-                            }.uniq.size
-          %>
-          <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
-            <div style="display: flex; align-items: center; gap: 0.45rem; color: #71717a; font-size: 0.82rem;">
-              <i class="bi bi-grid-3x3-gap"></i>
-              <span><%= event.sectors.size %> <%= event.sectors.size == 1 ? "setor" : "setores" %></span>
-            </div>
-            <div style="display: flex; align-items: center; gap: 0.45rem; color: #71717a; font-size: 0.82rem;">
-              <i class="bi bi-people"></i>
-              <span><%= total_teams %> <%= total_teams == 1 ? "equipe" : "equipes" %></span>
-            </div>
-            <div style="display: flex; align-items: center; gap: 0.45rem; color: #71717a; font-size: 0.82rem;">
-              <i class="bi bi-person-badge"></i>
-              <span><%= collab_count %> <%= collab_count == 1 ? "colaborador" : "colaboradores" %></span>
-            </div>
-          </div>
-
-          <%# Ações %>
-          <div style="display: flex; gap: 0.5rem; border-top: 1px solid #f4f4f5; padding-top: 1rem; margin-top: auto;">
-            <% if policy(event).show? %>
-              <%= link_to event_path(event), class: "btn-secondary", style: "flex: 1; justify-content: center;" do %>
-                <i class="bi bi-eye"></i> Visualizar
-              <% end %>
-            <% end %>
-            <% if policy(event).edit? %>
-              <%= link_to edit_event_path(event), class: "btn-secondary", style: "padding: 0.4rem 0.7rem;" do %>
-                <i class="bi bi-pencil"></i>
-              <% end %>
-            <% end %>
-            <% if policy(event).destroy? %>
-              <%= button_to event_path(event), method: :delete,
-                  form: { data: { turbo_confirm: t("confirms.delete") } },
-                  class: "btn-danger", style: "padding: 0.4rem 0.7rem;" do %>
-                <i class="bi bi-trash"></i>
-              <% end %>
-            <% end %>
-          </div>
-
-        </div>
-      </div>
-    <% end %>
+        </tbody>
+      </table>
+    </div>
   </div>
 <% end %>

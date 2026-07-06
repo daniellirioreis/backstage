@@ -10,9 +10,18 @@ class EventsController < ApplicationController
     @status_filter  = params[:status].presence_in(valid_statuses)
     @status_counts  = policy_scope(Event).group(:status).count
 
+    @q              = params[:q].to_s.strip
+    @location_filter = params[:location].to_s.strip
+    @date_from      = params[:date_from].presence
+    @date_to        = params[:date_to].presence
+
     @events = policy_scope(Event)
                 .includes(:company, sectors: { teams: :team_memberships })
                 .then { |s| @status_filter ? s.where(status: @status_filter) : s }
+                .then { |s| @q.present? ? s.where("events.name ILIKE ?", "%#{@q}%") : s }
+                .then { |s| @location_filter.present? ? s.where("events.location ILIKE ?", "%#{@location_filter}%") : s }
+                .then { |s| @date_from.present? ? s.where("events.end_date >= ?", @date_from) : s }
+                .then { |s| @date_to.present? ? s.where("events.start_date <= ?", @date_to) : s }
                 .order(start_date: :desc)
 
     # ── Stats do evento atual (hero card) ───────────────────────────────────
