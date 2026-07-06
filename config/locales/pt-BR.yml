@@ -48,6 +48,10 @@ pt-BR:
     absences_report: "Relatório de Ausências"
     hours_worked_report: "Relatório de Horas Trabalhadas"
     sector_summary_report: "Relatório por Setor"
+    manage_members: "Adicionar Colaboradores"
+    quick_add_member: "Cadastro Rápido de Substituto"
+    panel: "Painel do Coordenador"
+    credentials: "Credenciais"
 
   payment_methods:
     pix: "PIX"

@@ -269,9 +269,9 @@ class TeamsController < ApplicationController
     }
   end
 
-  # POST: adiciona substituto (existente ou novo) à equipe durante evento ativo
+  # POST: adiciona substituto (existente ou novo) à equipe
   def quick_add_member
-    authorize @team, :quick_add_member?
+    authorize @team, :manage_members?
 
     event_function_id = params[:event_function_id].presence
 
@@ -327,7 +327,7 @@ class TeamsController < ApplicationController
 
   # POST: importa membros selecionados
   def import_members
-    authorize @team, :edit?
+    authorize @team, :manage_members?
     user_ids = Array(params[:user_ids]).map(&:to_i).select { |id| id > 0 }
     imported = 0
     user_ids.each do |uid|

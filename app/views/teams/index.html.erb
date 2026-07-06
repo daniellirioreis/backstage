@@ -225,7 +225,7 @@
 
           <%# Ações %>
           <div style="display: flex; gap: 0.35rem; flex-shrink: 0;">
-            <% if policy(team).quick_add_member? || policy(team).manage_members? %>
+            <% if policy(team).manage_members? %>
               <button onclick="abrirModalSubstituto(<%= team.id %>, '<%= j team.name %>')"
                       class="btn-secondary" style="padding: 0.25rem 0.5rem; font-size: 0.8rem;"
                       title="Adicionar Substituto">

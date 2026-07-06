@@ -14,11 +14,12 @@ class TeamPolicy < ApplicationPolicy
   # Credenciais: só com evento ativo
   def credentials? = can?("show") && (user.admin? || event_active?)
 
-  # Gestão de membros com evento ativo
-  def manage_members?   = user.admin? || (event_active? && can?("manage_members"))
+  # Gestão de membros: adicionar/importar colaboradores (qualquer status de evento)
+  def manage_members? = user.admin? || can?("manage_members")
 
-  # Cadastro rápido de substituto com evento ativo
-  def quick_add_member? = user.admin? || (event_active? && can?("quick_add_member"))
+  # Cadastro rápido de substituto — delega a manage_members (evento ativo preferencial,
+  # mas a permissão em si já está em manage_members)
+  def quick_add_member? = manage_members?
 
   # Painel operacional do coordenador
   def panel?
@@ -29,8 +30,4 @@ class TeamPolicy < ApplicationPolicy
   private
 
   def resource_name = "teams"
-
-  def active_member_management?
-    event_active? && can?("manage_members")
-  end
 end
