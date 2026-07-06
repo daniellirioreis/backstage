@@ -167,7 +167,7 @@ class UsersController < ApplicationController
 
   def user_params
     permitted = [:name, :cpf, :phone, :email, :password, :password_confirmation, :avatar, :remove_avatar]
-    permitted << :role_id if current_user.admin?
+    permitted << :role_id if current_user.admin? || policy(User).create?
     params.require(:user).permit(permitted)
   end
 end

@@ -70,7 +70,7 @@
         <%= f.text_field :phone, class: "form-control", placeholder: "(11) 99999-9999", data: { mask: "phone" } %>
       </div>
 
-      <% if current_user.admin? %>
+      <% if current_user.admin? || policy(User).create? %>
         <div style="grid-column: 1 / -1;">
           <%= f.label :role_id, User.human_attribute_name(:role), class: "form-label" %>
           <%= f.collection_select :role_id, Role.order(:name), :id, :name,
