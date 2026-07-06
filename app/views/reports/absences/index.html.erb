@@ -1,9 +1,4 @@
-<div class="page-header">
-  <div>
-    <h1><%= t("nav.report_absences") %></h1>
-    <div style="font-size:0.78rem; color:#71717a; margin-top:0.1rem;"><%= @event.name %></div>
-  </div>
-</div>
+<%= render "reports/report_header", title: t("nav.report_absences") %>
 
 <%# Stats %>
 <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:1rem; margin-bottom:1.5rem;">
