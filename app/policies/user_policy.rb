@@ -1,8 +1,8 @@
 class UserPolicy < ApplicationPolicy
   def index?   = can?("index")
   def show?    = can?("show")
-  def new?     = user.present? && user.admin?
-  def create?  = user.present? && user.admin?
+  def new?     = user.admin? || can?("create")
+  def create?  = user.admin? || can?("create")
   def edit?    = user == record || can?("update")
   def update?  = user == record || can?("update")
   def destroy?     = can?("destroy") && record != user
