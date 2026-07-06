@@ -17,6 +17,7 @@ coord = Role.find_or_create_by!(name: "coordenador")
 [
   %w[teams    show],
   %w[teams    panel],
+  %w[teams    coordinator],
   %w[teams    credentials],
   %w[teams    manage_members],  # pode adicionar/importar colaboradores na equipe
   %w[attendances index],
@@ -46,6 +47,7 @@ gerente = Role.find_or_create_by!(name: "gerente")
   %w[teams       create],
   %w[teams       update],
   %w[teams       panel],
+  %w[teams       coordinator],
   %w[teams       credentials],
   %w[teams       manage_members],
   %w[teams       quick_add_member],
