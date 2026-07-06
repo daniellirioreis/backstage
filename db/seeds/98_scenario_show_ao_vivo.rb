@@ -73,12 +73,11 @@ puts "   Setores: #{sectors.size}"
 # ── Colaboradores ─────────────────────────────────────────────────────────────
 def make_collab(name, cpf, role, company)
   cpf_clean = cpf.gsub(/\D/, "")
-  u = User.find_or_initialize_by(cpf: cpf_clean)
-  if u.new_record?
-    u.name     = name
-    u.email    = "#{name.downcase.gsub(/\s+/, '.').parameterize}@sav26.com"
-    u.role     = role
-    u.password = "senha123"
+  email     = "#{name.downcase.gsub(/\s+/, '.').parameterize}@sav26.com"
+  u = User.find_by(cpf: cpf_clean) || User.find_by(email: email)
+  unless u
+    u = User.new(cpf: cpf_clean, name: name, email: email,
+                 role: role, password: "senha123")
     u.save!(validate: false)
     u.companies << company unless u.companies.include?(company)
   end

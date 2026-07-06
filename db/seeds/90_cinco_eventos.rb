@@ -43,12 +43,12 @@ colabs_data = [
 
 print "   Criando colaboradores... "
 pool = colabs_data.map do |name, cpf|
-  u = User.find_or_initialize_by(cpf: cpf.gsub(/\D/, ""))
-  if u.new_record?
-    u.name     = name
-    u.email    = "#{name.parameterize}@seed5.com"
-    u.role     = collab_role
-    u.password = "senha123"
+  cpf_clean = cpf.gsub(/\D/, "")
+  email     = "#{name.parameterize}@seed5.com"
+  u = User.find_by(cpf: cpf_clean) || User.find_by(email: email)
+  unless u
+    u = User.new(cpf: cpf_clean, name: name, email: email,
+                 role: collab_role, password: "senha123")
     u.save!(validate: false)
   end
   u.companies << company unless u.companies.include?(company)

@@ -121,14 +121,19 @@ collaborators.each do |c|
   clean_cpf = c[:cpf].to_s.gsub(/\D/, "")
   next if clean_cpf.length != 11
 
-  User.find_or_create_by!(cpf: clean_cpf) do |u|
-    u.name     = c[:name].strip
-    u.phone    = c[:phone].to_s.gsub(/\D/, "").then { |p| p.length >= 8 ? p : "00000000000" }
-    u.email    = "#{clean_cpf}@boombay.com"
-    u.password = "senha123"
-    u.role     = colab_role
-  end
-rescue ActiveRecord::RecordInvalid => e
+  email = "#{clean_cpf}@boombay.com"
+  # Busca por CPF ou por email para evitar UniqueViolation ao re-executar seeds
+  next if User.exists?(cpf: clean_cpf) || User.exists?(email: email)
+
+  User.create!(
+    name:     c[:name].strip,
+    phone:    c[:phone].to_s.gsub(/\D/, "").then { |p| p.length >= 8 ? p : "00000000000" },
+    email:    email,
+    password: "senha123",
+    role:     colab_role,
+    cpf:      clean_cpf
+  )
+rescue ActiveRecord::RecordInvalid, ActiveRecord::RecordNotUnique => e
   puts "  AVISO: #{c[:name]} — #{e.message}"
 end
 
