@@ -92,7 +92,7 @@ class CompaniesController < ApplicationController
 
   def company_params
     permitted = params.require(:company).permit(:name, :cnpj, :phone, :email, :address, :city, :state, :primary_color, :logo, :company_id, :plan_id)
-    permitted[:plan_id] = nil if permitted[:plan_id].blank?
+    permitted[:plan_id] = nil if permitted.key?(:plan_id) && permitted[:plan_id].blank?
     permitted
   end
 end
