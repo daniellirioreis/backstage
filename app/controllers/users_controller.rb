@@ -121,6 +121,7 @@ class UsersController < ApplicationController
   def new
     authorize User
     @user = User.new
+    @companies = companies_for_selector
   end
 
   def create
@@ -131,11 +132,13 @@ class UsersController < ApplicationController
       @user.password = @user.password_confirmation = SecureRandom.hex(12)
     end
     if @user.save
-      # Vincula automaticamente à empresa do usuário logado
+      # Empresa: usa a do usuário logado; se não tiver, usa a selecionada no form
       company = current_user.company_users.includes(:company).first&.company
+      company ||= Company.find_by(id: params[:company_id]) if params[:company_id].present?
       CompanyUser.find_or_create_by!(user: @user, company: company) if company
       redirect_to users_path, notice: t("notices.created", model: User.model_name.human)
     else
+      @companies = companies_for_selector
       render :new, status: :unprocessable_entity
     end
   end
@@ -176,5 +179,11 @@ class UsersController < ApplicationController
     permitted = [:name, :cpf, :phone, :email, :password, :password_confirmation, :avatar, :remove_avatar]
     permitted << :role_id if current_user.admin? || policy(User).create?
     params.require(:user).permit(permitted)
+  end
+
+  # Retorna empresas disponíveis para seleção — só quando o usuário logado não tem empresa
+  def companies_for_selector
+    return nil if current_user.company_users.exists?
+    current_user.admin? ? Company.order(:name) : nil
   end
 end

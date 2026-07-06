@@ -81,6 +81,20 @@
         </div>
       <% end %>
 
+      <%# Seletor de empresa — só aparece quando o usuário logado não tem empresa vinculada %>
+      <% if user.new_record? && @companies.present? %>
+        <div style="grid-column: 1 / -1;">
+          <label class="form-label">Empresa</label>
+          <%= select_tag :company_id,
+                options_from_collection_for_select(@companies, :id, :name, params[:company_id]),
+                include_blank: "— Selecione uma empresa —",
+                class: "form-control form-select" %>
+          <span style="font-size:0.75rem; color:#71717a; margin-top:0.25rem; display:block;">
+            O colaborador será vinculado a esta empresa.
+          </span>
+        </div>
+      <% end %>
+
     </div>
 
     <div style="border-top: 1px solid #f4f4f5; padding-top: 1rem; margin-top: 0.5rem;">
