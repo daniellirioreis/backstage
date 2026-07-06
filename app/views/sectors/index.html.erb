@@ -9,6 +9,18 @@
   </div>
 </div>
 
+<%= form_with url: sectors_path, method: :get, local: true do %>
+  <div class="content-card" style="margin-bottom:0.75rem; padding:0.6rem 1rem; display:flex; align-items:center; gap:0.6rem;">
+    <i class="bi bi-search" style="color:#a1a1aa; font-size:0.9rem; flex-shrink:0;"></i>
+    <input type="text" name="q" value="<%= @q %>" placeholder="Buscar setor..." autocomplete="off"
+           style="flex:1; border:none; outline:none; font-size:0.85rem; color:#18181b; background:transparent;">
+    <% if @q.present? %>
+      <%= link_to "×", sectors_path, style:"color:#a1a1aa; text-decoration:none; font-size:1.1rem; line-height:1;" %>
+    <% end %>
+    <button type="submit" class="btn-primary" style="padding:0.3rem 0.8rem; font-size:0.8rem;">Filtrar</button>
+  </div>
+<% end %>
+
 <table class="data-table">
   <thead>
     <tr>
