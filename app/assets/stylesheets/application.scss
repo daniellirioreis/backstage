@@ -199,53 +199,86 @@ body {
   position: sticky;
   top: 0;
   z-index: 100;
-  background: #fff;
-  border-bottom: 1px solid #e4e4e7;
-  padding: 0.45rem 2.5rem;
+  background: #14532d;
+  border-bottom: 2px solid #166534;
+  padding: 0 2.5rem;
+  height: 44px;
   display: flex;
   align-items: center;
-  gap: 0.6rem;
+  gap: 0.65rem;
   font-size: 0.78rem;
 
   .event-bar-label {
     color: #a1a1aa;
-    font-weight: 500;
+    font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 0.06em;
-    font-size: 0.68rem;
+    letter-spacing: 0.08em;
+    font-size: 0.62rem;
+    background: #166534;
+    border-radius: 4px;
+    padding: 2px 7px;
+    flex-shrink: 0;
   }
 
   .event-bar-name {
-    color: #15803d;
+    color: #f4f4f5;
     font-weight: 800;
-    font-size: 0.85rem;
-    background: #f0fdf4;
-    border-radius: 6px;
-    padding: 0.15rem 0.6rem;
+    font-size: 0.88rem;
     letter-spacing: -0.01em;
+    flex-shrink: 0;
   }
 
   .event-bar-badge {
-    padding: 0.1rem 0.45rem;
+    padding: 0.1rem 0.5rem;
     border-radius: 20px;
-    font-size: 0.65rem;
-    font-weight: 600;
+    font-size: 0.62rem;
+    font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 0.04em;
+    letter-spacing: 0.05em;
+    flex-shrink: 0;
   }
 
-  .event-bar-sep { color: #d4d4d8; }
+  .event-bar-sep {
+    color: #166534;
+    flex-shrink: 0;
+  }
 
-  .event-bar-change {
-    margin-left: auto;
-    color: #71717a;
-    text-decoration: none;
+  .event-bar-meta {
+    color: #fff;
+    font-size: 0.78rem;
+    font-weight: 500;
     display: flex;
     align-items: center;
     gap: 0.3rem;
-    transition: color 0.15s;
+    flex-shrink: 0;
+  }
 
-    &:hover { color: #18181b; }
+  .event-bar-change {
+    margin-left: auto;
+    color: #18181b;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.78rem;
+    font-weight: 600;
+    background: #fff;
+    border: 1px solid #e4e4e7;
+    border-radius: 7px;
+    padding: 0.25rem 0.75rem;
+    transition: background 0.15s, color 0.15s;
+    flex-shrink: 0;
+
+    &:hover {
+      background: #f4f4f5;
+      color: #18181b;
+    }
+  }
+
+  .event-bar-badge {
+    &.badge-active  { background: #fff; color: #15803d; border: 1px solid #fff; }
+    &.badge-draft   { background: #fff; color: #52525b; border: 1px solid #fff; }
+    &.badge-closed  { background: #fff; color: #3f3f46; border: 1px solid #fff; }
   }
 }
 
@@ -442,6 +475,24 @@ body {
   transition: background 0.15s;
 
   &:hover { background: #fef2f2; }
+}
+
+.btn-success {
+  background: #16a34a;
+  color: #fff;
+  border: 1px solid #15803d;
+  border-radius: 7px;
+  padding: 0.4rem 0.85rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  transition: background 0.15s;
+
+  &:hover { background: #15803d; color: #fff; }
 }
 
 // ── Card container ───────────────────────────────────────────────────────────
@@ -849,14 +900,20 @@ body {
 
   // ── Event bar compacta ────────────────────────────────────────────────────
   .event-bar {
-    padding: 0.45rem 0.75rem;
+    padding: 0 0.75rem;
     gap: 0.4rem;
-    flex-wrap: wrap;
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    height: 40px;
   }
 
-  .event-bar-change { margin-left: 0; }
+  .event-bar-change { margin-left: 0; padding: 0.2rem 0.55rem; }
 
-  .event-bar-name { max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .event-bar-meta { display: none; }
+
+  .event-bar-sep:nth-of-type(n+2) { display: none; }
+
+  .event-bar-name { max-width: 130px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
   // ── Page header empilhado ─────────────────────────────────────────────────
   .page-header {

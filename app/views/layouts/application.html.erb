@@ -241,9 +241,14 @@
             <span class="event-bar-sep">·</span>
             <span class="event-bar-name"><%= current_event.name %></span>
             <span class="event-bar-badge badge-<%= current_event.status %>"><%= t("event_statuses.#{current_event.status}") %></span>
+            <span class="event-bar-sep">·</span>
+            <span class="event-bar-meta">
+              <i class="bi bi-calendar3"></i>
+              <%= l(current_event.start_date, format: :short) %> – <%= l(current_event.end_date, format: :short) %>
+            </span>
             <% if current_event.location.present? %>
               <span class="event-bar-sep">·</span>
-              <span style="color: #71717a;"><i class="bi bi-geo-alt"></i> <%= current_event.location %></span>
+              <span class="event-bar-meta"><i class="bi bi-geo-alt"></i> <%= current_event.location %></span>
             <% end %>
             <%= link_to select_event_path(modal: 1, return_to: request.path), class: "event-bar-change" do %>
               <i class="bi bi-arrow-left-right"></i> Trocar
