@@ -65,6 +65,7 @@ Rails.application.routes.draw do
       get  :search_available       # AJAX: usuários disponíveis para adicionar
     end
     member do
+      get   :panel
       get   :credentials
       get   :schedule
       post  :schedule

@@ -30,7 +30,26 @@
         <nav>
           <% show_home        = policy(:dashboard).index? %>
           <% show_my_schedule = policy(current_user).my_schedule? %>
-          <% if show_home || show_my_schedule %>
+          <% if current_user.coordinator? %>
+            <%# Sidebar focada para coordenadores — só o essencial %>
+            <div class="sidebar-section">Minha equipe</div>
+            <% coord_membership = current_user.team_memberships.find_by(role: :coordinator) %>
+            <% if coord_membership %>
+              <%= link_to panel_team_path(coord_membership.team_id), class: "sidebar-link #{controller_name == 'teams' && action_name == 'panel' ? 'active' : ''}" do %>
+                <i class="bi bi-grid-1x2"></i> Painel da equipe
+              <% end %>
+              <% if policy(:attendance).scan? %>
+                <%= link_to scan_attendances_path, class: "sidebar-link #{controller_name == 'attendances' && action_name == 'scan' ? 'active' : ''}" do %>
+                  <i class="bi bi-qr-code-scan"></i> Check-in
+                <% end %>
+              <% end %>
+              <% if policy(@team || coord_membership.team).credentials? rescue false %>
+                <%= link_to credentials_team_path(coord_membership.team_id), class: "sidebar-link #{controller_name == 'teams' && action_name == 'credentials' ? 'active' : ''}" do %>
+                  <i class="bi bi-person-badge"></i> Credenciais
+                <% end %>
+              <% end %>
+            <% end %>
+          <% elsif show_home || show_my_schedule %>
             <div class="sidebar-section">Geral</div>
             <% if show_home %>
               <%= link_to root_path, class: "sidebar-link #{current_page?(root_path) ? 'active' : ''}" do %>

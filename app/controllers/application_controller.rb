@@ -72,6 +72,7 @@ class ApplicationController < ActionController::Base
   def skip_event_check?
     devise_controller? ||
       current_user&.role&.collaborator? ||
+      current_user&.coordinator? ||       # coordenadores navegam pelo painel da equipe
       controller_name.in?(%w[
         event_session
         dashboard
@@ -127,6 +128,10 @@ class ApplicationController < ActionController::Base
   def after_sign_in_path_for(resource)
     return super if resource.admin?
     return my_schedule_user_path(resource) if resource.role&.collaborator?
+    if resource.coordinator?
+      membership = resource.team_memberships.find_by(role: :coordinator)
+      return panel_team_path(membership.team_id) if membership
+    end
     super
   end
 

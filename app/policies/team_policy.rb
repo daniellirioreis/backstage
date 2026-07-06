@@ -20,6 +20,14 @@ class TeamPolicy < ApplicationPolicy
   # Cadastro rápido de substituto com evento ativo
   def quick_add_member? = user.admin? || (event_active? && can?("quick_add_member"))
 
+  # Painel operacional do coordenador
+  def panel?
+    return true if user.admin?
+    return false unless can?("panel")
+    # Coordenador só vê o painel da equipe que ele coordena
+    user.admin? || record.team_memberships.exists?(user_id: user.id, role: :coordinator)
+  end
+
   private
 
   def resource_name = "teams"

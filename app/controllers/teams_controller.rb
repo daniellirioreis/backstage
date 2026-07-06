@@ -1,5 +1,5 @@
 class TeamsController < ApplicationController
-  before_action :set_team, only: %i[show edit update destroy credentials import_members set_function schedule quick_add_member]
+  before_action :set_team, only: %i[show edit update destroy credentials import_members set_function schedule quick_add_member panel]
 
   def search
     authorize Team, :index?
@@ -35,6 +35,54 @@ class TeamsController < ApplicationController
     @teams_with_shifts = Shift.where(team_id: @teams.map(&:id)).distinct.pluck(:team_id).to_set
     @sector_function_data  = load_sector_function_data
     @event_functions_map   = current_event.event_functions.index_by { |ef| ef.id.to_s }
+  end
+
+  def panel
+    authorize @team, :panel?
+
+    @event = @team.sector.event
+
+    @memberships = TeamMembership
+      .where(team_id: @team.id)
+      .includes(:event_function, user: { avatar_attachment: :blob })
+      .joins(:user)
+      .order(role: :desc, "users.name": :asc)   # coordenadores aparecem primeiro
+
+    user_ids = @memberships.map(&:user_id)
+
+    # Presenças de hoje neste evento
+    today_attendances = Attendance
+      .where(user_id: user_ids, event_id: @event.id, checked_in_date: Date.today)
+      .index_by(&:user_id)
+
+    # Todas as presenças do evento (para histórico)
+    @all_attendances = Attendance
+      .where(user_id: user_ids, event_id: @event.id)
+      .order(checked_in_at: :desc)
+      .group_by(&:user_id)
+      .transform_values(&:first)
+
+    # Turnos de hoje
+    @shifts_today = Shift
+      .where(user_id: user_ids, sector_id: @team.sector_id, date: Date.today)
+      .index_by(&:user_id)
+
+    @total_members = @memberships.size
+    @present_today = today_attendances.size
+    @active_now    = today_attendances.values.count { |a| a.checked_out_at.nil? }
+    @absent_today  = @total_members - @present_today
+
+    # Para a view saber o status de cada membro
+    @member_status = @memberships.each_with_object({}) do |tm, h|
+      att = today_attendances[tm.user_id]
+      h[tm.user_id] = if att.nil?
+        :absent
+      elsif att.checked_out_at.nil?
+        :active
+      else
+        :present
+      end
+    end
   end
 
   def show

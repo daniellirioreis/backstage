@@ -2,9 +2,16 @@ class DashboardController < ApplicationController
   def index
     authorize :dashboard, :index?
 
-    # Colaboradores não têm dashboard — manda para a escala pessoal
+    # Colaboradores → escala pessoal
     if current_user.role&.collaborator?
       redirect_to my_schedule_user_path(current_user) and return
+    end
+
+    # Coordenadores → painel da equipe
+    if current_user.coordinator?
+      membership = current_user.team_memberships.find_by(role: :coordinator)
+      redirect_to(panel_team_path(membership.team_id)) and return if membership
+      redirect_to(new_user_session_path, alert: "Você não está associado a nenhuma equipe como coordenador.") and return
     end
 
     company_ids = if current_user.admin?

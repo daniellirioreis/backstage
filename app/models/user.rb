@@ -22,6 +22,10 @@ class User < ApplicationRecord
     role&.name == "admin"
   end
 
+  def coordinator?
+    role&.name == "coordenador"
+  end
+
   def formatted_cpf
     return "—" if cpf.blank?
     cpf.gsub(/(\d{3})(\d{3})(\d{3})(\d{2})/, '\1.\2.\3-\4')

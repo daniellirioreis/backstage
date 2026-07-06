@@ -23,6 +23,11 @@ end %>
     </div>
   </div>
   <div style="display: flex; gap: 0.5rem;">
+    <% if policy(@team).panel? %>
+      <%= link_to panel_team_path(@team), class: "btn-secondary" do %>
+        <i class="bi bi-grid-1x2"></i> Painel
+      <% end %>
+    <% end %>
     <% if policy(@team).edit? %>
       <%= link_to edit_team_path(@team), class: "btn-secondary" do %>
         <i class="bi bi-pencil"></i> <%= t("actions.edit") %>
