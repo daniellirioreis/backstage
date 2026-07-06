@@ -386,6 +386,11 @@
     var trigger = e.target.closest(".team-popover-trigger");
     if (trigger) {
       e.preventDefault();
+      // Em mobile, navega direto para a página da equipe
+      if (window.innerWidth < 768) {
+        window.location.href = trigger.getAttribute("data-team-url");
+        return;
+      }
       if (activeBtn === trigger) { closePopover(); return; }
       openPopover(trigger);
       return;
