@@ -87,6 +87,9 @@ class CompaniesController < ApplicationController
   def set_plan
     authorize @company, :set_plan?
     plan_id = params.dig(:company, :plan_id).presence
+    unless plan_id
+      return redirect_to company_path(@company, tab: "plano"), alert: "Selecione um plano."
+    end
     @company.update!(plan_id: plan_id)
     redirect_to company_path(@company, tab: "plano"), notice: "Plano atualizado com sucesso."
   rescue ActiveRecord::RecordInvalid => e

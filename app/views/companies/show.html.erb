@@ -293,12 +293,6 @@
               </div>
             </label>
           <% end %>
-          <label style="display:flex; align-items:center; gap:0.65rem; padding:0.75rem 1rem; border:2px solid <%= @company.plan_id.nil? ? '#18181b' : '#e4e4e7' %>; border-radius:10px; cursor:pointer;">
-            <input type="radio" name="company[plan_id]" value=""
-                   <%= @company.plan_id.nil? ? "checked" : "" %>
-                   style="flex-shrink:0;">
-            <span style="font-size:0.85rem; color:#71717a;">Sem plano</span>
-          </label>
         </div>
         <div style="margin-top:1rem;">
           <%= f.submit "Salvar plano", class: "btn-primary" %>
