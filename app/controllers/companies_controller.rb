@@ -8,7 +8,7 @@ class CompaniesController < ApplicationController
 
   def show
     authorize @company
-    @company_users = @company.company_users.includes(:user).order("users.name")
+    @company_users = @company.company_users.includes(:user).order("users.name").paginate(page: params[:page], per_page: 10)
     @available_users = User.order(:name) - @company.users
     @plans = Plan.order(:name) if current_user.admin?
   end
