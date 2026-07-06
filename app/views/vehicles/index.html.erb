@@ -7,6 +7,22 @@
   <% end %>
 </div>
 
+<%= form_with url: vehicles_path, method: :get, local: true do %>
+  <div class="content-card" style="margin-bottom:0.75rem; padding:0.6rem 1rem; display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
+    <i class="bi bi-search" style="color:#a1a1aa; font-size:0.9rem; flex-shrink:0;"></i>
+    <input type="text" name="plate" value="<%= @q_plate %>" placeholder="Placa..." autocomplete="off"
+           style="width:110px; flex-shrink:0; border:1px solid #e4e4e7; border-radius:6px; padding:0.3rem 0.6rem; font-size:0.83rem; font-family:monospace; outline:none; text-transform:uppercase;">
+    <input type="text" name="model" value="<%= @q_model %>" placeholder="Modelo..." autocomplete="off"
+           style="width:140px; flex-shrink:0; border:1px solid #e4e4e7; border-radius:6px; padding:0.3rem 0.6rem; font-size:0.83rem; outline:none;">
+    <input type="text" name="color" value="<%= @q_color %>" placeholder="Cor..." autocomplete="off"
+           style="width:110px; flex-shrink:0; border:1px solid #e4e4e7; border-radius:6px; padding:0.3rem 0.6rem; font-size:0.83rem; outline:none;">
+    <button type="submit" class="btn-primary" style="padding:0.3rem 0.8rem; font-size:0.8rem;">Filtrar</button>
+    <% if @q_plate.present? || @q_model.present? || @q_color.present? %>
+      <%= link_to "× Limpar", vehicles_path, style:"font-size:0.8rem; color:#a1a1aa; text-decoration:none;" %>
+    <% end %>
+  </div>
+<% end %>
+
 <table class="data-table">
   <thead>
     <tr>

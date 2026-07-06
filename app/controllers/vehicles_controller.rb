@@ -3,7 +3,16 @@ class VehiclesController < ApplicationController
 
   def index
     authorize Vehicle
-    @vehicles = policy_scope(Vehicle).order(:license_plate).paginate(page: params[:page], per_page: 10)
+    @q_plate = params[:plate].to_s.strip
+    @q_model = params[:model].to_s.strip
+    @q_color = params[:color].to_s.strip
+
+    @vehicles = policy_scope(Vehicle)
+                  .then { |s| @q_plate.present? ? s.where("license_plate ILIKE ?", "%#{@q_plate}%") : s }
+                  .then { |s| @q_model.present? ? s.where("model ILIKE ?", "%#{@q_model}%") : s }
+                  .then { |s| @q_color.present? ? s.where("color ILIKE ?", "%#{@q_color}%") : s }
+                  .order(:license_plate)
+                  .paginate(page: params[:page], per_page: 10)
   end
 
   def show
