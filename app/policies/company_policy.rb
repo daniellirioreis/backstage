@@ -7,7 +7,8 @@ class CompanyPolicy < ApplicationPolicy
   def show?     = can?("show") || member?
   def edit?     = can?("update") || owner_or_manager?
   def update?   = can?("update") || owner_or_manager?
-  def add_user? = user.present? && user.admin?
+  def add_user?  = user.present? && user.admin?
+  def set_plan?  = user.present? && (user.admin? || can?("set_plan"))
 
   class Scope < ApplicationPolicy::Scope
     def resolve

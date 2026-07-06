@@ -1,6 +1,7 @@
+<% active_tab = params[:tab].presence_in(%w[dados usuarios plano]) || "dados" %>
+
 <div class="page-header">
   <div style="display:flex; align-items:center; gap:1rem;">
-    <%# Logo %>
     <div style="width:56px; height:56px; border-radius:10px; background:#f4f4f5; border:1px solid #e4e4e7; display:flex; align-items:center; justify-content:center; overflow:hidden; flex-shrink:0;">
       <% if @company.logo.attached? %>
         <%= image_tag @company.logo, style:"width:100%;height:100%;object-fit:contain;" %>
@@ -31,228 +32,278 @@
   </div>
 </div>
 
-<%# ── Plano da empresa ──────────────────────────────────────────────────────── %>
-<% if @company.plan.present? || current_user.admin? %>
-  <div class="content-card" style="padding:1.25rem; margin-bottom:1.25rem;">
-    <div style="display:flex; align-items:center; justify-content:space-between; gap:1rem; flex-wrap:wrap;">
+<%# ── Tabs ───────────────────────────────────────────────────────────────── %>
+<div style="display:flex; gap:0; border-bottom:2px solid #e4e4e7; margin-bottom:1.25rem;">
+  <% [
+    ["dados",    "bi-building",    "Dados"],
+    ["usuarios", "bi-people",      "Usuários"],
+    (["plano",   "bi-box",         "Plano"] if policy(@company).set_plan?),
+  ].compact.each do |key, icon, label| %>
+    <%= link_to company_path(@company, tab: key),
+          style: "display:inline-flex; align-items:center; gap:0.35rem; padding:0.55rem 1rem; font-size:0.83rem; font-weight:#{active_tab == key ? '700' : '500'}; color:#{active_tab == key ? '#18181b' : '#71717a'}; text-decoration:none; border-bottom:#{active_tab == key ? '2px solid #18181b' : '2px solid transparent'}; margin-bottom:-2px;" do %>
+      <i class="bi <%= icon %>"></i> <%= label %>
+    <% end %>
+  <% end %>
+</div>
 
-      <%# Info do plano atual %>
-      <div style="display:flex; align-items:center; gap:1rem; flex-wrap:wrap; flex:1;">
-        <div>
-          <div style="font-size:0.65rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#a1a1aa; margin-bottom:0.2rem;">Plano</div>
-          <% if @company.plan %>
-            <div style="font-size:0.95rem; font-weight:700; color:#18181b;"><%= @company.plan.name %></div>
-          <% else %>
-            <div style="font-size:0.88rem; color:#a1a1aa; font-style:italic;">Sem plano</div>
+<%# ── Aba: Dados ──────────────────────────────────────────────────────────── %>
+<% if active_tab == "dados" %>
+  <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin-bottom:1.25rem;">
+
+    <%# Dados gerais %>
+    <div class="content-card" style="padding:1.25rem;">
+      <div style="font-size:0.72rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#71717a; margin-bottom:0.75rem;">Dados gerais</div>
+      <dl style="margin:0; display:flex; flex-direction:column; gap:0.5rem;">
+        <% [
+          ["CNPJ",      @company.cnpj,    "bi-file-text"],
+          ["Telefone",  @company.phone,   "bi-telephone"],
+          ["E-mail",    @company.email,   "bi-envelope"],
+          ["Endereço",  @company.address, "bi-geo-alt"],
+        ].each do |label, value, icon| %>
+          <% if value.present? %>
+            <div style="display:flex; gap:0.5rem; align-items:flex-start;">
+              <i class="bi <%= icon %>" style="color:#a1a1aa; font-size:0.78rem; margin-top:3px; flex-shrink:0;"></i>
+              <div>
+                <div style="font-size:0.68rem; color:#a1a1aa;"><%= label %></div>
+                <div style="font-size:0.85rem; color:#18181b; font-family:<%= label == 'CNPJ' ? 'monospace' : 'inherit' %>;"><%= value %></div>
+              </div>
+            </div>
+          <% end %>
+        <% end %>
+      </dl>
+      <div style="margin-top:0.75rem; display:flex; align-items:center; gap:0.5rem;">
+        <div style="width:18px; height:18px; border-radius:4px; background:<%= @company.primary_color %>; border:1px solid #e4e4e7;"></div>
+        <span style="font-size:0.78rem; color:#71717a; font-family:monospace;"><%= @company.primary_color %></span>
+      </div>
+    </div>
+
+    <%# Eventos %>
+    <div class="content-card" style="padding:1.25rem;">
+      <div style="font-size:0.72rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#71717a; margin-bottom:0.75rem;">Eventos (<%= @company.events.count %>)</div>
+      <% if @company.events.any? %>
+        <div style="display:flex; flex-direction:column; gap:0.4rem;">
+          <% @company.events.order(start_date: :desc).each do |event| %>
+            <div style="display:flex; align-items:center; justify-content:space-between; padding:0.4rem 0; border-bottom:1px solid #f4f4f5;">
+              <div>
+                <div style="font-size:0.82rem; font-weight:600; color:#18181b;"><%= event.name %></div>
+                <div style="font-size:0.7rem; color:#a1a1aa;"><%= l(event.start_date, format: :short) %> → <%= l(event.end_date, format: :short) %></div>
+              </div>
+              <span class="badge-status badge-<%= event.status %>" style="font-size:0.65rem;"><%= t("event_statuses.#{event.status}") %></span>
+            </div>
           <% end %>
         </div>
-
-        <%# Uso de eventos %>
-        <div style="background:#f4f4f5; border-radius:8px; padding:0.5rem 1rem; text-align:center; min-width:100px;">
-          <div style="font-size:0.65rem; font-weight:700; color:#71717a; text-transform:uppercase; letter-spacing:0.06em; margin-bottom:0.15rem;">Eventos</div>
-          <div style="font-size:1rem; font-weight:800; color:<%= @company.plan && !@company.can_add_event? ? '#ef4444' : '#18181b' %>; line-height:1;">
-            <%= @company.current_events_count %>
-            <span style="font-size:0.75rem; font-weight:400; color:#a1a1aa;">/ <%= @company.events_limit&.to_s || "∞" %></span>
-          </div>
-        </div>
-
-        <%# Uso de colaboradores %>
-        <div style="background:#f4f4f5; border-radius:8px; padding:0.5rem 1rem; text-align:center; min-width:120px;">
-          <div style="font-size:0.65rem; font-weight:700; color:#71717a; text-transform:uppercase; letter-spacing:0.06em; margin-bottom:0.15rem;">Colaboradores</div>
-          <div style="font-size:1rem; font-weight:800; color:<%= @company.plan && !@company.can_add_member? ? '#ef4444' : '#18181b' %>; line-height:1;">
-            <%= @company.current_members_count %>
-            <span style="font-size:0.75rem; font-weight:400; color:#a1a1aa;">/ <%= @company.members_limit&.to_s || "∞" %></span>
-          </div>
-        </div>
-      </div>
-
-      <%# Trocar plano (somente admin) %>
-      <% if current_user.admin? %>
-        <%= form_with url: company_path(@company), method: :patch, style:"display:flex; align-items:center; gap:0.5rem;" do |f| %>
-          <%= f.select :plan_id,
-                [["Sem plano", ""]] + @plans.map { |p| [p.name, p.id] },
-                { selected: @company.plan_id },
-                class: "form-control form-select",
-                style: "width:160px; font-size:0.85rem;",
-                name: "company[plan_id]" %>
-          <%= f.submit "Aplicar", style:"background:#18181b;color:#fff;border:none;padding:0.45rem 0.9rem;border-radius:7px;font-size:0.82rem;font-weight:600;cursor:pointer;white-space:nowrap;" %>
-        <% end %>
+      <% else %>
+        <p style="font-size:0.82rem; color:#a1a1aa; margin:0;">Nenhum evento associado.</p>
       <% end %>
-
     </div>
   </div>
 <% end %>
 
-<div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin-bottom:1.25rem;">
-
-  <%# Dados gerais %>
+<%# ── Aba: Usuários ───────────────────────────────────────────────────────── %>
+<% if active_tab == "usuarios" %>
   <div class="content-card" style="padding:1.25rem;">
-    <div style="font-size:0.72rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#71717a; margin-bottom:0.75rem;">Dados da company</div>
-    <dl style="margin:0; display:flex; flex-direction:column; gap:0.5rem;">
-      <% [
-        ["CNPJ",      @company.cnpj,    "bi-file-text"],
-        ["Telefone",  @company.phone,   "bi-telephone"],
-        ["E-mail",    @company.email,   "bi-envelope"],
-        ["Endereço",  @company.address, "bi-geo-alt"],
-      ].each do |label, value, icon| %>
-        <% if value.present? %>
-          <div style="display:flex; gap:0.5rem; align-items:flex-start;">
-            <i class="bi <%= icon %>" style="color:#a1a1aa; font-size:0.78rem; margin-top:3px; flex-shrink:0;"></i>
-            <div>
-              <div style="font-size:0.68rem; color:#a1a1aa;"><%= label %></div>
-              <div style="font-size:0.85rem; color:#18181b; font-family:<%= label == 'CNPJ' ? 'monospace' : 'inherit' %>;"><%= value %></div>
-            </div>
-          </div>
-        <% end %>
-      <% end %>
-    </dl>
-
-    <div style="margin-top:0.75rem; display:flex; align-items:center; gap:0.5rem;">
-      <div style="width:18px; height:18px; border-radius:4px; background:<%= @company.primary_color %>; border:1px solid #e4e4e7;"></div>
-      <span style="font-size:0.78rem; color:#71717a; font-family:monospace;"><%= @company.primary_color %></span>
-    </div>
-  </div>
-
-  <%# Eventos %>
-  <div class="content-card" style="padding:1.25rem;">
-    <div style="font-size:0.72rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#71717a; margin-bottom:0.75rem;">Eventos (<%= @company.events.count %>)</div>
-    <% if @company.events.any? %>
-      <div style="display:flex; flex-direction:column; gap:0.4rem;">
-        <% @company.events.order(start_date: :desc).each do |event| %>
-          <div style="display:flex; align-items:center; justify-content:space-between; padding:0.4rem 0; border-bottom:1px solid #f4f4f5;">
-            <div>
-              <div style="font-size:0.82rem; font-weight:600; color:#18181b;"><%= event.name %></div>
-              <div style="font-size:0.7rem; color:#a1a1aa;"><%= l(event.start_date, format: :short) %> → <%= l(event.end_date, format: :short) %></div>
-            </div>
-            <span class="badge-status badge-<%= event.status %>" style="font-size:0.65rem;"><%= t("event_statuses.#{event.status}") %></span>
-          </div>
-        <% end %>
+    <div style="display:flex; align-items:center; justify-content:space-between; gap:1rem; margin-bottom:1rem; flex-wrap:wrap;">
+      <div style="font-size:0.72rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#71717a;">
+        Usuários (<%= @company.company_users.count %>)
       </div>
-    <% else %>
-      <p style="font-size:0.82rem; color:#a1a1aa; margin:0;">Nenhum evento associado.</p>
-    <% end %>
-  </div>
-</div>
-
-<%# Usuários da company %>
-<div class="content-card" style="padding:1.25rem;">
-  <div style="display:flex; align-items:center; justify-content:space-between; gap:1rem; margin-bottom:1rem; flex-wrap:wrap;">
-    <div style="font-size:0.72rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#71717a;">
-      Usuários (<%= @company.company_users.count %>)
-    </div>
-    <%= form_with url: company_path(@company), method: :get, local: true, style: "display:flex; gap:0.4rem; align-items:center;" do |f| %>
-      <input type="text" name="q" value="<%= @search_query %>"
-             placeholder="Buscar por nome ou e-mail..."
-             class="form-control"
-             style="font-size:0.82rem; padding:0.35rem 0.65rem; width:240px; height:32px;">
-      <% if @search_query.present? %>
-        <%= link_to company_path(@company), class: "btn-secondary", style: "padding:0.3rem 0.6rem; font-size:0.78rem; height:32px; display:inline-flex; align-items:center;" do %>
-          <i class="bi bi-x"></i>
+      <%= form_with url: company_path(@company, tab: "usuarios"), method: :get, local: true, style: "display:flex; gap:0.4rem; align-items:center;" do |f| %>
+        <%= hidden_field_tag :tab, "usuarios" %>
+        <input type="text" name="q" value="<%= @search_query %>"
+               placeholder="Buscar por nome ou e-mail..."
+               class="form-control"
+               style="font-size:0.82rem; padding:0.35rem 0.65rem; width:240px; height:32px;">
+        <% if @search_query.present? %>
+          <%= link_to company_path(@company, tab: "usuarios"), class: "btn-secondary", style: "padding:0.3rem 0.6rem; font-size:0.78rem; height:32px; display:inline-flex; align-items:center;" do %>
+            <i class="bi bi-x"></i>
+          <% end %>
         <% end %>
       <% end %>
-    <% end %>
-  </div>
+    </div>
 
-  <% if @company_users.any? %>
-    <div class="table-responsive">
-      <table class="data-table">
-        <thead>
-          <tr>
-            <th style="width:44px;"></th>
-            <th>Nome</th>
-            <th>E-mail</th>
-            <th>Perfil na empresa</th>
-            <% if policy(@company).update? %><th style="width:40px;"></th><% end %>
-          </tr>
-        </thead>
-        <tbody>
-          <% @company_users.each do |eu| %>
+    <% if @company_users.any? %>
+      <div class="table-responsive">
+        <table class="data-table">
+          <thead>
             <tr>
-              <td style="padding:0.4rem 0.5rem;">
-                <div style="width:34px; height:34px; border-radius:50%; background:#f4f4f5; display:flex; align-items:center; justify-content:center; font-size:0.7rem; font-weight:700; color:#52525b; overflow:hidden; flex-shrink:0;">
-                  <% if eu.user.avatar.attached? %>
-                    <%= image_tag eu.user.avatar, style:"width:100%;height:100%;object-fit:cover;" %>
-                  <% else %>
-                    <%= eu.user.name.split.map(&:first).first(2).join.upcase %>
-                  <% end %>
-                </div>
-              </td>
-              <td style="font-weight:500;"><%= eu.user.name %></td>
-              <td style="color:#71717a; font-size:0.82rem;"><%= eu.user.email %></td>
-              <td>
-                <% if policy(@company).update? %>
-                  <%= form_with url: update_user_role_company_path(@company), method: :patch, data: { turbo: false } do |f| %>
-                    <%= hidden_field_tag :user_id, eu.user_id %>
-                    <%= f.select :role,
-                          CompanyUser::ROLES.map { |r| [CompanyUser.new(role: r).role_label, r] },
-                          { selected: eu.role },
-                          onchange: "this.form.submit()",
-                          style: "font-size:0.75rem; font-weight:600; border:1px solid #e4e4e7; border-radius:6px; padding:2px 8px; background:#f9f9f9; color:#18181b; cursor:pointer; outline:none;" %>
-                  <% end %>
-                <% else %>
-                  <% role_colors = { "owner" => ["#fef9c3","#ca8a04"], "manager" => ["#dbeafe","#2563eb"], "operator" => ["#f4f4f5","#71717a"], "collaborator" => ["#f0fdf4","#16a34a"] } %>
-                  <% bg, text = role_colors[eu.role] || role_colors["operator"] %>
-                  <span style="background:<%= bg %>; color:<%= text %>; font-size:0.68rem; font-weight:700; padding:2px 8px; border-radius:4px;"><%= eu.role_label %></span>
-                <% end %>
-              </td>
-              <% if policy(@company).update? %>
+              <th style="width:44px;"></th>
+              <th>Nome</th>
+              <th>E-mail</th>
+              <th>Perfil na empresa</th>
+              <% if policy(@company).update? %><th style="width:40px;"></th><% end %>
+            </tr>
+          </thead>
+          <tbody>
+            <% @company_users.each do |eu| %>
+              <tr>
+                <td style="padding:0.4rem 0.5rem;">
+                  <div style="width:34px; height:34px; border-radius:50%; background:#f4f4f5; display:flex; align-items:center; justify-content:center; font-size:0.7rem; font-weight:700; color:#52525b; overflow:hidden; flex-shrink:0;">
+                    <% if eu.user.avatar.attached? %>
+                      <%= image_tag eu.user.avatar, style:"width:100%;height:100%;object-fit:cover;" %>
+                    <% else %>
+                      <%= eu.user.name.split.map(&:first).first(2).join.upcase %>
+                    <% end %>
+                  </div>
+                </td>
+                <td style="font-weight:500;"><%= eu.user.name %></td>
+                <td style="color:#71717a; font-size:0.82rem;"><%= eu.user.email %></td>
                 <td>
-                  <%= button_to remove_user_company_path(@company, user_id: eu.user_id), method: :delete,
-                      form: { data: { turbo_confirm: "Remover #{eu.user.name} da empresa?" } },
-                      style:"background:none;border:none;cursor:pointer;color:#a1a1aa;font-size:0.85rem;padding:0.2rem 0.4rem;" do %>
-                    <i class="bi bi-x-lg"></i>
+                  <% if policy(@company).update? %>
+                    <%= form_with url: update_user_role_company_path(@company), method: :patch, data: { turbo: false } do |f| %>
+                      <%= hidden_field_tag :user_id, eu.user_id %>
+                      <%= f.select :role,
+                            CompanyUser::ROLES.map { |r| [CompanyUser.new(role: r).role_label, r] },
+                            { selected: eu.role },
+                            onchange: "this.form.submit()",
+                            style: "font-size:0.75rem; font-weight:600; border:1px solid #e4e4e7; border-radius:6px; padding:2px 8px; background:#f9f9f9; color:#18181b; cursor:pointer; outline:none;" %>
+                    <% end %>
+                  <% else %>
+                    <% role_colors = { "owner" => ["#fef9c3","#ca8a04"], "manager" => ["#dbeafe","#2563eb"], "operator" => ["#f4f4f5","#71717a"], "collaborator" => ["#f0fdf4","#16a34a"] } %>
+                    <% bg, text = role_colors[eu.role] || role_colors["operator"] %>
+                    <span style="background:<%= bg %>; color:<%= text %>; font-size:0.68rem; font-weight:700; padding:2px 8px; border-radius:4px;"><%= eu.role_label %></span>
                   <% end %>
                 </td>
-              <% end %>
-            </tr>
-          <% end %>
-        </tbody>
-      </table>
-    </div>
+                <% if policy(@company).update? %>
+                  <td>
+                    <%= button_to remove_user_company_path(@company, user_id: eu.user_id), method: :delete,
+                        form: { data: { turbo_confirm: "Remover #{eu.user.name} da empresa?" } },
+                        style:"background:none;border:none;cursor:pointer;color:#a1a1aa;font-size:0.85rem;padding:0.2rem 0.4rem;" do %>
+                      <i class="bi bi-x-lg"></i>
+                    <% end %>
+                  </td>
+                <% end %>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
 
-    <% if @company_users.total_pages > 1 %>
-      <div style="display:flex; justify-content:center; margin-top:1rem;">
-        <%= will_paginate @company_users,
-              previous_label: "&laquo;".html_safe,
-              next_label: "&raquo;".html_safe,
-              inner_window: 2, outer_window: 1 %>
+      <% if @company_users.total_pages > 1 %>
+        <div style="display:flex; justify-content:center; margin-top:1rem;">
+          <%= will_paginate @company_users,
+                previous_label: "&laquo;".html_safe,
+                next_label: "&raquo;".html_safe,
+                inner_window: 2, outer_window: 1 %>
+        </div>
+      <% end %>
+    <% end %>
+
+    <%# Adicionar usuário %>
+    <% if policy(@company).add_user? %>
+      <div style="border-top:1px solid #f4f4f5; padding-top:1rem;">
+        <div style="font-size:0.78rem; font-weight:600; color:#3f3f46; margin-bottom:0.75rem;">Adicionar usuário</div>
+        <%= form_with url: add_user_company_path(@company), method: :post, local: true do |f| %>
+          <div style="display:flex; gap:0.5rem; align-items:flex-end; flex-wrap:wrap;">
+            <div style="flex:1; min-width:220px; position:relative;"
+                 data-controller="autocomplete-single"
+                 data-autocomplete-single-url-value="<%= search_users_path %>"
+                 data-autocomplete-single-param-value="user_id">
+              <div data-autocomplete-single-target="selected"></div>
+              <input type="text"
+                     data-autocomplete-single-target="input"
+                     data-action="input->autocomplete-single#search"
+                     class="form-control"
+                     placeholder="Buscar por nome ou CPF..."
+                     autocomplete="off"
+                     style="font-size:0.85rem;">
+              <div data-autocomplete-single-target="dropdown" class="autocomplete-dropdown" style="display:none;"></div>
+              <input type="hidden"
+                     data-autocomplete-single-target="hidden"
+                     name="user_id"
+                     value="">
+            </div>
+            <%= f.select :role,
+                CompanyUser::ROLES.map { |r| [CompanyUser.new(role: r).role_label, r] },
+                {},
+                class: "form-control form-select",
+                style: "width:140px; flex-shrink:0;" %>
+            <%= f.submit "Adicionar",
+                style:"background:#18181b;color:#fff;border:none;padding:0.5rem 1rem;border-radius:7px;font-size:0.85rem;font-weight:600;cursor:pointer;white-space:nowrap;" %>
+          </div>
+        <% end %>
       </div>
     <% end %>
-  <% end %>
+  </div>
+<% end %>
 
-  <%# Adicionar usuário %>
-  <% if policy(@company).add_user? %>
-    <div style="border-top:1px solid #f4f4f5; padding-top:1rem;">
-      <div style="font-size:0.78rem; font-weight:600; color:#3f3f46; margin-bottom:0.75rem;">Adicionar usuário</div>
-      <%= form_with url: add_user_company_path(@company), method: :post, local: true do |f| %>
-        <div style="display:flex; gap:0.5rem; align-items:flex-end; flex-wrap:wrap;">
-          <div style="flex:1; min-width:220px; position:relative;"
-               data-controller="autocomplete-single"
-               data-autocomplete-single-url-value="<%= search_users_path %>"
-               data-autocomplete-single-param-value="user_id">
-            <div data-autocomplete-single-target="selected"></div>
-            <input type="text"
-                   data-autocomplete-single-target="input"
-                   data-action="input->autocomplete-single#search"
-                   class="form-control"
-                   placeholder="Buscar por nome ou CPF..."
-                   autocomplete="off"
-                   style="font-size:0.85rem;">
-            <div data-autocomplete-single-target="dropdown" class="autocomplete-dropdown" style="display:none;"></div>
-            <input type="hidden"
-                   data-autocomplete-single-target="hidden"
-                   name="user_id"
-                   value="">
+<%# ── Aba: Plano ───────────────────────────────────────────────────────────── %>
+<% if active_tab == "plano" && policy(@company).set_plan? %>
+  <div class="content-card" style="padding:1.25rem;">
+
+    <%# Plano atual %>
+    <div style="margin-bottom:1.5rem;">
+      <div style="font-size:0.72rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#71717a; margin-bottom:0.75rem;">Plano atual</div>
+      <% if @company.plan %>
+        <div style="display:flex; align-items:center; gap:0.75rem;">
+          <div style="width:40px; height:40px; border-radius:8px; background:#f0fdf4; border:1px solid #86efac; display:flex; align-items:center; justify-content:center;">
+            <i class="bi bi-box" style="color:#16a34a; font-size:1.1rem;"></i>
           </div>
-          <%= f.select :role,
-              CompanyUser::ROLES.map { |r| [CompanyUser.new(role: r).role_label, r] },
-              {},
-              class: "form-control form-select",
-              style: "width:140px; flex-shrink:0;" %>
-          <%= f.submit "Adicionar",
-              style:"background:#18181b;color:#fff;border:none;padding:0.5rem 1rem;border-radius:7px;font-size:0.85rem;font-weight:600;cursor:pointer;white-space:nowrap;" %>
+          <div>
+            <div style="font-size:1rem; font-weight:700; color:#18181b;"><%= @company.plan.name %></div>
+            <% if @company.plan.description.present? %>
+              <div style="font-size:0.75rem; color:#71717a; margin-top:1px;"><%= @company.plan.description %></div>
+            <% end %>
+          </div>
+        </div>
+      <% else %>
+        <div style="font-size:0.88rem; color:#a1a1aa; font-style:italic;">Nenhum plano atribuído.</div>
+      <% end %>
+    </div>
+
+    <%# Uso do plano %>
+    <div style="display:flex; gap:1rem; flex-wrap:wrap; margin-bottom:1.5rem;">
+      <div style="background:#f4f4f5; border-radius:8px; padding:0.75rem 1.25rem; text-align:center; min-width:110px;">
+        <div style="font-size:0.65rem; font-weight:700; color:#71717a; text-transform:uppercase; letter-spacing:0.06em; margin-bottom:0.2rem;">Eventos</div>
+        <div style="font-size:1.2rem; font-weight:800; color:<%= @company.plan && !@company.can_add_event? ? '#ef4444' : '#18181b' %>; line-height:1;">
+          <%= @company.current_events_count %>
+          <span style="font-size:0.78rem; font-weight:400; color:#a1a1aa;">/ <%= @company.events_limit&.to_s || "∞" %></span>
+        </div>
+      </div>
+      <div style="background:#f4f4f5; border-radius:8px; padding:0.75rem 1.25rem; text-align:center; min-width:130px;">
+        <div style="font-size:0.65rem; font-weight:700; color:#71717a; text-transform:uppercase; letter-spacing:0.06em; margin-bottom:0.2rem;">Colaboradores</div>
+        <div style="font-size:1.2rem; font-weight:800; color:<%= @company.plan && !@company.can_add_member? ? '#ef4444' : '#18181b' %>; line-height:1;">
+          <%= @company.current_members_count %>
+          <span style="font-size:0.78rem; font-weight:400; color:#a1a1aa;">/ <%= @company.members_limit&.to_s || "∞" %></span>
+        </div>
+      </div>
+    </div>
+
+    <%# Trocar plano %>
+    <div style="border-top:1px solid #f4f4f5; padding-top:1.25rem;">
+      <div style="font-size:0.72rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#71717a; margin-bottom:0.75rem;">Alterar plano</div>
+      <%= form_with url: set_plan_company_path(@company), method: :patch, local: true do |f| %>
+        <div style="display:flex; align-items:center; gap:0.75rem; flex-wrap:wrap;">
+          <% @plans.each do |plan| %>
+            <label style="display:flex; align-items:flex-start; gap:0.65rem; padding:0.75rem 1rem; border:2px solid <%= @company.plan_id == plan.id ? '#18181b' : '#e4e4e7' %>; border-radius:10px; cursor:pointer; min-width:180px; flex:1;">
+              <input type="radio" name="company[plan_id]" value="<%= plan.id %>"
+                     <%= @company.plan_id == plan.id ? "checked" : "" %>
+                     style="margin-top:3px; flex-shrink:0;">
+              <div>
+                <div style="font-size:0.88rem; font-weight:700; color:#18181b;"><%= plan.name %></div>
+                <% if plan.description.present? %>
+                  <div style="font-size:0.72rem; color:#71717a; margin-top:1px;"><%= plan.description %></div>
+                <% end %>
+                <div style="display:flex; gap:0.5rem; margin-top:0.4rem; flex-wrap:wrap;">
+                  <span style="background:#f4f4f5; border-radius:5px; padding:1px 7px; font-size:0.7rem; color:#52525b;">
+                    <i class="bi bi-calendar-event" style="font-size:0.6rem;"></i> <%= plan.events_limit_label %> eventos
+                  </span>
+                  <span style="background:#f4f4f5; border-radius:5px; padding:1px 7px; font-size:0.7rem; color:#52525b;">
+                    <i class="bi bi-people" style="font-size:0.6rem;"></i> <%= plan.members_limit_label %> colaboradores
+                  </span>
+                </div>
+              </div>
+            </label>
+          <% end %>
+          <label style="display:flex; align-items:center; gap:0.65rem; padding:0.75rem 1rem; border:2px solid <%= @company.plan_id.nil? ? '#18181b' : '#e4e4e7' %>; border-radius:10px; cursor:pointer;">
+            <input type="radio" name="company[plan_id]" value=""
+                   <%= @company.plan_id.nil? ? "checked" : "" %>
+                   style="flex-shrink:0;">
+            <span style="font-size:0.85rem; color:#71717a;">Sem plano</span>
+          </label>
+        </div>
+        <div style="margin-top:1rem;">
+          <%= f.submit "Salvar plano", class: "btn-primary" %>
         </div>
       <% end %>
     </div>
-  <% end %>
-</div>
+  </div>
+<% end %>

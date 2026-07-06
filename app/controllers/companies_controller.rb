@@ -1,5 +1,5 @@
 class CompaniesController < ApplicationController
-  before_action :set_company, only: %i[show edit update destroy add_user update_user_role remove_user]
+  before_action :set_company, only: %i[show edit update destroy add_user update_user_role remove_user set_plan]
 
   def index
     authorize Company
@@ -15,7 +15,7 @@ class CompaniesController < ApplicationController
     @company_users = scope.paginate(page: params[:page], per_page: 10)
     @search_query  = params[:q].to_s
     @available_users = User.order(:name) - @company.users
-    @plans = Plan.order(:name) if current_user.admin?
+    @plans = Plan.order(:name) if policy(@company).set_plan?
   end
 
   def new
@@ -82,6 +82,15 @@ class CompaniesController < ApplicationController
     cu = CompanyUser.find_by!(company: @company, user_id: params[:user_id])
     cu.destroy
     redirect_to @company, notice: t("companies.user_removed")
+  end
+
+  def set_plan
+    authorize @company, :set_plan?
+    plan_id = params.dig(:company, :plan_id).presence
+    @company.update!(plan_id: plan_id)
+    redirect_to company_path(@company, tab: "plano"), notice: "Plano atualizado com sucesso."
+  rescue ActiveRecord::RecordInvalid => e
+    redirect_to company_path(@company, tab: "plano"), alert: e.message
   end
 
   private

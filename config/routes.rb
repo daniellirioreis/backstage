@@ -34,6 +34,7 @@ Rails.application.routes.draw do
       post :add_user
       patch :update_user_role
       delete :remove_user
+      patch :set_plan
     end
   end
   resources :plans
