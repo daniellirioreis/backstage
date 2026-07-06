@@ -19,9 +19,20 @@
     <% if user_signed_in? %>
       <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
       <aside class="sidebar" id="mainSidebar">
+        <%
+          user_company = current_user.company_users.includes(:company).first&.company
+          company_logo = user_company&.logo&.attached? ? user_company.logo : nil
+        %>
         <div class="sidebar-brand" style="display:flex; align-items:center; gap:0.75rem; padding:1rem 1.25rem; position:relative;">
-          <%= render "shared/logo", size: :sm, stacked: false %>
-          <span style="font-size:0.85rem; font-weight:700; letter-spacing:0.08em; color:#ffffff;">Backstage</span>
+          <% if company_logo %>
+            <div style="width:36px; height:36px; border-radius:8px; background:#fff; overflow:hidden; flex-shrink:0; display:flex; align-items:center; justify-content:center;">
+              <%= image_tag company_logo, style: "max-width:100%; max-height:100%; object-fit:contain;" %>
+            </div>
+            <span style="font-size:0.85rem; font-weight:700; color:#ffffff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:130px;"><%= user_company.name %></span>
+          <% else %>
+            <%= render "shared/logo", size: :sm, stacked: false %>
+            <span style="font-size:0.85rem; font-weight:700; letter-spacing:0.08em; color:#ffffff;">Backstage</span>
+          <% end %>
           <button class="sidebar-close" onclick="closeSidebar()" type="button" aria-label="Fechar menu">
             <i class="bi bi-x-lg"></i>
           </button>
@@ -189,7 +200,12 @@
                   <%= current_user.name.first.upcase %>
                 <% end %>
               </div>
-              <span class="sidebar-username"><%= current_user.name.split.first %></span>
+              <span class="sidebar-username">
+                <%= current_user.name.split.first %>
+                <% if current_user.role.present? %>
+                  <span class="sidebar-userrole"><%= current_user.role.name.capitalize %></span>
+                <% end %>
+              </span>
               <i class="bi bi-chevron-up sidebar-user-chevron"></i>
             </button>
 

@@ -113,7 +113,8 @@ class ApplicationController < ActionController::Base
         companies
         plans
         invitations
-      ])
+      ]) ||
+      (controller_name == "users" && action_name == "my_schedule")
   end
 
   def check_onboarding!

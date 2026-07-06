@@ -2,8 +2,8 @@ class DashboardController < ApplicationController
   def index
     authorize :dashboard, :index?
 
-    # Colaboradores → escala pessoal
-    if current_user.role&.collaborator?
+    # Colaboradores (perfil "colaborador" sem acesso ao dashboard) → escala pessoal
+    if current_user.role&.name == "colaborador"
       redirect_to my_schedule_user_path(current_user) and return
     end
 
