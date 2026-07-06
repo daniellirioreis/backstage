@@ -1,5 +1,7 @@
 class DashboardPolicy < ApplicationPolicy
-  def index? = user.present? && (user.admin? || can?("index"))
+  # Qualquer usuário autenticado pode ver o dashboard — colaboradores são
+  # redirecionados para sua escala pelo controller, mas não ficam bloqueados.
+  def index? = user.present?
 
   private
 

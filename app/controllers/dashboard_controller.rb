@@ -2,6 +2,11 @@ class DashboardController < ApplicationController
   def index
     authorize :dashboard, :index?
 
+    # Colaboradores não têm dashboard — manda para a escala pessoal
+    if current_user.role&.collaborator?
+      redirect_to my_schedule_user_path(current_user) and return
+    end
+
     company_ids = if current_user.admin?
       Company.pluck(:id)
     else

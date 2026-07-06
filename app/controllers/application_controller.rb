@@ -136,10 +136,14 @@ class ApplicationController < ActionController::Base
       render json: { status: :error, message: message }, status: :forbidden
     else
       flash[:alert] = message
+      # Evita loop infinito: se já estamos no root e não temos permissão,
+      # redirecionar para root novamente criaria um loop. Vai para o login.
+      fallback = request.path == root_path ? new_user_session_path : root_path
       safe_back = request.referer.present? &&
                   !request.referer.include?(new_user_session_path) &&
-                  request.referer != request.url
-      safe_back ? redirect_back(fallback_location: root_path) : redirect_to(root_path)
+                  request.referer != request.url &&
+                  URI.parse(request.referer).path != root_path
+      safe_back ? redirect_back(fallback_location: fallback) : redirect_to(fallback)
     end
   end
 

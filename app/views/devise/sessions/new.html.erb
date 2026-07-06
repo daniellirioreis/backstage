@@ -6,6 +6,12 @@
 
   <%= render "devise/shared/error_messages", resource: resource %>
 
+  <% if flash[:notice] %>
+    <div class="flash-notice" style="margin-bottom:1rem;">
+      <i class="bi bi-check-circle"></i> <%= flash[:notice] %>
+    </div>
+  <% end %>
+
   <% if flash[:alert] %>
     <div class="flash-alert" style="margin-bottom:1rem;">
       <i class="bi bi-exclamation-circle"></i> <%= flash[:alert] %>
