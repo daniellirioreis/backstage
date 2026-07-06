@@ -27,7 +27,7 @@ class OnboardingController < ApplicationController
   def plano
     @company = current_user.companies.first
     redirect_to onboarding_empresa_path and return unless @company
-    redirect_to onboarding_evento_path if @company.events.exists?
+    redirect_to onboarding_evento_path and return if @company.events.exists?
     @plans = Plan.order(:name)
   end
 
