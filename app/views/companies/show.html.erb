@@ -136,10 +136,21 @@
 
 <%# Usuários da company %>
 <div class="content-card" style="padding:1.25rem;">
-  <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1rem;">
+  <div style="display:flex; align-items:center; justify-content:space-between; gap:1rem; margin-bottom:1rem; flex-wrap:wrap;">
     <div style="font-size:0.72rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#71717a;">
       Usuários (<%= @company.company_users.count %>)
     </div>
+    <%= form_with url: company_path(@company), method: :get, local: true, style: "display:flex; gap:0.4rem; align-items:center;" do |f| %>
+      <input type="text" name="q" value="<%= @search_query %>"
+             placeholder="Buscar por nome ou e-mail..."
+             class="form-control"
+             style="font-size:0.82rem; padding:0.35rem 0.65rem; width:240px; height:32px;">
+      <% if @search_query.present? %>
+        <%= link_to company_path(@company), class: "btn-secondary", style: "padding:0.3rem 0.6rem; font-size:0.78rem; height:32px; display:inline-flex; align-items:center;" do %>
+          <i class="bi bi-x"></i>
+        <% end %>
+      <% end %>
+    <% end %>
   </div>
 
   <% if @company_users.any? %>
