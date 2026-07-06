@@ -84,20 +84,44 @@
     </div>
 
     <div style="border-top: 1px solid #f4f4f5; padding-top: 1rem; margin-top: 0.5rem;">
-      <p style="font-size: 0.8rem; color: #71717a; margin-bottom: 0.75rem;">
-        <%= user.new_record? ? "Defina uma senha para o colaborador." : "Deixe em branco para manter a senha atual." %>
-      </p>
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
-        <div>
-          <%= f.label :password, User.human_attribute_name(:password), class: "form-label" %>
-          <%= f.password_field :password, class: "form-control", autocomplete: "new-password" %>
-        </div>
-        <div>
-          <%= f.label :password_confirmation, User.human_attribute_name(:password_confirmation), class: "form-label" %>
-          <%= f.password_field :password_confirmation, class: "form-control", autocomplete: "new-password" %>
+      <% if user.new_record? %>
+        <%# Toggle: definir senha agora ou gerar automaticamente %>
+        <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; margin-bottom: 0.75rem; width: fit-content;">
+          <input type="checkbox" id="toggle_set_password" onchange="togglePasswordFields(this.checked)"
+                 style="width: 15px; height: 15px;">
+          <span style="font-size: 0.82rem; color: #18181b; font-weight: 500;">Definir senha agora</span>
+        </label>
+        <p id="password_auto_hint" style="font-size: 0.78rem; color: #71717a; margin-bottom: 0.75rem;">
+          Uma senha aleatória será gerada. O colaborador poderá redefini-la depois.
+        </p>
+        <div id="password_fields" style="display: none;">
+      <% else %>
+        <p style="font-size: 0.8rem; color: #71717a; margin-bottom: 0.75rem;">
+          Deixe em branco para manter a senha atual.
+        </p>
+        <div id="password_fields">
+      <% end %>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+          <div>
+            <%= f.label :password, User.human_attribute_name(:password), class: "form-label" %>
+            <%= f.password_field :password, class: "form-control", autocomplete: "new-password" %>
+          </div>
+          <div>
+            <%= f.label :password_confirmation, User.human_attribute_name(:password_confirmation), class: "form-label" %>
+            <%= f.password_field :password_confirmation, class: "form-control", autocomplete: "new-password" %>
+          </div>
         </div>
       </div>
     </div>
+
+    <% if user.new_record? %>
+      <script>
+        function togglePasswordFields(show) {
+          document.getElementById('password_fields').style.display = show ? 'block' : 'none';
+          document.getElementById('password_auto_hint').style.display = show ? 'none' : 'block';
+        }
+      </script>
+    <% end %>
 
     <div style="display: flex; gap: 0.75rem; border-top: 1px solid #f4f4f5; padding-top: 1.25rem;">
       <%= f.submit t("actions.save"), class: "btn-primary" %>

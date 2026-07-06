@@ -126,6 +126,10 @@ class UsersController < ApplicationController
   def create
     authorize User
     @user = User.new(user_params)
+    # Se nenhuma senha foi definida, gera uma aleatória
+    if @user.password.blank?
+      @user.password = @user.password_confirmation = SecureRandom.hex(12)
+    end
     if @user.save
       redirect_to users_path, notice: t("notices.created", model: User.model_name.human)
     else
