@@ -129,8 +129,8 @@ class ApplicationController < ActionController::Base
     return super if resource.admin?
     return my_schedule_user_path(resource) if resource.role&.collaborator?
     if resource.coordinator?
-      membership = resource.team_memberships.find_by(role: :coordinator)
-      return panel_team_path(membership.team_id) if membership
+      team = Team.find_by(coordinator_id: resource.id)
+      return panel_team_path(team) if team
     end
     super
   end

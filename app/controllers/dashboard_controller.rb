@@ -7,11 +7,11 @@ class DashboardController < ApplicationController
       redirect_to my_schedule_user_path(current_user) and return
     end
 
-    # Coordenadores → painel da equipe
+    # Coordenadores → painel da equipe onde são responsáveis
     if current_user.coordinator?
-      membership = current_user.team_memberships.find_by(role: :coordinator)
-      redirect_to(panel_team_path(membership.team_id)) and return if membership
-      redirect_to(new_user_session_path, alert: "Você não está associado a nenhuma equipe como coordenador.") and return
+      team = Team.find_by(coordinator_id: current_user.id)
+      redirect_to(panel_team_path(team)) and return if team
+      redirect_to(new_user_session_path, alert: "Você não está definido como coordenador de nenhuma equipe.") and return
     end
 
     company_ids = if current_user.admin?

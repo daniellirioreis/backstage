@@ -33,9 +33,9 @@
           <% if current_user.coordinator? %>
             <%# Sidebar focada para coordenadores — só o essencial %>
             <div class="sidebar-section">Minha equipe</div>
-            <% coord_membership = current_user.team_memberships.find_by(role: :coordinator) %>
-            <% if coord_membership %>
-              <%= link_to panel_team_path(coord_membership.team_id), class: "sidebar-link #{controller_name == 'teams' && action_name == 'panel' ? 'active' : ''}" do %>
+            <% coord_team = Team.find_by(coordinator_id: current_user.id) %>
+            <% if coord_team %>
+              <%= link_to panel_team_path(coord_team), class: "sidebar-link #{controller_name == 'teams' && action_name == 'panel' ? 'active' : ''}" do %>
                 <i class="bi bi-grid-1x2"></i> Painel da equipe
               <% end %>
               <% if policy(:attendance).scan? %>
@@ -44,7 +44,7 @@
                 <% end %>
               <% end %>
               <% if current_user.can?("teams", "credentials") %>
-                <%= link_to credentials_team_path(coord_membership.team_id), class: "sidebar-link #{controller_name == 'teams' && action_name == 'credentials' ? 'active' : ''}" do %>
+                <%= link_to credentials_team_path(coord_team), class: "sidebar-link #{controller_name == 'teams' && action_name == 'credentials' ? 'active' : ''}" do %>
                   <i class="bi bi-person-badge"></i> Credenciais
                 <% end %>
               <% end %>

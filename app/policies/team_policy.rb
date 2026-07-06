@@ -23,9 +23,7 @@ class TeamPolicy < ApplicationPolicy
   # Painel operacional do coordenador
   def panel?
     return true if user.admin?
-    return false unless can?("panel")
-    # Coordenador só vê o painel da equipe que ele coordena
-    user.admin? || record.team_memberships.exists?(user_id: user.id, role: :coordinator)
+    can?("panel") && record.coordinator_id == user.id
   end
 
   private
