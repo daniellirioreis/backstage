@@ -1,14 +1,13 @@
 class RolePolicy < ApplicationPolicy
-  # Somente admin pode gerenciar perfis
-  def index?   = user.admin?
-  def show?    = user.admin?
-  def new?     = user.admin?
-  def create?  = user.admin?
-  def edit?    = user.admin?
-  def update?  = user.admin?
-  def destroy? = user.admin?
+  def index?   = user.admin? || can?("index")
+  def show?    = user.admin? || can?("show")
+  def new?     = user.admin? || can?("create")
+  def create?  = user.admin? || can?("create")
+  def edit?    = user.admin? || can?("update")
+  def update?  = user.admin? || can?("update")
+  def destroy? = user.admin? || can?("destroy")
 
   class Scope < ApplicationPolicy::Scope
-    def resolve = user.admin? ? scope.all : scope.none
+    def resolve = (user.admin? || user.role&.permissions&.exists?(resource: "roles")) ? scope.all : scope.none
   end
 end

@@ -138,9 +138,9 @@
         <i class="bi bi-box-arrow-right"></i> Check-out
       </button>
     </div>
-    <%= link_to root_path, id: "scan-close", onclick: "stopCamera && stopCamera()" do %>
+    <a href="#" id="scan-close" onclick="stopCamera && stopCamera(); history.back(); return false;">
       <i class="bi bi-x-lg"></i> Fechar
-    <% end %>
+    </a>
   </div>
 
   <div id="video-wrapper">

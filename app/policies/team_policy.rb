@@ -27,6 +27,10 @@ class TeamPolicy < ApplicationPolicy
     can?("panel") && record.coordinator_id == user.id
   end
 
+  def coordinator?
+    user.admin? || (can?("coordinator") && Team.exists?(coordinator_id: user.id))
+  end
+
   private
 
   def resource_name = "teams"

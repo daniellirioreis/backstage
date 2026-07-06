@@ -11,7 +11,7 @@ class DashboardController < ApplicationController
     if current_user.coordinator?
       team = Team.find_by(coordinator_id: current_user.id)
       redirect_to(panel_team_path(team)) and return if team
-      redirect_to(new_user_session_path, alert: "Você não está definido como coordenador de nenhuma equipe.") and return
+      # sem equipe atribuída: continua para o dashboard normal
     end
 
     company_ids = if current_user.admin?

@@ -69,6 +69,11 @@
                 <i class="bi bi-calendar-week"></i> <%= t("permission_actions.my_schedule") %>
               <% end %>
             <% end %>
+            <% if Team.exists?(coordinator_id: current_user.id) %>
+              <%= link_to coordinator_teams_path, class: "sidebar-link #{controller_name == 'teams' && action_name == 'coordinator' ? 'active' : ''}" do %>
+                <i class="bi bi-grid-1x2"></i> Minhas Equipes
+              <% end %>
+            <% end %>
           <% end %>
 
           <% if policy(Event).index? %>
@@ -169,6 +174,8 @@
             <%= link_to plans_path, class: "sidebar-link #{controller_name == 'plans' ? 'active' : ''}" do %>
               <i class="bi bi-box"></i> Planos
             <% end %>
+          <% end %>
+          <% if policy(Role).index? %>
             <%= link_to roles_path, class: "sidebar-link #{controller_name == 'roles' ? 'active' : ''}" do %>
               <i class="bi bi-shield-check"></i> <%= Role.model_name.human(count: 2) %>
             <% end %>
@@ -262,6 +269,14 @@
             <% if current_event.location.present? %>
               <span class="event-bar-sep">·</span>
               <span class="event-bar-meta"><i class="bi bi-geo-alt"></i> <%= current_event.location %></span>
+            <% end %>
+            <% if current_event.draft? && policy(current_event).transition? %>
+              <%= button_to transition_event_path(current_event), method: :patch,
+                    class: "event-bar-activate",
+                    form: { style: "display:contents;" },
+                    data: { turbo_confirm: "Ativar o evento \"#{current_event.name}\"?" } do %>
+                <i class="bi bi-play-fill"></i> Ativar
+              <% end %>
             <% end %>
             <%= link_to select_event_path(modal: 1, return_to: request.path), class: "event-bar-change" do %>
               <i class="bi bi-arrow-left-right"></i> Trocar

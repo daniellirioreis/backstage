@@ -15,7 +15,7 @@ class Permission < ApplicationRecord
     "users"       => %w[my_schedule],
     "attendances" => %w[scan checkout],
     "reports"     => %w[closing manage_payments finalize_closing reopen_closing attendance_report absences_report hours_worked_report sector_summary_report],
-    "teams"       => %w[manage_members quick_add_member panel credentials],
+    "teams"       => %w[manage_members quick_add_member panel credentials coordinator],
     "companies"   => %w[set_plan]
   }.freeze
 end

@@ -61,6 +61,7 @@ Rails.application.routes.draw do
   resources :teams do
     collection do
       get  :search
+      get  :coordinator
       get  :import_source_teams    # AJAX: teams de um evento
       get  :import_source_members  # AJAX: membros de uma equipe
       get  :search_available       # AJAX: usuários disponíveis para adicionar

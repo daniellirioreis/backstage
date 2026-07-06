@@ -388,9 +388,11 @@ class EventsController < ApplicationController
 
     case @event.status
     when "active"
-      has_checkins = Attendance.where(event: @event).exists?
-      if has_checkins
-        redirect_to @event, alert: "Não é possível voltar para Rascunho: já existem check-ins registrados neste evento."
+      checkin_users = Attendance.where(event: @event).where.not(checked_in_at: nil).joins(:user).order("users.name").pluck("users.name").uniq
+      if checkin_users.any?
+        names = checkin_users.first(5).join(", ")
+        suffix = checkin_users.size > 5 ? " e mais #{checkin_users.size - 5}." : "."
+        redirect_to @event, alert: "Não é possível voltar para Rascunho: já existem check-ins registrados. Colaboradores: #{names}#{suffix}"
         return
       end
       @event.update!(status: "draft")
