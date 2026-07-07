@@ -25,6 +25,7 @@
             placeholder: "000.000.000-00",
             class: "form-control",
             data: { mask: "cpf" } %>
+      <%= f.hidden_field :email, value: "" %>
     </div>
     <div class="mb-3">
       <%= f.label :password, "Senha", class: "form-label" %>
