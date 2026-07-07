@@ -59,14 +59,15 @@ class User < ApplicationRecord
   validates :phone, presence: true, unless: :skip_required_validations
 
   # ── Login por CPF (com fallback para e-mail) ────────────────────────────────
-  def self.find_for_authentication(warden_conditions)
-    login = warden_conditions.delete(:login).to_s.strip
+  def self.find_for_database_authentication(warden_conditions)
+    conditions = warden_conditions.dup
+    login = conditions.delete(:login).to_s.strip
     digits = login.gsub(/\D/, "")
 
     if digits.length == 11
-      find_by(cpf: digits)
+      where(conditions).find_by(cpf: digits)
     else
-      find_by(email: login.downcase)
+      where(conditions).find_by("lower(email) = ?", login.downcase)
     end
   end
 
