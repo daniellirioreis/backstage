@@ -15,6 +15,8 @@ class Users::SessionsController < Devise::SessionsController
       login
     end
 
-    params[:user][:email] = email || login
+    # Warden lê request.params diretamente, não o ActionController::Parameters
+    request.params["user"] ||= {}
+    request.params["user"]["email"] = email || login
   end
 end
