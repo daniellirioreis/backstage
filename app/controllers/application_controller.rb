@@ -5,6 +5,7 @@ class ApplicationController < ActionController::Base
   before_action :check_onboarding!
   before_action :require_current_event!
   before_action :check_company_plan!
+  before_action :configure_permitted_parameters, if: :devise_controller?
 
   layout :resolve_layout
 
@@ -134,6 +135,10 @@ class ApplicationController < ActionController::Base
       return panel_team_path(team) if team
     end
     super
+  end
+
+  def configure_permitted_parameters
+    devise_parameter_sanitizer.permit(:sign_in, keys: [:login])
   end
 
   def user_not_authorized(exception = nil)
