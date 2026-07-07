@@ -318,13 +318,27 @@
       });
     }
 
-    function initPhoneMasks() {
-      document.querySelectorAll("[data-mask='phone']").forEach(applyPhoneMask);
+    function applyCpfMask(input) {
+      input.addEventListener("input", function(e) {
+        var v = e.target.value.replace(/\D/g, "").slice(0, 11);
+        v = v.replace(/^(\d{3})(\d{3})(\d{3})(\d{0,2})/, function(_, a, b, c, d) {
+          if (d) return a + "." + b + "." + c + "-" + d;
+          if (c) return a + "." + b + "." + c;
+          if (b) return a + "." + b;
+          return a;
+        });
+        e.target.value = v;
+      });
     }
 
-    document.addEventListener("DOMContentLoaded", initPhoneMasks);
-    document.addEventListener("turbo:load", initPhoneMasks);
-    document.addEventListener("turbo:render", initPhoneMasks);
+    function initMasks() {
+      document.querySelectorAll("[data-mask='phone']").forEach(applyPhoneMask);
+      document.querySelectorAll("[data-mask='cpf']").forEach(applyCpfMask);
+    }
+
+    document.addEventListener("DOMContentLoaded", initMasks);
+    document.addEventListener("turbo:load", initMasks);
+    document.addEventListener("turbo:render", initMasks);
 
     // ── Sidebar mobile ────────────────────────────────────────────────────────
     function openSidebar() {

@@ -58,6 +58,18 @@ class User < ApplicationRecord
   validate :cpf_check_digits, if: -> { cpf.present? && cpf.match?(/\A\d{11}\z/) }
   validates :phone, presence: true, unless: :skip_required_validations
 
+  # ── Login por CPF (com fallback para e-mail) ────────────────────────────────
+  def self.find_for_authentication(warden_conditions)
+    login = warden_conditions.delete(:login).to_s.strip
+    digits = login.gsub(/\D/, "")
+
+    if digits.length == 11
+      find_by(cpf: digits)
+    else
+      find_by(email: login.downcase)
+    end
+  end
+
   private
 
   def strip_cpf
