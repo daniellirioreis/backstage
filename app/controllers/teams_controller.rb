@@ -48,13 +48,18 @@ class TeamsController < ApplicationController
                  .order("sectors.name, teams.name")
 
     @teams_data = @teams.map do |team|
-      memberships = team.team_memberships.sort_by { |tm| [tm.role == "coordinator" ? 0 : 1, tm.user.name] }
+      all_memberships = team.team_memberships.sort_by { |tm| [tm.role == "coordinator" ? 0 : 1, tm.user.name] }
+      all_user_ids    = all_memberships.map(&:user_id)
+
+      shifts    = Shift.where(user_id: all_user_ids, sector_id: team.sector_id, date: Date.today).index_by(&:user_id)
+
+      # Apenas membros com escala hoje
+      memberships = all_memberships.select { |tm| shifts.key?(tm.user_id) }
       user_ids    = memberships.map(&:user_id)
 
       today_att = Attendance.where(user_id: user_ids, event_id: current_event.id, checked_in_date: Date.today).index_by(&:user_id)
       all_att   = Attendance.where(user_id: user_ids, event_id: current_event.id)
                             .order(checked_in_at: :desc).group_by(&:user_id).transform_values(&:first)
-      shifts    = Shift.where(user_id: user_ids, sector_id: team.sector_id, date: Date.today).index_by(&:user_id)
 
       member_status = memberships.each_with_object({}) do |tm, h|
         att = today_att[tm.user_id]
@@ -62,16 +67,16 @@ class TeamsController < ApplicationController
       end
 
       {
-        team:           team,
-        event:          current_event,
-        memberships:    memberships,
+        team:            team,
+        event:           current_event,
+        memberships:     memberships,
         all_attendances: all_att,
-        shifts_today:   shifts,
-        member_status:  member_status,
-        total:          memberships.size,
-        present:        today_att.size,
-        active:         today_att.values.count { |a| a.checked_out_at.nil? },
-        absent:         memberships.size - today_att.size
+        shifts_today:    shifts,
+        member_status:   member_status,
+        total:           memberships.size,
+        present:         today_att.size,
+        active:          today_att.values.count { |a| a.checked_out_at.nil? },
+        absent:          memberships.size - today_att.size
       }
     end
   end
