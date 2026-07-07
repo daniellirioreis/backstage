@@ -11,7 +11,7 @@ class User < ApplicationRecord
   has_many :company_users, dependent: :destroy
   has_many :companies, through: :company_users
   has_one_attached :avatar
-  attr_accessor :remove_avatar, :skip_required_validations
+  attr_accessor :remove_avatar, :skip_required_validations, :login
   before_save { avatar.purge if remove_avatar == "1" }
 
   delegate :can?, to: :role, allow_nil: true
