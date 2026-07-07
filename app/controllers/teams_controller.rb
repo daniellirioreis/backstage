@@ -67,17 +67,18 @@ class TeamsController < ApplicationController
       end
 
       {
-        team:             team,
-        event:            current_event,
-        memberships:      memberships,
-        all_attendances:  all_att,
-        shifts_today:     shifts,
-        member_status:    member_status,
-        total:            memberships.size,
-        total_members:    all_memberships.size,
-        present:          today_att.size,
-        active:           today_att.values.count { |a| a.checked_out_at.nil? },
-        absent:           memberships.size - today_att.size
+        team:                  team,
+        event:                 current_event,
+        memberships:           memberships,
+        memberships_no_shift:  all_memberships.reject { |tm| shifts.key?(tm.user_id) },
+        all_attendances:       all_att,
+        shifts_today:          shifts,
+        member_status:         member_status,
+        total:                 memberships.size,
+        total_members:         all_memberships.size,
+        present:               today_att.size,
+        active:                today_att.values.count { |a| a.checked_out_at.nil? },
+        absent:                memberships.size - today_att.size
       }
     end
   end

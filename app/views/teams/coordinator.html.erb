@@ -155,18 +155,29 @@
   <% end %>
 <% end %>
 
-<% if td[:memberships].empty? %>
-  <% if td[:total_members] > 0 %>
-    <div style="display:flex; align-items:flex-start; gap:0.6rem; background:#fffbeb; border:1px solid #fde68a; border-radius:8px; padding:0.65rem 0.85rem; margin-top:0.5rem;">
-      <i class="bi bi-exclamation-triangle-fill" style="color:#d97706; font-size:0.9rem; flex-shrink:0; margin-top:1px;"></i>
-      <div>
-        <div style="font-size:0.78rem; font-weight:700; color:#92400e;">Sem escala definida para hoje</div>
-        <div style="font-size:0.72rem; color:#b45309; margin-top:2px;">Esta equipe tem <%= td[:total_members] %> <%= td[:total_members] == 1 ? "colaborador" : "colaboradores" %>, mas nenhum possui escala cadastrada para hoje.</div>
+<% if td[:memberships].empty? && td[:total_members] == 0 %>
+  <p style="font-size:0.82rem; color:#a1a1aa; text-align:center; padding:1rem 0;">Nenhum membro nesta equipe.</p>
+<% end %>
+
+<%# Aviso: membros sem escala hoje (aparece mesmo quando há outros com escala) %>
+<% if td[:memberships_no_shift].any? %>
+  <div style="display:flex; align-items:flex-start; gap:0.6rem; background:#fffbeb; border:1px solid #fde68a; border-radius:8px; padding:0.65rem 0.85rem; margin-top:0.5rem;">
+    <i class="bi bi-exclamation-triangle-fill" style="color:#d97706; font-size:0.9rem; flex-shrink:0; margin-top:2px;"></i>
+    <div style="flex:1; min-width:0;">
+      <div style="font-size:0.78rem; font-weight:700; color:#92400e; margin-bottom:0.3rem;">
+        Sem escala para hoje (<%= td[:memberships_no_shift].size %>)
       </div>
+      <% td[:memberships_no_shift].each do |tm| %>
+        <div style="display:flex; align-items:center; gap:0.4rem; font-size:0.72rem; color:#b45309; margin-bottom:2px;">
+          <i class="bi bi-person" style="font-size:0.65rem; flex-shrink:0;"></i>
+          <span><%= tm.user.name %></span>
+          <% if tm.event_function.present? %>
+            <span style="color:#d97706; font-size:0.65rem;">· <%= tm.event_function.name %></span>
+          <% end %>
+        </div>
+      <% end %>
     </div>
-  <% else %>
-    <p style="font-size:0.82rem; color:#a1a1aa; text-align:center; padding:1rem 0;">Nenhum membro nesta equipe.</p>
-  <% end %>
+  </div>
 <% end %>
 
 <div style="height:1px; background:#e4e4e7; margin:1.5rem 0;"></div>
