@@ -60,14 +60,12 @@ class User < ApplicationRecord
 
   # ── Login por CPF (com fallback para e-mail) ────────────────────────────────
   def self.find_for_database_authentication(warden_conditions)
-    conditions = warden_conditions.dup
-    login = conditions.delete(:login).to_s.strip
-    digits = login.gsub(/\D/, "")
+    login  = warden_conditions[:login].to_s.gsub(/\D/, "")
 
-    if digits.length == 11
-      where(conditions).find_by(cpf: digits)
+    if login.length == 11
+      find_by(cpf: login)
     else
-      where(conditions).find_by("lower(email) = ?", login.downcase)
+      find_by("lower(email) = ?", warden_conditions[:login].to_s.downcase)
     end
   end
 
