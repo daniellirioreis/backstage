@@ -923,13 +923,9 @@ body {
   .mobile-topbar   { display: flex; }
 
   // ── Layout principal ──────────────────────────────────────────────────────
-  .main-content {
-    margin-left: 0;
-  }
+  .main-content { margin-left: 0; }
 
-  .main-inner {
-    padding: 1rem;
-  }
+  .main-inner { padding: 0.75rem; }
 
   // ── Event bar compacta ────────────────────────────────────────────────────
   .event-bar {
@@ -941,12 +937,15 @@ body {
   }
 
   .event-bar-change { margin-left: 0; padding: 0.2rem 0.55rem; }
-
-  .event-bar-meta { display: none; }
-
+  .event-bar-meta   { display: none; }
   .event-bar-sep:nth-of-type(n+2) { display: none; }
+  .event-bar-name   { max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-  .event-bar-name { max-width: 130px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  // Botão ativar: só ícone no mobile
+  .event-bar-activate {
+    padding: 0.2rem 0.5rem;
+    span { display: none; }
+  }
 
   // ── Page header empilhado ─────────────────────────────────────────────────
   .page-header {
@@ -968,7 +967,7 @@ body {
   // ── Content cards ─────────────────────────────────────────────────────────
   .content-card {
     border-radius: 8px;
-    padding: 1rem;
+    padding: 0.85rem;
   }
 
   // ── Flash messages ────────────────────────────────────────────────────────
@@ -988,13 +987,49 @@ body {
     gap: 0.35rem;
   }
 
-  // ── Tabelas ───────────────────────────────────────────────────────────────
-  .data-table { min-width: 600px; }
+  // ── Tabelas: scroll horizontal ────────────────────────────────────────────
+  .data-table { min-width: 540px; }
+
+  // Qualquer tabela recebe scroll horizontal
+  table {
+    display: block;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    max-width: 100%;
+  }
+  // Restaurar para TomSelect (dropdown interno usa <table>)
+  .ts-wrapper table,
+  .ts-dropdown table {
+    display: table;
+    overflow: visible;
+    max-width: none;
+  }
 
   // ── Formulários ───────────────────────────────────────────────────────────
-  .form-row-grid {
+  .form-row-grid { grid-template-columns: 1fr !important; }
+
+  // Grids de 3 ou 4 colunas em inline style → colapsar no mobile
+  // 4 colunas (ex: panel de stats) → 2×2
+  [style*="repeat(4,1fr)"],
+  [style*="repeat(4, 1fr)"] {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+  // 3 colunas (ex: métricas de evento) → coluna única
+  [style*="repeat(3,1fr)"],
+  [style*="repeat(3, 1fr)"] {
     grid-template-columns: 1fr !important;
   }
+
+  // ── Auth card ─────────────────────────────────────────────────────────────
+  .auth-card {
+    padding: 1.75rem 1.25rem;
+    border-radius: 0;
+    border-left: none;
+    border-right: none;
+    max-width: 100%;
+  }
+
+  .auth-wrapper { align-items: flex-start; padding-top: 2rem; }
 
   // ── Metric cards ─────────────────────────────────────────────────────────
   .metric-grid {
@@ -1002,20 +1037,28 @@ body {
   }
 
   // ── Dashboard ─────────────────────────────────────────────────────────────
-  // Painel do evento atual: stats em 2 colunas
-  .ev-stats-grid {
-    grid-template-columns: repeat(2, 1fr) !important;
-  }
+  .ev-stats-grid    { grid-template-columns: repeat(2, 1fr) !important; }
+  .dash-metrics-grid{ grid-template-columns: repeat(2, 1fr) !important; }
+  .dash-main-grid   { grid-template-columns: 1fr !important; }
 
-  // Métricas globais: 2 colunas
-  .dash-metrics-grid {
-    grid-template-columns: repeat(2, 1fr) !important;
+  // ── Paginação compacta ────────────────────────────────────────────────────
+  .pagination a,
+  .pagination span {
+    min-width: 28px;
+    height: 28px;
+    font-size: 0.78rem;
+    padding: 0 0.35rem;
   }
+}
 
-  // Layout principal: coluna única
-  .dash-main-grid {
-    grid-template-columns: 1fr !important;
-  }
+// Telas muito pequenas (< 390px — iPhone SE, etc.)
+@media (max-width: 390px) {
+  .main-inner { padding: 0.5rem; }
+
+  .event-bar-label { display: none; }
+  .event-bar-sep:first-of-type { display: none; }
+
+  .page-header h1 { font-size: 0.95rem; }
 }
 
 // ── Paginação (will_paginate) ──────────────────────────────────────────────────

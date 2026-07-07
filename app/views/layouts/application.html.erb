@@ -275,7 +275,7 @@
                     class: "event-bar-activate",
                     form: { style: "display:contents;" },
                     data: { turbo_confirm: "Ativar o evento \"#{current_event.name}\"?" } do %>
-                <i class="bi bi-play-fill"></i> Ativar
+                <i class="bi bi-play-fill"></i><span> Ativar</span>
               <% end %>
             <% end %>
             <%= link_to select_event_path(modal: 1, return_to: request.path), class: "event-bar-change" do %>
