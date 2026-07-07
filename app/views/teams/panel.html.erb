@@ -1,7 +1,9 @@
 <%# ── Cabeçalho ──────────────────────────────────────────────────────────── %>
 <div style="background:#0d0d0d; color:#fff; padding:1rem 1.25rem; border-radius:12px; margin-bottom:1rem;">
   <div style="font-size:0.65rem; color:#52525b; text-transform:uppercase; letter-spacing:.1em; margin-bottom:0.3rem; display:flex; align-items:center; gap:0.4rem;">
-    <span style="width:7px;height:7px;border-radius:50%;background:#4ade80;display:inline-block;animation:pulse-dot 1.5s infinite;flex-shrink:0;"></span>
+    <% if @event.active? %>
+      <span style="width:7px;height:7px;border-radius:50%;background:#2563eb;display:inline-block;animation:pulse-dot 1.5s infinite;flex-shrink:0;"></span>
+    <% end %>
     Painel do coordenador
   </div>
   <h1 style="font-size:1.2rem; font-weight:700; color:#fff; margin:0 0 0.3rem;"><%= @team.name %></h1>
