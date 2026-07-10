@@ -1,0 +1,42 @@
+<%# Locals: idx (integer ou "__SECTOR_IDX__"), event_functions %>
+<div class="sector-row" style="border:1px solid #e4e4e7;border-radius:10px;padding:0.75rem;margin-bottom:0.5rem;">
+
+  <%# ── Tipo + Nome ────────────────────────────────────────────────────────── %>
+  <div style="display:flex;gap:0.6rem;align-items:center;">
+    <select name="sectors[<%= idx %>][sector_type]" class="form-select form-control" style="width:210px;flex-shrink:0;">
+      <option value="">— Tipo (opcional) —</option>
+      <% Sector::TYPES.each do |type| %>
+        <option value="<%= type %>"><%= I18n.t("sector_types.#{type}") %></option>
+      <% end %>
+    </select>
+    <input type="text" name="sectors[<%= idx %>][name]" class="form-control"
+           placeholder="Nome do setor (ex: Segurança Portão A)"
+           style="flex:1;">
+    <button type="button" onclick="removeSectorRow(this)"
+            class="btn-danger" style="padding:0.35rem 0.6rem;font-size:0.8rem;flex-shrink:0;">
+      <i class="bi bi-x"></i>
+    </button>
+  </div>
+
+  <%# ── Alocação de funções ────────────────────────────────────────────────── %>
+  <% if event_functions.any? %>
+    <div style="margin-top:0.6rem;padding-top:0.6rem;border-top:1px solid #f4f4f5;">
+      <div style="font-size:0.68rem;font-weight:700;color:#a1a1aa;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.45rem;">
+        Quantidade por função
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:0.4rem;">
+        <% event_functions.each_with_index do |ef, j| %>
+          <div style="display:inline-flex;align-items:center;gap:0.35rem;background:#f9f9fb;border:1px solid #e4e4e7;border-radius:8px;padding:4px 10px;">
+            <span style="font-size:0.76rem;color:#52525b;white-space:nowrap;"><%= ef.name %></span>
+            <input type="hidden" name="sectors[<%= idx %>][functions][<%= j %>][event_function_id]" value="<%= ef.id %>">
+            <input type="number"
+                   name="sectors[<%= idx %>][functions][<%= j %>][quantity]"
+                   value="0" min="0" step="1"
+                   style="width:46px;font-size:0.8rem;padding:2px 4px;text-align:center;border:1px solid #e4e4e7;border-radius:5px;background:#fff;">
+          </div>
+        <% end %>
+      </div>
+    </div>
+  <% end %>
+
+</div>

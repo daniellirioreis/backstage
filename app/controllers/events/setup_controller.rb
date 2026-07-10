@@ -3,22 +3,32 @@ class Events::SetupController < ApplicationController
 
   def sectors
     authorize @event, :edit?
-    @sectors = @event.sectors.order(:created_at)
+    @sectors        = @event.sectors.order(:created_at)
+    @event_functions = @event.event_functions.order(:name)
   end
 
   def save_sectors
     authorize @event, :edit?
 
-    added = 0
-    (params[:sectors] || []).each do |s|
+    sector_data = (params[:sectors] || {}).values
+    sector_data.each do |s|
       next if s[:name].blank?
-      @event.sectors.create!(name: s[:name].strip, sector_type: s[:sector_type].presence)
-      added += 1
+      sector = @event.sectors.create!(name: s[:name].strip, sector_type: s[:sector_type].presence)
+
+      (s[:functions] || {}).values.each do |fn|
+        qty = fn[:quantity].to_i
+        next if qty <= 0 || fn[:event_function_id].blank?
+        sector.sector_functions.create!(
+          event_function_id: fn[:event_function_id],
+          quantity: qty
+        )
+      end
     end
 
     redirect_to teams_event_setup_path(@event)
   rescue ActiveRecord::RecordInvalid => e
-    @sectors = @event.sectors.reload.order(:created_at)
+    @sectors         = @event.sectors.reload.order(:created_at)
+    @event_functions = @event.event_functions.order(:name)
     flash.now[:alert] = e.message
     render :sectors, status: :unprocessable_entity
   end
