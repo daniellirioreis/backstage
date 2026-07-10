@@ -1,4 +1,15 @@
 <div class="page-header">
-  <h1><%= t("actions.edit_model", model: Event.model_name.human) %>: <%= @event.name %></h1>
+  <h1>Editar evento</h1>
+  <p style="color:#71717a;margin-top:0.3rem;font-size:0.88rem;">
+    <strong><%= @event.name %></strong>
+    <% if @event.event_type.present? %>
+      &middot; <%= I18n.t("event_types.#{@event.event_type}", default: @event.event_type.humanize) %>
+    <% end %>
+    &middot; <%= l(@event.start_date, format: :short) rescue @event.start_date %>
+    <% if @event.end_date && @event.end_date != @event.start_date %>
+      – <%= l(@event.end_date, format: :short) rescue @event.end_date %>
+    <% end %>
+  </p>
 </div>
+
 <%= render "form", event: @event %>

@@ -148,8 +148,9 @@
       <% event.event_days.ordered.each do |ed| %>
         <%= f.fields_for :event_days, ed do |ff| %>
           <div class="ed-row" style="background:#f9f9fb;border:1px solid #e4e4e7;border-radius:8px;padding:0.6rem 0.7rem;position:relative;">
+            <% days_pt = %w[Dom Seg Ter Qua Qui Sex Sáb] %>
             <div class="ed-day-label" style="font-size:0.7rem;color:#52525b;margin-bottom:0.3rem;font-weight:600;">
-              <% if ed.date %><%= l(ed.date, format: "%a %d/%m") %><% else %>Data<% end %>
+              <% if ed.date %><%= days_pt[ed.date.wday] %> <%= ed.date.strftime("%d/%m") %><% else %>Data<% end %>
             </div>
             <%= ff.date_field :date, class: "form-control ed-date-input",
                 style: "font-size:0.78rem;padding:0.3rem 0.5rem;margin-bottom:0.3rem;",
