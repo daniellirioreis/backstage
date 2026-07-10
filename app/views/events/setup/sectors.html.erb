@@ -7,101 +7,344 @@
 
 <%= render "wizard_nav", current_step: 2, event: @event %>
 
-<%# ── Setores já criados ──────────────────────────────────────────────────── %>
-<% if @sectors.any? %>
-  <div class="content-card" style="margin-bottom:1rem;">
-    <div style="font-size:0.82rem;font-weight:700;color:#52525b;margin-bottom:0.65rem;">
-      <i class="bi bi-check-circle" style="color:#16a34a;"></i>
-      Setores adicionados (<%= @sectors.count %>)
-    </div>
-    <div style="display:flex;flex-wrap:wrap;gap:0.4rem;">
-      <% @sectors.each do |s| %>
-        <span style="display:inline-flex;align-items:center;gap:0.35rem;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:20px;padding:3px 10px;font-size:0.78rem;color:#166534;">
-          <i class="bi bi-building" style="font-size:0.72rem;"></i>
-          <%= s.name %>
-          <% if s.sector_type.present? %>
-            <span style="color:#6b7280;">&middot; <%= s.sector_type_label %></span>
-          <% end %>
-        </span>
-      <% end %>
-    </div>
+<% if @event_functions.none? %>
+  <div style="background:#fefce8;border:1px solid #fef08a;border-radius:8px;padding:0.65rem 0.9rem;font-size:0.78rem;color:#713f12;margin-bottom:1rem;">
+    <i class="bi bi-info-circle"></i>
+    Nenhuma função definida neste evento. Para alocar funções por setor,
+    <%= link_to "edite o evento", edit_event_path(@event), style: "color:#92400e;font-weight:600;" %>
+    e adicione as funções e valores antes.
   </div>
 <% end %>
 
-<%# ── Formulário ──────────────────────────────────────────────────────────── %>
-<div class="content-card">
-  <div style="font-size:0.88rem;font-weight:700;color:#18181b;margin-bottom:0.2rem;">
-    <i class="bi bi-plus-circle"></i>
-    <%= @sectors.any? ? "Adicionar mais setores" : "Adicionar setores" %>
+<%= form_with url: sectors_event_setup_path(@event), method: :post, local: true, id: "sectors-form" do |f| %>
+
+  <div style="border:1px solid #e4e4e7; border-radius:14px; overflow:hidden; margin-bottom:1.5rem; box-shadow:0 1px 3px rgba(0,0,0,0.05);">
+
+    <%# ── Tab bar ──────────────────────────────────────────────────────────── %>
+    <div id="sector-tab-bar" style="display:flex; align-items:stretch; border-bottom:2px solid #e4e4e7; background:#fafafa; overflow-x:auto;">
+
+      <% @sectors.each_with_index do |sector, i| %>
+        <button type="button"
+                id="stab-<%= sector.id %>"
+                class="sector-tab-btn"
+                data-panel="spanel-<%= sector.id %>"
+                onclick="switchSectorTab(this)"
+                style="display:flex;align-items:center;gap:0.35rem;padding:0.65rem 0.95rem;border:none;background:none;cursor:pointer;font-size:0.82rem;font-weight:<%= i == 0 ? '600' : '400' %>;white-space:nowrap;flex-shrink:0;border-bottom:2px solid <%= i == 0 ? '#7c3aed' : 'transparent' %>;color:<%= i == 0 ? '#7c3aed' : '#71717a' %>;margin-bottom:-2px;transition:color 0.15s,border-color 0.15s;">
+          <i class="bi bi-grid-3x3-gap" style="font-size:0.7rem;"></i>
+          <span class="stab-label"><%= sector.name.present? ? sector.name : "Setor" %></span>
+          <span onclick="event.stopPropagation();removeSectorTab(this)"
+                style="margin-left:0.15rem;font-size:0.85rem;color:#c4c4c4;line-height:1;padding:0 2px;border-radius:3px;cursor:pointer;"
+                onmouseover="this.style.color='#ef4444'" onmouseout="this.style.color='#c4c4c4'"
+                title="Remover setor">×</span>
+        </button>
+      <% end %>
+
+      <% if @sectors.none? %>
+        <button type="button"
+                id="stab-new_0"
+                class="sector-tab-btn"
+                data-panel="spanel-new_0"
+                onclick="switchSectorTab(this)"
+                style="display:flex;align-items:center;gap:0.35rem;padding:0.65rem 0.95rem;border:none;background:none;cursor:pointer;font-size:0.82rem;font-weight:600;white-space:nowrap;flex-shrink:0;border-bottom:2px solid #7c3aed;color:#7c3aed;margin-bottom:-2px;">
+          <i class="bi bi-grid-3x3-gap" style="font-size:0.7rem;"></i>
+          <span class="stab-label">Novo setor</span>
+          <span onclick="event.stopPropagation();removeSectorTab(this)"
+                style="margin-left:0.15rem;font-size:0.85rem;color:#c4c4c4;line-height:1;padding:0 2px;border-radius:3px;cursor:pointer;"
+                onmouseover="this.style.color='#ef4444'" onmouseout="this.style.color='#c4c4c4'"
+                title="Remover setor">×</span>
+        </button>
+      <% end %>
+
+      <button type="button" id="sector-add-btn" onclick="addSectorTab()"
+              style="display:flex;align-items:center;gap:0.35rem;padding:0.22rem 0.7rem;border:none;border-radius:6px;background:#16a34a;cursor:pointer;font-size:0.8rem;font-weight:500;color:#fff;white-space:nowrap;flex-shrink:0;margin:auto 0.5rem auto 0.35rem;transition:background 0.15s;"
+              onmouseover="this.style.background='#15803d';"
+              onmouseout="this.style.background='#16a34a';">
+        <i class="bi bi-plus-circle-fill" style="font-size:0.75rem;"></i> Novo setor
+      </button>
+    </div>
+
+    <%# ── Panels ────────────────────────────────────────────────────────────── %>
+    <div id="sector-panels" style="padding:1.5rem 1.25rem;">
+      <% @sectors.each_with_index do |sector, i| %>
+        <div id="spanel-<%= sector.id %>" style="display:<%= i == 0 ? 'block' : 'none' %>;">
+          <%= render "sector_row", idx: sector.id, event_functions: @event_functions, sector: sector %>
+        </div>
+      <% end %>
+      <% if @sectors.none? %>
+        <div id="spanel-new_0">
+          <%= render "sector_row", idx: "new_0", event_functions: @event_functions %>
+        </div>
+      <% end %>
+    </div>
+
   </div>
-  <p style="font-size:0.78rem;color:#71717a;margin-bottom:1.1rem;">
-    Cada setor agrupa equipes de um mesmo tipo de trabalho (ex: Segurança, Som, Palco).
-  </p>
 
-  <% if @event_functions.none? %>
-    <div style="background:#fefce8;border:1px solid #fef08a;border-radius:8px;padding:0.65rem 0.9rem;font-size:0.78rem;color:#713f12;margin-bottom:1rem;">
-      <i class="bi bi-info-circle"></i>
-      Nenhuma função definida neste evento. Para alocar funções por setor,
-      <%= link_to "edite o evento", edit_event_path(@event), style: "color:#92400e;font-weight:600;" %>
-      e adicione as funções e valores antes.
+  <%# Template para JS — ERB renderiza @event_functions; JS substitui __SECTOR_IDX__ %>
+  <template id="sector-row-template">
+    <%= render "sector_row", idx: "__SECTOR_IDX__", event_functions: @event_functions %>
+  </template>
+
+  <%# ── Rodapé ─────────────────────────────────────────────────────────────── %>
+  <div style="display:flex;align-items:center;justify-content:space-between;border-top:1px solid #f4f4f5;padding-top:1.25rem;gap:1rem;">
+    <%= link_to teams_event_setup_path(@event),
+          style: "font-size:0.82rem;color:#71717a;text-decoration:none;" do %>
+      Pular esta etapa <i class="bi bi-arrow-right"></i>
+    <% end %>
+    <div style="display:flex;gap:0.6rem;">
+      <%= link_to "← Voltar", edit_event_path(@event), class: "btn-secondary" %>
+      <%= f.submit "Próximo: Equipes →", class: "btn-primary" %>
     </div>
-  <% end %>
+  </div>
 
-  <%= form_with url: sectors_event_setup_path(@event), method: :post, local: true do |f| %>
-    <div id="sector-rows">
-      <%# 3 linhas iniciais com índice explícito %>
-      <% 3.times do |i| %>
-        <%= render "sector_row", idx: i, event_functions: @event_functions %>
-      <% end %>
-    </div>
-
-    <%# Template para JS (ERB renderiza @event_functions aqui) %>
-    <template id="sector-row-template">
-      <%= render "sector_row", idx: "__SECTOR_IDX__", event_functions: @event_functions %>
-    </template>
-
-    <button type="button" onclick="addSectorRow()" class="btn-secondary"
-            style="font-size:0.82rem;margin-top:0.5rem;margin-bottom:1.5rem;">
-      <i class="bi bi-plus"></i> Adicionar linha
-    </button>
-
-    <div style="display:flex;align-items:center;justify-content:space-between;
-                border-top:1px solid #f4f4f5;padding-top:1.25rem;gap:1rem;">
-      <%= link_to teams_event_setup_path(@event),
-            style: "font-size:0.82rem;color:#71717a;text-decoration:none;" do %>
-        Pular esta etapa <i class="bi bi-arrow-right"></i>
-      <% end %>
-      <div style="display:flex;gap:0.6rem;">
-        <%= link_to "Cancelar", event_path(@event), class: "btn-secondary" %>
-        <%= f.submit "Próximo: Equipes →", class: "btn-primary" %>
-      </div>
-    </div>
-  <% end %>
-</div>
+<% end %>
 
 <script>
 (function () {
-  var sectorIdx = <%= Time.now.to_i %>;
+  var sectorIdx   = <%= Time.now.to_i %>;
+  var FN_RATES    = <%= raw(@event_functions.each_with_object({}) { |ef, h| h[ef.id.to_s] = ef.hourly_rate.to_f }.to_json) %>;
+  var EVENT_HOURS = <%= @event_hours || 8.0 %>;
+  var STS_URL     = "<%= sector_type_stats_sectors_path %>";
 
-  window.addSectorRow = function () {
-    var tpl  = document.getElementById("sector-row-template").content.cloneNode(true);
-    var row  = tpl.querySelector(".sector-row");
-    var idx  = sectorIdx++;
-    row.innerHTML = row.innerHTML.replace(/__SECTOR_IDX__/g, idx);
-    document.getElementById("sector-rows").appendChild(row);
-    document.getElementById("sector-rows").lastElementChild
-      .querySelector("input[type=text]").focus();
+  // ── Custo/estimativa ─────────────────────────────────────────────────────
+  function formatBRL(n) {
+    return "R$" + n.toFixed(2).replace(".", ",").replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+  }
+
+  function updateRowCost(row) {
+    var sel   = row.querySelector(".sf-fn-select");
+    var qtyEl = row.querySelector(".sf-qty-input");
+    if (!sel || !qtyEl) return;
+    var fnId  = sel.value;
+    var qty   = parseFloat(qtyEl.value) || 0;
+    var rate  = fnId ? (FN_RATES[fnId] || 0) : 0;
+    var costH = qty * rate;
+    var est   = costH * EVENT_HOURS;
+    var rateEl = row.querySelector(".sf-rate");
+    var costEl = row.querySelector(".sf-cost");
+    var estEl  = row.querySelector(".sf-est");
+    if (rateEl) rateEl.textContent = rate  > 0 ? formatBRL(rate)  + "/h" : "—";
+    if (costEl) costEl.textContent = costH > 0 ? formatBRL(costH) + "/h" : "—";
+    if (estEl)  estEl.textContent  = est   > 0 ? formatBRL(est)          : "—";
+  }
+
+  var form = document.getElementById("sectors-form");
+  form.addEventListener("change", function (e) {
+    var row = e.target.closest(".sf-row");
+    if (row) updateRowCost(row);
+  });
+  form.addEventListener("input", function (e) {
+    var row = e.target.closest(".sf-row");
+    if (row) updateRowCost(row);
+  });
+  document.querySelectorAll(".sf-row").forEach(updateRowCost);
+
+  // ── Histórico por tipo ───────────────────────────────────────────────────
+  function stsBuildBars(rows) {
+    if (!rows || !rows.length) return '<div style="font-size:0.72rem;color:#a1a1aa;">Sem dados suficientes.</div>';
+    var max = rows[0].avg_qty;
+    if (!max) return '<div style="font-size:0.72rem;color:#a1a1aa;">Sem dados suficientes.</div>';
+    return rows.map(function (r) {
+      var pct = Math.round(r.avg_qty / max * 100);
+      return '<div style="display:grid;grid-template-columns:140px 1fr 60px;align-items:center;gap:6px;margin-bottom:5px;">'
+        + '<div style="font-size:0.72rem;color:#374151;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="' + r.label + '">' + r.label + '</div>'
+        + '<div style="background:#d1fae5;border-radius:4px;height:10px;overflow:hidden;">'
+        +   '<div style="width:' + pct + '%;height:100%;background:#16a34a;border-radius:4px;"></div>'
+        + '</div>'
+        + '<div style="font-size:0.72rem;font-weight:700;color:#15803d;text-align:right;white-space:nowrap;">' + r.avg_qty + ' col.</div>'
+        + '</div>';
+    }).join('');
+  }
+
+  function loadSectorTypeStats(select, sectorRow) {
+    var panel = sectorRow.querySelector(".sector-type-stats-panel");
+    if (!panel) return;
+    var sectorType = select.value;
+    if (!sectorType) { panel.style.display = "none"; return; }
+    fetch(STS_URL + "?sector_type=" + encodeURIComponent(sectorType), {
+      headers: { "Accept": "application/json", "X-Requested-With": "XMLHttpRequest" }
+    })
+    .then(function (r) { return r.json(); })
+    .then(function (d) {
+      if (!d.total_sectors) { panel.style.display = "none"; return; }
+      var label = select.options[select.selectedIndex].text;
+      panel.querySelector(".sts-tipo-label").textContent    = label;
+      panel.querySelector(".sts-sec-count").textContent     = d.total_sectors + " setor" + (d.total_sectors > 1 ? "es" : "");
+      panel.querySelector(".sts-avg-collab").textContent    = d.avg_collaborators;
+      panel.querySelector(".sts-range-collab").textContent  = "mín " + d.min_collaborators + " · máx " + d.max_collaborators;
+      panel.querySelector(".sts-fn-count").textContent      = d.functions.length;
+      panel.querySelector(".sts-functions-chart").innerHTML = stsBuildBars(d.functions);
+      panel.style.display = "";
+    })
+    .catch(function () { panel.style.display = "none"; });
+  }
+
+  // Carrega histórico para setores existentes com tipo definido
+  document.querySelectorAll(".sector-row[data-existing='true']").forEach(function (sr) {
+    var sel = sr.querySelector("select[name*='sector_type']");
+    if (sel && sel.value) loadSectorTypeStats(sel, sr);
+  });
+
+  window.toggleStsPanel = function (btn) {
+    var body    = btn.nextElementSibling;
+    var chevron = btn.querySelector(".sts-chevron");
+    var open    = body.style.display !== "none";
+    body.style.display      = open ? "none" : "";
+    chevron.style.transform = open ? "" : "rotate(180deg)";
   };
 
-  window.removeSectorRow = function (btn) {
-    var rows = document.querySelectorAll("#sector-rows .sector-row");
-    if (rows.length <= 1) {
-      var row = btn.closest(".sector-row");
-      row.querySelector("input[type=text]").value = "";
-      row.querySelector("select").value = "";
-      return;
+  window.sectorTypeChanged = function (select) {
+    var sectorRow = select.closest(".sector-row");
+    var nameInput = sectorRow ? sectorRow.querySelector(".sector-name-input") : null;
+    if (nameInput && !nameInput.value.trim() && select.value) {
+      nameInput.value = select.options[select.selectedIndex].text;
+      // Atualiza label da aba
+      var panelDiv = sectorRow.closest('[id^="spanel-"]');
+      if (panelDiv) {
+        var tabBtn = document.querySelector('.sector-tab-btn[data-panel="' + panelDiv.id + '"]');
+        if (tabBtn) {
+          var lbl = tabBtn.querySelector('.stab-label');
+          if (lbl) lbl.textContent = nameInput.value;
+        }
+      }
     }
-    btn.closest(".sector-row").remove();
+    if (sectorRow) loadSectorTypeStats(select, sectorRow);
   };
+
+  // ── Tab switching ────────────────────────────────────────────────────────
+  window.switchSectorTab = function (btn) {
+    document.querySelectorAll('#sector-tab-bar .sector-tab-btn').forEach(function (b) {
+      b.style.borderBottomColor = 'transparent';
+      b.style.color             = '#71717a';
+      b.style.fontWeight        = '400';
+    });
+    btn.style.borderBottomColor = '#7c3aed';
+    btn.style.color             = '#7c3aed';
+    btn.style.fontWeight        = '600';
+
+    document.querySelectorAll('#sector-panels > div').forEach(function (p) {
+      p.style.display = 'none';
+    });
+    var panel = document.getElementById(btn.dataset.panel);
+    if (panel) panel.style.display = 'block';
+  };
+
+  // ── Adicionar nova aba ───────────────────────────────────────────────────
+  window.addSectorTab = function () {
+    var idx     = 'new_' + (sectorIdx++);
+    var panelId = 'spanel-' + idx;
+
+    var tpl       = document.getElementById('sector-row-template').content.cloneNode(true);
+    var sectorRow = tpl.querySelector('.sector-row');
+    if (sectorRow) {
+      sectorRow.querySelectorAll('select[name], input[name]').forEach(function (el) {
+        el.name = el.name.replace(/__SECTOR_IDX__/g, idx);
+      });
+      sectorRow.querySelectorAll('template.sf-row-tpl').forEach(function (t) {
+        t.innerHTML = t.innerHTML.replace(/__SECTOR_IDX__/g, idx);
+      });
+    }
+
+    var panel = document.createElement('div');
+    panel.id = panelId;
+    panel.style.display = 'none';
+    panel.appendChild(tpl);
+    document.getElementById('sector-panels').appendChild(panel);
+
+    var tabBtn = document.createElement('button');
+    tabBtn.type = 'button';
+    tabBtn.className = 'sector-tab-btn';
+    tabBtn.dataset.panel = panelId;
+    tabBtn.onclick = function () { switchSectorTab(this); };
+    tabBtn.style.cssText = 'display:flex;align-items:center;gap:0.35rem;padding:0.65rem 0.95rem;border:none;background:none;cursor:pointer;font-size:0.82rem;font-weight:600;white-space:nowrap;flex-shrink:0;border-bottom:2px solid #7c3aed;color:#7c3aed;margin-bottom:-2px;transition:color 0.15s,border-color 0.15s;';
+    tabBtn.innerHTML =
+      '<i class="bi bi-grid-3x3-gap" style="font-size:0.7rem;"></i>' +
+      ' <span class="stab-label">Novo setor</span>' +
+      ' <span onclick="event.stopPropagation();removeSectorTab(this)"' +
+      '       style="margin-left:0.15rem;font-size:0.85rem;color:#c4c4c4;line-height:1;padding:0 2px;border-radius:3px;cursor:pointer;"' +
+      '       onmouseover="this.style.color=\'#ef4444\'" onmouseout="this.style.color=\'#c4c4c4\'"' +
+      '       title="Remover setor">×</span>';
+
+    var addBtn = document.getElementById('sector-add-btn');
+    addBtn.parentNode.insertBefore(tabBtn, addBtn);
+
+    switchSectorTab(tabBtn);
+
+    var nameInput = panel.querySelector('.sector-name-input');
+    if (nameInput) {
+      nameInput.focus();
+      nameInput.addEventListener('input', function () {
+        var lbl = tabBtn.querySelector('.stab-label');
+        if (lbl) lbl.textContent = this.value.trim() || 'Novo setor';
+      });
+    }
+
+    panel.querySelectorAll('.sf-row').forEach(updateRowCost);
+  };
+
+  // ── Remover aba ──────────────────────────────────────────────────────────
+  window.removeSectorTab = function (removeSpan) {
+    var tabBtn    = removeSpan.closest('.sector-tab-btn');
+    var panelId   = tabBtn.dataset.panel;
+    var panel     = document.getElementById(panelId);
+    var sectorRow = panel ? panel.querySelector('.sector-row') : null;
+    var isExisting = sectorRow && sectorRow.dataset.existing === 'true';
+    var tabBar    = document.getElementById('sector-tab-bar');
+    var allTabs   = Array.from(tabBar.querySelectorAll('.sector-tab-btn'));
+    var tabIdx    = allTabs.indexOf(tabBtn);
+    var sibling   = allTabs[tabIdx - 1] || allTabs[tabIdx + 1];
+
+    if (isExisting) {
+      // Toggle: marcado → desmarcar / não marcado → marcar
+      var flag = sectorRow.querySelector('.sector-destroy-flag');
+      if (flag && flag.value === '1') {
+        flag.value = '0';
+        tabBtn.style.opacity        = '1';
+        tabBtn.style.textDecoration = '';
+        tabBtn.title                = '';
+      } else {
+        if (flag) flag.value = '1';
+        tabBtn.style.opacity        = '0.45';
+        tabBtn.style.textDecoration = 'line-through';
+        tabBtn.title                = 'Clique em × para desfazer';
+        if (sibling && tabBtn.style.borderBottomColor === 'rgb(124, 58, 237)') {
+          switchSectorTab(sibling);
+        }
+      }
+    } else {
+      // Mantém ao menos 1 aba
+      if (allTabs.length <= 1) return;
+      tabBtn.remove();
+      if (panel) panel.remove();
+      if (sibling) switchSectorTab(sibling);
+    }
+  };
+
+  // ── Adicionar linha de função ────────────────────────────────────────────
+  window.addSfRow = function (btn) {
+    var sectorRow = btn.closest('.sector-row');
+    var tpl       = sectorRow.querySelector('.sf-row-tpl');
+    var sfRows    = sectorRow.querySelector('.sf-rows');
+    if (!tpl || !sfRows) return;
+    var sfIdx = Date.now();
+    var clone = tpl.content.cloneNode(true);
+    var row   = clone.querySelector('.sf-row');
+    row.querySelectorAll('select, input').forEach(function (el) {
+      if (el.name) el.name = el.name.replace('__SF_IDX__', sfIdx);
+    });
+    sfRows.appendChild(row);
+  };
+
+  // ── Atualiza label das abas quando o nome do setor muda ──────────────────
+  document.querySelectorAll('.sector-name-input').forEach(function (input) {
+    var panelDiv = input.closest('[id^="spanel-"]');
+    if (!panelDiv) return;
+    var tabBtn = document.querySelector('.sector-tab-btn[data-panel="' + panelDiv.id + '"]');
+    if (!tabBtn) return;
+    input.addEventListener('input', function () {
+      var lbl = tabBtn.querySelector('.stab-label');
+      if (lbl) lbl.textContent = this.value.trim() || 'Setor';
+    });
+  });
+
 })();
 </script>

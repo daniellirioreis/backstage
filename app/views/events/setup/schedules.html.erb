@@ -1,0 +1,132 @@
+<%= render "events/setup/wizard_nav", current_step: 4, event: @event %>
+
+<div class="page-header" style="margin-bottom: 1.5rem;">
+  <div>
+    <h1 style="font-size:1.35rem; font-weight:700; color:#18181b; margin:0;">
+      <i class="bi bi-calendar-week" style="color:#7c3aed;"></i> Escalas
+    </h1>
+    <p style="font-size:0.82rem; color:#71717a; margin:0.25rem 0 0;">
+      Configure os horários de cada equipe para o evento.
+    </p>
+  </div>
+</div>
+
+<% all_teams = @sectors.flat_map(&:teams) %>
+
+<% if all_teams.empty? %>
+  <div style="background:#f9f9fb; border:1px solid #e4e4e7; border-radius:12px; padding:2rem; text-align:center; color:#71717a;">
+    <i class="bi bi-people" style="font-size:2rem; display:block; margin-bottom:0.5rem;"></i>
+    Nenhuma equipe cadastrada.
+    <a href="<%= teams_event_setup_path(@event) %>" style="color:#7c3aed; font-weight:600;">Voltar para Equipes</a>
+  </div>
+<% else %>
+
+  <% if @event_days.empty? %>
+    <div style="background:#fffbeb; border:1px solid #fde68a; border-radius:10px; padding:0.85rem 1.1rem; margin-bottom:1.25rem; font-size:0.83rem; color:#92400e;">
+      <i class="bi bi-exclamation-triangle-fill" style="color:#f59e0b;"></i>
+      <strong>Dias do evento não configurados.</strong>
+      Para configurar escalas, cadastre os dias em
+      <%= link_to "Dados do evento", edit_event_path(@event), style: "color:#7c3aed; font-weight:600;" %>.
+    </div>
+  <% end %>
+
+  <div style="border:1px solid #e4e4e7; border-radius:14px; overflow:hidden; box-shadow:0 1px 3px rgba(0,0,0,0.05);">
+
+    <% active_id = (params[:tab].presence || all_teams.first&.id).to_s %>
+
+    <%# ── Tab bar ── %>
+    <div style="display:flex; align-items:stretch; border-bottom:1px solid #e4e4e7; background:#fafafa; overflow-x:auto;">
+      <% all_teams.each do |team| %>
+        <%
+          with_shift = @users_with_shift_by_team[team.id].to_i
+          mc         = team.team_memberships.size
+          t_done     = mc > 0 && with_shift >= mc
+          t_none     = with_shift == 0
+          dot_color  = t_done ? '#16a34a' : (t_none ? '#dc2626' : '#d97706')
+          is_active  = team.id.to_s == active_id
+        %>
+        <button
+          id="sched-tab-<%= team.id %>"
+          onclick="switchSchedTab(this, 'sched-panel-<%= team.id %>')"
+          style="
+            display:flex; align-items:center; gap:0.4rem;
+            padding:0.7rem 1.1rem; border:none; background:none; cursor:pointer;
+            font-size:0.82rem; font-weight:600; white-space:nowrap; flex-shrink:0;
+            border-bottom:2px solid <%= is_active ? '#7c3aed' : 'transparent' %>;
+            color:<%= is_active ? '#7c3aed' : '#71717a' %>;
+            transition:color 0.15s, border-color 0.15s;">
+          <span style="width:8px; height:8px; border-radius:50%; background:<%= dot_color %>; flex-shrink:0; display:inline-block;"></span>
+          <%= team.name %>
+          <span style="font-size:0.7rem; color:<%= is_active ? '#a78bfa' : '#a1a1aa' %>; font-weight:400;">
+            · <%= team.sector.name %>
+          </span>
+        </button>
+      <% end %>
+    </div>
+
+    <%# ── Tab panels — cada um é um turbo-frame ── %>
+    <% all_teams.each do |team| %>
+      <% is_active = team.id.to_s == active_id %>
+      <div id="sched-panel-<%= team.id %>"
+           style="display:<%= is_active ? 'block' : 'none' %>; padding:1.25rem 1.5rem;">
+        <turbo-frame
+          id="shift-frame-<%= team.id %>"
+          data-url="<%= edit_team_shifts_path(team_id: team.id, wizard: 1) %>"
+          style="display:block;">
+          <%# Placeholder enquanto carrega %>
+          <div style="padding:2rem; text-align:center; color:#a1a1aa;">
+            <i class="bi bi-hourglass-split"></i> Carregando escala...
+          </div>
+        </turbo-frame>
+      </div>
+    <% end %>
+
+  </div>
+
+  <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.75rem; margin-top:1.25rem;">
+    <%= link_to teams_event_setup_path(@event), class: "btn-secondary" do %>
+      <i class="bi bi-arrow-left"></i> Voltar para Equipes
+    <% end %>
+    <%= link_to event_path(@event), class: "btn-primary" do %>
+      <i class="bi bi-check2-circle"></i> Finalizar configuração
+    <% end %>
+  </div>
+
+<% end %>
+
+<script>
+function loadSchedFrame(panel) {
+  if (!panel) return;
+  var frame = panel.querySelector('turbo-frame');
+  if (frame && !frame.getAttribute('src') && frame.dataset.url) {
+    frame.setAttribute('src', frame.dataset.url);
+  }
+}
+
+function switchSchedTab(btn, panelId) {
+  var container = btn.closest('[style*="border:1px solid #e4e4e7"]');
+
+  container.querySelectorAll('[id^="sched-tab-"]').forEach(function(b) {
+    b.style.borderBottomColor = 'transparent';
+    b.style.color = '#71717a';
+  });
+  container.querySelectorAll('[id^="sched-panel-"]').forEach(function(p) {
+    p.style.display = 'none';
+  });
+
+  btn.style.borderBottomColor = '#7c3aed';
+  btn.style.color = '#7c3aed';
+
+  var panel = document.getElementById(panelId);
+  if (panel) {
+    panel.style.display = 'block';
+    loadSchedFrame(panel);
+  }
+}
+
+// Carrega o frame da aba ativa ao abrir a página
+document.addEventListener('DOMContentLoaded', function() {
+  var activePanel = document.getElementById('sched-panel-<%= active_id %>');
+  loadSchedFrame(activePanel);
+});
+</script>

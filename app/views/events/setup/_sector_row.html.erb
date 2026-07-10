@@ -1,42 +1,145 @@
-<%# Locals: idx (integer ou "__SECTOR_IDX__"), event_functions %>
-<div class="sector-row" style="border:1px solid #e4e4e7;border-radius:10px;padding:0.75rem;margin-bottom:0.5rem;">
+<%# Locals: idx, event_functions, sector (opcional — setor existente para edição) %>
+<% existing = local_assigns[:sector] %>
+<% cols = "1fr 70px 90px 100px 110px 36px" %>
+
+<div class="sector-row"
+     data-existing="<%= existing&.persisted? ? 'true' : 'false' %>">
+
+  <%# Campos hidden para setores existentes %>
+  <% if existing&.persisted? %>
+    <input type="hidden" name="sectors[<%= idx %>][id]"       value="<%= existing.id %>">
+    <input type="hidden" name="sectors[<%= idx %>][_destroy]" value="0" class="sector-destroy-flag">
+  <% end %>
 
   <%# ── Tipo + Nome ────────────────────────────────────────────────────────── %>
-  <div style="display:flex;gap:0.6rem;align-items:center;">
-    <select name="sectors[<%= idx %>][sector_type]" class="form-select form-control" style="width:210px;flex-shrink:0;">
-      <option value="">— Tipo (opcional) —</option>
-      <% Sector::TYPES.each do |type| %>
-        <option value="<%= type %>"><%= I18n.t("sector_types.#{type}") %></option>
-      <% end %>
-    </select>
-    <input type="text" name="sectors[<%= idx %>][name]" class="form-control"
-           placeholder="Nome do setor (ex: Segurança Portão A)"
-           style="flex:1;">
-    <button type="button" onclick="removeSectorRow(this)"
-            class="btn-danger" style="padding:0.35rem 0.6rem;font-size:0.8rem;flex-shrink:0;">
-      <i class="bi bi-x"></i>
-    </button>
+  <div style="display:grid;grid-template-columns:220px 1fr;gap:0.75rem;margin-bottom:0.75rem;">
+    <div>
+      <label class="form-label" style="font-size:0.78rem;">Tipo de setor</label>
+      <select name="sectors[<%= idx %>][sector_type]" class="form-control"
+              onchange="sectorTypeChanged(this)">
+        <option value="">— Tipo (opcional) —</option>
+        <% Sector::TYPES.map { |t| [I18n.t("sector_types.#{t}"), t] }.sort_by(&:first).each do |label, val| %>
+          <option value="<%= val %>"<%= ' selected' if existing&.sector_type == val %>><%= label %></option>
+        <% end %>
+      </select>
+    </div>
+    <div>
+      <label class="form-label" style="font-size:0.78rem;">Nome do setor</label>
+      <input type="text" name="sectors[<%= idx %>][name]" class="form-control sector-name-input"
+             placeholder="Ex: Segurança Portão A" value="<%= existing&.name %>">
+    </div>
   </div>
 
-  <%# ── Alocação de funções ────────────────────────────────────────────────── %>
-  <% if event_functions.any? %>
-    <div style="margin-top:0.6rem;padding-top:0.6rem;border-top:1px solid #f4f4f5;">
-      <div style="font-size:0.68rem;font-weight:700;color:#a1a1aa;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.45rem;">
-        Quantidade por função
+  <%# ── Painel de histórico por tipo (colapsável) ─────────────────────────── %>
+  <div class="sector-type-stats-panel" style="display:none;margin-bottom:1rem;">
+    <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;overflow:hidden;">
+
+      <button type="button" onclick="toggleStsPanel(this)"
+              style="width:100%;display:flex;align-items:center;gap:0.5rem;padding:0.65rem 1rem;background:transparent;border:none;cursor:pointer;text-align:left;">
+        <i class="bi bi-bar-chart-line" style="color:#15803d;font-size:0.9rem;flex-shrink:0;"></i>
+        <span style="font-size:0.8rem;font-weight:700;color:#15803d;">
+          Histórico — <span class="sts-tipo-label"></span>
+        </span>
+        <span class="sts-sec-count"
+              style="margin-left:auto;font-size:0.7rem;background:#dcfce7;color:#15803d;border:1px solid #bbf7d0;border-radius:6px;padding:2px 8px;font-weight:600;flex-shrink:0;"></span>
+        <i class="bi bi-chevron-down sts-chevron" style="color:#15803d;font-size:0.75rem;flex-shrink:0;transition:transform 0.2s;"></i>
+      </button>
+
+      <div class="sts-body" style="display:none;padding:0 1rem 1rem;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;margin-bottom:0.85rem;">
+          <div style="background:white;border-radius:8px;padding:0.65rem 0.75rem;border:1px solid #d1fae5;">
+            <div style="font-size:0.62rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#16a34a;margin-bottom:3px;">Colaboradores</div>
+            <div class="sts-avg-collab" style="font-size:1.2rem;font-weight:700;color:#18181b;"></div>
+            <div class="sts-range-collab" style="font-size:0.65rem;color:#71717a;"></div>
+          </div>
+          <div style="background:white;border-radius:8px;padding:0.65rem 0.75rem;border:1px solid #d1fae5;">
+            <div style="font-size:0.62rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#16a34a;margin-bottom:3px;">Funções identificadas</div>
+            <div class="sts-fn-count" style="font-size:1.2rem;font-weight:700;color:#18181b;"></div>
+            <div style="font-size:0.65rem;color:#71717a;">tipos distintos</div>
+          </div>
+        </div>
+        <div style="font-size:0.65rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#71717a;margin-bottom:6px;">
+          Funções mais usadas neste tipo de setor
+        </div>
+        <div class="sts-functions-chart"></div>
+        <div style="margin-top:0.65rem;padding-top:0.55rem;border-top:1px solid #bbf7d0;font-size:0.65rem;color:#16a34a;">
+          <i class="bi bi-info-circle"></i>
+          Qtd. média planejada por setor, baseada em setores similares já cadastrados.
+        </div>
       </div>
-      <div style="display:flex;flex-wrap:wrap;gap:0.4rem;">
-        <% event_functions.each_with_index do |ef, j| %>
-          <div style="display:inline-flex;align-items:center;gap:0.35rem;background:#f9f9fb;border:1px solid #e4e4e7;border-radius:8px;padding:4px 10px;">
-            <span style="font-size:0.76rem;color:#52525b;white-space:nowrap;"><%= ef.name %></span>
-            <input type="hidden" name="sectors[<%= idx %>][functions][<%= j %>][event_function_id]" value="<%= ef.id %>">
-            <input type="number"
-                   name="sectors[<%= idx %>][functions][<%= j %>][quantity]"
-                   value="0" min="0" step="1"
-                   style="width:46px;font-size:0.8rem;padding:2px 4px;text-align:center;border:1px solid #e4e4e7;border-radius:5px;background:#fff;">
+    </div>
+  </div>
+
+  <%# ── Funções planejadas ─────────────────────────────────────────────────── %>
+  <% if event_functions.any? %>
+    <div style="font-size:0.78rem;font-weight:600;color:#52525b;margin-bottom:0.5rem;">
+      <i class="bi bi-clipboard-check"></i> Funções planejadas
+    </div>
+
+    <div style="border:1px solid #e4e4e7;border-radius:8px;overflow:hidden;margin-bottom:0.6rem;">
+      <div style="display:grid;grid-template-columns:<%= cols %>;gap:0.5rem;padding:0.4rem 0.75rem;background:#f9fafb;border-bottom:1px solid #e4e4e7;">
+        <span style="font-size:0.68rem;font-weight:600;color:#71717a;text-transform:uppercase;letter-spacing:0.05em;">Função</span>
+        <span style="font-size:0.68rem;font-weight:600;color:#71717a;text-transform:uppercase;letter-spacing:0.05em;">Qtd.</span>
+        <span style="font-size:0.68rem;font-weight:600;color:#71717a;text-transform:uppercase;letter-spacing:0.05em;">Taxa/h</span>
+        <span style="font-size:0.68rem;font-weight:600;color:#71717a;text-transform:uppercase;letter-spacing:0.05em;">Custo/h</span>
+        <span style="font-size:0.68rem;font-weight:600;color:#15803d;text-transform:uppercase;letter-spacing:0.05em;">Estimativa</span>
+        <span></span>
+      </div>
+
+      <div class="sf-rows">
+        <% (existing&.sector_functions || []).each do |sf| %>
+          <div class="sf-row" style="display:grid;grid-template-columns:<%= cols %>;gap:0.5rem;align-items:center;padding:0.45rem 0.75rem;border-bottom:1px solid #f4f4f5;">
+            <select class="form-control sf-fn-select" style="font-size:0.82rem;"
+                    name="sectors[<%= idx %>][functions][sf_<%= sf.id %>][event_function_id]">
+              <option value="">— Selecione —</option>
+              <% event_functions.each do |ef| %>
+                <option value="<%= ef.id %>"<%= ' selected' if sf.event_function_id == ef.id %>><%= ef.name %></option>
+              <% end %>
+            </select>
+            <input type="number" class="form-control sf-qty-input"
+                   name="sectors[<%= idx %>][functions][sf_<%= sf.id %>][quantity]"
+                   min="1" value="<%= sf.quantity %>" style="font-size:0.82rem;">
+            <span class="sf-rate" style="font-size:0.78rem;color:#71717a;">—</span>
+            <span class="sf-cost" style="font-size:0.78rem;font-weight:600;color:#18181b;">—</span>
+            <span class="sf-est"  style="font-size:0.78rem;font-weight:600;color:#15803d;">—</span>
+            <div style="display:flex;justify-content:center;">
+              <button type="button" class="btn-danger" style="padding:0.25rem 0.45rem;font-size:0.75rem;width:30px;"
+                      onclick="this.closest('.sf-row').remove();">
+                <i class="bi bi-x"></i>
+              </button>
+            </div>
           </div>
         <% end %>
       </div>
     </div>
+
+    <template class="sf-row-tpl">
+      <div class="sf-row" style="display:grid;grid-template-columns:<%= cols %>;gap:0.5rem;align-items:center;padding:0.45rem 0.75rem;border-bottom:1px solid #f4f4f5;">
+        <select class="form-control sf-fn-select" style="font-size:0.82rem;"
+                name="sectors[<%= idx %>][functions][__SF_IDX__][event_function_id]">
+          <option value="">— Selecione —</option>
+          <% event_functions.each do |ef| %>
+            <option value="<%= ef.id %>"><%= ef.name %></option>
+          <% end %>
+        </select>
+        <input type="number" class="form-control sf-qty-input"
+               name="sectors[<%= idx %>][functions][__SF_IDX__][quantity]"
+               min="1" value="1" style="font-size:0.82rem;">
+        <span class="sf-rate" style="font-size:0.78rem;color:#71717a;">—</span>
+        <span class="sf-cost" style="font-size:0.78rem;font-weight:600;color:#18181b;">—</span>
+        <span class="sf-est"  style="font-size:0.78rem;font-weight:600;color:#15803d;">—</span>
+        <div style="display:flex;justify-content:center;">
+          <button type="button" class="btn-danger" style="padding:0.25rem 0.45rem;font-size:0.75rem;width:30px;"
+                  onclick="this.closest('.sf-row').remove();">
+            <i class="bi bi-x"></i>
+          </button>
+        </div>
+      </div>
+    </template>
+
+    <button type="button" onclick="addSfRow(this)" style="display:inline-flex;align-items:center;gap:0.35rem;padding:0.28rem 0.75rem;border:none;border-radius:6px;background:#16a34a;color:#fff;font-size:0.8rem;font-weight:500;cursor:pointer;transition:background .15s;" onmouseover="this.style.background='#15803d';" onmouseout="this.style.background='#16a34a';">
+      <i class="bi bi-plus-circle-fill" style="font-size:0.75rem;"></i> Adicionar função
+    </button>
   <% end %>
 
 </div>

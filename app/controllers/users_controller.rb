@@ -56,7 +56,7 @@ class UsersController < ApplicationController
       {
         id:         u.id,
         name:       u.name,
-        cpf:        u.cpf.gsub(/(\d{3})(\d{3})(\d{3})(\d{2})/, '\1.\2.\3-\4'),
+        cpf:        u.cpf&.gsub(/(\d{3})(\d{3})(\d{3})(\d{2})/, '\1.\2.\3-\4'),
         avatar_url: u.avatar.attached? ? url_for(u.avatar) : nil,
         initials:   u.name.split.map(&:first).first(2).join.upcase
       }

@@ -171,6 +171,7 @@ class ShiftsController < ApplicationController
     @event = current_event
     @selected_team = Team.includes(sector: :event).find(params[:team_id])
     @event_days = @event ? @event.event_days.ordered : []
+    @in_frame = request.headers["Turbo-Frame"].present?
 
     @team_members = TeamMembership
       .where(team_id: @selected_team.id)
@@ -245,6 +246,8 @@ class ShiftsController < ApplicationController
       msg = "Escala de \"#{@selected_team.name}\" salva — #{parts.join(', ')}."
       if params[:modal] == "1"
         render html: "<script>window.parent.closeShiftModal(); window.parent.location.href='#{teams_path}?notice=#{CGI.escape(msg)}';</script>".html_safe, layout: false
+      elsif params[:wizard] == "1"
+        redirect_to schedules_event_setup_path(@event, tab: @selected_team.id), notice: msg
       else
         redirect_to shifts_path, notice: msg
       end

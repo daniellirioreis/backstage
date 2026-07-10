@@ -1,49 +1,60 @@
-<div class="page-header">
-  <div>
-    <h1>Editar Escala</h1>
-    <div style="font-size: 0.78rem; color: #71717a; margin-top: 0.15rem;">
-      <i class="bi bi-grid-3x3-gap" style="font-size: 0.7rem;"></i> <%= @selected_team.sector.name %> ·
-      <strong><%= @selected_team.name %></strong>
-    </div>
-  </div>
-  <%= link_to shifts_path, class: "btn-secondary" do %>
-    <i class="bi bi-arrow-left"></i> Voltar
-  <% end %>
-</div>
+<% uid = @selected_team.id %>
 
-<%# Erros %>
+<%= turbo_frame_tag "shift-frame-#{uid}" do %>
+
+<%# ── Cabeçalho — oculto quando embutido em frame ── %>
+<% unless @in_frame %>
+  <div class="page-header">
+    <div>
+      <h1>Editar Escala</h1>
+      <div style="font-size: 0.78rem; color: #71717a; margin-top: 0.15rem;">
+        <i class="bi bi-grid-3x3-gap" style="font-size: 0.7rem;"></i> <%= @selected_team.sector.name %> ·
+        <strong><%= @selected_team.name %></strong>
+      </div>
+    </div>
+    <% back_path = params[:wizard] == "1" ? schedules_event_setup_path(@event) : shifts_path %>
+    <%= link_to back_path, class: "btn-secondary", data: { turbo_frame: "_top" } do %>
+      <i class="bi bi-arrow-left"></i> Voltar
+    <% end %>
+  </div>
+<% end %>
+
+<%# ── Erros ── %>
 <% if @update_errors&.any? %>
-  <div style="background: #fef2f2; border: 1px solid #fca5a5; border-radius: 8px; padding: 1rem 1.25rem; margin-bottom: 1rem;">
-    <div style="font-weight: 700; color: #dc2626; font-size: 0.88rem; margin-bottom: 0.5rem;">
+  <div style="background:#fef2f2; border:1px solid #fca5a5; border-radius:8px; padding:1rem 1.25rem; margin-bottom:1rem;">
+    <div style="font-weight:700; color:#dc2626; font-size:0.88rem; margin-bottom:0.5rem;">
       <i class="bi bi-exclamation-circle-fill"></i> <%= @update_errors.size %> turno(s) com erro:
     </div>
     <% @update_errors.each do |err| %>
-      <div style="font-size: 0.82rem; color: #991b1b; padding: 2px 0;">
+      <div style="font-size:0.82rem; color:#991b1b; padding:2px 0;">
         <strong><%= err[:name] %>:</strong> <%= err[:messages].join(', ') %>
       </div>
     <% end %>
   </div>
 <% end %>
 
-<%# ── PASSO 1: Seleção de dias (GET — recarrega a página com @selected_days correto) ── %>
+<%# ── PASSO 1: Seleção de dias ── %>
 <% if @event_days.any? %>
   <%
-    # Datas atualmente selecionadas no servidor (usadas para pré-marcar os cards)
     selected_date_strs = @selected_days.map { |ed| ed.date.to_s }
   %>
-  <%= form_with url: edit_team_shifts_path, method: :get, local: true do %>
-    <input type="hidden" name="team_id" value="<%= @selected_team.id %>">
+  <%# Sem local:true → Turbo trata o GET e atualiza só o frame %>
+  <%= form_with url: edit_team_shifts_path, method: :get do %>
+    <input type="hidden" name="team_id" value="<%= uid %>">
     <% if params[:modal].present? %>
-      <input type="hidden" name="modal" value="<%= params[:modal] %>">
+      <input type="hidden" name="modal"  value="<%= params[:modal] %>">
+    <% end %>
+    <% if params[:wizard].present? %>
+      <input type="hidden" name="wizard" value="<%= params[:wizard] %>">
     <% end %>
 
-    <div class="content-card" style="margin-bottom: 1rem;">
-      <h3 style="font-size: 0.82rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: #71717a; margin: 0 0 0.9rem;">
+    <div class="content-card" style="margin-bottom:1rem;">
+      <h3 style="font-size:0.82rem; font-weight:600; text-transform:uppercase; letter-spacing:0.05em; color:#71717a; margin:0 0 0.9rem;">
         <i class="bi bi-calendar3"></i> Dias do evento
-        <span style="font-size:0.7rem; font-weight:400; color:#a1a1aa; margin-left:0.25rem;">— selecione e clique em <strong style="color:#7c3aed;">Confirmar</strong> para atualizar a tabela</span>
+        <span style="font-size:0.7rem; font-weight:400; color:#a1a1aa; margin-left:0.25rem;">— selecione e clique em <strong style="color:#7c3aed;">Confirmar</strong></span>
       </h3>
 
-      <div id="day-cards" style="display:flex; flex-wrap:wrap; gap:0.5rem; margin-bottom:0.75rem;">
+      <div style="display:flex; flex-wrap:wrap; gap:0.5rem; margin-bottom:0.75rem;">
         <% @event_days.each do |ed| %>
           <%
             is_sel    = selected_date_strs.include?(ed.date.to_s)
@@ -51,9 +62,8 @@
             dow       = I18n.l(ed.date, format: "%a")
           %>
           <button type="button"
-                  class="day-card<%= ' day-card--selected' if is_sel %>"
                   data-date="<%= ed.date %>"
-                  onclick="toggleDay(this)"
+                  onclick="toggleDay_<%= uid %>(this)"
                   style="
                     display:flex; flex-direction:column; align-items:center;
                     padding:0.55rem 0.9rem; border-radius:8px; cursor:pointer;
@@ -73,14 +83,14 @@
         <% end %>
       </div>
 
-      <input type="hidden" id="hidden_date"     name="date"     value="<%= @selected_days.first&.date %>">
-      <input type="hidden" id="hidden_end_date" name="end_date" value="<%= @selected_days.size > 1 ? @selected_days.last.date : '' %>">
+      <input type="hidden" id="hidden_date_<%= uid %>"     name="date"     value="<%= @selected_days.first&.date %>">
+      <input type="hidden" id="hidden_end_date_<%= uid %>" name="end_date" value="<%= @selected_days.size > 1 ? @selected_days.last.date : '' %>">
 
       <div style="display:flex; align-items:center; gap:0.75rem; flex-wrap:wrap;">
-        <span id="day-summary" style="font-size:0.78rem; color:#71717a; min-height:1.2em;">
+        <span id="day-summary-<%= uid %>" style="font-size:0.78rem; color:#71717a; min-height:1.2em;">
           <%= @selected_days.any? ? "#{@selected_days.size} dia(s) selecionado(s)" : "Nenhum dia selecionado" %>
         </span>
-        <button type="submit" id="confirm-days-btn" class="btn-secondary"
+        <button type="submit" id="confirm-days-btn-<%= uid %>" class="btn-secondary"
                 style="font-size:0.78rem; padding:0.3rem 0.75rem;"
                 <%= 'disabled' if @selected_days.empty? %>>
           <i class="bi bi-arrow-clockwise"></i> Confirmar seleção
@@ -88,56 +98,45 @@
       </div>
     </div>
   <% end %>
-
-<% else %>
-  <%# Fallback sem event_days — inputs de data dentro do form principal %>
 <% end %>
 
-<%# ── PASSO 2: Tabela de colaboradores + Salvar (PATCH) ── %>
+<%# ── PASSO 2: Tabela + Salvar ── %>
 <%= form_with url: update_team_shifts_path, method: :patch, local: true, data: { turbo: false } do |f| %>
-  <input type="hidden" name="team_id" value="<%= @selected_team.id %>">
-  <%= hidden_field_tag :modal, params[:modal] if params[:modal].present? %>
+  <input type="hidden" name="team_id" value="<%= uid %>">
+  <%= hidden_field_tag :modal,  params[:modal]  if params[:modal].present? %>
+  <%= hidden_field_tag :wizard, params[:wizard] if params[:wizard].present? %>
 
   <% if @event_days.empty? %>
-    <%# Fallback: inputs de data quando não há event_days %>
-    <div class="content-card" style="margin-bottom: 1rem;">
-      <h3 style="font-size: 0.82rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: #71717a; margin: 0 0 1rem;">
+    <div class="content-card" style="margin-bottom:1rem;">
+      <h3 style="font-size:0.82rem; font-weight:600; text-transform:uppercase; letter-spacing:0.05em; color:#71717a; margin:0 0 1rem;">
         <i class="bi bi-calendar3"></i> Período
       </h3>
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
         <div>
           <label class="form-label">
-            Data início <span style="color: #ef4444;">*</span>
+            Data início <span style="color:#ef4444;">*</span>
             <% if @event %>
-              <span style="font-weight: 400; color: #a1a1aa;">(<%= l(@event.start_date, format: :short) %> → <%= l(@event.end_date, format: :short) %>)</span>
+              <span style="font-weight:400; color:#a1a1aa;">(<%= l(@event.start_date, format: :short) %> → <%= l(@event.end_date, format: :short) %>)</span>
             <% end %>
           </label>
-          <input type="date" name="date"
-                 value="<%= @ref_date || params[:date] %>"
-                 class="form-control" required
+          <input type="date" name="date" value="<%= @ref_date || params[:date] %>" class="form-control" required
                  <% if @event %> min="<%= @event.start_date %>" max="<%= @event.end_date %>" <% end %>>
         </div>
         <div>
-          <label class="form-label">Data fim <span style="color: #a1a1aa; font-weight: 400;">(opcional)</span></label>
-          <input type="date" name="end_date"
-                 value="<%= @ref_end_date || params[:end_date] %>"
-                 class="form-control"
+          <label class="form-label">Data fim <span style="color:#a1a1aa; font-weight:400;">(opcional)</span></label>
+          <input type="date" name="end_date" value="<%= @ref_end_date || params[:end_date] %>" class="form-control"
                  <% if @event %> min="<%= @event.start_date %>" max="<%= @event.end_date %>" <% end %>>
         </div>
       </div>
     </div>
   <% else %>
-    <%# Passa as datas confirmadas para o PATCH %>
     <input type="hidden" name="date"     value="<%= @selected_days.first&.date || params[:date] %>">
     <input type="hidden" name="end_date" value="<%= @selected_days.size > 1 ? @selected_days.last.date : '' %>">
   <% end %>
 
-  <%# Resumo dos dias selecionados %>
   <% if @selected_days.any? %>
-    <%
-      total_h = @selected_days.sum { |ed| ed.hours.to_f }
-    %>
-    <div class="content-card" style="margin-bottom: 1rem; padding: 0.85rem 1.25rem;">
+    <% total_h = @selected_days.sum { |ed| ed.hours.to_f } %>
+    <div class="content-card" style="margin-bottom:1rem; padding:0.85rem 1.25rem;">
       <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:0.5rem;">
         <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
           <span style="font-size:0.75rem; font-weight:600; text-transform:uppercase; letter-spacing:0.05em; color:#71717a;">
@@ -165,12 +164,15 @@
         existing_shifts: @existing_shifts,
         submitted_members: @submitted_members %>
 
-  <div style="display: flex; gap: 0.5rem;">
+  <div style="display:flex; gap:0.5rem; margin-top:0.5rem;">
     <button type="submit" class="btn-primary" <%= 'disabled' if @selected_days.empty? && @event_days.any? %>>
       <i class="bi bi-calendar-check"></i> Salvar Alterações
     </button>
     <% if params[:modal] == "1" %>
       <button type="button" class="btn-secondary" onclick="window.parent.closeShiftModal()">Cancelar</button>
+    <% elsif params[:wizard] == "1" %>
+      <%# No frame: link escapes para o topo (data-turbo-frame="_top") %>
+      <%= link_to "Cancelar", schedules_event_setup_path(@event), class: "btn-secondary", data: { turbo_frame: "_top" } %>
     <% else %>
       <%= link_to "Cancelar", shifts_path, class: "btn-secondary" %>
     <% end %>
@@ -180,18 +182,21 @@
 <% if @event_days.any? %>
 <script>
 (function () {
-  var hiddenDate    = document.getElementById("hidden_date");
-  var hiddenEndDate = document.getElementById("hidden_end_date");
+  var uid  = <%= uid %>;
+  // Escopo: o turbo-frame desta equipe (evita conflito entre frames de equipes diferentes)
+  var frame = document.getElementById('shift-frame-' + uid) || document;
 
-  // Inicializa com os dias já selecionados no servidor
+  var hiddenDate    = frame.querySelector('#hidden_date_'     + uid);
+  var hiddenEndDate = frame.querySelector('#hidden_end_date_' + uid);
+
   var selectedDates = <%= raw @selected_days.map { |ed| ed.date.to_s }.to_json %>;
 
   function updateUI() {
-    document.querySelectorAll(".day-card").forEach(function (btn) {
+    frame.querySelectorAll("[data-date]").forEach(function (btn) {
       var sel = selectedDates.includes(btn.dataset.date);
       btn.style.borderColor = sel ? "#7c3aed" : "#e4e4e7";
       btn.style.background  = sel ? "#f5f3ff" : "#fff";
-      btn.querySelectorAll("span").forEach(function(s) {
+      btn.querySelectorAll("span").forEach(function (s) {
         if (s.style.fontSize === "1rem") {
           s.style.color = sel ? "#7c3aed" : "#18181b";
         } else {
@@ -206,18 +211,18 @@
       hiddenEndDate.value = sorted.length > 1 ? sorted[sorted.length - 1] : "";
     }
 
-    var summary = document.getElementById("day-summary");
+    var summary = frame.querySelector('#day-summary-' + uid);
     if (summary) {
       summary.textContent = selectedDates.length === 0
         ? "Nenhum dia selecionado"
         : selectedDates.length + " dia(s) selecionado(s)";
     }
 
-    var btn = document.getElementById("confirm-days-btn");
-    if (btn) btn.disabled = selectedDates.length === 0;
+    var confirmBtn = frame.querySelector('#confirm-days-btn-' + uid);
+    if (confirmBtn) confirmBtn.disabled = selectedDates.length === 0;
   }
 
-  window.toggleDay = function (btn) {
+  window['toggleDay_' + uid] = function (btn) {
     var d   = btn.dataset.date;
     var idx = selectedDates.indexOf(d);
     if (idx === -1) selectedDates.push(d);
@@ -229,3 +234,5 @@
 })();
 </script>
 <% end %>
+
+<% end %><%# /turbo_frame_tag %>

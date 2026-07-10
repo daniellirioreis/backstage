@@ -14,8 +14,10 @@ class Team < ApplicationRecord
   # Sincroniza a membership do coordenador sempre que coordinator_id mudar
   after_save :sync_coordinator_membership, if: :saved_change_to_coordinator_id?
 
+  attr_accessor :skip_member_uniqueness_check
+
   validates :name, presence: true
-  validate :regular_members_unique_per_event
+  validate :regular_members_unique_per_event, unless: :skip_member_uniqueness_check
 
   private
 
@@ -36,16 +38,20 @@ class Team < ApplicationRecord
     end
   end
 
-  # Apenas membros regulares (role: :member) precisam ser únicos por evento
+  # Apenas membros regulares precisam ser únicos por evento.
+  # Coordenadores são sempre isentos: podem atuar em múltiplas equipes.
   def regular_members_unique_per_event
     return unless sector.present?
 
-    # IDs dos membros regulares desta equipe (excluindo coordenador e linhas marcadas para remoção)
+    # IDs dos membros desta equipe, excluindo:
+    #   • linhas marcadas para remoção
+    #   • o coordenador desta equipe (independente do role salvo no DB)
     my_member_ids = team_memberships
       .reject(&:marked_for_destruction?)
       .select(&:member?)
       .map(&:user_id)
       .compact
+      .reject { |uid| uid == coordinator_id }
 
     return if my_member_ids.empty?
 
@@ -57,6 +63,9 @@ class Team < ApplicationRecord
       .includes(:user, team: :sector)
 
     conflict_map = other_memberships.each_with_object({}) do |tm, h|
+      # Ignora se o usuário é coordenador da outra equipe
+      # (cobre dados antigos onde o role ainda não foi corrigido para :coordinator)
+      next if tm.team.coordinator_id == tm.user_id
       h[tm.user_id] = tm
     end
 

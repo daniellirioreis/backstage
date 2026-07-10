@@ -7,107 +7,585 @@
 
 <%= render "wizard_nav", current_step: 3, event: @event %>
 
-<%= form_with url: teams_event_setup_path(@event), method: :post, local: true do |f| %>
+<%= form_with url: teams_event_setup_path(@event), method: :post, local: true, id: "teams-form" do |f| %>
 
-  <% if @sectors.all? { |s| s.teams.loaded? ? s.teams.any? : s.teams.exists? } %>
-    <%# If all sectors already have teams, show a note %>
-    <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:0.75rem 1rem;margin-bottom:1rem;font-size:0.82rem;color:#1d4ed8;">
-      <i class="bi bi-info-circle"></i>
-      Todos os setores já possuem equipes. Você pode adicionar mais abaixo ou concluir.
-    </div>
-  <% end %>
+  <div style="border:1px solid #e4e4e7;border-radius:14px;margin-bottom:1rem;box-shadow:0 1px 3px rgba(0,0,0,.05);">
 
-  <% @sectors.each do |sector| %>
-    <div class="content-card" style="margin-bottom:1rem;">
-      <%# Sector header %>
-      <div style="display:flex;align-items:center;gap:0.6rem;margin-bottom:0.85rem;">
-        <div style="width:32px;height:32px;border-radius:8px;background:#f4f4f5;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-          <i class="bi bi-building" style="color:#52525b;font-size:0.9rem;"></i>
-        </div>
-        <div>
-          <div style="font-size:0.92rem;font-weight:700;color:#18181b;"><%= sector.name %></div>
+    <%# ── Aba de setores ──────────────────────────────────────────────────────── %>
+    <div id="sector-tabs-bar" style="display:flex;align-items:stretch;border-bottom:2px solid #e4e4e7;background:#fafafa;overflow-x:auto;border-radius:14px 14px 0 0;">
+      <% @sectors.each_with_index do |sector, i| %>
+        <button type="button"
+                id="stab-<%= sector.id %>"
+                class="sector-team-tab"
+                data-panel="stpanel-<%= sector.id %>"
+                onclick="switchSectorTeamTab(this)"
+                style="display:flex;align-items:center;gap:0.4rem;padding:0.65rem 1.1rem;border:none;background:none;cursor:pointer;font-size:0.83rem;font-weight:<%= i == 0 ? '600' : '400' %>;white-space:nowrap;flex-shrink:0;border-bottom:2px solid <%= i == 0 ? '#7c3aed' : 'transparent' %>;color:<%= i == 0 ? '#7c3aed' : '#71717a' %>;margin-bottom:-2px;transition:color .15s,border-color .15s;">
+          <i class="bi bi-grid-3x3-gap" style="font-size:0.72rem;"></i>
+          <%= sector.name %>
           <% if sector.sector_type.present? %>
-            <div style="font-size:0.75rem;color:#71717a;"><%= sector.sector_type_label %></div>
+            <span style="font-size:0.68rem;font-weight:400;color:<%= i == 0 ? '#a78bfa' : '#a1a1aa' %>;">· <%= sector.sector_type_label %></span>
           <% end %>
-        </div>
-      </div>
+        </button>
+      <% end %>
+    </div>
 
-      <%# Teams already in this sector %>
-      <% if sector.teams.any? %>
-        <div style="margin-bottom:0.75rem;">
-          <% sector.teams.each do |team| %>
-            <div style="display:flex;align-items:center;gap:0.5rem;padding:4px 0;font-size:0.82rem;color:#52525b;">
-              <i class="bi bi-check2" style="color:#16a34a;"></i>
-              <%= team.name %>
+    <%# ── Painéis de setor ────────────────────────────────────────────────────── %>
+    <% @sectors.each_with_index do |sector, i| %>
+      <%
+        fn_assigned = Hash.new(0)
+        sector.teams.each do |team|
+          team.team_memberships.each do |tm|
+            fn_assigned[tm.event_function_id.to_s] += 1 if tm.event_function_id
+          end
+        end
+        member_cols = @event_functions.any? ? "1fr 200px 32px" : "1fr 32px"
+        fn_map      = @event_functions.index_by(&:id)
+      %>
+
+      <%# O div.content-card interno garante que .closest(".content-card") no JS continua a funcionar %>
+      <div id="stpanel-<%= sector.id %>" class="sector-team-panel"
+           style="display:<%= i == 0 ? 'block' : 'none' %>;">
+        <div class="content-card" style="margin:0;border:none;border-radius:0;padding:1.25rem;">
+
+          <%# ── Funções planejadas (se existirem) ─────────────────────────────── %>
+          <% if sector.sector_functions.any? %>
+            <div style="background:linear-gradient(135deg,#f5f3ff 0%,#ede9fe 100%);border:1px solid #ddd6fe;border-radius:10px;padding:0.6rem 1rem;margin-bottom:1rem;">
+              <div style="font-size:0.62rem;font-weight:700;color:#6d28d9;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:0.4rem;">
+                <i class="bi bi-clipboard-check"></i> Funções planejadas
+              </div>
+              <div style="display:grid;grid-template-columns:1fr auto 80px auto;gap:0.25rem 0.65rem;align-items:center;">
+                <span style="font-size:0.6rem;font-weight:600;color:#7c3aed;text-transform:uppercase;letter-spacing:0.05em;">Função</span>
+                <span style="font-size:0.6rem;font-weight:600;color:#7c3aed;text-transform:uppercase;letter-spacing:0.05em;text-align:right;">Atribuído</span>
+                <span></span><span></span>
+                <% sector.sector_functions.each do |sf| %>
+                  <% ef       = sf.event_function
+                     qty      = sf.quantity
+                     done     = fn_assigned[sf.event_function_id.to_s]
+                     pct      = qty > 0 ? [[done * 100 / qty, 100].min, 0].max : 0
+                     exceeded = done > qty
+                     complete = done == qty
+                     color    = exceeded ? '#d97706' : (complete ? '#16a34a' : '#dc2626')
+                     bg       = exceeded ? '#fef3c7' : (complete ? '#dcfce7' : '#fee2e2')
+                     label    = exceeded ? "+#{done - qty} extra#{done - qty == 1 ? '' : 's'}"
+                              : complete ? "Completo"
+                              : "#{qty - done} vaga#{qty - done == 1 ? '' : 's'}"
+                  %>
+                  <span style="font-size:0.78rem;color:#3b0764;"><%= ef&.name %></span>
+                  <span class="fn-plan-count" data-fn-id="<%= sf.event_function_id %>" data-qty="<%= qty %>"
+                        style="font-size:0.78rem;font-weight:600;color:#4c1d95;text-align:right;"><%= done %>&nbsp;/&nbsp;<%= qty %></span>
+                  <div style="height:4px;background:#c4b5fd;border-radius:99px;overflow:hidden;">
+                    <div class="fn-plan-bar" data-fn-id="<%= sf.event_function_id %>"
+                         style="height:100%;width:<%= pct %>%;background:<%= color %>;border-radius:99px;transition:width .3s;"></div>
+                  </div>
+                  <span class="fn-plan-badge" data-fn-id="<%= sf.event_function_id %>"
+                        style="font-size:0.68rem;font-weight:600;background:<%= bg %>;color:<%= color %>;padding:1px 7px;border-radius:99px;white-space:nowrap;"><%= label %></span>
+                <% end %>
+              </div>
             </div>
           <% end %>
-        </div>
-      <% end %>
 
-      <%# Team input rows for this sector %>
-      <div class="team-rows" data-sector-id="<%= sector.id %>">
-        <div class="team-row" style="display:flex;gap:0.5rem;align-items:center;margin-bottom:0.4rem;">
-          <input type="hidden" name="teams[][sector_id]" value="<%= sector.id %>">
-          <input type="text" name="teams[][name]" class="form-control"
-                 placeholder="Nome da equipe (ex: Portão A)">
-          <button type="button" onclick="removeTeamRow(this)"
-                  class="btn-danger" style="padding:0.3rem 0.55rem;font-size:0.8rem;flex-shrink:0;">
-            <i class="bi bi-x"></i>
-          </button>
-        </div>
-      </div>
+          <%# ── Abas de equipes ────────────────────────────────────────────────── %>
+          <div class="team-tab-container">
 
-      <button type="button"
-              onclick="addTeamRow(this, '<%= sector.id %>')"
-              class="btn-secondary"
-              style="font-size:0.78rem;margin-top:0.35rem;">
-        <i class="bi bi-plus"></i> Adicionar equipe
-      </button>
-    </div>
-  <% end %>
+            <div class="team-tab-bar" style="display:flex;border-bottom:2px solid #e4e4e7;margin-bottom:1rem;overflow-x:auto;">
+              <% sector.teams.each_with_index do |team, ti| %>
+                <button type="button"
+                        class="team-tab-btn<%= ti == 0 ? ' active-tab' : '' %>"
+                        data-panel="team-panel-<%= team.id %>"
+                        onclick="switchTeamTab(this)"
+                        style="padding:0.45rem 0.85rem;border:none;border-bottom:2px solid <%= ti == 0 ? '#7c3aed' : 'transparent' %>;margin-bottom:-2px;background:transparent;cursor:pointer;font-size:0.8rem;color:<%= ti == 0 ? '#7c3aed' : '#71717a' %>;font-weight:<%= ti == 0 ? '600' : '400' %>;white-space:nowrap;flex-shrink:0;transition:color .15s,border-color .15s;">
+                  <i class="bi bi-people" style="font-size:0.68rem;margin-right:3px;"></i><%= team.name %>
+                </button>
+              <% end %>
+              <button type="button" class="team-add-btn"
+                      onclick="addTeamTab(this, '<%= sector.id %>')"
+                      style="display:flex;align-items:center;gap:0.3rem;padding:0.22rem 0.7rem;border:none;border-radius:6px;background:#16a34a;cursor:pointer;font-size:0.78rem;font-weight:500;color:#fff;white-space:nowrap;flex-shrink:0;margin:auto 0.35rem;transition:background .15s;"
+                      onmouseover="this.style.background='#15803d';"
+                      onmouseout="this.style.background='#16a34a';">
+                <i class="bi bi-plus-circle-fill" style="font-size:0.72rem;"></i> Nova equipe
+              </button>
+            </div>
 
-  <%# Action buttons %>
+            <%# Painéis das equipes existentes %>
+            <% sector.teams.each_with_index do |team, ti| %>
+              <div id="team-panel-<%= team.id %>" class="team-tab-panel existing-team" data-team-id="<%= team.id %>"
+                   style="display:<%= ti == 0 ? 'block' : 'none' %>;">
+                <input type="hidden" name="teams[<%= team.id %>][_destroy]" value="0" class="destroy-flag">
+                <input type="hidden" name="teams[<%= team.id %>][id]" value="<%= team.id %>">
+                <input type="hidden" name="teams[<%= team.id %>][sector_id]" value="<%= sector.id %>">
+
+                <div style="display:grid;grid-template-columns:1fr 180px;gap:0.75rem;margin-bottom:1rem;">
+                  <div>
+                    <label class="form-label" style="font-size:0.78rem;">Nome da equipe</label>
+                    <input type="text" name="teams[<%= team.id %>][name]" value="<%= team.name %>" class="form-control team-name-input">
+                  </div>
+                  <div>
+                    <label class="form-label" style="font-size:0.78rem;">Canal de Rádio</label>
+                    <input type="text" name="teams[<%= team.id %>][radio_channel]" value="<%= team.radio_channel %>" class="form-control" placeholder="ex: Canal 3">
+                  </div>
+                </div>
+
+                <div style="margin-bottom:1rem;">
+                  <label class="form-label" style="font-size:0.78rem;">Coordenador</label>
+                  <div style="position:relative;" class="user-ac-wrapper">
+                    <input type="text" class="form-control user-ac-input" value="<%= team.coordinator&.name %>"
+                           placeholder="Buscar por nome ou CPF..." autocomplete="off" style="font-size:0.85rem;">
+                    <div class="user-ac-dropdown" style="display:none;position:absolute;z-index:200;width:100%;background:#fff;border:1px solid #e4e4e7;border-radius:6px;box-shadow:0 4px 12px rgba(0,0,0,0.08);max-height:200px;overflow-y:auto;top:100%;left:0;margin-top:2px;"></div>
+                    <input type="hidden" name="teams[<%= team.id %>][coordinator_id]" value="<%= team.coordinator_id %>" class="user-ac-hidden">
+                  </div>
+                </div>
+
+                <div style="font-size:0.78rem;font-weight:600;color:#52525b;margin-bottom:0.5rem;"><i class="bi bi-people"></i> Colaboradores</div>
+                <div style="border:1px solid #e4e4e7;border-radius:8px;margin-bottom:0.6rem;">
+                  <div style="display:grid;grid-template-columns:<%= member_cols %>;gap:0.5rem;padding:0.4rem 0.75rem;background:#f9fafb;border-bottom:1px solid #e4e4e7;border-radius:8px 8px 0 0;">
+                    <span style="font-size:0.68rem;font-weight:600;color:#71717a;text-transform:uppercase;letter-spacing:0.05em;">Colaborador</span>
+                    <% if @event_functions.any? %><span style="font-size:0.68rem;font-weight:600;color:#71717a;text-transform:uppercase;letter-spacing:0.05em;">Função</span><% end %>
+                    <span></span>
+                  </div>
+                  <div class="member-rows">
+                    <% team.team_memberships.reject(&:coordinator?).each_with_index do |tm, midx| %>
+                      <% ef = fn_map[tm.event_function_id] %>
+                      <div class="member-row" style="display:grid;grid-template-columns:<%= member_cols %>;gap:0.5rem;align-items:center;padding:0.45rem 0.75rem;border-bottom:1px solid #f4f4f5;">
+                        <div style="position:relative;" class="user-ac-wrapper">
+                          <input type="text" class="form-control user-ac-input" value="<%= tm.user&.name %>" placeholder="Buscar colaborador..." autocomplete="off" style="font-size:0.82rem;">
+                          <div class="user-ac-dropdown" style="display:none;position:absolute;z-index:200;width:100%;background:#fff;border:1px solid #e4e4e7;border-radius:6px;box-shadow:0 4px 12px rgba(0,0,0,0.08);max-height:200px;overflow-y:auto;top:100%;left:0;margin-top:2px;"></div>
+                          <input type="hidden" class="user-ac-hidden" name="teams[<%= team.id %>][members][<%= midx %>][user_id]" value="<%= tm.user_id %>">
+                        </div>
+                        <% if @event_functions.any? %>
+                          <div style="position:relative;" class="fn-ac-wrapper">
+                            <input type="text" class="form-control fn-ac-input" value="<%= ef ? "#{ef.name} · R$#{format('%.2f', ef.hourly_rate)}/h" : '' %>" placeholder="Função..." autocomplete="off" style="font-size:0.82rem;">
+                            <div class="fn-ac-dropdown" style="display:none;position:absolute;z-index:201;width:100%;background:#fff;border:1px solid #e4e4e7;border-radius:6px;box-shadow:0 4px 12px rgba(0,0,0,0.08);max-height:180px;overflow-y:auto;top:100%;left:0;margin-top:2px;"></div>
+                            <input type="hidden" class="fn-ac-hidden" name="teams[<%= team.id %>][members][<%= midx %>][event_function_id]" value="<%= tm.event_function_id %>">
+                          </div>
+                        <% end %>
+                        <div style="display:flex;justify-content:center;">
+                          <button type="button" class="btn-danger" style="padding:0.25rem 0.45rem;font-size:0.75rem;width:30px;" onclick="removeMemberRow(this);"><i class="bi bi-x"></i></button>
+                        </div>
+                      </div>
+                    <% end %>
+                  </div>
+                </div>
+
+                <template class="member-row-tpl">
+                  <div class="member-row" style="display:grid;grid-template-columns:<%= member_cols %>;gap:0.5rem;align-items:center;padding:0.45rem 0.75rem;border-bottom:1px solid #f4f4f5;">
+                    <div style="position:relative;" class="user-ac-wrapper">
+                      <input type="text" class="form-control user-ac-input" placeholder="Buscar colaborador..." autocomplete="off" style="font-size:0.82rem;">
+                      <div class="user-ac-dropdown" style="display:none;position:absolute;z-index:200;width:100%;background:#fff;border:1px solid #e4e4e7;border-radius:6px;box-shadow:0 4px 12px rgba(0,0,0,0.08);max-height:200px;overflow-y:auto;top:100%;left:0;margin-top:2px;"></div>
+                      <input type="hidden" class="user-ac-hidden" name="teams[<%= team.id %>][members][__MEMBER_IDX__][user_id]">
+                    </div>
+                    <% if @event_functions.any? %>
+                      <div style="position:relative;" class="fn-ac-wrapper">
+                        <input type="text" class="form-control fn-ac-input" placeholder="Função..." autocomplete="off" style="font-size:0.82rem;">
+                        <div class="fn-ac-dropdown" style="display:none;position:absolute;z-index:201;width:100%;background:#fff;border:1px solid #e4e4e7;border-radius:6px;box-shadow:0 4px 12px rgba(0,0,0,0.08);max-height:180px;overflow-y:auto;top:100%;left:0;margin-top:2px;"></div>
+                        <input type="hidden" class="fn-ac-hidden" name="teams[<%= team.id %>][members][__MEMBER_IDX__][event_function_id]">
+                      </div>
+                    <% end %>
+                    <div style="display:flex;justify-content:center;">
+                      <button type="button" class="btn-danger" style="padding:0.25rem 0.45rem;font-size:0.75rem;width:30px;" onclick="removeMemberRow(this);"><i class="bi bi-x"></i></button>
+                    </div>
+                  </div>
+                </template>
+
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-top:0.6rem;">
+                  <button type="button" onclick="addMemberRow(this)" style="display:inline-flex;align-items:center;gap:0.35rem;padding:0.28rem 0.75rem;border:none;border-radius:6px;background:#16a34a;color:#fff;font-size:0.8rem;font-weight:500;cursor:pointer;transition:background .15s;" onmouseover="this.style.background='#15803d';" onmouseout="this.style.background='#16a34a';">
+                    <i class="bi bi-person-plus-fill" style="font-size:0.75rem;"></i> Adicionar colaborador
+                  </button>
+                  <button type="button" onclick="markTeamDestroy(this)"
+                          style="padding:0.25rem 0.6rem;font-size:0.75rem;border:1px solid #e4e4e7;border-radius:6px;background:transparent;color:#a1a1aa;cursor:pointer;">
+                    <i class="bi bi-trash"></i> Remover equipe
+                  </button>
+                </div>
+              </div>
+            <% end %>
+
+            <%# Container para novos painéis de equipe (via JS) %>
+            <div class="new-team-panels"></div>
+
+            <%# Template da nova equipe %>
+            <template class="team-card-tpl" data-sector-id="<%= sector.id %>">
+              <div class="team-form-content">
+                <input type="hidden" name="teams[__TEAM_IDX__][sector_id]" value="<%= sector.id %>">
+                <div style="display:grid;grid-template-columns:1fr 180px;gap:0.75rem;margin-bottom:1rem;">
+                  <div>
+                    <label class="form-label" style="font-size:0.78rem;">Nome da equipe</label>
+                    <input type="text" name="teams[__TEAM_IDX__][name]" class="form-control team-name-input" placeholder="Ex: Portão A, Palco Principal">
+                  </div>
+                  <div>
+                    <label class="form-label" style="font-size:0.78rem;">Canal de Rádio</label>
+                    <input type="text" name="teams[__TEAM_IDX__][radio_channel]" class="form-control" placeholder="ex: Canal 3">
+                  </div>
+                </div>
+                <div style="margin-bottom:1rem;">
+                  <label class="form-label" style="font-size:0.78rem;">Coordenador</label>
+                  <div style="position:relative;" class="user-ac-wrapper">
+                    <input type="text" class="form-control user-ac-input" placeholder="Buscar por nome ou CPF..." autocomplete="off" style="font-size:0.85rem;">
+                    <div class="user-ac-dropdown" style="display:none;position:absolute;z-index:200;width:100%;background:#fff;border:1px solid #e4e4e7;border-radius:6px;box-shadow:0 4px 12px rgba(0,0,0,0.08);max-height:200px;overflow-y:auto;top:100%;left:0;margin-top:2px;"></div>
+                    <input type="hidden" name="teams[__TEAM_IDX__][coordinator_id]" class="user-ac-hidden">
+                  </div>
+                </div>
+                <div style="font-size:0.78rem;font-weight:600;color:#52525b;margin-bottom:0.5rem;"><i class="bi bi-people"></i> Colaboradores</div>
+                <div style="border:1px solid #e4e4e7;border-radius:8px;margin-bottom:0.6rem;">
+                  <div style="display:grid;grid-template-columns:<%= member_cols %>;gap:0.5rem;padding:0.4rem 0.75rem;background:#f9fafb;border-bottom:1px solid #e4e4e7;border-radius:8px 8px 0 0;">
+                    <span style="font-size:0.68rem;font-weight:600;color:#71717a;text-transform:uppercase;letter-spacing:0.05em;">Colaborador</span>
+                    <% if @event_functions.any? %><span style="font-size:0.68rem;font-weight:600;color:#71717a;text-transform:uppercase;letter-spacing:0.05em;">Função</span><% end %>
+                    <span></span>
+                  </div>
+                  <div class="member-rows"></div>
+                </div>
+                <template class="member-row-tpl">
+                  <div class="member-row" style="display:grid;grid-template-columns:<%= member_cols %>;gap:0.5rem;align-items:center;padding:0.45rem 0.75rem;border-bottom:1px solid #f4f4f5;">
+                    <div style="position:relative;" class="user-ac-wrapper">
+                      <input type="text" class="form-control user-ac-input" placeholder="Buscar colaborador..." autocomplete="off" style="font-size:0.82rem;">
+                      <div class="user-ac-dropdown" style="display:none;position:absolute;z-index:200;width:100%;background:#fff;border:1px solid #e4e4e7;border-radius:6px;box-shadow:0 4px 12px rgba(0,0,0,0.08);max-height:200px;overflow-y:auto;top:100%;left:0;margin-top:2px;"></div>
+                      <input type="hidden" class="user-ac-hidden" name="teams[__TEAM_IDX__][members][__MEMBER_IDX__][user_id]">
+                    </div>
+                    <% if @event_functions.any? %>
+                      <div style="position:relative;" class="fn-ac-wrapper">
+                        <input type="text" class="form-control fn-ac-input" placeholder="Função..." autocomplete="off" style="font-size:0.82rem;">
+                        <div class="fn-ac-dropdown" style="display:none;position:absolute;z-index:201;width:100%;background:#fff;border:1px solid #e4e4e7;border-radius:6px;box-shadow:0 4px 12px rgba(0,0,0,0.08);max-height:180px;overflow-y:auto;top:100%;left:0;margin-top:2px;"></div>
+                        <input type="hidden" class="fn-ac-hidden" name="teams[__TEAM_IDX__][members][__MEMBER_IDX__][event_function_id]">
+                      </div>
+                    <% end %>
+                    <div style="display:flex;justify-content:center;">
+                      <button type="button" class="btn-danger" style="padding:0.25rem 0.45rem;font-size:0.75rem;width:30px;" onclick="removeMemberRow(this);"><i class="bi bi-x"></i></button>
+                    </div>
+                  </div>
+                </template>
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-top:0.6rem;">
+                  <button type="button" onclick="addMemberRow(this)" style="display:inline-flex;align-items:center;gap:0.35rem;padding:0.28rem 0.75rem;border:none;border-radius:6px;background:#16a34a;color:#fff;font-size:0.8rem;font-weight:500;cursor:pointer;transition:background .15s;" onmouseover="this.style.background='#15803d';" onmouseout="this.style.background='#16a34a';">
+                    <i class="bi bi-person-plus-fill" style="font-size:0.75rem;"></i> Adicionar colaborador
+                  </button>
+                  <button type="button" onclick="removeTeamPanel(this)"
+                          style="padding:0.25rem 0.6rem;font-size:0.75rem;border:1px solid #e4e4e7;border-radius:6px;background:transparent;color:#a1a1aa;cursor:pointer;">
+                    <i class="bi bi-x"></i> Cancelar
+                  </button>
+                </div>
+              </div>
+            </template>
+
+          </div><%# /team-tab-container %>
+
+        </div><%# /content-card %>
+      </div><%# /sector-team-panel %>
+    <% end %>
+
+  </div><%# /outer container %>
+
+  <%# ── Rodapé ─────────────────────────────────────────────────────────────── %>
   <div style="display:flex;align-items:center;justify-content:space-between;gap:1rem;margin-top:0.5rem;">
     <%= link_to sectors_event_setup_path(@event), class: "btn-secondary" do %>
       <i class="bi bi-arrow-left"></i> Voltar
     <% end %>
-
     <div style="display:flex;gap:0.6rem;align-items:center;">
-      <%= link_to event_path(@event),
-            style: "font-size:0.82rem;color:#71717a;text-decoration:none;" do %>
+      <%= link_to event_path(@event), style: "font-size:0.82rem;color:#71717a;text-decoration:none;" do %>
         Pular <i class="bi bi-arrow-right"></i>
       <% end %>
       <%= f.submit "Concluir e ver evento →", class: "btn-primary" %>
     </div>
   </div>
+
 <% end %>
 
 <script>
 (function () {
-  window.addTeamRow = function (btn, sectorId) {
-    var container = btn.closest(".content-card").querySelector(".team-rows");
-    var newRow = document.createElement("div");
-    newRow.className = "team-row";
-    newRow.style.cssText = "display:flex;gap:0.5rem;align-items:center;margin-bottom:0.4rem;";
-    newRow.innerHTML =
-      '<input type="hidden" name="teams[][sector_id]" value="' + sectorId + '">' +
-      '<input type="text" name="teams[][name]" class="form-control" placeholder="Nome da equipe">' +
-      '<button type="button" onclick="removeTeamRow(this)" class="btn-danger" ' +
-        'style="padding:0.3rem 0.55rem;font-size:0.8rem;flex-shrink:0;">' +
-        '<i class="bi bi-x"></i>' +
-      '</button>';
-    container.appendChild(newRow);
-    newRow.querySelector("input[type=text]").focus();
+  var teamIdx  = Date.now();
+  var SEARCH_URL = "<%= search_users_path %>";
+  var FN_LIST    = <%= raw(@event_functions.map { |ef| { id: ef.id, label: "#{ef.name} · R$#{format('%.2f', ef.hourly_rate)}/h" } }.to_json) %>;
+
+  // ── Troca de aba de setor ────────────────────────────────────────────────
+  window.switchSectorTeamTab = function (btn) {
+    document.querySelectorAll('.sector-team-tab').forEach(function (b) {
+      b.style.borderBottomColor = 'transparent';
+      b.style.color             = '#71717a';
+      b.style.fontWeight        = '400';
+    });
+    btn.style.borderBottomColor = '#7c3aed';
+    btn.style.color             = '#7c3aed';
+    btn.style.fontWeight        = '600';
+
+    document.querySelectorAll('.sector-team-panel').forEach(function (p) {
+      p.style.display = 'none';
+    });
+    var panel = document.getElementById(btn.dataset.panel);
+    if (panel) panel.style.display = 'block';
   };
 
-  window.removeTeamRow = function (btn) {
-    var container = btn.closest(".team-rows");
-    var rows = container.querySelectorAll(".team-row");
-    if (rows.length <= 1) {
-      container.querySelector("input[type=text]").value = "";
-      return;
+  // ── Autocomplete de usuário ──────────────────────────────────────────────
+  function initUserAc(wrapper, onSelectCb) {
+    var input    = wrapper.querySelector(".user-ac-input");
+    var dropdown = wrapper.querySelector(".user-ac-dropdown");
+    var hidden   = wrapper.querySelector(".user-ac-hidden");
+    if (!input || !dropdown) return;
+    var timer;
+    function renderResults(users) {
+      if (!Array.isArray(users) || !users.length) {
+        dropdown.innerHTML = '<div style="padding:0.5rem 0.75rem;font-size:0.82rem;color:#a1a1aa;">Nenhum resultado</div>';
+      } else {
+        dropdown.innerHTML = users.map(function (u) {
+          var av = u.avatar_url
+            ? '<img src="' + u.avatar_url + '" style="width:26px;height:26px;border-radius:50%;object-fit:cover;flex-shrink:0;">'
+            : '<div style="width:26px;height:26px;border-radius:50%;background:#f4f4f5;border:1px solid #e4e4e7;display:flex;align-items:center;justify-content:center;font-size:0.5rem;font-weight:700;color:#52525b;flex-shrink:0;">' + (u.initials || "") + "</div>";
+          return '<div class="user-option" data-id="' + u.id + '" data-name="' + (u.name || "") + '" '
+            + 'style="display:flex;align-items:center;gap:0.55rem;padding:0.45rem 0.75rem;cursor:pointer;" '
+            + 'onmouseover="this.style.background=\'#f4f4f5\'" onmouseout="this.style.background=\'\'">'
+            + av
+            + '<div><div style="font-size:0.82rem;font-weight:500;color:#18181b;">' + (u.name || "") + "</div>"
+            + '<div style="font-size:0.7rem;color:#a1a1aa;font-family:monospace;">' + (u.cpf || "") + "</div></div></div>";
+        }).join("");
+      }
+      dropdown.style.display = "block";
+      dropdown.querySelectorAll(".user-option").forEach(function (opt) {
+        opt.addEventListener("mousedown", function (e) {
+          e.preventDefault();
+          input.value = this.dataset.name;
+          if (hidden) hidden.value = this.dataset.id;
+          dropdown.style.display = "none";
+          if (onSelectCb) onSelectCb(this.dataset.id, this.dataset.name);
+        });
+      });
     }
-    btn.closest(".team-row").remove();
+    input.addEventListener("input", function () {
+      clearTimeout(timer);
+      var q = this.value.trim();
+      if (q.length < 2) { dropdown.style.display = "none"; return; }
+      timer = setTimeout(function () {
+        fetch(SEARCH_URL + "?q=" + encodeURIComponent(q), {
+          headers: { "Accept": "application/json", "X-Requested-With": "XMLHttpRequest" }
+        })
+          .then(function (r) { return r.ok ? r.json() : []; })
+          .then(renderResults)
+          .catch(function () { dropdown.style.display = "none"; });
+      }, 250);
+    });
+    input.addEventListener("blur", function () {
+      setTimeout(function () { dropdown.style.display = "none"; }, 150);
+    });
+  }
+
+  // ── Atualiza painel de funções planejadas ────────────────────────────────
+  function updateSectorFnPanel(sectorCard) {
+    var counts = {};
+    sectorCard.querySelectorAll(".fn-ac-hidden").forEach(function (h) {
+      if (h.value) counts[h.value] = (counts[h.value] || 0) + 1;
+    });
+    sectorCard.querySelectorAll(".fn-plan-count").forEach(function (countEl) {
+      var fnId     = countEl.dataset.fnId;
+      var qty      = parseInt(countEl.dataset.qty, 10);
+      var done     = counts[fnId] || 0;
+      var pct      = qty > 0 ? Math.min(Math.round(done * 100 / qty), 100) : 0;
+      var exceeded = done > qty;
+      var complete = done === qty;
+      var color    = exceeded ? "#d97706" : (complete ? "#16a34a" : "#dc2626");
+      var bg       = exceeded ? "#fef3c7" : (complete ? "#dcfce7" : "#fee2e2");
+      var label    = exceeded ? "+" + (done - qty) + " extra" + (done - qty === 1 ? "" : "s")
+                   : complete ? "Completo"
+                   : (qty - done) + " vaga" + (qty - done === 1 ? "" : "s");
+      countEl.innerHTML = done + " / " + qty;
+      var barEl = sectorCard.querySelector('.fn-plan-bar[data-fn-id="' + fnId + '"]');
+      if (barEl) { barEl.style.width = pct + "%"; barEl.style.background = color; }
+      var badgeEl = sectorCard.querySelector('.fn-plan-badge[data-fn-id="' + fnId + '"]');
+      if (badgeEl) { badgeEl.textContent = label; badgeEl.style.background = bg; badgeEl.style.color = color; }
+    });
+  }
+
+  // ── Autocomplete de função ───────────────────────────────────────────────
+  function initFnAc(wrapper) {
+    var input    = wrapper.querySelector(".fn-ac-input");
+    var dropdown = wrapper.querySelector(".fn-ac-dropdown");
+    var hidden   = wrapper.querySelector(".fn-ac-hidden");
+    if (!input || !dropdown || !FN_LIST.length) return;
+    var currentLabel = input.value;
+    var currentId    = hidden ? hidden.value : "";
+    function renderList(items) {
+      dropdown.innerHTML = items.length
+        ? items.map(function (fn) {
+            return '<div class="fn-option" data-id="' + fn.id + '" data-label="' + fn.label + '" '
+              + 'style="padding:0.45rem 0.75rem;cursor:pointer;font-size:0.82rem;color:#18181b;" '
+              + 'onmouseover="this.style.background=\'#f4f4f5\'" onmouseout="this.style.background=\'\'">'
+              + fn.label + "</div>";
+          }).join("")
+        : '<div style="padding:0.5rem 0.75rem;font-size:0.82rem;color:#a1a1aa;">Nenhuma função</div>';
+      dropdown.style.display = "block";
+      dropdown.querySelectorAll(".fn-option").forEach(function (opt) {
+        opt.addEventListener("mousedown", function (e) {
+          e.preventDefault();
+          input.value       = this.dataset.label;
+          if (hidden) hidden.value = this.dataset.id;
+          currentLabel      = this.dataset.label;
+          currentId         = this.dataset.id;
+          dropdown.style.display = "none";
+          var sectorCard = wrapper.closest(".content-card");
+          if (sectorCard) updateSectorFnPanel(sectorCard);
+        });
+      });
+    }
+    input.addEventListener("focus", function () { input.value = ""; renderList(FN_LIST); });
+    input.addEventListener("input", function () {
+      var q = this.value.trim().toLowerCase();
+      renderList(q ? FN_LIST.filter(function (fn) { return fn.label.toLowerCase().includes(q); }) : FN_LIST);
+    });
+    input.addEventListener("blur", function () {
+      setTimeout(function () {
+        dropdown.style.display = "none";
+        input.value       = currentLabel;
+        if (hidden) hidden.value = currentId;
+        var sectorCard = wrapper.closest(".content-card");
+        if (sectorCard) updateSectorFnPanel(sectorCard);
+      }, 160);
+    });
+  }
+
+  // ── Inicializa autocompletes de um painel de equipe ──────────────────────
+  function initTeamCard(panel) {
+    panel.querySelectorAll(".user-ac-wrapper").forEach(function (uw) {
+      if (!uw.closest(".member-row")) initUserAc(uw);
+    });
+    panel.querySelectorAll(".member-row").forEach(function (row) {
+      var uw = row.querySelector(".user-ac-wrapper");
+      var fw = row.querySelector(".fn-ac-wrapper");
+      if (uw) initUserAc(uw);
+      if (fw) initFnAc(fw);
+    });
+  }
+
+  // ── Trocar aba de equipe ─────────────────────────────────────────────────
+  window.switchTeamTab = function (btn) {
+    var container = btn.closest(".team-tab-container");
+    var tabBar    = btn.closest(".team-tab-bar");
+    if (!container || !tabBar) return;
+    tabBar.querySelectorAll(".team-tab-btn").forEach(function (b) {
+      b.style.borderBottomColor = "transparent";
+      b.style.fontWeight        = "400";
+      b.style.color             = b.classList.contains("new-tab") ? "#16a34a" : "#71717a";
+    });
+    var isNew = btn.classList.contains("new-tab");
+    btn.style.borderBottomColor = isNew ? "#16a34a" : "#7c3aed";
+    btn.style.fontWeight        = "600";
+    btn.style.color             = isNew ? "#16a34a" : "#7c3aed";
+    container.querySelectorAll(".team-tab-panel").forEach(function (p) {
+      p.style.display = "none";
+    });
+    var panel = document.getElementById(btn.dataset.panel);
+    if (panel) panel.style.display = "block";
   };
+
+  // ── Adicionar nova equipe como aba ───────────────────────────────────────
+  window.addTeamTab = function (btn, sectorId) {
+    var sectorCard      = btn.closest(".content-card");
+    var tpl             = sectorCard.querySelector(".team-card-tpl");
+    var tabBar          = sectorCard.querySelector(".team-tab-bar");
+    var panelsContainer = sectorCard.querySelector(".new-team-panels");
+    if (!tpl || !tabBar || !panelsContainer) return;
+    var idx     = teamIdx++;
+    var panelId = "team-panel-" + idx;
+    var clone   = tpl.content.cloneNode(true);
+    var content = clone.querySelector(".team-form-content");
+    content.querySelectorAll("input[name], select[name]").forEach(function (el) {
+      el.name = el.name.replace(/__TEAM_IDX__/g, idx);
+    });
+    content.querySelectorAll("template.member-row-tpl").forEach(function (t) {
+      t.innerHTML = t.innerHTML.replace(/__TEAM_IDX__/g, idx);
+    });
+    var panel = document.createElement("div");
+    panel.id        = panelId;
+    panel.className = "team-tab-panel";
+    panel.style.display = "none";
+    panel.appendChild(content);
+    panelsContainer.appendChild(panel);
+    var tabBtn = document.createElement("button");
+    tabBtn.type = "button";
+    tabBtn.className = "team-tab-btn new-tab";
+    tabBtn.dataset.panel = panelId;
+    tabBtn.setAttribute("onclick", "switchTeamTab(this)");
+    tabBtn.innerHTML = '<i class="bi bi-plus-circle-fill" style="font-size:0.68rem;margin-right:3px;"></i>Nova equipe';
+    tabBtn.style.cssText = "display:inline-flex;align-items:center;gap:0.3rem;padding:0.22rem 0.65rem;border:none;border-radius:6px;background:#16a34a;cursor:pointer;font-size:0.78rem;font-weight:500;color:#fff;white-space:nowrap;flex-shrink:0;margin:auto 0.35rem;transition:background .15s;";
+    var addBtn = tabBar.querySelector(".team-add-btn");
+    tabBar.insertBefore(tabBtn, addBtn);
+    switchTeamTab(tabBtn);
+    initTeamCard(panel);
+    var nameInput = panel.querySelector(".team-name-input");
+    if (nameInput) {
+      nameInput.focus();
+      nameInput.addEventListener("input", function () {
+        var label = this.value.trim() || "Nova equipe";
+        tabBtn.innerHTML = '<i class="bi bi-plus-circle" style="font-size:0.68rem;margin-right:3px;"></i>' + label;
+      });
+    }
+  };
+
+  // ── Remover painel de nova equipe ────────────────────────────────────────
+  window.removeTeamPanel = function (btn) {
+    var panel     = btn.closest(".team-tab-panel");
+    var container = panel.closest(".team-tab-container");
+    var panelId   = panel.id;
+    var tabBtn    = container.querySelector('.team-tab-btn[data-panel="' + panelId + '"]');
+    var allTabs   = Array.from(container.querySelectorAll(".team-tab-btn:not(.team-add-btn)"));
+    var idx       = allTabs.indexOf(tabBtn);
+    var sibling   = allTabs[idx - 1] || allTabs[idx + 1];
+    if (tabBtn) tabBtn.remove();
+    panel.remove();
+    if (sibling) switchTeamTab(sibling);
+    var sectorCard = container.closest(".content-card");
+    if (sectorCard) updateSectorFnPanel(sectorCard);
+  };
+
+  // ── Marcar equipe existente para remoção ─────────────────────────────────
+  window.markTeamDestroy = function (btn) {
+    var panel     = btn.closest(".team-tab-panel");
+    var container = panel.closest(".team-tab-container");
+    var flag      = panel.querySelector(".destroy-flag");
+    var tabBtn    = container.querySelector('.team-tab-btn[data-panel="' + panel.id + '"]');
+    var isDestroy = flag && flag.value === "1";
+    if (isDestroy) {
+      if (flag) flag.value = "0";
+      panel.style.opacity = "1";
+      panel.style.pointerEvents = "";
+      if (tabBtn) { tabBtn.style.textDecoration = ""; tabBtn.style.opacity = "1"; }
+      btn.innerHTML = '<i class="bi bi-trash"></i> Remover equipe';
+      btn.style.cssText = "padding:0.25rem 0.6rem;font-size:0.75rem;border:1px solid #e4e4e7;border-radius:6px;background:transparent;color:#a1a1aa;cursor:pointer;";
+    } else {
+      if (flag) flag.value = "1";
+      panel.style.opacity = "0.4";
+      panel.style.pointerEvents = "none";
+      if (tabBtn) { tabBtn.style.textDecoration = "line-through"; tabBtn.style.opacity = "0.5"; }
+      btn.innerHTML = '<i class="bi bi-arrow-counterclockwise"></i> Desfazer remoção';
+      btn.style.cssText = "padding:0.25rem 0.6rem;font-size:0.75rem;border:1px solid #fcd34d;border-radius:6px;background:#fef3c7;color:#d97706;cursor:pointer;pointer-events:auto;opacity:1;";
+    }
+    var sectorCard = container.closest(".content-card");
+    if (sectorCard) updateSectorFnPanel(sectorCard);
+  };
+
+  // ── Remover linha de membro ──────────────────────────────────────────────
+  window.removeMemberRow = function (btn) {
+    var sectorCard = btn.closest(".content-card");
+    btn.closest(".member-row").remove();
+    if (sectorCard) updateSectorFnPanel(sectorCard);
+  };
+
+  // ── Adicionar linha de membro ────────────────────────────────────────────
+  window.addMemberRow = function (btn) {
+    var panel     = btn.closest(".team-tab-panel") || btn.closest(".team-form-content");
+    var tpl       = panel.querySelector(".member-row-tpl");
+    var container = panel.querySelector(".member-rows");
+    if (!tpl || !container) return;
+    var midx  = Date.now();
+    var clone = tpl.content.cloneNode(true);
+    var row   = clone.querySelector(".member-row");
+    row.querySelectorAll("input[name]").forEach(function (el) {
+      el.name = el.name.replace(/__MEMBER_IDX__/g, midx);
+    });
+    container.appendChild(row);
+    var addedRow = container.lastElementChild;
+    var uw = addedRow.querySelector(".user-ac-wrapper");
+    var fw = addedRow.querySelector(".fn-ac-wrapper");
+    if (uw) initUserAc(uw);
+    if (fw) initFnAc(fw);
+    addedRow.querySelector(".user-ac-input").focus();
+  };
+
+  // ── Inicializa autocompletes dos painéis existentes ──────────────────────
+  document.querySelectorAll(".existing-team").forEach(function (panel) {
+    initTeamCard(panel);
+  });
 })();
 </script>

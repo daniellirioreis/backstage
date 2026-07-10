@@ -25,7 +25,6 @@
     </div>
   </div>
   <div style="display: flex; gap: 0.5rem;">
-    <%# Botão de transição de status (avançar) %>
     <% if policy(@event).transition? %>
       <% if @event.draft? %>
         <%= button_to transition_event_path(@event), method: :patch,
@@ -40,8 +39,6 @@
           <i class="bi bi-stop-circle-fill"></i> Encerrar evento
         <% end %>
       <% end %>
-
-      <%# Botão de retrocesso (discreto) %>
       <% if @event.active? %>
         <%= button_to revert_event_path(@event), method: :patch,
               style: "display:flex; align-items:center; gap:0.35rem; background:transparent; color:#71717a; border:1px solid #e4e4e7; border-radius:7px; padding:0.4rem 0.75rem; font-size:0.78rem; cursor:pointer;",
@@ -84,7 +81,7 @@
 <% total_members      = @sectors.flat_map(&:teams).flat_map(&:users).uniq.size %>
 <% total_coordinators = @sectors.flat_map(&:teams).count(&:coordinator) %>
 
-<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
+<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
   <div class="metric-card">
     <div class="metric-label"><i class="bi bi-grid-3x3-gap"></i> Setores</div>
     <div class="metric-value"><%= @sectors.size %></div>
@@ -103,441 +100,484 @@
   </div>
 </div>
 
-<%# ── Estimativa de planejamento ──────────────────────────────────────────── %>
-<% if @plan_cost_by_function.any? %>
-  <%
-    total_planned      = @headcount_by_function.values.sum { |v| v[:planned] }
-    total_assigned     = @headcount_by_function.values.sum { |v| v[:assigned] }
-    hc_total_pct       = total_planned > 0 ? [(total_assigned * 100.0 / total_planned).round, 100].min : 0
-    hc_total_color     = hc_total_pct >= 100 ? '#15803d' : hc_total_pct >= 60 ? '#92400e' : '#991b1b'
-    total_assigned_cost = @headcount_by_function.sum do |ef, v|
-      v[:assigned] * ef.hourly_rate.to_f * @total_event_hours
-    end
-  %>
-  <div class="content-card" style="margin-bottom: 2rem; padding: 1.25rem 1.5rem;">
-    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1rem;">
-      <h2 style="font-size:0.9rem; font-weight:600; color:#18181b; margin:0;">
-        <i class="bi bi-calculator" style="color:#7c3aed;"></i> Estimativa de planejamento
-        <span style="font-size:0.72rem; font-weight:400; color:#a1a1aa; margin-left:0.35rem;">
-          <% if @event_days_records.any? %>
-            <%= @event_days_records.size %> dia<%= @event_days_records.size == 1 ? '' : 's' %> · <%= @total_event_hours.to_i == @total_event_hours ? @total_event_hours.to_i : @total_event_hours %>h total
-          <% else %>
-            <%= (@total_event_hours / 8).round %> dia<%= (@total_event_hours / 8).round == 1 ? '' : 's' %> · <%= @total_event_hours.to_i %>h total
-          <% end %>
-        </span>
-      </h2>
-      <div style="display:flex; align-items:center; gap:1rem;">
-        <% if total_planned > 0 %>
-          <span style="font-size:0.8rem; font-weight:600; color:<%= hc_total_color %>;">
-            <i class="bi bi-person-check"></i> <%= total_assigned %>/<%= total_planned %> atribuídos
-            <% if total_assigned_cost > 0 %>
-              · <%= number_to_currency(total_assigned_cost, unit: "R$", separator: ",", delimiter: ".", precision: 0) %>
-            <% end %>
-          </span>
-        <% end %>
-        <span style="font-size:0.95rem; font-weight:700; color:#7c3aed;">
-          <%= number_to_currency(@plan_total_cost, unit: "R$", separator: ",", delimiter: ".", precision: 2) %>
-        </span>
-      </div>
-    </div>
+<%# ── Tab nav ─────────────────────────────────────────────────────────────── %>
+<% has_financial = @plan_cost_by_function.any? || @cost_by_function.any? %>
 
-    <%
-      sorted_plan = @plan_cost_by_function.sort_by { |_, v| -v }
-      max_plan    = sorted_plan.first&.last.to_f
-    %>
-    <div style="display:flex; flex-direction:column; gap:0.75rem;">
-      <% sorted_plan.each do |ef, cost| %>
-        <%
-          sf_total_qty   = @sectors.sum { |s| s.sector_functions.select { |sf| sf.event_function_id == ef.id }.sum(&:quantity) }
-          pct            = max_plan > 0 ? (cost / max_plan * 100).round(1) : 0
-          hc             = @headcount_by_function[ef]
-          hc_planned     = hc ? hc[:planned]  : 0
-          hc_assigned    = hc ? hc[:assigned] : 0
-          hc_over        = hc_planned > 0 && hc_assigned > hc_planned
-          hc_pct         = hc_planned > 0 ? [(hc_assigned * 100.0 / hc_planned).round, 100].min : 0
-          hc_color       = hc_over ? '#92400e' : hc_pct >= 100 ? '#15803d' : hc_pct > 0 ? '#92400e' : '#a1a1aa'
-          hc_bg          = hc_over ? '#ffedd5' : hc_pct >= 100 ? '#dcfce7' : hc_pct > 0 ? '#fef3c7' : '#f4f4f5'
-          hc_border      = hc_over ? '1px solid #fb923c' : 'none'
-          hc_bar         = hc_over ? '#f97316' : hc_pct >= 100 ? '#4ade80' : hc_pct > 0 ? '#fb923c' : '#e4e4e7'
-          assigned_cost  = hc_assigned * ef.hourly_rate.to_f * @total_event_hours
-        %>
-        <div>
-          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:0.3rem;">
-            <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
-              <span style="font-size:0.83rem; font-weight:500; color:#18181b;"><%= ef.name %></span>
-              <span style="font-size:0.72rem; color:#a1a1aa;"><%= sf_total_qty %> × <%= ef.hourly_rate_formatted %></span>
-              <% if hc_planned > 0 %>
-                <span style="font-size:0.7rem; font-weight:600; background:<%= hc_bg %>; color:<%= hc_color %>; border:<%= hc_border %>; border-radius:4px; padding:1px 7px; white-space:nowrap;">
-                  <% if hc_over %>
-                    <i class="bi bi-exclamation-triangle-fill"></i>
-                  <% elsif hc_pct >= 100 %>
-                    <i class="bi bi-check-circle-fill"></i>
-                  <% else %>
-                    <i class="bi bi-person-fill"></i>
-                  <% end %>
-                  <%= hc_assigned %>/<%= hc_planned %>
-                  <% if hc_over %>
-                    <span style="font-size:0.62rem; opacity:0.8;">(+<%= hc_assigned - hc_planned %>)</span>
-                  <% end %>
-                  <% if assigned_cost > 0 %>
-                    · <%= number_to_currency(assigned_cost, unit: "R$", separator: ",", delimiter: ".", precision: 0) %>
-                  <% end %>
-                </span>
-              <% end %>
-            </div>
-            <span style="font-size:0.85rem; font-weight:700; color:#7c3aed; flex-shrink:0; margin-left:0.75rem;">
-              <%= number_to_currency(cost, unit: "R$", separator: ",", delimiter: ".", precision: 2) %>
-            </span>
-          </div>
-          <%# Barra de custo (purple) %>
-          <div style="height:5px; background:#f4f4f5; border-radius:99px; overflow:hidden; margin-bottom:2px;">
-            <div style="height:100%; width:<%= pct %>%; background:#a78bfa; border-radius:99px;"></div>
-          </div>
-          <%# Barra de preenchimento (colorida) %>
-          <% if hc_planned > 0 %>
-            <div style="height:3px; background:#f4f4f5; border-radius:99px; overflow:hidden;">
-              <div style="height:100%; width:<%= hc_pct %>%; background:<%= hc_bar %>; border-radius:99px;"></div>
-            </div>
-          <% end %>
-        </div>
-      <% end %>
-    </div>
-
-    <%# Rodapé totais %>
-    <% if total_assigned_cost > 0 %>
-      <%
-        covered_pct  = @plan_total_cost > 0 ? [(total_assigned_cost / @plan_total_cost * 100).round, 100].min : 0
-        payable_cost = @estimated_cost - @absent_cost.to_f
-        paid_pct     = payable_cost > 0 ? [(@total_paid / payable_cost * 100).round, 100].min : 0
-        gap          = @plan_total_cost - total_assigned_cost
-      %>
-      <div style="margin-top:1rem; padding-top:0.75rem; border-top:1px solid #e4e4e7;">
-        <div style="display:flex; justify-content:space-between; align-items:flex-end;">
-          <div style="display:flex; gap:1.5rem; flex-wrap:wrap;">
-            <div>
-              <div style="font-size:0.68rem; font-weight:600; text-transform:uppercase; letter-spacing:0.05em; color:#a1a1aa; margin-bottom:1px;">Atribuído</div>
-              <div style="font-size:0.88rem; font-weight:700; color:<%= hc_total_color %>;">
-                <%= number_to_currency(total_assigned_cost, unit: "R$", separator: ",", delimiter: ".", precision: 2) %>
-              </div>
-            </div>
-            <div>
-              <div style="font-size:0.68rem; font-weight:600; text-transform:uppercase; letter-spacing:0.05em; color:#a1a1aa; margin-bottom:1px;">Planejado</div>
-              <div style="font-size:0.88rem; font-weight:700; color:#7c3aed;">
-                <%= number_to_currency(@plan_total_cost, unit: "R$", separator: ",", delimiter: ".", precision: 2) %>
-              </div>
-            </div>
-            <% if @total_paid > 0 %>
-              <div>
-                <div style="font-size:0.68rem; font-weight:600; text-transform:uppercase; letter-spacing:0.05em; color:#a1a1aa; margin-bottom:1px;">Pago</div>
-                <div style="font-size:0.88rem; font-weight:700; color:#15803d;">
-                  <%= number_to_currency(@total_paid, unit: "R$", separator: ",", delimiter: ".", precision: 2) %>
-                </div>
-              </div>
-              <% if @absent_cost.to_f > 0 %>
-                <div>
-                  <div style="font-size:0.68rem; font-weight:600; text-transform:uppercase; letter-spacing:0.05em; color:#a1a1aa; margin-bottom:1px;">Ausências</div>
-                  <div style="font-size:0.88rem; font-weight:700; color:#6b7280;" title="Custo não incorrido — colaboradores escalados que não compareceram">
-                    <%= number_to_currency(@absent_cost, unit: "R$", separator: ",", delimiter: ".", precision: 2) %>
-                    <span style="font-size:0.65rem; font-weight:500; color:#a1a1aa;">economia</span>
-                  </div>
-                </div>
-              <% end %>
-              <% truly_pending = @estimated_cost - @total_paid - @absent_cost.to_f %>
-              <% if truly_pending > 0.01 %>
-                <div>
-                  <div style="font-size:0.68rem; font-weight:600; text-transform:uppercase; letter-spacing:0.05em; color:#a1a1aa; margin-bottom:1px;">A pagar</div>
-                  <div style="font-size:0.88rem; font-weight:700; color:#d97706;">
-                    <%= number_to_currency(truly_pending, unit: "R$", separator: ",", delimiter: ".", precision: 2) %>
-                  </div>
-                </div>
-              <% end %>
-            <% elsif gap > 0 %>
-              <div>
-                <div style="font-size:0.68rem; font-weight:600; text-transform:uppercase; letter-spacing:0.05em; color:#a1a1aa; margin-bottom:1px;">Faltam</div>
-                <div style="font-size:0.88rem; font-weight:700; color:#dc2626;">
-                  <%= number_to_currency(gap, unit: "R$", separator: ",", delimiter: ".", precision: 2) %>
-                </div>
-              </div>
-            <% end %>
-          </div>
-          <span style="font-size:0.78rem; font-weight:700; color:<%= covered_pct >= 100 ? '#15803d' : covered_pct >= 60 ? '#92400e' : '#71717a' %>;">
-            <%= covered_pct %>% coberto
-          </span>
-        </div>
-
-        <% if @total_paid > 0 %>
-          <%
-            absent_pct  = @estimated_cost > 0 ? [(@absent_cost.to_f / @estimated_cost * 100).round, 100].min : 0
-            truly_pending_pct = [100 - paid_pct - absent_pct, 0].max
-          %>
-          <div style="margin-top:0.75rem;">
-            <div style="display:flex; justify-content:space-between; margin-bottom:3px;">
-              <span style="font-size:0.68rem; color:#71717a;">Pagamentos realizados</span>
-              <span style="font-size:0.68rem; font-weight:700; color:#15803d;"><%= paid_pct %>%</span>
-            </div>
-            <div style="height:6px; background:#e4e4e7; border-radius:4px; overflow:hidden; display:flex;">
-              <div style="height:100%; width:<%= paid_pct %>%; background:#16a34a; transition:width 0.3s;"></div>
-              <div style="height:100%; width:<%= absent_pct %>%; background:#d1d5db; transition:width 0.3s;" title="Ausências"></div>
-              <div style="height:100%; width:<%= truly_pending_pct %>%; background:#fbbf24; transition:width 0.3s;" title="A pagar"></div>
-            </div>
-            <div style="display:flex; gap:0.75rem; margin-top:4px;">
-              <span style="font-size:0.62rem; color:#15803d; display:flex; align-items:center; gap:3px;"><span style="width:8px;height:8px;border-radius:50%;background:#16a34a;display:inline-block;"></span>Pago</span>
-              <% if absent_pct > 0 %>
-                <span style="font-size:0.62rem; color:#6b7280; display:flex; align-items:center; gap:3px;"><span style="width:8px;height:8px;border-radius:50%;background:#d1d5db;display:inline-block;"></span>Ausências</span>
-              <% end %>
-              <% if truly_pending_pct > 0 %>
-                <span style="font-size:0.62rem; color:#d97706; display:flex; align-items:center; gap:3px;"><span style="width:8px;height:8px;border-radius:50%;background:#fbbf24;display:inline-block;"></span>A pagar</span>
-              <% end %>
-            </div>
-          </div>
-        <% end %>
-      </div>
-    <% end %>
-  </div>
-<% end %>
-
-<%# ── Custo realizado por função ──────────────────────────────────────────── %>
-<% if @cost_by_function.any? %>
-  <div class="content-card" style="margin-bottom: 2rem; padding: 1.25rem 1.5rem;">
-    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem;">
-      <h2 style="font-size: 0.9rem; font-weight: 600; color: #18181b; margin: 0;">
-        <i class="bi bi-cash-stack" style="color: #16a34a;"></i> Custo realizado por função
-      </h2>
-      <span style="font-size: 0.88rem; font-weight: 700; color: #15803d;">
-        Total: <%= number_to_currency(@estimated_cost, unit: "R$", separator: ",", delimiter: ".", precision: 2) %>
-      </span>
-    </div>
-
-    <%
-      sorted = @cost_by_function.sort_by { |_, v| -v }
-      max_cost = sorted.first&.last.to_f
-    %>
-
-    <div style="display: flex; flex-direction: column; gap: 0.65rem;">
-      <% sorted.each do |ef, cost| %>
-        <% pct = max_cost > 0 ? (cost / max_cost * 100).round(1) : 0 %>
-        <div>
-          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.3rem;">
-            <div style="display: flex; align-items: center; gap: 0.5rem;">
-              <span style="font-size: 0.83rem; font-weight: 500; color: #18181b;"><%= ef.name %></span>
-              <span style="font-size: 0.72rem; color: #a1a1aa;"><%= ef.hourly_rate_formatted %></span>
-            </div>
-            <span style="font-size: 0.85rem; font-weight: 700; color: #15803d;">
-              <%= number_to_currency(cost, unit: "R$", separator: ",", delimiter: ".", precision: 2) %>
-            </span>
-          </div>
-          <div style="height: 6px; background: #f4f4f5; border-radius: 99px; overflow: hidden;">
-            <div style="height: 100%; width: <%= pct %>%; background: #4ade80; border-radius: 99px; transition: width 0.4s ease;"></div>
-          </div>
-        </div>
-      <% end %>
-    </div>
-  </div>
-<% end %>
-
-<%# ── Coordenadores ───────────────────────────────────────────────────────── %>
-<% coordinators = @sectors.flat_map(&:teams).select(&:coordinator).map { |t|
-     coord_tm = t.team_memberships.find(&:coordinator?)
-     { team: t, user: t.coordinator, credential: coord_tm&.credential_code }
-   } %>
-<% if coordinators.any? %>
-  <div class="content-card" style="margin-bottom: 2rem;">
-    <h2 style="font-size: 0.9rem; font-weight: 600; color: #18181b; margin: 0 0 0.75rem;">
-      <i class="bi bi-star-fill" style="color: #f59e0b;"></i> Coordenadores
-    </h2>
-    <table class="data-table">
-      <thead>
-        <tr>
-          <th>Nome</th>
-          <th>Equipe</th>
-          <th>Canal Rádio</th>
-          <th>Cód. Credencial</th>
-        </tr>
-      </thead>
-      <tbody>
-        <% coordinators.each do |c| %>
-          <tr>
-            <td>
-              <div style="display: flex; align-items: center; gap: 0.6rem;">
-                <div style="width: 28px; height: 28px; border-radius: 50%; overflow: hidden; background: #fef3c7; border: 2px solid #fcd34d; display: flex; align-items: center; justify-content: center; font-size: 0.55rem; font-weight: 700; color: #92400e; flex-shrink: 0;">
-                  <% if c[:user].avatar.attached? %>
-                    <%= image_tag c[:user].avatar, style: "width: 100%; height: 100%; object-fit: cover;" %>
-                  <% else %>
-                    <%= c[:user].name.split.map(&:first).first(2).join.upcase %>
-                  <% end %>
-                </div>
-                <span style="font-weight: 500; color: #18181b;"><%= c[:user].name %></span>
-              </div>
-            </td>
-            <td style="color: #71717a; font-size: 0.82rem;"><%= c[:team].name %></td>
-            <td>
-              <% if c[:team].radio_channel.present? %>
-                <span style="display: inline-flex; align-items: center; gap: 0.25rem; background: #fef3c7; border: 1px solid #fcd34d; border-radius: 5px; padding: 1px 7px; font-size: 0.7rem; font-weight: 600; color: #92400e;">
-                  <i class="bi bi-broadcast"></i> <%= c[:team].radio_channel %>
-                </span>
-              <% else %>
-                <span style="color: #a1a1aa;">—</span>
-              <% end %>
-            </td>
-            <td style="font-family: monospace; font-size: 0.78rem; color: #71717a;">
-              <%= c[:credential] || "—" %>
-            </td>
-          </tr>
-        <% end %>
-      </tbody>
-    </table>
-  </div>
-<% end %>
-
-<%# ── Setores ─────────────────────────────────────────────────────────────── %>
-<%
-  total_expected = @sectors.sum { |s| s.planned_headcount }
-  total_scaled   = @sectors.flat_map(&:teams).flat_map(&:users).uniq.size
-  sectors_with_expected = @sectors.count { |s| s.planned_headcount > 0 }
-  sectors_complete = @sectors.count { |s|
-    s.planned_headcount > 0 &&
-    s.teams.flat_map(&:users).uniq.size >= s.planned_headcount
-  }
-%>
-
-<div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem;">
-  <h2 style="font-size: 1rem; font-weight: 600; color: #18181b; margin: 0;">
-    <%= Sector.model_name.human(count: 2) %>
-  </h2>
-  <% if !@event.closed? && policy(Sector).new? %>
-    <%= link_to new_sector_path(event_id: @event.id), class: "btn-primary" do %>
-      <i class="bi bi-plus"></i> <%= t("actions.new", model: Sector.model_name.human) %>
-    <% end %>
+<div style="display:flex; align-items:stretch; border-bottom:2px solid #e4e4e7; margin-bottom:1.5rem; gap:0;">
+  <button id="tab-btn-geral" onclick="switchEventTab('geral')"
+          style="padding:0.6rem 1.25rem; border:none; background:none; cursor:pointer; font-size:0.88rem; font-weight:600; color:#7c3aed; border-bottom:2px solid #7c3aed; margin-bottom:-2px; transition:all 0.15s;">
+    <i class="bi bi-grid-3x3-gap"></i> Geral
+  </button>
+  <% if has_financial %>
+    <button id="tab-btn-financeiro" onclick="switchEventTab('financeiro')"
+            style="padding:0.6rem 1.25rem; border:none; background:none; cursor:pointer; font-size:0.88rem; font-weight:600; color:#71717a; border-bottom:2px solid transparent; margin-bottom:-2px; transition:all 0.15s;">
+      <i class="bi bi-cash-stack"></i> Financeiro
+    </button>
   <% end %>
 </div>
 
-<% if sectors_with_expected > 0 %>
-  <div class="content-card" style="margin-bottom: 1.25rem; padding: 1rem 1.25rem;">
-    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:0.75rem;">
-      <span style="font-size:0.8rem; font-weight:600; text-transform:uppercase; letter-spacing:0.06em; color:#71717a;">
-        <i class="bi bi-people"></i> Preenchimento geral
-      </span>
-      <% overall_pct = total_expected > 0 ? [(total_scaled * 100.0 / total_expected).round, 100].min : 0 %>
-      <span style="font-size:0.85rem; font-weight:700; color:<%= overall_pct >= 100 ? '#15803d' : overall_pct >= 60 ? '#92400e' : '#991b1b' %>;">
-        <%= total_scaled %> / <%= total_expected %> (<%= overall_pct %>%)
-      </span>
-    </div>
-    <div style="height:8px; background:#f4f4f5; border-radius:99px; overflow:hidden; margin-bottom:0.75rem;">
-      <div style="height:100%; width:<%= overall_pct %>%; background:<%= overall_pct >= 100 ? '#4ade80' : overall_pct >= 60 ? '#fb923c' : '#f87171' %>; border-radius:99px; transition:width 0.4s ease;"></div>
-    </div>
-    <div style="display:flex; gap:1.5rem; font-size:0.78rem; color:#71717a;">
-      <span><i class="bi bi-check-circle-fill" style="color:#4ade80;"></i> <%= sectors_complete %> setor<%= sectors_complete == 1 ? '' : 'es' %> completo<%= sectors_complete == 1 ? '' : 's' %></span>
-      <span><i class="bi bi-hourglass-split" style="color:#fb923c;"></i> <%= sectors_with_expected - sectors_complete %> incompleto<%= (sectors_with_expected - sectors_complete) == 1 ? '' : 's' %></span>
-      <span><i class="bi bi-dash-circle" style="color:#d4d4d8;"></i> <%= @sectors.size - sectors_with_expected %> sem previsão</span>
-    </div>
-  </div>
-<% end %>
+<%# ══════════════════════════════════════════════════════════════════════════ %>
+<%# ABA: GERAL                                                                %>
+<%# ══════════════════════════════════════════════════════════════════════════ %>
+<div id="tab-geral">
 
-<% if @sectors.empty? %>
-  <div class="content-card" style="text-align: center; padding: 2.5rem; color: #a1a1aa;">
-    <i class="bi bi-grid-3x3-gap" style="font-size: 2rem; display: block; margin-bottom: 0.5rem;"></i>
-    <p style="margin: 0; font-size: 0.88rem;">Nenhum setor cadastrado para este evento.</p>
-  </div>
-<% else %>
-  <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 1rem;">
-    <% @sectors.each do |sector| %>
-      <div class="content-card" style="padding: 1.25rem; display: flex; flex-direction: column; gap: 1rem;">
+  <%# ── Coordenadores ── %>
+  <% coordinators = @sectors.flat_map(&:teams).select(&:coordinator).map { |t|
+       coord_tm = t.team_memberships.find(&:coordinator?)
+       { team: t, user: t.coordinator, credential: coord_tm&.credential_code }
+     } %>
+  <% if coordinators.any? %>
+    <div class="content-card" style="margin-bottom: 2rem;">
+      <h2 style="font-size: 0.9rem; font-weight: 600; color: #18181b; margin: 0 0 0.75rem;">
+        <i class="bi bi-star-fill" style="color: #f59e0b;"></i> Coordenadores
+      </h2>
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Nome</th>
+            <th>Equipe</th>
+            <th>Canal Rádio</th>
+            <th>Cód. Credencial</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% coordinators.each do |c| %>
+            <tr>
+              <td>
+                <div style="display: flex; align-items: center; gap: 0.6rem;">
+                  <div style="width: 28px; height: 28px; border-radius: 50%; overflow: hidden; background: #fef3c7; border: 2px solid #fcd34d; display: flex; align-items: center; justify-content: center; font-size: 0.55rem; font-weight: 700; color: #92400e; flex-shrink: 0;">
+                    <% if c[:user].avatar.attached? %>
+                      <%= image_tag c[:user].avatar, style: "width: 100%; height: 100%; object-fit: cover;" %>
+                    <% else %>
+                      <%= c[:user].name.split.map(&:first).first(2).join.upcase %>
+                    <% end %>
+                  </div>
+                  <span style="font-weight: 500; color: #18181b;"><%= c[:user].name %></span>
+                </div>
+              </td>
+              <td style="color: #71717a; font-size: 0.82rem;"><%= c[:team].name %></td>
+              <td>
+                <% if c[:team].radio_channel.present? %>
+                  <span style="display: inline-flex; align-items: center; gap: 0.25rem; background: #fef3c7; border: 1px solid #fcd34d; border-radius: 5px; padding: 1px 7px; font-size: 0.7rem; font-weight: 600; color: #92400e;">
+                    <i class="bi bi-broadcast"></i> <%= c[:team].radio_channel %>
+                  </span>
+                <% else %>
+                  <span style="color: #a1a1aa;">—</span>
+                <% end %>
+              </td>
+              <td style="font-family: monospace; font-size: 0.78rem; color: #71717a;">
+                <%= c[:credential] || "—" %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  <% end %>
 
-        <%# Nome e ações %>
-        <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 0.5rem;">
-          <h3 style="font-size: 0.92rem; font-weight: 600; color: #18181b; margin: 0;">
-            <%= sector.name %>
-          </h3>
-          <div style="display: flex; gap: 0.35rem; flex-shrink: 0;">
-            <% if policy(sector).edit? %>
-              <%= link_to edit_sector_path(sector), class: "btn-secondary", style: "padding: 0.3rem 0.55rem;" do %>
-                <i class="bi bi-pencil"></i>
+  <%# ── Setores ── %>
+  <%
+    total_expected = @sectors.sum { |s| s.planned_headcount }
+    total_scaled   = @sectors.flat_map(&:teams).flat_map(&:users).uniq.size
+    sectors_with_expected = @sectors.count { |s| s.planned_headcount > 0 }
+    sectors_complete = @sectors.count { |s|
+      s.planned_headcount > 0 &&
+      s.teams.flat_map(&:users).uniq.size >= s.planned_headcount
+    }
+  %>
+
+  <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem;">
+    <h2 style="font-size: 1rem; font-weight: 600; color: #18181b; margin: 0;">
+      <%= Sector.model_name.human(count: 2) %>
+    </h2>
+  </div>
+
+  <% if sectors_with_expected > 0 %>
+    <div class="content-card" style="margin-bottom: 1.25rem; padding: 1rem 1.25rem;">
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:0.75rem;">
+        <span style="font-size:0.8rem; font-weight:600; text-transform:uppercase; letter-spacing:0.06em; color:#71717a;">
+          <i class="bi bi-people"></i> Preenchimento geral
+        </span>
+        <% overall_pct = total_expected > 0 ? [(total_scaled * 100.0 / total_expected).round, 100].min : 0 %>
+        <span style="font-size:0.85rem; font-weight:700; color:<%= overall_pct >= 100 ? '#15803d' : overall_pct >= 60 ? '#92400e' : '#991b1b' %>;">
+          <%= total_scaled %> / <%= total_expected %> (<%= overall_pct %>%)
+        </span>
+      </div>
+      <div style="height:8px; background:#f4f4f5; border-radius:99px; overflow:hidden; margin-bottom:0.75rem;">
+        <div style="height:100%; width:<%= overall_pct %>%; background:<%= overall_pct >= 100 ? '#4ade80' : overall_pct >= 60 ? '#fb923c' : '#f87171' %>; border-radius:99px; transition:width 0.4s ease;"></div>
+      </div>
+      <div style="display:flex; gap:1.5rem; font-size:0.78rem; color:#71717a;">
+        <span><i class="bi bi-check-circle-fill" style="color:#4ade80;"></i> <%= sectors_complete %> setor<%= sectors_complete == 1 ? '' : 'es' %> completo<%= sectors_complete == 1 ? '' : 's' %></span>
+        <span><i class="bi bi-hourglass-split" style="color:#fb923c;"></i> <%= sectors_with_expected - sectors_complete %> incompleto<%= (sectors_with_expected - sectors_complete) == 1 ? '' : 's' %></span>
+        <span><i class="bi bi-dash-circle" style="color:#d4d4d8;"></i> <%= @sectors.size - sectors_with_expected %> sem previsão</span>
+      </div>
+    </div>
+  <% end %>
+
+  <% if @sectors.empty? %>
+    <div class="content-card" style="text-align: center; padding: 2.5rem; color: #a1a1aa;">
+      <i class="bi bi-grid-3x3-gap" style="font-size: 2rem; display: block; margin-bottom: 0.5rem;"></i>
+      <p style="margin: 0; font-size: 0.88rem;">Nenhum setor cadastrado para este evento.</p>
+    </div>
+  <% else %>
+    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 1rem;">
+      <% @sectors.each do |sector| %>
+        <div class="content-card" style="padding: 1.25rem; display: flex; flex-direction: column; gap: 1rem;">
+          <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 0.5rem;">
+            <h3 style="font-size: 0.92rem; font-weight: 600; color: #18181b; margin: 0;">
+              <%= sector.name %>
+            </h3>
+            <div style="display: flex; gap: 0.35rem; flex-shrink: 0;">
+              <% if policy(sector).edit? %>
+                <%= link_to edit_sector_path(sector), class: "btn-secondary", style: "padding: 0.3rem 0.55rem;" do %>
+                  <i class="bi bi-pencil"></i>
+                <% end %>
               <% end %>
-            <% end %>
-            <% if policy(sector).destroy? %>
-              <%= button_to sector_path(sector), method: :delete,
-                  form: { data: { turbo_confirm: t("confirms.delete") } },
-                  class: "btn-danger", style: "padding: 0.3rem 0.55rem;" do %>
-                <i class="bi bi-trash"></i>
+              <% if policy(sector).destroy? %>
+                <%= button_to sector_path(sector), method: :delete,
+                    form: { data: { turbo_confirm: t("confirms.delete") } },
+                    class: "btn-danger", style: "padding: 0.3rem 0.55rem;" do %>
+                  <i class="bi bi-trash"></i>
+                <% end %>
               <% end %>
+            </div>
+          </div>
+
+          <% if sector.planned_headcount > 0
+               scaled_count = sector.teams.flat_map(&:users).uniq.size
+               expected     = sector.planned_headcount
+               pct          = [(scaled_count * 100.0 / expected).round, 100].min
+               bar_color    = pct >= 100 ? '#4ade80' : pct >= 60 ? '#fb923c' : '#f87171'
+               text_color   = pct >= 100 ? '#15803d' : pct >= 60 ? '#92400e' : '#991b1b'
+          %>
+            <div style="background:#f9f9f9; border-radius:8px; padding:0.6rem 0.75rem;">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.35rem;">
+                <span style="font-size:0.7rem; color:#71717a; font-weight:600; text-transform:uppercase; letter-spacing:0.05em;">Preenchimento</span>
+                <span style="font-size:0.78rem; font-weight:700; color:<%= text_color %>;">
+                  <%= scaled_count %> / <%= expected %>
+                </span>
+              </div>
+              <div style="height:5px; background:#e4e4e7; border-radius:99px; overflow:hidden;">
+                <div style="height:100%; width:<%= pct %>%; background:<%= bar_color %>; border-radius:99px;"></div>
+              </div>
+            </div>
+          <% end %>
+
+          <div style="border-top: 1px solid #f4f4f5; padding-top: 0.9rem;">
+            <div style="font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: #71717a; margin-bottom: 0.5rem;">
+              <i class="bi bi-people"></i> <%= sector.teams.size %> <%= sector.teams.size == 1 ? "equipe" : "equipes" %>
+            </div>
+            <% if sector.teams.any? %>
+              <div style="display: flex; flex-direction: column; gap: 0.3rem;">
+                <% sector.teams.each do |team| %>
+                  <div style="display: flex; align-items: center; gap: 0.5rem; padding: 0.35rem 0; border-bottom: 1px solid #f4f4f5;">
+                    <i class="bi bi-dash" style="color: #d4d4d8; flex-shrink: 0;"></i>
+                    <div style="min-width: 0; flex: 1;">
+                      <%= link_to team.name, team_path(team), style: "font-size: 0.82rem; color: #3f3f46; text-decoration: none; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" %>
+                      <% if team.coordinator %>
+                        <div style="display: flex; align-items: center; gap: 0.3rem; margin-top: 2px;">
+                          <div style="width: 16px; height: 16px; border-radius: 50%; overflow: hidden; background: #dcfce7; border: 1px solid #86efac; display: flex; align-items: center; justify-content: center; font-size: 0.45rem; font-weight: 700; color: #15803d; flex-shrink: 0;">
+                            <% if team.coordinator.avatar.attached? %>
+                              <%= image_tag team.coordinator.avatar, style: "width: 100%; height: 100%; object-fit: cover;" %>
+                            <% else %>
+                              <%= team.coordinator.name.split.map(&:first).first(2).join.upcase %>
+                            <% end %>
+                          </div>
+                          <span style="font-size: 0.7rem; color: #15803d; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                            <%= team.coordinator.name.split.first %>
+                          </span>
+                          <% if team.radio_channel.present? %>
+                            <span style="display: inline-flex; align-items: center; gap: 0.25rem; background: #fef3c7; border: 1px solid #fcd34d; border-radius: 5px; padding: 1px 7px; font-size: 0.68rem; font-weight: 600; color: #92400e; white-space: nowrap;">
+                              <i class="bi bi-broadcast" style="font-size: 0.6rem;"></i> <%= team.radio_channel %>
+                            </span>
+                          <% end %>
+                        </div>
+                      <% end %>
+                    </div>
+                    <div style="flex-shrink: 0; display: flex; flex-direction: column; align-items: flex-end; gap: 0.2rem;">
+                      <span style="font-size: 0.75rem; color: #a1a1aa;"><%= team.users.size %> col.</span>
+                      <% if @teams_with_shifts.include?(team.id) %>
+                        <span style="display: inline-flex; align-items: center; gap: 0.2rem; background: #dcfce7; border: 1px solid #86efac; border-radius: 5px; padding: 1px 6px; font-size: 0.6rem; font-weight: 600; color: #15803d; white-space: nowrap;">
+                          <i class="bi bi-calendar-check" style="font-size: 0.55rem;"></i> Escala definida
+                        </span>
+                      <% else %>
+                        <span style="display: inline-flex; align-items: center; gap: 0.2rem; background: #fef2f2; border: 1px solid #fca5a5; border-radius: 5px; padding: 1px 6px; font-size: 0.6rem; font-weight: 600; color: #dc2626; white-space: nowrap;">
+                          <i class="bi bi-calendar-x" style="font-size: 0.55rem;"></i> Sem escala
+                        </span>
+                      <% end %>
+                    </div>
+                  </div>
+                <% end %>
+              </div>
+            <% else %>
+              <span style="font-size: 0.8rem; color: #a1a1aa;">Nenhuma equipe</span>
             <% end %>
           </div>
         </div>
+      <% end %>
+    </div>
+  <% end %>
 
-        <%# Previsto vs escalado %>
-        <% if sector.planned_headcount > 0
-             scaled_count = sector.teams.flat_map(&:users).uniq.size
-             expected     = sector.planned_headcount
-             pct          = [(scaled_count * 100.0 / expected).round, 100].min
-             bar_color    = pct >= 100 ? '#4ade80' : pct >= 60 ? '#fb923c' : '#f87171'
-             text_color   = pct >= 100 ? '#15803d' : pct >= 60 ? '#92400e' : '#991b1b'
-        %>
-          <div style="background:#f9f9f9; border-radius:8px; padding:0.6rem 0.75rem;">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.35rem;">
-              <span style="font-size:0.7rem; color:#71717a; font-weight:600; text-transform:uppercase; letter-spacing:0.05em;">Preenchimento</span>
-              <span style="font-size:0.78rem; font-weight:700; color:<%= text_color %>;">
-                <%= scaled_count %> / <%= expected %>
+</div><%# /tab-geral %>
+
+<%# ══════════════════════════════════════════════════════════════════════════ %>
+<%# ABA: FINANCEIRO                                                           %>
+<%# ══════════════════════════════════════════════════════════════════════════ %>
+<div id="tab-financeiro" style="display:none;">
+
+  <%# ── Estimativa de planejamento ── %>
+  <% if @plan_cost_by_function.any? %>
+    <%
+      total_planned      = @headcount_by_function.values.sum { |v| v[:planned] }
+      total_assigned     = @headcount_by_function.values.sum { |v| v[:assigned] }
+      hc_total_pct       = total_planned > 0 ? [(total_assigned * 100.0 / total_planned).round, 100].min : 0
+      hc_total_color     = hc_total_pct >= 100 ? '#15803d' : hc_total_pct >= 60 ? '#92400e' : '#991b1b'
+      total_assigned_cost = @headcount_by_function.sum do |ef, v|
+        v[:assigned] * ef.hourly_rate.to_f * @total_event_hours
+      end
+    %>
+    <div class="content-card" style="margin-bottom: 2rem; padding: 1.25rem 1.5rem;">
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1rem;">
+        <h2 style="font-size:0.9rem; font-weight:600; color:#18181b; margin:0;">
+          <i class="bi bi-calculator" style="color:#7c3aed;"></i> Estimativa de planejamento
+          <span style="font-size:0.72rem; font-weight:400; color:#a1a1aa; margin-left:0.35rem;">
+            <% if @event_days_records.any? %>
+              <%= @event_days_records.size %> dia<%= @event_days_records.size == 1 ? '' : 's' %> · <%= @total_event_hours.to_i == @total_event_hours ? @total_event_hours.to_i : @total_event_hours %>h total
+            <% else %>
+              <%= (@total_event_hours / 8).round %> dia<%= (@total_event_hours / 8).round == 1 ? '' : 's' %> · <%= @total_event_hours.to_i %>h total
+            <% end %>
+          </span>
+        </h2>
+        <div style="display:flex; align-items:center; gap:1rem;">
+          <% if total_planned > 0 %>
+            <span style="font-size:0.8rem; font-weight:600; color:<%= hc_total_color %>;">
+              <i class="bi bi-person-check"></i> <%= total_assigned %>/<%= total_planned %> atribuídos
+              <% if total_assigned_cost > 0 %>
+                · <%= number_to_currency(total_assigned_cost, unit: "R$", separator: ",", delimiter: ".", precision: 0) %>
+              <% end %>
+            </span>
+          <% end %>
+          <span style="font-size:0.95rem; font-weight:700; color:#7c3aed;">
+            <%= number_to_currency(@plan_total_cost, unit: "R$", separator: ",", delimiter: ".", precision: 2) %>
+          </span>
+        </div>
+      </div>
+
+      <%
+        sorted_plan = @plan_cost_by_function.sort_by { |_, v| -v }
+        max_plan    = sorted_plan.first&.last.to_f
+      %>
+      <div style="display:flex; flex-direction:column; gap:0.75rem;">
+        <% sorted_plan.each do |ef, cost| %>
+          <%
+            sf_total_qty   = @sectors.sum { |s| s.sector_functions.select { |sf| sf.event_function_id == ef.id }.sum(&:quantity) }
+            pct            = max_plan > 0 ? (cost / max_plan * 100).round(1) : 0
+            hc             = @headcount_by_function[ef]
+            hc_planned     = hc ? hc[:planned]  : 0
+            hc_assigned    = hc ? hc[:assigned] : 0
+            hc_over        = hc_planned > 0 && hc_assigned > hc_planned
+            hc_pct         = hc_planned > 0 ? [(hc_assigned * 100.0 / hc_planned).round, 100].min : 0
+            hc_color       = hc_over ? '#92400e' : hc_pct >= 100 ? '#15803d' : hc_pct > 0 ? '#92400e' : '#a1a1aa'
+            hc_bg          = hc_over ? '#ffedd5' : hc_pct >= 100 ? '#dcfce7' : hc_pct > 0 ? '#fef3c7' : '#f4f4f5'
+            hc_border      = hc_over ? '1px solid #fb923c' : 'none'
+            hc_bar         = hc_over ? '#f97316' : hc_pct >= 100 ? '#4ade80' : hc_pct > 0 ? '#fb923c' : '#e4e4e7'
+            assigned_cost  = hc_assigned * ef.hourly_rate.to_f * @total_event_hours
+          %>
+          <div>
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:0.3rem;">
+              <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
+                <span style="font-size:0.83rem; font-weight:500; color:#18181b;"><%= ef.name %></span>
+                <span style="font-size:0.72rem; color:#a1a1aa;"><%= sf_total_qty %> × <%= ef.hourly_rate_formatted %></span>
+                <% if hc_planned > 0 %>
+                  <span style="font-size:0.7rem; font-weight:600; background:<%= hc_bg %>; color:<%= hc_color %>; border:<%= hc_border %>; border-radius:4px; padding:1px 7px; white-space:nowrap;">
+                    <% if hc_over %>
+                      <i class="bi bi-exclamation-triangle-fill"></i>
+                    <% elsif hc_pct >= 100 %>
+                      <i class="bi bi-check-circle-fill"></i>
+                    <% else %>
+                      <i class="bi bi-person-fill"></i>
+                    <% end %>
+                    <%= hc_assigned %>/<%= hc_planned %>
+                    <% if hc_over %>
+                      <span style="font-size:0.62rem; opacity:0.8;">(+<%= hc_assigned - hc_planned %>)</span>
+                    <% end %>
+                    <% if assigned_cost > 0 %>
+                      · <%= number_to_currency(assigned_cost, unit: "R$", separator: ",", delimiter: ".", precision: 0) %>
+                    <% end %>
+                  </span>
+                <% end %>
+              </div>
+              <span style="font-size:0.85rem; font-weight:700; color:#7c3aed; flex-shrink:0; margin-left:0.75rem;">
+                <%= number_to_currency(cost, unit: "R$", separator: ",", delimiter: ".", precision: 2) %>
               </span>
             </div>
-            <div style="height:5px; background:#e4e4e7; border-radius:99px; overflow:hidden;">
-              <div style="height:100%; width:<%= pct %>%; background:<%= bar_color %>; border-radius:99px;"></div>
+            <div style="height:5px; background:#f4f4f5; border-radius:99px; overflow:hidden; margin-bottom:2px;">
+              <div style="height:100%; width:<%= pct %>%; background:#a78bfa; border-radius:99px;"></div>
             </div>
+            <% if hc_planned > 0 %>
+              <div style="height:3px; background:#f4f4f5; border-radius:99px; overflow:hidden;">
+                <div style="height:100%; width:<%= hc_pct %>%; background:<%= hc_bar %>; border-radius:99px;"></div>
+              </div>
+            <% end %>
           </div>
         <% end %>
+      </div>
 
-        <%# Equipes %>
-        <div style="border-top: 1px solid #f4f4f5; padding-top: 0.9rem;">
-          <div style="font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: #71717a; margin-bottom: 0.5rem;">
-            <i class="bi bi-people"></i> <%= sector.teams.size %> <%= sector.teams.size == 1 ? "equipe" : "equipes" %>
-          </div>
-          <% if sector.teams.any? %>
-            <div style="display: flex; flex-direction: column; gap: 0.3rem;">
-              <% sector.teams.each do |team| %>
-                <div style="display: flex; align-items: center; gap: 0.5rem; padding: 0.35rem 0; border-bottom: 1px solid #f4f4f5;">
-                  <i class="bi bi-dash" style="color: #d4d4d8; flex-shrink: 0;"></i>
-                  <div style="min-width: 0; flex: 1;">
-                    <%= link_to team.name, team_path(team), style: "font-size: 0.82rem; color: #3f3f46; text-decoration: none; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" %>
-                    <% if team.coordinator %>
-                      <div style="display: flex; align-items: center; gap: 0.3rem; margin-top: 2px;">
-                        <div style="width: 16px; height: 16px; border-radius: 50%; overflow: hidden; background: #dcfce7; border: 1px solid #86efac; display: flex; align-items: center; justify-content: center; font-size: 0.45rem; font-weight: 700; color: #15803d; flex-shrink: 0;">
-                          <% if team.coordinator.avatar.attached? %>
-                            <%= image_tag team.coordinator.avatar, style: "width: 100%; height: 100%; object-fit: cover;" %>
-                          <% else %>
-                            <%= team.coordinator.name.split.map(&:first).first(2).join.upcase %>
-                          <% end %>
-                        </div>
-                        <span style="font-size: 0.7rem; color: #15803d; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-                          <%= team.coordinator.name.split.first %>
-                        </span>
-                        <% if team.radio_channel.present? %>
-                          <span style="display: inline-flex; align-items: center; gap: 0.25rem; background: #fef3c7; border: 1px solid #fcd34d; border-radius: 5px; padding: 1px 7px; font-size: 0.68rem; font-weight: 600; color: #92400e; white-space: nowrap;">
-                            <i class="bi bi-broadcast" style="font-size: 0.6rem;"></i> <%= team.radio_channel %>
-                          </span>
-                        <% end %>
-                      </div>
-                    <% end %>
+      <% if total_assigned_cost > 0 %>
+        <%
+          covered_pct  = @plan_total_cost > 0 ? [(total_assigned_cost / @plan_total_cost * 100).round, 100].min : 0
+          payable_cost = @estimated_cost - @absent_cost.to_f
+          paid_pct     = payable_cost > 0 ? [(@total_paid / payable_cost * 100).round, 100].min : 0
+          gap          = @plan_total_cost - total_assigned_cost
+        %>
+        <div style="margin-top:1rem; padding-top:0.75rem; border-top:1px solid #e4e4e7;">
+          <div style="display:flex; justify-content:space-between; align-items:flex-end;">
+            <div style="display:flex; gap:1.5rem; flex-wrap:wrap;">
+              <div>
+                <div style="font-size:0.68rem; font-weight:600; text-transform:uppercase; letter-spacing:0.05em; color:#a1a1aa; margin-bottom:1px;">Atribuído</div>
+                <div style="font-size:0.88rem; font-weight:700; color:<%= hc_total_color %>;">
+                  <%= number_to_currency(total_assigned_cost, unit: "R$", separator: ",", delimiter: ".", precision: 2) %>
+                </div>
+              </div>
+              <div>
+                <div style="font-size:0.68rem; font-weight:600; text-transform:uppercase; letter-spacing:0.05em; color:#a1a1aa; margin-bottom:1px;">Planejado</div>
+                <div style="font-size:0.88rem; font-weight:700; color:#7c3aed;">
+                  <%= number_to_currency(@plan_total_cost, unit: "R$", separator: ",", delimiter: ".", precision: 2) %>
+                </div>
+              </div>
+              <% if @total_paid > 0 %>
+                <div>
+                  <div style="font-size:0.68rem; font-weight:600; text-transform:uppercase; letter-spacing:0.05em; color:#a1a1aa; margin-bottom:1px;">Pago</div>
+                  <div style="font-size:0.88rem; font-weight:700; color:#15803d;">
+                    <%= number_to_currency(@total_paid, unit: "R$", separator: ",", delimiter: ".", precision: 2) %>
                   </div>
-                  <div style="flex-shrink: 0; display: flex; flex-direction: column; align-items: flex-end; gap: 0.2rem;">
-                    <span style="font-size: 0.75rem; color: #a1a1aa;"><%= team.users.size %> col.</span>
-                    <% if @teams_with_shifts.include?(team.id) %>
-                      <span style="display: inline-flex; align-items: center; gap: 0.2rem; background: #dcfce7; border: 1px solid #86efac; border-radius: 5px; padding: 1px 6px; font-size: 0.6rem; font-weight: 600; color: #15803d; white-space: nowrap;">
-                        <i class="bi bi-calendar-check" style="font-size: 0.55rem;"></i> Escala definida
-                      </span>
-                    <% else %>
-                      <span style="display: inline-flex; align-items: center; gap: 0.2rem; background: #fef2f2; border: 1px solid #fca5a5; border-radius: 5px; padding: 1px 6px; font-size: 0.6rem; font-weight: 600; color: #dc2626; white-space: nowrap;">
-                        <i class="bi bi-calendar-x" style="font-size: 0.55rem;"></i> Sem escala
-                      </span>
-                    <% end %>
+                </div>
+                <% if @absent_cost.to_f > 0 %>
+                  <div>
+                    <div style="font-size:0.68rem; font-weight:600; text-transform:uppercase; letter-spacing:0.05em; color:#a1a1aa; margin-bottom:1px;">Ausências</div>
+                    <div style="font-size:0.88rem; font-weight:700; color:#6b7280;">
+                      <%= number_to_currency(@absent_cost, unit: "R$", separator: ",", delimiter: ".", precision: 2) %>
+                      <span style="font-size:0.65rem; font-weight:500; color:#a1a1aa;">economia</span>
+                    </div>
+                  </div>
+                <% end %>
+                <% truly_pending = @estimated_cost - @total_paid - @absent_cost.to_f %>
+                <% if truly_pending > 0.01 %>
+                  <div>
+                    <div style="font-size:0.68rem; font-weight:600; text-transform:uppercase; letter-spacing:0.05em; color:#a1a1aa; margin-bottom:1px;">A pagar</div>
+                    <div style="font-size:0.88rem; font-weight:700; color:#d97706;">
+                      <%= number_to_currency(truly_pending, unit: "R$", separator: ",", delimiter: ".", precision: 2) %>
+                    </div>
+                  </div>
+                <% end %>
+              <% elsif gap > 0 %>
+                <div>
+                  <div style="font-size:0.68rem; font-weight:600; text-transform:uppercase; letter-spacing:0.05em; color:#a1a1aa; margin-bottom:1px;">Faltam</div>
+                  <div style="font-size:0.88rem; font-weight:700; color:#dc2626;">
+                    <%= number_to_currency(gap, unit: "R$", separator: ",", delimiter: ".", precision: 2) %>
                   </div>
                 </div>
               <% end %>
             </div>
-          <% else %>
-            <span style="font-size: 0.8rem; color: #a1a1aa;">Nenhuma equipe</span>
+            <span style="font-size:0.78rem; font-weight:700; color:<%= covered_pct >= 100 ? '#15803d' : covered_pct >= 60 ? '#92400e' : '#71717a' %>;">
+              <%= covered_pct %>% coberto
+            </span>
+          </div>
+          <% if @total_paid > 0 %>
+            <%
+              absent_pct        = @estimated_cost > 0 ? [(@absent_cost.to_f / @estimated_cost * 100).round, 100].min : 0
+              truly_pending_pct = [100 - paid_pct - absent_pct, 0].max
+            %>
+            <div style="margin-top:0.75rem;">
+              <div style="display:flex; justify-content:space-between; margin-bottom:3px;">
+                <span style="font-size:0.68rem; color:#71717a;">Pagamentos realizados</span>
+                <span style="font-size:0.68rem; font-weight:700; color:#15803d;"><%= paid_pct %>%</span>
+              </div>
+              <div style="height:6px; background:#e4e4e7; border-radius:4px; overflow:hidden; display:flex;">
+                <div style="height:100%; width:<%= paid_pct %>%; background:#16a34a; transition:width 0.3s;"></div>
+                <div style="height:100%; width:<%= absent_pct %>%; background:#d1d5db; transition:width 0.3s;"></div>
+                <div style="height:100%; width:<%= truly_pending_pct %>%; background:#fbbf24; transition:width 0.3s;"></div>
+              </div>
+              <div style="display:flex; gap:0.75rem; margin-top:4px;">
+                <span style="font-size:0.62rem; color:#15803d; display:flex; align-items:center; gap:3px;"><span style="width:8px;height:8px;border-radius:50%;background:#16a34a;display:inline-block;"></span>Pago</span>
+                <% if absent_pct > 0 %>
+                  <span style="font-size:0.62rem; color:#6b7280; display:flex; align-items:center; gap:3px;"><span style="width:8px;height:8px;border-radius:50%;background:#d1d5db;display:inline-block;"></span>Ausências</span>
+                <% end %>
+                <% if truly_pending_pct > 0 %>
+                  <span style="font-size:0.62rem; color:#d97706; display:flex; align-items:center; gap:3px;"><span style="width:8px;height:8px;border-radius:50%;background:#fbbf24;display:inline-block;"></span>A pagar</span>
+                <% end %>
+              </div>
+            </div>
           <% end %>
         </div>
+      <% end %>
+    </div>
+  <% end %>
 
+  <%# ── Custo realizado por função ── %>
+  <% if @cost_by_function.any? %>
+    <div class="content-card" style="margin-bottom: 2rem; padding: 1.25rem 1.5rem;">
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem;">
+        <h2 style="font-size: 0.9rem; font-weight: 600; color: #18181b; margin: 0;">
+          <i class="bi bi-cash-stack" style="color: #16a34a;"></i> Custo realizado por função
+        </h2>
+        <span style="font-size: 0.88rem; font-weight: 700; color: #15803d;">
+          Total: <%= number_to_currency(@estimated_cost, unit: "R$", separator: ",", delimiter: ".", precision: 2) %>
+        </span>
       </div>
-    <% end %>
-  </div>
-<% end %>
+      <%
+        sorted   = @cost_by_function.sort_by { |_, v| -v }
+        max_cost = sorted.first&.last.to_f
+      %>
+      <div style="display: flex; flex-direction: column; gap: 0.65rem;">
+        <% sorted.each do |ef, cost| %>
+          <% pct = max_cost > 0 ? (cost / max_cost * 100).round(1) : 0 %>
+          <div>
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.3rem;">
+              <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <span style="font-size: 0.83rem; font-weight: 500; color: #18181b;"><%= ef.name %></span>
+                <span style="font-size: 0.72rem; color: #a1a1aa;"><%= ef.hourly_rate_formatted %></span>
+              </div>
+              <span style="font-size: 0.85rem; font-weight: 700; color: #15803d;">
+                <%= number_to_currency(cost, unit: "R$", separator: ",", delimiter: ".", precision: 2) %>
+              </span>
+            </div>
+            <div style="height: 6px; background: #f4f4f5; border-radius: 99px; overflow: hidden;">
+              <div style="height: 100%; width: <%= pct %>%; background: #4ade80; border-radius: 99px; transition: width 0.4s ease;"></div>
+            </div>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  <% end %>
+
+  <% if !@plan_cost_by_function.any? && !@cost_by_function.any? %>
+    <div class="content-card" style="text-align:center; padding:2.5rem; color:#a1a1aa;">
+      <i class="bi bi-cash-stack" style="font-size:2rem; display:block; margin-bottom:0.5rem;"></i>
+      <p style="margin:0; font-size:0.88rem;">Nenhum dado financeiro disponível. Configure funções e valores no evento.</p>
+    </div>
+  <% end %>
+
+</div><%# /tab-financeiro %>
+
+<script>
+function switchEventTab(name) {
+  ['geral', 'financeiro'].forEach(function(t) {
+    var panel = document.getElementById('tab-' + t);
+    var btn   = document.getElementById('tab-btn-' + t);
+    if (!panel || !btn) return;
+    var active = t === name;
+    panel.style.display    = active ? 'block' : 'none';
+    btn.style.color        = active ? '#7c3aed' : '#71717a';
+    btn.style.borderBottomColor = active ? '#7c3aed' : 'transparent';
+  });
+  // Persiste no hash da URL sem recarregar
+  history.replaceState(null, '', '#' + name);
+}
+
+// Abre a aba correta ao carregar (por hash ou padrão)
+document.addEventListener('DOMContentLoaded', function() {
+  var hash = window.location.hash.replace('#', '');
+  if (hash === 'financeiro') switchEventTab('financeiro');
+});
+</script>
