@@ -78,6 +78,7 @@ class ApplicationController < ActionController::Base
         event_session
         dashboard
         events
+        setup
         users
         roles
         plans

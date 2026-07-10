@@ -342,7 +342,7 @@ class EventsController < ApplicationController
     end
 
     if @event.save
-      redirect_to edit_event_path(@event), notice: "Evento criado. Adicione as funções e valores abaixo."
+      redirect_to sectors_event_setup_path(@event), notice: "Evento criado! Agora configure os setores."
     else
       render :new, status: :unprocessable_entity
     end

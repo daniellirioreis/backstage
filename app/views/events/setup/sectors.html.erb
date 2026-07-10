@@ -1,0 +1,125 @@
+<div class="page-header">
+  <h1>Configurar Setores</h1>
+  <p style="color:#71717a;margin-top:0.3rem;font-size:0.88rem;">
+    <strong><%= @event.name %></strong> &middot; Organize as áreas de trabalho do evento
+  </p>
+</div>
+
+<%= render "wizard_nav", current_step: 2, event: @event %>
+
+<%# ── Setores já criados ──────────────────────────────────────────────────── %>
+<% if @sectors.any? %>
+  <div class="content-card" style="margin-bottom:1rem;">
+    <div style="font-size:0.82rem;font-weight:700;color:#52525b;margin-bottom:0.65rem;">
+      <i class="bi bi-check-circle" style="color:#16a34a;"></i>
+      Setores adicionados (<%= @sectors.count %>)
+    </div>
+    <div style="display:flex;flex-wrap:wrap;gap:0.4rem;">
+      <% @sectors.each do |s| %>
+        <span style="display:inline-flex;align-items:center;gap:0.35rem;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:20px;padding:3px 10px;font-size:0.78rem;color:#166534;">
+          <i class="bi bi-building" style="font-size:0.72rem;"></i>
+          <%= s.name %>
+          <% if s.sector_type.present? %>
+            <span style="color:#6b7280;">&middot; <%= s.sector_type_label %></span>
+          <% end %>
+        </span>
+      <% end %>
+    </div>
+  </div>
+<% end %>
+
+<%# ── Formulário para adicionar setores ─────────────────────────────────── %>
+<div class="content-card">
+  <div style="font-size:0.88rem;font-weight:700;color:#18181b;margin-bottom:0.2rem;">
+    <i class="bi bi-plus-circle"></i>
+    <%= @sectors.any? ? "Adicionar mais setores" : "Adicionar setores" %>
+  </div>
+  <p style="font-size:0.78rem;color:#71717a;margin-bottom:1rem;">
+    Cada setor agrupa equipes de um mesmo tipo de trabalho (ex: Segurança, Som, Palco).
+    Você pode adicionar mais depois.
+  </p>
+
+  <%= form_with url: sectors_event_setup_path(@event), method: :post, local: true do |f| %>
+    <div id="sector-rows">
+      <%# Start with 3 empty rows %>
+      <% 3.times do |i| %>
+        <div class="sector-row" style="display:flex;gap:0.6rem;align-items:center;margin-bottom:0.5rem;">
+          <select name="sectors[][sector_type]" class="form-select form-control" style="width:210px;flex-shrink:0;">
+            <option value="">— Tipo (opcional) —</option>
+            <% Sector::TYPES.each do |type| %>
+              <option value="<%= type %>"><%= I18n.t("sector_types.#{type}") %></option>
+            <% end %>
+          </select>
+          <input type="text" name="sectors[][name]" class="form-control"
+                 placeholder="Nome do setor (ex: Segurança Portão A)"
+                 style="flex:1;">
+          <button type="button" onclick="removeSectorRow(this)"
+                  class="btn-danger" style="padding:0.35rem 0.6rem;font-size:0.8rem;"
+                  title="Remover">
+            <i class="bi bi-x"></i>
+          </button>
+        </div>
+      <% end %>
+    </div>
+
+    <template id="sector-row-template">
+      <div class="sector-row" style="display:flex;gap:0.6rem;align-items:center;margin-bottom:0.5rem;">
+        <select name="sectors[][sector_type]" class="form-select form-control" style="width:210px;flex-shrink:0;">
+          <option value="">— Tipo (opcional) —</option>
+          <% Sector::TYPES.each do |type| %>
+            <option value="<%= type %>"><%= I18n.t("sector_types.#{type}") %></option>
+          <% end %>
+        </select>
+        <input type="text" name="sectors[][name]" class="form-control"
+               placeholder="Nome do setor"
+               style="flex:1;">
+        <button type="button" onclick="removeSectorRow(this)"
+                class="btn-danger" style="padding:0.35rem 0.6rem;font-size:0.8rem;"
+                title="Remover">
+          <i class="bi bi-x"></i>
+        </button>
+      </div>
+    </template>
+
+    <button type="button" onclick="addSectorRow()" class="btn-secondary"
+            style="font-size:0.82rem;margin-top:0.25rem;margin-bottom:1.5rem;">
+      <i class="bi bi-plus"></i> Adicionar linha
+    </button>
+
+    <div style="display:flex;align-items:center;justify-content:space-between;border-top:1px solid #f4f4f5;padding-top:1.25rem;gap:1rem;">
+      <%= link_to teams_event_setup_path(@event),
+            style: "font-size:0.82rem;color:#71717a;text-decoration:none;",
+            title: "Pular e ir para equipes" do %>
+        Pular esta etapa <i class="bi bi-arrow-right"></i>
+      <% end %>
+
+      <div style="display:flex;gap:0.6rem;align-items:center;">
+        <%= link_to "Cancelar", event_path(@event), class: "btn-secondary" %>
+        <%= f.submit "Próximo: Equipes →", class: "btn-primary" %>
+      </div>
+    </div>
+  <% end %>
+</div>
+
+<script>
+(function () {
+  window.addSectorRow = function () {
+    var tpl  = document.getElementById("sector-row-template").content.cloneNode(true);
+    document.getElementById("sector-rows").appendChild(tpl);
+    document.getElementById("sector-rows").lastElementChild
+      .querySelector("input[type=text]").focus();
+  };
+
+  window.removeSectorRow = function (btn) {
+    var rows = document.querySelectorAll("#sector-rows .sector-row");
+    if (rows.length <= 1) {
+      // Keep at least one row — just clear it
+      var row  = btn.closest(".sector-row");
+      row.querySelector("input[type=text]").value = "";
+      row.querySelector("select").value = "";
+      return;
+    }
+    btn.closest(".sector-row").remove();
+  };
+})();
+</script>

@@ -51,6 +51,12 @@ Rails.application.routes.draw do
       get :preview, on: :member
     end
     resources :event_functions, only: [:create, :update, :destroy]
+    resource :setup, only: [], controller: 'events/setup' do
+      get  :sectors
+      post :sectors, action: :save_sectors
+      get  :teams
+      post :teams,   action: :save_teams
+    end
     collection do
       get :event_type_stats
     end

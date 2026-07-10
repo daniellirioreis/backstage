@@ -1,0 +1,113 @@
+<div class="page-header">
+  <h1>Configurar Equipes</h1>
+  <p style="color:#71717a;margin-top:0.3rem;font-size:0.88rem;">
+    <strong><%= @event.name %></strong> &middot; Adicione equipes dentro de cada setor
+  </p>
+</div>
+
+<%= render "wizard_nav", current_step: 3, event: @event %>
+
+<%= form_with url: teams_event_setup_path(@event), method: :post, local: true do |f| %>
+
+  <% if @sectors.all? { |s| s.teams.loaded? ? s.teams.any? : s.teams.exists? } %>
+    <%# If all sectors already have teams, show a note %>
+    <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:0.75rem 1rem;margin-bottom:1rem;font-size:0.82rem;color:#1d4ed8;">
+      <i class="bi bi-info-circle"></i>
+      Todos os setores já possuem equipes. Você pode adicionar mais abaixo ou concluir.
+    </div>
+  <% end %>
+
+  <% @sectors.each do |sector| %>
+    <div class="content-card" style="margin-bottom:1rem;">
+      <%# Sector header %>
+      <div style="display:flex;align-items:center;gap:0.6rem;margin-bottom:0.85rem;">
+        <div style="width:32px;height:32px;border-radius:8px;background:#f4f4f5;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <i class="bi bi-building" style="color:#52525b;font-size:0.9rem;"></i>
+        </div>
+        <div>
+          <div style="font-size:0.92rem;font-weight:700;color:#18181b;"><%= sector.name %></div>
+          <% if sector.sector_type.present? %>
+            <div style="font-size:0.75rem;color:#71717a;"><%= sector.sector_type_label %></div>
+          <% end %>
+        </div>
+      </div>
+
+      <%# Teams already in this sector %>
+      <% if sector.teams.any? %>
+        <div style="margin-bottom:0.75rem;">
+          <% sector.teams.each do |team| %>
+            <div style="display:flex;align-items:center;gap:0.5rem;padding:4px 0;font-size:0.82rem;color:#52525b;">
+              <i class="bi bi-check2" style="color:#16a34a;"></i>
+              <%= team.name %>
+            </div>
+          <% end %>
+        </div>
+      <% end %>
+
+      <%# Team input rows for this sector %>
+      <div class="team-rows" data-sector-id="<%= sector.id %>">
+        <div class="team-row" style="display:flex;gap:0.5rem;align-items:center;margin-bottom:0.4rem;">
+          <input type="hidden" name="teams[][sector_id]" value="<%= sector.id %>">
+          <input type="text" name="teams[][name]" class="form-control"
+                 placeholder="Nome da equipe (ex: Portão A)">
+          <button type="button" onclick="removeTeamRow(this)"
+                  class="btn-danger" style="padding:0.3rem 0.55rem;font-size:0.8rem;flex-shrink:0;">
+            <i class="bi bi-x"></i>
+          </button>
+        </div>
+      </div>
+
+      <button type="button"
+              onclick="addTeamRow(this, '<%= sector.id %>')"
+              class="btn-secondary"
+              style="font-size:0.78rem;margin-top:0.35rem;">
+        <i class="bi bi-plus"></i> Adicionar equipe
+      </button>
+    </div>
+  <% end %>
+
+  <%# Action buttons %>
+  <div style="display:flex;align-items:center;justify-content:space-between;gap:1rem;margin-top:0.5rem;">
+    <%= link_to sectors_event_setup_path(@event), class: "btn-secondary" do %>
+      <i class="bi bi-arrow-left"></i> Voltar
+    <% end %>
+
+    <div style="display:flex;gap:0.6rem;align-items:center;">
+      <%= link_to event_path(@event),
+            style: "font-size:0.82rem;color:#71717a;text-decoration:none;" do %>
+        Pular <i class="bi bi-arrow-right"></i>
+      <% end %>
+      <%= f.submit "Concluir e ver evento →", class: "btn-primary" %>
+    </div>
+  </div>
+<% end %>
+
+<script>
+(function () {
+  window.addTeamRow = function (btn, sectorId) {
+    var container = btn.closest(".content-card").querySelector(".team-rows");
+    var newRow = document.createElement("div");
+    newRow.className = "team-row";
+    newRow.style.cssText = "display:flex;gap:0.5rem;align-items:center;margin-bottom:0.4rem;";
+    newRow.innerHTML =
+      '<input type="hidden" name="teams[][sector_id]" value="' + sectorId + '">' +
+      '<input type="text" name="teams[][name]" class="form-control" placeholder="Nome da equipe">' +
+      '<button type="button" onclick="removeTeamRow(this)" class="btn-danger" ' +
+        'style="padding:0.3rem 0.55rem;font-size:0.8rem;flex-shrink:0;">' +
+        '<i class="bi bi-x"></i>' +
+      '</button>';
+    container.appendChild(newRow);
+    newRow.querySelector("input[type=text]").focus();
+  };
+
+  window.removeTeamRow = function (btn) {
+    var container = btn.closest(".team-rows");
+    var rows = container.querySelectorAll(".team-row");
+    if (rows.length <= 1) {
+      container.querySelector("input[type=text]").value = "";
+      return;
+    }
+    btn.closest(".team-row").remove();
+  };
+})();
+</script>
