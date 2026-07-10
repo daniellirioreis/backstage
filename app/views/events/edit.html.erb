@@ -5,11 +5,13 @@
     <% if @event.event_type.present? %>
       &middot; <%= I18n.t("event_types.#{@event.event_type}", default: @event.event_type.humanize) %>
     <% end %>
-    &middot; <%= l(@event.start_date, format: :short) rescue @event.start_date %>
+    &middot; <%= @event.start_date&.strftime("%d/%m/%Y") %>
     <% if @event.end_date && @event.end_date != @event.start_date %>
-      – <%= l(@event.end_date, format: :short) rescue @event.end_date %>
+      – <%= @event.end_date.strftime("%d/%m/%Y") %>
     <% end %>
   </p>
 </div>
+
+<%= render "events/setup/wizard_nav", current_step: 1, event: @event %>
 
 <%= render "form", event: @event %>

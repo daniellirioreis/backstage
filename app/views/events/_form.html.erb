@@ -250,11 +250,17 @@
   <%# ── Footer ──────────────────────────────────────────────────────────── %>
   <div style="display:flex;align-items:center;justify-content:space-between;gap:0.75rem;
               border-top:1px solid #f4f4f5;padding-top:1.25rem;margin-top:0.5rem;">
-    <%= link_to "Cancelar", events_path, class: "btn-secondary" %>
     <% if wizard_mode %>
+      <%# New — cancel goes back to events list %>
+      <%= link_to "Cancelar", events_path, class: "btn-secondary" %>
       <%= f.submit "Próximo: Setores →", class: "btn-primary" %>
     <% else %>
-      <%= f.submit t("actions.save"), class: "btn-primary" %>
+      <%# Edit — two options: save & close  OR  save & continue wizard %>
+      <%= link_to "Cancelar", event_path(event), class: "btn-secondary" %>
+      <div style="display:flex;gap:0.5rem;align-items:center;">
+        <%= f.submit "Salvar", name: "save_and_close", class: "btn-secondary" %>
+        <%= f.submit "Próximo: Setores →", name: "save_and_continue", class: "btn-primary" %>
+      </div>
     <% end %>
   </div>
 <% end %>

@@ -356,7 +356,11 @@ class EventsController < ApplicationController
   def update
     authorize @event
     if @event.update(event_params)
-      redirect_to events_path, notice: t("notices.updated", model: Event.model_name.human)
+      if params[:save_and_continue].present?
+        redirect_to sectors_event_setup_path(@event), notice: "Dados salvos. Configure os setores."
+      else
+        redirect_to event_path(@event), notice: t("notices.updated", model: Event.model_name.human)
+      end
     else
       render :edit, status: :unprocessable_entity
     end

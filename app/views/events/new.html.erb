@@ -3,29 +3,6 @@
   <p style="color:#71717a;margin-top:0.3rem;font-size:0.88rem;">Passo 1 de 3 — Dados básicos do evento</p>
 </div>
 
-<%# Wizard nav reusado (sem event ainda) %>
-<% steps = [
-  { n: 1, label: "Dados do evento" },
-  { n: 2, label: "Setores" },
-  { n: 3, label: "Equipes" }
-] %>
-<div style="display:flex;align-items:center;gap:0;margin-bottom:1.75rem;background:#f9f9fb;border:1px solid #e4e4e7;border-radius:12px;padding:1rem 1.5rem;">
-  <% steps.each_with_index do |step, i| %>
-    <% active = step[:n] == 1; pending = step[:n] > 1 %>
-    <div style="display:flex;align-items:center;gap:0.6rem;flex:1;">
-      <div style="
-        width:28px;height:28px;border-radius:50%;flex-shrink:0;
-        display:flex;align-items:center;justify-content:center;font-size:0.78rem;font-weight:700;
-        <%= active  ? 'background:#18181b;color:white;' : 'background:#e4e4e7;color:#a1a1aa;' %>
-      "><%= step[:n] %></div>
-      <span style="font-size:0.82rem;font-weight:<%= active ? '700' : '500' %>;color:<%= active ? '#18181b' : '#a1a1aa' %>;white-space:nowrap;">
-        <%= step[:label] %>
-      </span>
-    </div>
-    <% unless i == steps.length - 1 %>
-      <div style="flex-shrink:0;padding:0 0.5rem;color:#d4d4d8;font-size:0.75rem;"><i class="bi bi-chevron-right"></i></div>
-    <% end %>
-  <% end %>
-</div>
+<%= render "events/setup/wizard_nav", current_step: 1, event: @event %>
 
 <%= render "form", event: @event %>
