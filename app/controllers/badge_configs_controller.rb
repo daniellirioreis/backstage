@@ -6,6 +6,34 @@ class BadgeConfigsController < ApplicationController
     authorize @badge_config
   end
 
+  def preview
+    authorize @badge_config, :edit?
+    layout_name = params[:layout].presence_in(BadgeConfig::LAYOUTS) || @badge_config.layout.presence || "classic"
+    cfg = @badge_config.dup
+    cfg.layout = layout_name
+
+    # Allow live form values to override saved config for preview
+    %w[
+      event_name_color header_footer_color body_color name_color team_info_color
+      credential_code_color photo_size name_font_size role_chip_font_size
+      team_info_font_size event_name_font_size event_date_font_size credential_code_font_size
+    ].each do |attr|
+      cfg.public_send("#{attr}=", params[attr]) if params[attr].present?
+    end
+
+    render partial: "shared/badge_layouts/#{layout_name}",
+           locals: {
+             user:            current_user,
+             event:           @event,
+             team:            nil,
+             cfg:             cfg,
+             is_coordinator:  false,
+             avatar_base64:   nil,
+             credential_code: "PREV-2026",
+             chip_label:      "Colaborador"
+           }
+  end
+
   def update
     authorize @badge_config
     @badge_config.assign_attributes(badge_config_params)
@@ -37,7 +65,7 @@ class BadgeConfigsController < ApplicationController
       :photo_size, :name_font_size, :role_chip_font_size,
       :team_info_font_size, :event_name_font_size, :event_date_font_size,
       :event_name_color, :header_footer_color, :body_color, :name_color, :team_info_color,
-      :credential_code_font_size, :credential_code_color
+      :credential_code_font_size, :credential_code_color, :layout
     )
   end
 end

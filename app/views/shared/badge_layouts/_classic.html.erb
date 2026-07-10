@@ -1,0 +1,55 @@
+<%# Locals: user, event, team, cfg, is_coordinator, avatar_base64, credential_code, chip_label %>
+<% acc = cfg.event_name_color; hdr = cfg.header_footer_color; bod = cfg.body_color %>
+<div style="font-family:Arial,Helvetica,sans-serif;border-radius:16px;overflow:hidden;width:260px;display:flex;flex-direction:column;min-height:400px;">
+
+  <%# Barra accent topo %>
+  <div style="height:4px;background:<%= is_coordinator ? acc : '#27272a' %>;"></div>
+
+  <%# Header %>
+  <div style="background:<%= hdr %>;padding:12px 16px 10px;display:flex;align-items:center;justify-content:space-between;border-bottom:3px solid <%= acc %>;">
+    <span style="font-size:9px;font-weight:800;letter-spacing:0.22em;text-transform:uppercase;color:#f4f4f5;"><%= event&.company&.name || "Backstage" %></span>
+    <% if event %>
+      <div>
+        <div style="font-size:<%= cfg.event_name_font_size %>px;font-weight:700;color:<%= acc %>;letter-spacing:0.06em;text-transform:uppercase;text-align:right;"><%= event.name %></div>
+        <div style="font-size:<%= cfg.event_date_font_size %>px;color:<%= acc %>;margin-top:2px;text-align:right;">
+          <%= l(event.start_date, format: :short) %> a <%= l(event.end_date, format: :short) %>
+          <% if event.location.present? %> &middot; <%= event.location %><% end %>
+        </div>
+      </div>
+    <% end %>
+  </div>
+
+  <%# Body %>
+  <div style="background:<%= bod %>;padding:16px 14px 14px;display:flex;flex-direction:column;align-items:center;gap:10px;flex:1;justify-content:center;">
+    <div style="width:<%= cfg.photo_size %>px;height:<%= cfg.photo_size %>px;border-radius:50%;border:3px solid #0d0d0d;overflow:hidden;background:#e4e4e7;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+      <% if avatar_base64 %>
+        <img src="<%= avatar_base64 %>" style="width:100%;height:100%;object-fit:cover;">
+      <% else %>
+        <span style="font-size:<%= (cfg.photo_size * 0.3).round %>px;font-weight:700;color:#a1a1aa;"><%= user.name.split.map(&:first).first(2).join.upcase %></span>
+      <% end %>
+    </div>
+    <div style="font-size:<%= cfg.name_font_size %>px;font-weight:800;color:<%= cfg.name_color %>;line-height:1.2;text-align:center;"><%= user.name %></div>
+    <div style="display:inline-block;padding:2px 10px;border-radius:20px;font-size:<%= cfg.role_chip_font_size %>px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:#fff;background:<%= is_coordinator ? '#15803d' : '#18181b' %>;"><%= chip_label %></div>
+    <% if team %>
+      <div style="font-size:<%= cfg.team_info_font_size %>px;color:<%= cfg.team_info_color %>;line-height:1.4;text-align:center;"><strong><%= team.sector.name %></strong> &middot; <%= team.name %></div>
+    <% end %>
+    <div style="font-size:9px;color:#a1a1aa;font-family:monospace;letter-spacing:0.05em;"><%= user.formatted_cpf %></div>
+    <div style="width:100%;height:1px;background:#e4e4e7;"></div>
+  </div>
+
+  <%# Footer %>
+  <div style="background:<%= hdr %>;padding:10px 14px;display:flex;align-items:center;justify-content:space-between;gap:10px;">
+    <div style="flex-shrink:0;">
+      <%= badge_qr_svg(credential_code.presence || "BST#{user.id}", pixel_size: 44, color: acc, bg: hdr) %>
+    </div>
+    <div style="text-align:right;">
+      <% if credential_code.present? %>
+        <span style="font-size:7px;color:#3f3f46;text-transform:uppercase;letter-spacing:0.08em;display:block;">Credencial</span>
+        <span style="font-size:<%= cfg.credential_code_font_size %>px;font-weight:700;font-family:monospace;display:block;color:<%= cfg.credential_code_color %>;"><%= credential_code %></span>
+      <% end %>
+      <span style="font-size:7px;color:#3f3f46;text-transform:uppercase;letter-spacing:0.08em;display:block;margin-top:3px;">Acesso</span>
+      <span style="font-size:9px;font-weight:700;font-family:monospace;display:block;color:#a1a1aa;">Todos os dias</span>
+    </div>
+  </div>
+
+</div>

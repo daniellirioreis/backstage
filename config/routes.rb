@@ -47,7 +47,9 @@ Rails.application.routes.draw do
     end
   end
   resources :events do
-    resource  :badge_config, only: [:edit, :update]
+    resource  :badge_config, only: [:edit, :update] do
+      get :preview, on: :member
+    end
     resources :event_functions, only: [:create, :update, :destroy]
     collection do
       get :event_type_stats

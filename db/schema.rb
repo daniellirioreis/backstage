@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_07_04_000002) do
+ActiveRecord::Schema[7.1].define(version: 2026_07_09_000001) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -77,6 +77,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_07_04_000002) do
     t.string "team_info_color", default: "#52525b"
     t.integer "credential_code_font_size", default: 8
     t.string "credential_code_color", default: "#a1a1aa"
+    t.string "layout", default: "classic", null: false
     t.index ["event_id"], name: "index_badge_configs_on_event_id"
   end
 

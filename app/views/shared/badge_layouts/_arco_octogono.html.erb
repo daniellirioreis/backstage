@@ -1,0 +1,59 @@
+<%# Locals: user, event, team, cfg, is_coordinator, avatar_base64, credential_code, chip_label %>
+<% acc = cfg.event_name_color; hdr = cfg.header_footer_color; bod = cfg.body_color %>
+<div class="badge" style="overflow:hidden;border-radius:14px;font-family:Arial,sans-serif;background:<%= hdr %>;display:flex;flex-direction:column;min-height:400px;">
+  <%# ── Header em arco ─────────────────────────────────────────── %>
+  <div style="position:relative;padding:10px 14px 34px;background:<%= hdr %>;">
+    <div style="text-align:center;">
+      <div style="font-size:8.5px;font-weight:800;letter-spacing:0.18em;text-transform:uppercase;color:<%= acc %>;"><%= event&.name || "Backstage" %></div>
+      <div style="font-size:6px;color:#52525b;margin-top:2px;"><% if event %><%= l(event.start_date, format: :short) %> a <%= l(event.end_date, format: :short) %><% if event.location.present? %> &middot; <%= event.location %><% end %><% end %></div>
+    </div>
+    <%# Arco (semicírculo) que desce do header para o body %>
+    <svg style="position:absolute;bottom:-1px;left:0;width:100%;display:block;" viewBox="0 0 260 36" preserveAspectRatio="none">
+      <path d="M0,36 L0,36 Q130,0 260,36 Z" fill="#1a1a1a"/>
+      <path d="M0,36 L0,36 Q130,4 260,36 Z" fill="none" stroke="<%= acc %>" stroke-width="1.5"/>
+    </svg>
+  </div>
+
+  <%# ── Foto octógono ────────────────────────────────────────── %>
+  <div style="display:flex;justify-content:center;background:<%= bod %>;padding:14px 0 10px;position:relative;">
+    <div style="position:relative;width:82px;height:82px;">
+      <div style="position:absolute;inset:0;background:<%= acc %>;clip-path:polygon(30% 0%,70% 0%,100% 30%,100% 70%,70% 100%,30% 100%,0% 70%,0% 30%);"></div>
+      <div style="position:absolute;inset:3px;background:#27272a;clip-path:polygon(30% 0%,70% 0%,100% 30%,100% 70%,70% 100%,30% 100%,0% 70%,0% 30%);overflow:hidden;display:flex;align-items:center;justify-content:center;">
+        <% if avatar_base64 %>
+          <img src="<%= avatar_base64 %>" style="width:100%;height:100%;object-fit:cover;">
+        <% else %>
+          <span style="font-size:22px;font-weight:700;color:#52525b;"><%= user.name.split.map(&:first).first(2).join.upcase %></span>
+        <% end %>
+      </div>
+    </div>
+  </div>
+
+  <%# ── Nome e cargo ─────────────────────────────────────────── %>
+  <div style="background:<%= bod %>;padding:6px 14px 12px;text-align:center;flex:1;display:flex;flex-direction:column;justify-content:center;">
+    <div style="font-size:<%= cfg.name_font_size %>px;font-weight:800;color:<%= cfg.name_color %>;line-height:1.2;"><%= user.name %></div>
+    <div style="display:inline-block;margin-top:6px;padding:3px 14px;border-radius:4px;font-size:<%= cfg.role_chip_font_size %>px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:<%= hdr %>;background:<%= acc %>;"><%= chip_label %></div>
+    <% if team %>
+      <div style="margin-top:7px;font-size:<%= cfg.team_info_font_size %>px;color:<%= cfg.team_info_color %>;"><strong><%= team.sector.name %></strong> &middot; <%= team.name %></div>
+    <% end %>
+    <div style="font-size:8px;color:#3f3f46;font-family:monospace;margin-top:3px;"><%= user.formatted_cpf %></div>
+  </div>
+
+  <%# ── Footer em arco inverso ──────────────────────────────── %>
+  <div style="position:relative;background:<%= bod %>;">
+    <svg style="display:block;width:100%;" viewBox="0 0 260 28" preserveAspectRatio="none">
+      <path d="M0,0 Q130,32 260,0 L260,28 L0,28 Z" fill="<%= hdr %>"/>
+      <path d="M0,0 Q130,28 260,0" fill="none" stroke="<%= acc %>" stroke-width="1.5"/>
+    </svg>
+    <div style="background:<%= hdr %>;padding:6px 14px 10px;display:flex;align-items:center;justify-content:space-between;gap:8px;">
+      <%= badge_qr_svg(credential_code.presence || "BST#{user.id}", pixel_size: 40, color: acc, bg: hdr) %>
+      <div style="text-align:right;">
+        <% if credential_code.present? %>
+          <div style="font-size:6px;text-transform:uppercase;letter-spacing:0.08em;color:#3f3f46;">Credencial</div>
+          <div style="font-size:<%= cfg.credential_code_font_size %>px;color:<%= cfg.credential_code_color %>;font-family:monospace;font-weight:700;"><%= credential_code %></div>
+        <% end %>
+        <div style="font-size:6px;text-transform:uppercase;color:#3f3f46;margin-top:2px;">Acesso</div>
+        <div style="font-size:8px;color:#a1a1aa;font-family:monospace;">Todos os dias</div>
+      </div>
+    </div>
+  </div>
+</div>

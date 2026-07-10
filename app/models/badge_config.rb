@@ -1,6 +1,11 @@
 class BadgeConfig < ApplicationRecord
   belongs_to :event
 
+  LAYOUTS = %w[
+    classic diagonal_losango arco_octogono pvc_bold dark_premium
+  ].freeze
+
+  validates :layout, inclusion: { in: LAYOUTS }, allow_blank: true
   validates :photo_size,           numericality: { in: 40..200 }
   validates :name_font_size,       numericality: { in: 10..40 }
   validates :role_chip_font_size,  numericality: { in: 6..24 }

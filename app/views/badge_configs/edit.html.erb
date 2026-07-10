@@ -19,6 +19,26 @@
   <div>
     <%= form_with model: [@event, @badge_config], url: event_badge_config_path(@event), method: :patch do |f| %>
 
+      <%# ── Seletor de layout ──────────────────────────────────── %>
+      <div class="content-card" style="padding: 1.5rem; margin-bottom: 1rem;">
+        <h2 class="cfg-section" style="margin-bottom: 1rem;">Layout da Credencial</h2>
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.6rem;">
+          <% BadgeConfig::LAYOUTS.each do |lyt| %>
+            <% active = (@badge_config.layout.presence || "classic") == lyt %>
+            <label style="cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:0.35rem;">
+              <%= f.radio_button :layout, lyt, style: "display:none;", id: "layout_#{lyt}" %>
+              <div style="width:100%;border-radius:8px;border:2px solid <%= active ? '#4ade80' : '#27272a' %>;background:<%= active ? '#052e16' : '#18181b' %>;padding:0.5rem 0.35rem;text-align:center;transition:border-color 0.15s;" class="layout-card" data-layout="<%= lyt %>">
+                <div style="font-size:1.2rem;margin-bottom:2px;">
+                  <% icons = { "classic" => "bi-credit-card", "onda_hexagono" => "bi-hexagon", "diagonal_losango" => "bi-diamond", "onda_dupla_retangulo" => "bi-square-rounded", "arco_octogono" => "bi-octagon", "tag_cordao" => "bi-tag", "pvc_bold" => "bi-badge-hd", "congresso" => "bi-person-badge", "minimalista" => "bi-card-text", "bold_tipografico" => "bi-type-bold", "dark_premium" => "bi-stars" } %>
+                  <i class="bi <%= icons[lyt] || 'bi-credit-card' %>" style="color:<%= active ? '#4ade80' : '#71717a' %>;"></i>
+                </div>
+                <div style="font-size:0.6rem;font-weight:600;color:<%= active ? '#4ade80' : '#71717a' %>;line-height:1.2;"><%= lyt.gsub("_", " ").capitalize %></div>
+              </div>
+            </label>
+          <% end %>
+        </div>
+      </div>
+
       <div class="content-card" style="padding: 1.5rem; display: flex; flex-direction: column; gap: 1.25rem;">
 
         <%# ── Cabeçalho ── %>
@@ -142,56 +162,19 @@
     </div>
 
     <div style="background: #e4e4e7; border-radius: 12px; padding: 2rem; display: flex; justify-content: center;">
-      <div id="badge-preview" style="width: 240px; font-family: Arial, Helvetica, sans-serif; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.3);">
-
-        <div id="prev-accent-bar" style="height: 4px; background: <%= @badge_config.event_name_color %>;"></div>
-
-        <div id="prev-header" style="background: <%= @badge_config.header_footer_color %>; padding: 8px 11px 7px; display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid <%= @badge_config.event_name_color %>;">
-          <span style="font-size: 7px; font-weight: 800; letter-spacing: 0.2em; text-transform: uppercase; color: #f4f4f5;"><%= @event&.company&.name || "Backstage" %></span>
-          <div>
-            <div id="prev-event-name" style="font-size: <%= @badge_config.event_name_font_size %>px; font-weight: 700; color: <%= @badge_config.event_name_color %>; text-transform: uppercase; text-align: right;"><%= @event.name %></div>
-            <div id="prev-event-date" style="font-size: <%= @badge_config.event_date_font_size %>px; color: <%= @badge_config.event_name_color %>; margin-top: 1px; text-align: right;"><%= l(@event.start_date, format: :short) %> a <%= l(@event.end_date, format: :short) %><%= @event.location.present? ? " · #{@event.location}" : "" %></div>
-          </div>
+      <%# zoom afeta o layout real — sem gap na parte inferior %>
+      <div style="border-radius: 10px; box-shadow: 0 4px 20px rgba(0,0,0,0.3); overflow: hidden; flex-shrink: 0;">
+        <div id="badge-preview-wrapper" style="width: 260px; zoom: 0.923; display: block;">
+          <%= render "shared/badge_layouts/#{@badge_config.layout.presence || 'classic'}",
+              user: current_user,
+              event: @event,
+              team: nil,
+              cfg: @badge_config,
+              is_coordinator: false,
+              avatar_base64: nil,
+              credential_code: "PREV-2026",
+              chip_label: "Colaborador" %>
         </div>
-
-        <div id="prev-body" style="background: <%= @badge_config.body_color %>; padding: 14px 12px 10px; text-align: center;">
-          <div id="prev-photo" style="width: <%= @badge_config.photo_size %>px; height: <%= @badge_config.photo_size %>px; border-radius: 50%; border: 2px solid #0d0d0d; background: #e4e4e7; margin: 0 auto 8px; display: flex; align-items: center; justify-content: center;">
-            <span id="prev-initials" style="font-size: <%= (@badge_config.photo_size * 0.3).round %>px; font-weight: 700; color: #a1a1aa;">CB</span>
-          </div>
-          <div id="prev-name" style="font-size: <%= @badge_config.name_font_size %>px; font-weight: 800; color: <%= @badge_config.name_color %>; margin: 0 0 6px;">Cleide Barbosa</div>
-          <div id="prev-chip" style="display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: <%= @badge_config.role_chip_font_size %>px; font-weight: 700; text-transform: uppercase; color: #fff; background: #15803d; margin-bottom: 6px;">Coordenador</div>
-          <div id="prev-team" style="font-size: <%= @badge_config.team_info_font_size %>px; color: <%= @badge_config.team_info_color %>; margin-bottom: 2px;"><strong>Bilheteria</strong> · Equipe Bilheteria</div>
-          <div style="font-size: 8px; color: #a1a1aa; font-family: monospace;">068.314.286-06</div>
-          <div style="height: 1px; background: #e4e4e7; margin: 8px 0 0;"></div>
-        </div>
-
-        <div id="prev-footer" style="background: <%= @badge_config.header_footer_color %>; padding: 8px 11px; display: flex; align-items: center; justify-content: space-between;">
-          <svg id="prev-qr" width="26" height="26" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
-            <rect width="48" height="48" fill="<%= @badge_config.header_footer_color %>"/>
-            <rect x="4" y="4" width="16" height="16" fill="none" stroke="<%= @badge_config.event_name_color %>" stroke-width="2"/>
-            <rect x="7" y="7" width="10" height="10" fill="<%= @badge_config.event_name_color %>"/>
-            <rect x="28" y="4" width="16" height="16" fill="none" stroke="<%= @badge_config.event_name_color %>" stroke-width="2"/>
-            <rect x="31" y="7" width="10" height="10" fill="<%= @badge_config.event_name_color %>"/>
-            <rect x="4" y="28" width="16" height="16" fill="none" stroke="<%= @badge_config.event_name_color %>" stroke-width="2"/>
-            <rect x="7" y="31" width="10" height="10" fill="<%= @badge_config.event_name_color %>"/>
-            <rect x="28" y="28" width="4" height="4" fill="<%= @badge_config.event_name_color %>"/>
-            <rect x="34" y="28" width="4" height="4" fill="<%= @badge_config.event_name_color %>"/>
-            <rect x="40" y="28" width="4" height="4" fill="<%= @badge_config.event_name_color %>"/>
-            <rect x="28" y="34" width="4" height="4" fill="<%= @badge_config.event_name_color %>"/>
-            <rect x="34" y="34" width="4" height="4" fill="<%= @badge_config.event_name_color %>"/>
-            <rect x="28" y="40" width="4" height="4" fill="<%= @badge_config.event_name_color %>"/>
-            <rect x="40" y="40" width="4" height="4" fill="<%= @badge_config.event_name_color %>"/>
-            <rect x="34" y="40" width="4" height="4" fill="<%= @badge_config.event_name_color %>"/>
-            <rect x="40" y="34" width="4" height="4" fill="<%= @badge_config.event_name_color %>"/>
-          </svg>
-          <div style="text-align: right;">
-            <span style="font-size: 6px; color: #3f3f46; text-transform: uppercase; letter-spacing: 0.06em; display: block;">Credencial</span>
-            <span id="prev-credential-code" style="font-size: <%= @badge_config.credential_code_font_size %>px; color: <%= @badge_config.credential_code_color %>; font-family: monospace; font-weight: 700; display: block; letter-spacing: 0.04em;">BBY26-A3X9KL2M</span>
-            <span style="font-size: 6px; color: #3f3f46; text-transform: uppercase; letter-spacing: 0.06em; display: block; margin-top: 2px;">Acesso</span>
-            <span style="font-size: 8px; color: #a1a1aa; font-family: monospace; display: block;">Todos os dias</span>
-          </div>
-        </div>
-
       </div>
     </div>
   </div>
@@ -213,111 +196,113 @@
 </style>
 
 <script>
-  function initBadgePreview() {
-    // Sliders de tamanho
-    const sliders = [
-      { name: "badge_config[photo_size]",                valId: "val-photo-size",           prevId: "prev-photo",           prop: "photoSize"  },
-      { name: "badge_config[event_name_font_size]",      valId: "val-event-name-size",      prevId: "prev-event-name",      prop: "fontSize"   },
-      { name: "badge_config[event_date_font_size]",      valId: "val-event-date-size",      prevId: "prev-event-date",      prop: "fontSize"   },
-      { name: "badge_config[name_font_size]",            valId: "val-name-size",            prevId: "prev-name",            prop: "fontSize"   },
-      { name: "badge_config[role_chip_font_size]",       valId: "val-chip-size",            prevId: "prev-chip",            prop: "fontSize"   },
-      { name: "badge_config[team_info_font_size]",       valId: "val-team-size",            prevId: "prev-team",            prop: "fontSize"   },
-      { name: "badge_config[credential_code_font_size]", valId: "val-credential-code-size", prevId: "prev-credential-code", prop: "fontSize"   },
-    ];
+  document.addEventListener("turbo:load", function () {
+    const previewBaseUrl = "<%= preview_event_badge_config_path(@event) %>";
+    const wrapper = document.getElementById("badge-preview-wrapper");
+    let currentLayout = "<%= @badge_config.layout.presence || 'classic' %>";
+    let debounceTimer = null;
 
-    sliders.forEach(({ name, valId, prevId, prop }) => {
+    // ── Collect current form values for live preview ──────────
+    function getFormParams() {
+      const map = [
+        ["event_name_color",          "badge_config[event_name_color]"],
+        ["header_footer_color",       "badge_config[header_footer_color]"],
+        ["body_color",                "badge_config[body_color]"],
+        ["name_color",                "badge_config[name_color]"],
+        ["team_info_color",           "badge_config[team_info_color]"],
+        ["credential_code_color",     "badge_config[credential_code_color]"],
+        ["photo_size",                "badge_config[photo_size]"],
+        ["name_font_size",            "badge_config[name_font_size]"],
+        ["role_chip_font_size",       "badge_config[role_chip_font_size]"],
+        ["team_info_font_size",       "badge_config[team_info_font_size]"],
+        ["event_name_font_size",      "badge_config[event_name_font_size]"],
+        ["event_date_font_size",      "badge_config[event_date_font_size]"],
+        ["credential_code_font_size", "badge_config[credential_code_font_size]"],
+      ];
+      const p = new URLSearchParams();
+      map.forEach(([key, name]) => {
+        const el = document.querySelector(`[name="${name}"]`);
+        if (el) p.set(key, el.value);
+      });
+      return p;
+    }
+
+    // ── Fetch and inject preview HTML ─────────────────────────
+    function fetchPreview(layout) {
+      currentLayout = layout;
+      if (!wrapper) return;
+      const params = getFormParams();
+      params.set("layout", layout);
+      wrapper.style.opacity = "0.45";
+      wrapper.style.transition = "opacity 0.12s";
+      fetch(previewBaseUrl + "?" + params.toString(), {
+        headers: { "Accept": "text/html", "X-Requested-With": "XMLHttpRequest" }
+      })
+        .then(r => r.text())
+        .then(html => {
+          wrapper.innerHTML = html;
+          wrapper.style.opacity = "1";
+        })
+        .catch(() => { wrapper.style.opacity = "1"; });
+    }
+
+    function debouncedPreview() {
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => fetchPreview(currentLayout), 380);
+    }
+
+    // ── Layout card selector ──────────────────────────────────
+    document.querySelectorAll(".layout-card").forEach(function (card) {
+      card.closest("label").addEventListener("click", function () {
+        const lyt = card.dataset.layout;
+        document.querySelectorAll(".layout-card").forEach(function (c) {
+          const active = c.dataset.layout === lyt;
+          c.style.borderColor = active ? "#4ade80" : "#27272a";
+          c.style.background  = active ? "#052e16" : "#18181b";
+          const icon  = c.querySelector("i");
+          const label = c.querySelector("div:last-child");
+          if (icon)  icon.style.color  = active ? "#4ade80" : "#71717a";
+          if (label) label.style.color = active ? "#4ade80" : "#71717a";
+        });
+        fetchPreview(lyt);
+      });
+    });
+
+    // ── Sliders — update display value + debounced preview ────
+    [
+      ["badge_config[photo_size]",                "val-photo-size"           ],
+      ["badge_config[event_name_font_size]",      "val-event-name-size"      ],
+      ["badge_config[event_date_font_size]",      "val-event-date-size"      ],
+      ["badge_config[name_font_size]",            "val-name-size"            ],
+      ["badge_config[role_chip_font_size]",       "val-chip-size"            ],
+      ["badge_config[team_info_font_size]",       "val-team-size"            ],
+      ["badge_config[credential_code_font_size]", "val-credential-code-size" ],
+    ].forEach(([name, valId]) => {
       const input = document.querySelector(`input[name="${name}"]`);
       const valEl = document.getElementById(valId);
-      const prevEl = document.getElementById(prevId);
-      if (!input || !valEl || !prevEl) return;
-
+      if (!input) return;
       input.addEventListener("input", () => {
-        const v = parseInt(input.value);
-        valEl.textContent = v + "px";
-        if (prop === "photoSize") {
-          prevEl.style.width  = v + "px";
-          prevEl.style.height = v + "px";
-          const initials = document.getElementById("prev-initials");
-          if (initials) initials.style.fontSize = Math.round(v * 0.3) + "px";
-        } else {
-          prevEl.style.fontSize = v + "px";
-        }
+        if (valEl) valEl.textContent = input.value + "px";
+        debouncedPreview();
       });
     });
 
-    // Color pickers
-    function applyEventNameColor(color) {
-      const valEl = document.getElementById("val-event-name-color");
-      if (valEl) valEl.textContent = color;
-      ["prev-event-name", "prev-event-date"].forEach(id => {
-        const el = document.getElementById(id);
-        if (el) el.style.color = color;
+    // ── Color pickers — update hex display + debounced preview ─
+    [
+      ["input-event-name-color",      "val-event-name-color"      ],
+      ["input-header-footer-color",   "val-header-footer-color"   ],
+      ["input-body-color",            "val-body-color"            ],
+      ["input-name-color",            "val-name-color"            ],
+      ["input-team-info-color",       "val-team-info-color"       ],
+      ["input-credential-code-color", "val-credential-code-color" ],
+    ].forEach(([id, valId]) => {
+      const input = document.getElementById(id);
+      const valEl = document.getElementById(valId);
+      if (!input) return;
+      input.addEventListener("input", () => {
+        if (valEl) valEl.textContent = input.value;
+        debouncedPreview();
       });
-      const bar = document.getElementById("prev-accent-bar");
-      if (bar) bar.style.background = color;
-      const header = document.getElementById("prev-header");
-      if (header) header.style.borderBottom = "2px solid " + color;
-      document.querySelectorAll("#prev-qr rect").forEach((el, i) => {
-        if (i === 0) return; // fundo
-        if (el.getAttribute("fill") !== "none") el.setAttribute("fill", color);
-        if (el.getAttribute("stroke")) el.setAttribute("stroke", color);
-      });
-    }
-
-    function applyHeaderFooterColor(color) {
-      const valEl = document.getElementById("val-header-footer-color");
-      if (valEl) valEl.textContent = color;
-      ["prev-header", "prev-footer"].forEach(id => {
-        const el = document.getElementById(id);
-        if (el) el.style.background = color;
-      });
-      const qrBg = document.querySelector("#prev-qr rect:first-child");
-      if (qrBg) qrBg.setAttribute("fill", color);
-    }
-
-    function applyBodyColor(color) {
-      const valEl = document.getElementById("val-body-color");
-      if (valEl) valEl.textContent = color;
-      const body = document.getElementById("prev-body");
-      if (body) body.style.background = color;
-    }
-
-    function applyNameColor(color) {
-      const valEl = document.getElementById("val-name-color");
-      if (valEl) valEl.textContent = color;
-      const el = document.getElementById("prev-name");
-      if (el) el.style.color = color;
-    }
-
-    function applyTeamInfoColor(color) {
-      const valEl = document.getElementById("val-team-info-color");
-      if (valEl) valEl.textContent = color;
-      const el = document.getElementById("prev-team");
-      if (el) el.style.color = color;
-    }
-
-    function applyCredentialCodeColor(color) {
-      const valEl = document.getElementById("val-credential-code-color");
-      if (valEl) valEl.textContent = color;
-      const el = document.getElementById("prev-credential-code");
-      if (el) el.style.color = color;
-    }
-
-    const colorMap = {
-      "input-event-name-color":      applyEventNameColor,
-      "input-header-footer-color":   applyHeaderFooterColor,
-      "input-body-color":            applyBodyColor,
-      "input-name-color":            applyNameColor,
-      "input-team-info-color":       applyTeamInfoColor,
-      "input-credential-code-color": applyCredentialCodeColor,
-    };
-
-    Object.entries(colorMap).forEach(([id, fn]) => {
-      const el = document.getElementById(id);
-      if (el) el.addEventListener("input", e => fn(e.target.value));
     });
-  }
-
-  // Funciona tanto no carregamento normal quanto após navegação Turbo
-  document.addEventListener("turbo:load", initBadgePreview);
+  });
 </script>
