@@ -1,184 +1,216 @@
-<div class="content-card" style="max-width: 700px;">
-  <%= form_with model: event do |f| %>
-    <%= render "shared/error_messages", object: event %>
+<% wizard_mode = !event.persisted? %>
 
-    <%# Company (only shown if companies exist) %>
-    <% companies = current_user.admin? ? Company.order(:name) : current_user.companies.order(:name) %>
-    <% if companies.any? %>
-      <div style="margin-bottom:1rem;">
-        <%= f.label :company_id, Company.model_name.human, class: "form-label" %>
-        <%= f.select :company_id,
-            companies.map { |c| [c.name, c.id] },
-            { include_blank: "— #{t('actions.none', default: 'Sem empresa')} —" },
-            class: "form-select form-control" %>
-      </div>
-    <% end %>
+<%# ─── Type group definitions (used both by ERB and injected into JS) ─── %>
+<% type_groups = {
+  "shows"       => { label: "Shows e Cultura",  icon: "bi-music-note-beamed", types: %w[show festival concert theater dance circus opera stand_up] },
+  "sports"      => { label: "Esportivo",         icon: "bi-trophy",            types: %w[sports race tournament championship] },
+  "corporate"   => { label: "Corporativo",       icon: "bi-briefcase",         types: %w[corporate conference seminar workshop hackathon trade_show product_launch award_ceremony] },
+  "social"      => { label: "Social",            icon: "bi-balloon-heart",     types: %w[wedding graduation birthday debutante social_gathering new_year carnival] },
+  "cultural"    => { label: "Cultural",          icon: "bi-easel",             types: %w[cultural art_exhibition gastronomy religious church_service] },
+  "educational" => { label: "Educacional",       icon: "bi-book",              types: %w[educational lecture governmental] },
+  "other"       => { label: "Outro",             icon: "bi-three-dots",        types: %w[other] },
+} %>
 
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
-      <div>
-        <%= f.label :name, Event.human_attribute_name(:name), class: "form-label" %>
-        <%= f.text_field :name, class: "form-control" %>
+<%= form_with model: event do |f| %>
+  <%= render "shared/error_messages", object: event %>
+
+  <%# ── Empresa ──────────────────────────────────────────────────────────── %>
+  <% companies = current_user.admin? ? Company.order(:name) : current_user.companies.order(:name) %>
+  <% if companies.many? %>
+    <div class="content-card" style="margin-bottom:1rem;">
+      <div style="font-size:0.75rem;font-weight:700;color:#71717a;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.75rem;">
+        <i class="bi bi-building"></i> Empresa
+      </div>
+      <%= f.select :company_id,
+          companies.map { |c| [c.name, c.id] },
+          { include_blank: "— Sem empresa —" },
+          class: "form-select form-control" %>
+    </div>
+  <% elsif companies.one? %>
+    <%= f.hidden_field :company_id, value: companies.first.id %>
+  <% end %>
+
+  <%# ── Identificação ─────────────────────────────────────────────────────── %>
+  <div class="content-card" style="margin-bottom:1rem;">
+    <div style="font-size:0.75rem;font-weight:700;color:#71717a;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.9rem;">
+      <i class="bi bi-pencil"></i> Identificação
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.9rem;">
+      <div style="grid-column:span 2;">
+        <%= f.label :name, "Nome do evento", class: "form-label" %>
+        <%= f.text_field :name, class: "form-control", placeholder: "Ex: Festival de Verão 2026" %>
       </div>
       <div>
-        <%= f.label :code, "Código do evento", class: "form-label" %>
-        <%= f.text_field :code, class: "form-control", placeholder: "Ex: BBY26",
-            style: "text-transform: uppercase;",
-            oninput: "this.value = this.value.toUpperCase()" %>
-        <small style="color: #71717a; font-size: 0.75rem;">2 a 10 letras/números · prefixo das credenciais</small>
+        <%= f.label :code, "Código", class: "form-label" %>
+        <%= f.text_field :code, class: "form-control", placeholder: "BBY26",
+            style: "text-transform:uppercase;font-family:monospace;",
+            oninput: "this.value=this.value.toUpperCase()" %>
+        <small style="color:#71717a;font-size:0.72rem;">Prefixo das credenciais · 2–10 letras/números</small>
       </div>
       <div>
-        <%= f.label :location, Event.human_attribute_name(:location), class: "form-label" %>
-        <%= f.text_field :location, class: "form-control" %>
+        <%= f.label :location, "Local", class: "form-label" %>
+        <%= f.text_field :location, class: "form-control", placeholder: "São Paulo, SP" %>
       </div>
       <div>
-        <%= f.label :start_date, Event.human_attribute_name(:start_date), class: "form-label" %>
+        <%= f.label :start_date, "Data de início", class: "form-label" %>
         <%= f.date_field :start_date, class: "form-control" %>
       </div>
       <div>
-        <%= f.label :end_date, Event.human_attribute_name(:end_date), class: "form-label" %>
+        <%= f.label :end_date, "Data de fim", class: "form-label" %>
         <%= f.date_field :end_date, class: "form-control" %>
       </div>
-      <div>
-        <%= f.label :status, Event.human_attribute_name(:status), class: "form-label" %>
-        <%= f.select :status, Event.statuses.keys.map { |s| [t("event_statuses.#{s}"), s] },
-            {}, class: "form-select form-control" %>
-      </div>
-      <div>
-        <%= f.label :event_type, "Tipo de evento", class: "form-label" %>
-        <%= f.select :event_type,
-            Event::EVENT_TYPES.map { |et| [I18n.t("event_types.#{et}"), et] },
-            { include_blank: "— Selecione um tipo —" },
-            class: "form-select form-control",
-            id: "event-type-select",
-            onchange: "loadEventTypeStats(this.value)" %>
-      </div>
+      <% if event.persisted? %>
+        <div>
+          <%= f.label :status, "Status", class: "form-label" %>
+          <%= f.select :status, Event.statuses.keys.map { |s| [t("event_statuses.#{s}"), s] },
+              {}, class: "form-select form-control" %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+
+  <%# ── Tipo de evento ──────────────────────────────────────────────────── %>
+  <div class="content-card" style="margin-bottom:1rem;">
+    <div style="font-size:0.75rem;font-weight:700;color:#71717a;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.9rem;">
+      <i class="bi bi-tag"></i> Tipo de evento
     </div>
 
-    <%# ── Painel de análise histórica por tipo de evento ──────────────────── %>
-    <div id="event-type-stats-panel" style="display:none;margin-top:0.25rem;margin-bottom:1rem;">
-      <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:1rem 1.1rem;">
+    <%# Hidden input that submits the actual value %>
+    <%= f.hidden_field :event_type, id: "event_type_hidden" %>
 
-        <%# Header %>
-        <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.85rem;">
-          <i class="bi bi-bar-chart-line" style="color:#1d4ed8;font-size:0.9rem;"></i>
-          <span style="font-size:0.8rem;font-weight:700;color:#1d4ed8;">
+    <%# Level 1: Category chips %>
+    <div style="display:flex;flex-wrap:wrap;gap:0.4rem;margin-bottom:0.7rem;" id="type-group-chips">
+      <% type_groups.each do |gk, gv| %>
+        <button type="button" id="grp-<%= gk %>" onclick="selectGroup('<%= gk %>')"
+                style="display:inline-flex;align-items:center;gap:0.35rem;padding:5px 13px;border-radius:20px;
+                       font-size:0.8rem;cursor:pointer;border:1px solid #e4e4e7;background:#fff;
+                       color:#52525b;font-family:inherit;transition:background 0.1s,color 0.1s;">
+          <i class="bi <%= gv[:icon] %>" style="font-size:0.75rem;"></i>
+          <%= gv[:label] %>
+        </button>
+      <% end %>
+    </div>
+
+    <%# Level 2: Sub-type chips (rendered by JS) %>
+    <div id="subtype-area" style="display:none;margin-bottom:0.7rem;padding:0.6rem 0.75rem;background:#f9f9fb;border-radius:8px;border:1px solid #e4e4e7;">
+      <div style="font-size:0.7rem;color:#71717a;margin-bottom:0.45rem;font-weight:600;text-transform:uppercase;letter-spacing:0.04em;">
+        Tipo específico
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:0.3rem;" id="subtype-chips"></div>
+    </div>
+
+    <%# Compact stats (3 metrics inline) %>
+    <div id="event-type-stats-panel" style="display:none;">
+      <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:0.7rem 1rem;">
+        <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.6rem;">
+          <i class="bi bi-bar-chart-line" style="color:#1d4ed8;font-size:0.82rem;"></i>
+          <span style="font-size:0.76rem;font-weight:700;color:#1d4ed8;">
             Histórico — <span id="ets-tipo-label"></span>
           </span>
-          <span id="ets-ev-count" style="margin-left:auto;font-size:0.7rem;background:#dbeafe;color:#1d4ed8;border:1px solid #bfdbfe;border-radius:6px;padding:2px 8px;font-weight:600;"></span>
+          <span id="ets-ev-count" style="margin-left:auto;font-size:0.68rem;background:#dbeafe;color:#1d4ed8;border:1px solid #bfdbfe;border-radius:6px;padding:2px 7px;font-weight:600;"></span>
         </div>
-
-        <%# Métricas %>
-        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:0.5rem;margin-bottom:0.85rem;">
-          <div style="background:white;border-radius:8px;padding:0.65rem 0.75rem;border:1px solid #e0e7ff;">
-            <div style="font-size:0.62rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#6366f1;margin-bottom:3px;">Colaboradores</div>
-            <div id="ets-avg-collab" style="font-size:1.1rem;font-weight:700;color:#18181b;"></div>
-            <div id="ets-range-collab" style="font-size:0.65rem;color:#71717a;"></div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:0.5rem;">
+          <div style="background:white;border-radius:7px;padding:0.55rem 0.7rem;border:1px solid #e0e7ff;text-align:center;">
+            <div style="font-size:0.6rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#6366f1;margin-bottom:2px;">Colaboradores</div>
+            <div id="ets-avg-collab" style="font-size:1.05rem;font-weight:700;color:#18181b;"></div>
+            <div id="ets-range-collab" style="font-size:0.6rem;color:#71717a;"></div>
           </div>
-          <div style="background:white;border-radius:8px;padding:0.65rem 0.75rem;border:1px solid #e0e7ff;">
-            <div style="font-size:0.62rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#6366f1;margin-bottom:3px;">Custo médio</div>
-            <div id="ets-avg-cost" style="font-size:1.1rem;font-weight:700;color:#18181b;"></div>
-            <div style="font-size:0.65rem;color:#71717a;">por evento</div>
+          <div style="background:white;border-radius:7px;padding:0.55rem 0.7rem;border:1px solid #e0e7ff;text-align:center;">
+            <div style="font-size:0.6rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#6366f1;margin-bottom:2px;">Duração média</div>
+            <div id="ets-avg-days" style="font-size:1.05rem;font-weight:700;color:#18181b;"></div>
+            <div style="font-size:0.6rem;color:#71717a;">dias por evento</div>
           </div>
-          <div style="background:white;border-radius:8px;padding:0.65rem 0.75rem;border:1px solid #e0e7ff;">
-            <div style="font-size:0.62rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#6366f1;margin-bottom:3px;">Duração média</div>
-            <div id="ets-avg-days" style="font-size:1.1rem;font-weight:700;color:#18181b;"></div>
-            <div style="font-size:0.65rem;color:#71717a;">dias por evento</div>
+          <div style="background:white;border-radius:7px;padding:0.55rem 0.7rem;border:1px solid #e0e7ff;text-align:center;">
+            <div style="font-size:0.6rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#6366f1;margin-bottom:2px;">Custo médio</div>
+            <div id="ets-avg-cost" style="font-size:1.05rem;font-weight:700;color:#18181b;"></div>
+            <div style="font-size:0.6rem;color:#71717a;">por evento</div>
           </div>
         </div>
-
-        <%# Abas %>
-        <div style="display:flex;gap:5px;margin-bottom:0.65rem;">
-          <button type="button" id="ets-tab-setores"    onclick="etsSwitch('setores')"       style="font-size:0.72rem;padding:3px 10px;border-radius:6px;border:1px solid #93c5fd;background:#1d4ed8;color:white;font-weight:600;cursor:pointer;">Setores</button>
-          <button type="button" id="ets-tab-funcoes"    onclick="etsSwitch('funcoes')"       style="font-size:0.72rem;padding:3px 10px;border-radius:6px;border:1px solid #bfdbfe;background:white;color:#1d4ed8;font-weight:600;cursor:pointer;">Custo por função</button>
-          <button type="button" id="ets-tab-collab-sec" onclick="etsSwitch('collab-sec')"    style="font-size:0.72rem;padding:3px 10px;border-radius:6px;border:1px solid #bfdbfe;background:white;color:#1d4ed8;font-weight:600;cursor:pointer;">Colaboradores por setor</button>
-        </div>
-
-        <div id="ets-pane-setores">
-          <div style="font-size:0.65rem;color:#71717a;margin-bottom:6px;">% de eventos com este setor</div>
-          <div id="ets-sectors-chart"></div>
-        </div>
-        <div id="ets-pane-funcoes" style="display:none;">
-          <div style="font-size:0.65rem;color:#71717a;margin-bottom:6px;">Custo médio por colaborador/função por evento</div>
-          <div id="ets-funcoes-chart"></div>
-        </div>
-        <div id="ets-pane-collab-sec" style="display:none;">
-          <div style="font-size:0.65rem;color:#71717a;margin-bottom:6px;">Média de colaboradores alocados por setor</div>
-          <div id="ets-collab-sec-chart"></div>
-        </div>
-
-        <div style="margin-top:0.65rem;padding-top:0.55rem;border-top:1px solid #bfdbfe;font-size:0.65rem;color:#3b82f6;">
-          <i class="bi bi-info-circle"></i>
-          Dados calculados a partir dos eventos já realizados nesta plataforma.
+        <div style="margin-top:0.45rem;font-size:0.63rem;color:#3b82f6;">
+          <i class="bi bi-info-circle"></i> Calculado a partir dos eventos realizados na plataforma.
         </div>
       </div>
     </div>
+  </div>
 
-    <%# ── Dias do evento ─────────────────────────────────────────────────── %>
-    <div style="border-top: 1px solid #f4f4f5; padding-top: 1.25rem; margin-top: 0.5rem; margin-bottom: 1.25rem;">
-      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:0.75rem;">
-        <div style="font-size:0.88rem; font-weight:700; color:#18181b;">
-          <i class="bi bi-calendar3"></i> Duração por dia
-        </div>
-        <button type="button" onclick="autoPopulateDays()" class="btn-secondary" style="font-size:0.78rem; padding:0.3rem 0.7rem;">
-          <i class="bi bi-magic"></i> Gerar a partir das datas
-        </button>
+  <%# ── Dias do evento ──────────────────────────────────────────────────── %>
+  <div class="content-card" style="margin-bottom:1rem;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.85rem;">
+      <div style="font-size:0.75rem;font-weight:700;color:#71717a;text-transform:uppercase;letter-spacing:0.05em;">
+        <i class="bi bi-calendar3"></i> Dias do evento
       </div>
-
-      <div id="ed-rows">
-        <% event.event_days.ordered.each do |ed| %>
-          <%= f.fields_for :event_days, ed do |ff| %>
-            <div class="ed-row" style="display:flex; gap:0.6rem; align-items:center; margin-bottom:0.4rem;">
-              <%= ff.date_field :date, class: "form-control", style: "max-width:160px;" %>
-              <div style="position:relative; max-width:120px;">
-                <%= ff.number_field :hours, class: "form-control", step: "0.5", min: "0.5", max: "24",
-                      style: "padding-right:2rem;" %>
-                <span style="position:absolute; right:10px; top:50%; transform:translateY(-50%); font-size:0.78rem; color:#71717a; pointer-events:none;">h</span>
-              </div>
-              <% if ed.persisted? %>
-                <%= ff.check_box :_destroy, { style: "display:none;", class: "ed-destroy-cb" }, "1", "0" %>
-                <button type="button" onclick="toggleEdDestroy(this)" class="btn-danger" style="padding:0.3rem 0.55rem; font-size:0.8rem;">
-                  <i class="bi bi-x"></i>
-                </button>
-              <% else %>
-                <button type="button" onclick="this.closest('.ed-row').remove()" class="btn-danger" style="padding:0.3rem 0.55rem; font-size:0.8rem;">
-                  <i class="bi bi-x"></i>
-                </button>
-              <% end %>
-            </div>
-          <% end %>
-        <% end %>
-      </div>
-
-      <template id="ed-template">
-        <div class="ed-row" style="display:flex; gap:0.6rem; align-items:center; margin-bottom:0.4rem;">
-          <input type="date" name="event[event_days_attributes][__IDX__][date]"
-                 class="form-control" style="max-width:160px;">
-          <div style="position:relative; max-width:120px;">
-            <input type="number" name="event[event_days_attributes][__IDX__][hours]"
-                   class="form-control ed-hours" step="0.5" min="0.5" max="24" value="8"
-                   style="padding-right:2rem;">
-            <span style="position:absolute; right:10px; top:50%; transform:translateY(-50%); font-size:0.78rem; color:#71717a; pointer-events:none;">h</span>
-          </div>
-          <button type="button" onclick="this.closest('.ed-row').remove()" class="btn-danger" style="padding:0.3rem 0.55rem; font-size:0.8rem;">
-            <i class="bi bi-x"></i>
-          </button>
-        </div>
-      </template>
-
-      <button type="button" onclick="addEdRow()" class="btn-secondary" style="font-size:0.82rem; margin-top:0.25rem;">
-        <i class="bi bi-plus"></i> Adicionar dia
+      <button type="button" onclick="autoPopulateDays()" class="btn-secondary" style="font-size:0.78rem;padding:0.3rem 0.7rem;">
+        <i class="bi bi-magic"></i> Gerar das datas
       </button>
     </div>
 
-    <%# ── Funções e valores por hora ──────────────────────────────────────── %>
-    <div style="border-top: 1px solid #f4f4f5; padding-top: 1.25rem; margin-top: 0.5rem;">
-      <div style="font-size: 0.88rem; font-weight: 700; color: #18181b; margin-bottom: 0.75rem;">
-        <i class="bi bi-briefcase"></i> Funções e Valores por Hora
-      </div>
+    <div id="ed-rows" style="display:grid;grid-template-columns:repeat(3,1fr);gap:0.5rem;">
+      <% event.event_days.ordered.each do |ed| %>
+        <%= f.fields_for :event_days, ed do |ff| %>
+          <div class="ed-row" style="background:#f9f9fb;border:1px solid #e4e4e7;border-radius:8px;padding:0.6rem 0.7rem;position:relative;">
+            <div class="ed-day-label" style="font-size:0.7rem;color:#52525b;margin-bottom:0.3rem;font-weight:600;">
+              <% if ed.date %><%= l(ed.date, format: "%a %d/%m") %><% else %>Data<% end %>
+            </div>
+            <%= ff.date_field :date, class: "form-control ed-date-input",
+                style: "font-size:0.78rem;padding:0.3rem 0.5rem;margin-bottom:0.3rem;",
+                onchange: "updateDayLabel(this)" %>
+            <div style="display:flex;align-items:center;gap:0.3rem;">
+              <%= ff.number_field :hours, class: "form-control ed-hours",
+                  step: "0.5", min: "0.5", max: "24",
+                  style: "font-size:0.82rem;padding:0.3rem 0.5rem;flex:1;" %>
+              <span style="font-size:0.72rem;color:#71717a;flex-shrink:0;">h</span>
+            </div>
+            <% if ed.persisted? %>
+              <%= ff.check_box :_destroy, { style: "display:none;", class: "ed-destroy-cb" }, "1", "0" %>
+              <button type="button" onclick="toggleEdDestroy(this)"
+                      style="position:absolute;top:5px;right:5px;background:none;border:none;color:#a1a1aa;cursor:pointer;font-size:0.8rem;padding:2px;line-height:1;">
+                <i class="bi bi-x"></i>
+              </button>
+            <% else %>
+              <button type="button" onclick="this.closest('.ed-row').remove()"
+                      style="position:absolute;top:5px;right:5px;background:none;border:none;color:#a1a1aa;cursor:pointer;font-size:0.8rem;padding:2px;line-height:1;">
+                <i class="bi bi-x"></i>
+              </button>
+            <% end %>
+          </div>
+        <% end %>
+      <% end %>
+    </div>
 
+    <template id="ed-template">
+      <div class="ed-row" style="background:#f9f9fb;border:1px solid #e4e4e7;border-radius:8px;padding:0.6rem 0.7rem;position:relative;">
+        <div class="ed-day-label" style="font-size:0.7rem;color:#52525b;margin-bottom:0.3rem;font-weight:600;">Data</div>
+        <input type="date" name="event[event_days_attributes][__IDX__][date]"
+               class="form-control ed-date-input"
+               style="font-size:0.78rem;padding:0.3rem 0.5rem;margin-bottom:0.3rem;"
+               onchange="updateDayLabel(this)">
+        <div style="display:flex;align-items:center;gap:0.3rem;">
+          <input type="number" name="event[event_days_attributes][__IDX__][hours]"
+                 class="form-control ed-hours" step="0.5" min="0.5" max="24" value="8"
+                 style="font-size:0.82rem;padding:0.3rem 0.5rem;flex:1;">
+          <span style="font-size:0.72rem;color:#71717a;flex-shrink:0;">h</span>
+        </div>
+        <button type="button" onclick="this.closest('.ed-row').remove()"
+                style="position:absolute;top:5px;right:5px;background:none;border:none;color:#a1a1aa;cursor:pointer;font-size:0.8rem;padding:2px;line-height:1;">
+          <i class="bi bi-x"></i>
+        </button>
+      </div>
+    </template>
+
+    <button type="button" onclick="addEdRow()" class="btn-secondary"
+            style="font-size:0.82rem;margin-top:0.6rem;">
+      <i class="bi bi-plus"></i> Adicionar dia
+    </button>
+  </div>
+
+  <%# ── Funções e valores/hora (somente na edição) ──────────────────────── %>
+  <% if event.persisted? %>
+    <div class="content-card" style="margin-bottom:1rem;">
+      <div style="font-size:0.75rem;font-weight:700;color:#71717a;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.75rem;">
+        <i class="bi bi-briefcase"></i> Funções e valores por hora
+      </div>
       <div id="fn-fields">
         <% event.event_functions.each do |ef| %>
-          <% ef_id = ef.object_id %>
           <%= f.fields_for :event_functions, ef do |ff| %>
             <div class="fn-row" style="display:flex;gap:0.6rem;align-items:center;margin-bottom:0.5rem;">
               <%= ff.text_field :name, class: "form-control", placeholder: "Nome da função", style: "width:280px;flex-shrink:0;" %>
@@ -186,18 +218,14 @@
                 <span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:#71717a;font-size:0.82rem;pointer-events:none;">R$</span>
                 <%= ff.number_field :hourly_rate, class: "form-control", placeholder: "0,00", step: "0.01", min: 0, style: "padding-left:28px;" %>
               </div>
-              <label style="display:flex;align-items:center;gap:0.3rem;font-size:0.75rem;color:#ef4444;cursor:pointer;white-space:nowrap;">
-                <%= ff.check_box :_destroy, style: "display:none;", class: "fn-destroy-cb" %>
-                <button type="button" onclick="removeFnRow(this)" class="btn-danger" style="padding:0.3rem 0.55rem;font-size:0.8rem;">
-                  <i class="bi bi-x"></i>
-                </button>
-              </label>
+              <%= ff.check_box :_destroy, style: "display:none;", class: "fn-destroy-cb" %>
+              <button type="button" onclick="removeFnRow(this)" class="btn-danger" style="padding:0.3rem 0.55rem;font-size:0.8rem;">
+                <i class="bi bi-x"></i>
+              </button>
             </div>
           <% end %>
         <% end %>
       </div>
-
-      <%# Template para novas linhas (oculto) %>
       <template id="fn-template">
         <div class="fn-row" style="display:flex;gap:0.6rem;align-items:center;margin-bottom:0.5rem;">
           <input type="text" name="event[event_functions_attributes][__IDX__][name]"
@@ -212,45 +240,142 @@
           </button>
         </div>
       </template>
-
       <button type="button" onclick="addFnRow()" class="btn-secondary" style="font-size:0.82rem;margin-top:0.25rem;">
         <i class="bi bi-plus"></i> Adicionar função
       </button>
     </div>
-
-    <div style="display: flex; gap: 0.75rem; margin-top: 1.5rem; border-top: 1px solid #f4f4f5; padding-top: 1.25rem;">
-      <%= f.submit t("actions.save"), class: "btn-primary" %>
-      <%= link_to t("actions.cancel"), events_path, class: "btn-secondary" %>
-    </div>
   <% end %>
-</div>
+
+  <%# ── Footer ──────────────────────────────────────────────────────────── %>
+  <div style="display:flex;align-items:center;justify-content:space-between;gap:0.75rem;
+              border-top:1px solid #f4f4f5;padding-top:1.25rem;margin-top:0.5rem;">
+    <%= link_to "Cancelar", events_path, class: "btn-secondary" %>
+    <% if wizard_mode %>
+      <%= f.submit "Próximo: Setores →", class: "btn-primary" %>
+    <% else %>
+      <%= f.submit t("actions.save"), class: "btn-primary" %>
+    <% end %>
+  </div>
+<% end %>
 
 <script>
-(function() {
+(function () {
   var newIdx = Date.now();
 
-  // ── Dias do evento ────────────────────────────────────────────────────────
-  window.addEdRow = function(dateVal, hoursVal) {
-    var tpl   = document.getElementById("ed-template").content.cloneNode(true);
-    var row   = tpl.querySelector(".ed-row");
-    var idx   = newIdx++;
-    row.innerHTML = row.innerHTML.replace(/__IDX__/g, idx);
-    if (dateVal)  row.querySelector("input[type=date]").value   = dateVal;
-    if (hoursVal) row.querySelector(".ed-hours").value = hoursVal;
-    document.getElementById("ed-rows").appendChild(row);
+  var TYPE_GROUPS = <%= raw(type_groups.transform_values { |v| v[:types] }.to_json) %>;
+  var TYPE_LABELS = <%= raw(Event::EVENT_TYPES.map { |t| [t, I18n.t("event_types.#{t}")] }.to_h.to_json) %>;
+  var ETS_STATS_URL = "<%= event_type_stats_events_path %>";
+  var currentType  = "<%= event.event_type.to_s %>";
+
+  function chipStyle(active) {
+    return active
+      ? "display:inline-flex;align-items:center;padding:4px 11px;border-radius:20px;font-size:0.78rem;cursor:pointer;border:1px solid #18181b;background:#18181b;color:#fff;font-family:inherit;transition:background 0.1s;"
+      : "display:inline-flex;align-items:center;padding:4px 11px;border-radius:20px;font-size:0.78rem;cursor:pointer;border:1px solid #e4e4e7;background:#fff;color:#52525b;font-family:inherit;transition:background 0.1s;";
+  }
+
+  window.selectGroup = function (groupKey) {
+    document.querySelectorAll("#type-group-chips button").forEach(function (btn) {
+      var active = btn.id === "grp-" + groupKey;
+      btn.style.background   = active ? "#18181b" : "#fff";
+      btn.style.color        = active ? "#fff"    : "#52525b";
+      btn.style.borderColor  = active ? "#18181b" : "#e4e4e7";
+    });
+
+    var types = TYPE_GROUPS[groupKey] || [];
+    var chips = document.getElementById("subtype-chips");
+    chips.innerHTML = "";
+    types.forEach(function (tv) {
+      var btn = document.createElement("button");
+      btn.type = "button";
+      btn.id   = "sub-" + tv;
+      btn.setAttribute("style", chipStyle(tv === currentType));
+      btn.textContent = TYPE_LABELS[tv] || tv;
+      btn.onclick = function () { selectSubtype(tv); };
+      chips.appendChild(btn);
+    });
+    document.getElementById("subtype-area").style.display = "";
   };
 
-  window.toggleEdDestroy = function(btn) {
+  window.selectSubtype = function (typeVal) {
+    currentType = typeVal;
+    document.getElementById("event_type_hidden").value = typeVal;
+    document.querySelectorAll("#subtype-chips button").forEach(function (btn) {
+      btn.setAttribute("style", chipStyle(btn.id === "sub-" + typeVal));
+    });
+    loadEventTypeStats(typeVal);
+  };
+
+  window.loadEventTypeStats = function (eventType) {
+    var panel = document.getElementById("event-type-stats-panel");
+    if (!eventType) { panel.style.display = "none"; return; }
+    fetch(ETS_STATS_URL + "?event_type=" + encodeURIComponent(eventType), {
+      headers: { "Accept": "application/json", "X-Requested-With": "XMLHttpRequest" }
+    })
+    .then(function (r) { return r.json(); })
+    .then(function (d) {
+      if (!d.total_events) { panel.style.display = "none"; return; }
+      var fmt = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
+      document.getElementById("ets-tipo-label").textContent  = TYPE_LABELS[eventType] || eventType;
+      document.getElementById("ets-ev-count").textContent    = d.total_events + " eventos";
+      document.getElementById("ets-avg-collab").textContent  = d.avg_collaborators;
+      document.getElementById("ets-range-collab").textContent= "mín " + d.min_collaborators + " · máx " + d.max_collaborators;
+      document.getElementById("ets-avg-days").textContent    = d.avg_days || "—";
+      document.getElementById("ets-avg-cost").textContent    = d.avg_cost > 0 ? fmt.format(d.avg_cost) : "—";
+      panel.style.display = "";
+    })
+    .catch(function () { panel.style.display = "none"; });
+  };
+
+  <%# Init: if editing an event that already has a type, pre-select it %>
+  (function () {
+    if (!currentType) return;
+    var matchGroup = null;
+    Object.keys(TYPE_GROUPS).forEach(function (gk) {
+      if (TYPE_GROUPS[gk].includes(currentType)) matchGroup = gk;
+    });
+    if (matchGroup) {
+      selectGroup(matchGroup);
+    }
+    loadEventTypeStats(currentType);
+  })();
+
+  <%# ── Event days ─────────────────────────────────────────────────────── %>
+  window.updateDayLabel = function (input) {
+    var row   = input.closest(".ed-row");
+    var label = row && row.querySelector(".ed-day-label");
+    if (!label || !input.value) return;
+    var d    = new Date(input.value + "T12:00:00");
+    var days = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
+    label.textContent = days[d.getDay()] + " " + d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
+  };
+
+  window.addEdRow = function (dateVal, hoursVal) {
+    var tpl = document.getElementById("ed-template").content.cloneNode(true);
+    var row = tpl.querySelector(".ed-row");
+    var idx = newIdx++;
+    row.innerHTML = row.innerHTML.replace(/__IDX__/g, idx);
+    var container = document.getElementById("ed-rows");
+    container.appendChild(row);
+    var addedRow = container.lastElementChild;
+    if (dateVal) {
+      var dateInput = addedRow.querySelector(".ed-date-input");
+      dateInput.value = dateVal;
+      updateDayLabel(dateInput);
+    }
+    if (hoursVal) addedRow.querySelector(".ed-hours").value = hoursVal;
+  };
+
+  window.toggleEdDestroy = function (btn) {
     var row = btn.closest(".ed-row");
     var cb  = row.querySelector(".ed-destroy-cb");
     cb.checked        = !cb.checked;
-    row.style.opacity = cb.checked ? "0.35" : "1";
+    row.style.opacity = cb.checked ? "0.38" : "1";
     btn.innerHTML     = cb.checked
       ? '<i class="bi bi-arrow-counterclockwise"></i>'
       : '<i class="bi bi-x"></i>';
   };
 
-  window.autoPopulateDays = function() {
+  window.autoPopulateDays = function () {
     var startEl = document.querySelector("input[name='event[start_date]']");
     var endEl   = document.querySelector("input[name='event[end_date]']");
     if (!startEl?.value || !endEl?.value) {
@@ -260,16 +385,13 @@
     var start = new Date(startEl.value + "T00:00:00");
     var end   = new Date(endEl.value   + "T00:00:00");
     if (end < start) { alert("Data de fim deve ser após o início."); return; }
-
-    // Coletar datas já existentes (não marcadas para destruir)
     var existing = new Set();
-    document.querySelectorAll("#ed-rows .ed-row").forEach(function(row) {
+    document.querySelectorAll("#ed-rows .ed-row").forEach(function (row) {
       var cb = row.querySelector(".ed-destroy-cb");
       if (cb && cb.checked) return;
-      var d = row.querySelector("input[type=date]")?.value;
+      var d = row.querySelector(".ed-date-input")?.value;
       if (d) existing.add(d);
     });
-
     var cur = new Date(start);
     while (cur <= end) {
       var iso = cur.toISOString().slice(0, 10);
@@ -278,96 +400,26 @@
     }
   };
 
-  // ── Funções ───────────────────────────────────────────────────────────────
-  window.addFnRow = function() {
-    var tpl = document.getElementById("fn-template").content.cloneNode(true);
-    var row = tpl.querySelector(".fn-row");
-    var idx = newIdx++;
+  <%# ── Functions (edit mode only) ──────────────────────────────────────── %>
+  window.addFnRow = function () {
+    var tpl = document.getElementById("fn-template");
+    if (!tpl) return;
+    var clone = tpl.content.cloneNode(true);
+    var row   = clone.querySelector(".fn-row");
+    var idx   = newIdx++;
     row.innerHTML = row.innerHTML.replace(/__IDX__/g, idx);
     document.getElementById("fn-fields").appendChild(row);
-    document.getElementById("fn-fields").lastElementChild.querySelector("input[type=text]").focus();
+    document.getElementById("fn-fields").lastElementChild
+      .querySelector("input[type=text]").focus();
   };
 
-  // ── Análise histórica por tipo de evento ──────────────────────────────────
-  var ETS_STATS_URL = "<%= event_type_stats_events_path %>";
-
-  function etsBuildBars(rows, valueKey, fmtFn, fillColor) {
-    if (!rows || !rows.length) return '<div style="font-size:0.72rem;color:#a1a1aa;">Sem dados suficientes.</div>';
-    var max = rows[0][valueKey];
-    if (!max) return '<div style="font-size:0.72rem;color:#a1a1aa;">Sem dados suficientes.</div>';
-    return rows.map(function(r) {
-      var pct = Math.round(r[valueKey] / max * 100);
-      return '<div style="display:grid;grid-template-columns:130px 1fr 80px;align-items:center;gap:6px;margin-bottom:5px;">'
-        + '<div style="font-size:0.72rem;color:#374151;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="' + r.label + '">' + r.label + '</div>'
-        + '<div style="background:#dbeafe;border-radius:4px;height:10px;overflow:hidden;">'
-        +   '<div style="width:' + pct + '%;height:100%;background:' + fillColor + ';border-radius:4px;"></div>'
-        + '</div>'
-        + '<div style="font-size:0.72rem;font-weight:700;color:#1d4ed8;text-align:right;white-space:nowrap;">' + fmtFn(r[valueKey]) + '</div>'
-        + '</div>';
-    }).join('');
-  }
-
-  window.etsSwitch = function(tab) {
-    ['setores', 'funcoes', 'collab-sec'].forEach(function(t) {
-      var pane = document.getElementById('ets-pane-' + t);
-      var btn  = document.getElementById('ets-tab-' + t);
-      if (!pane || !btn) return;
-      var active = t === tab;
-      pane.style.display    = active ? '' : 'none';
-      btn.style.background  = active ? '#1d4ed8' : 'white';
-      btn.style.color       = active ? 'white'   : '#1d4ed8';
-    });
-  };
-
-  window.loadEventTypeStats = function(eventType) {
-    var panel = document.getElementById('event-type-stats-panel');
-    if (!eventType) { panel.style.display = 'none'; return; }
-
-    fetch(ETS_STATS_URL + '?event_type=' + encodeURIComponent(eventType), {
-      headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
-    })
-    .then(function(r) { return r.json(); })
-    .then(function(d) {
-      if (!d.total_events) { panel.style.display = 'none'; return; }
-
-      var fmt = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 });
-
-      document.getElementById('ets-tipo-label').textContent    = document.getElementById('event-type-select').options[document.getElementById('event-type-select').selectedIndex].text;
-      document.getElementById('ets-ev-count').textContent      = d.total_events + ' eventos';
-      document.getElementById('ets-avg-collab').textContent    = d.avg_collaborators;
-      document.getElementById('ets-range-collab').textContent  = 'mín ' + d.min_collaborators + ' · máx ' + d.max_collaborators;
-      document.getElementById('ets-avg-cost').textContent      = d.avg_cost > 0 ? fmt.format(d.avg_cost) : '—';
-      document.getElementById('ets-avg-days').textContent      = d.avg_days ? d.avg_days : '—';
-
-      document.getElementById('ets-sectors-chart').innerHTML = etsBuildBars(
-        d.sectors, 'pct', function(v) { return v + '%'; }, '#6366f1'
-      );
-      document.getElementById('ets-funcoes-chart').innerHTML = etsBuildBars(
-        d.functions, 'avg_cost', function(v) { return fmt.format(v); }, '#10b981'
-      );
-      document.getElementById('ets-collab-sec-chart').innerHTML = etsBuildBars(
-        d.collab_by_sector, 'avg', function(v) { return v + ' col.'; }, '#8b5cf6'
-      );
-
-      etsSwitch('setores');
-      panel.style.display = '';
-    })
-    .catch(function() { panel.style.display = 'none'; });
-  };
-
-  // Carrega ao abrir o form de edição se já houver tipo selecionado
-  (function() {
-    var sel = document.getElementById('event-type-select');
-    if (sel && sel.value) loadEventTypeStats(sel.value);
-  })();
-
-  window.removeFnRow = function(btn) {
+  window.removeFnRow = function (btn) {
     var row = btn.closest(".fn-row");
     var cb  = row.querySelector(".fn-destroy-cb");
     if (cb) {
-      cb.checked = true;
+      cb.checked        = true;
       row.style.opacity = "0.35";
-      row.querySelectorAll("input:not([type=checkbox])").forEach(function(i) { i.disabled = true; });
+      row.querySelectorAll("input:not([type=checkbox])").forEach(function (i) { i.disabled = true; });
       btn.disabled = true;
     } else {
       row.remove();
