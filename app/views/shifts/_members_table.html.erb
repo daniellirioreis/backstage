@@ -197,6 +197,49 @@
   <% end %>
 </div>
 
+<%# ── Script SEMPRE renderizado: cálculo automático de hora fim ────────── %>
+<% default_day_hours = selected_days.any? ? selected_days.first.hours.to_f : 8.0 %>
+<script>
+(function () {
+  var DEFAULT_HOURS = <%= default_day_hours %>;
+
+  function calcEnd(startVal, hours) {
+    if (!startVal || !hours) return '';
+    var p   = startVal.split(':').map(Number);
+    var min = p[0] * 60 + p[1] + Math.round(hours * 60);
+    return String(Math.floor(min / 60) % 24).padStart(2, '0') + ':' + String(min % 60).padStart(2, '0');
+  }
+
+  function hoursForInput(startInput) {
+    var mh = startInput && parseFloat(startInput.getAttribute('data-max-hours'));
+    return (mh && mh > 0) ? mh : DEFAULT_HOURS;
+  }
+
+  // ── Bulk start → calcula fim e propaga (funciona em qualquer modo) ──
+  var bulkStart = document.getElementById('bulk_start');
+  var bulkEnd   = document.getElementById('bulk_end');
+  if (bulkStart && bulkEnd) {
+    bulkStart.addEventListener('input', function () {
+      if (!bulkStart.value) return;
+      var first = document.querySelector('.col-start');
+      bulkEnd.value = calcEnd(bulkStart.value, hoursForInput(first));
+      document.querySelectorAll('.col-end').forEach(function(i) { i.value = bulkEnd.value; });
+    });
+  }
+
+  // ── Individual col-start em modo legado (sem dia confirmado) ────────
+  document.addEventListener('input', function (e) {
+    if (!e.target.classList.contains('col-start')) return;
+    if (e.target.classList.contains('day-time-pair')) return; // per-day cuida deles abaixo
+    var row = e.target.closest('tr');
+    if (!row) return;
+    var endInput = row.querySelector('.col-end');
+    if (!endInput || endInput.value) return; // não sobrescreve se já preenchido
+    endInput.value = calcEnd(e.target.value, DEFAULT_HOURS);
+  });
+})();
+</script>
+
 <% if per_day %>
 <div id="duration-error-box" style="display:none; background:#fef2f2; border:1px solid #fca5a5; border-radius:8px; padding:0.75rem 1rem; margin-top:0.5rem;">
   <div style="font-weight:700; color:#dc2626; font-size:0.85rem; margin-bottom:0.25rem;">
@@ -302,29 +345,8 @@
     endInput.value = String(endH).padStart(2, '0') + ':' + String(endM).padStart(2, '0');
   }
 
-  // Sugere para o horário padrão (bulk) também
-  var bulkStart = document.getElementById('bulk_start');
-  var bulkEnd   = document.getElementById('bulk_end');
-  if (bulkStart && bulkEnd) {
-    bulkStart.addEventListener('input', function () {
-      if (!bulkStart.value) return;
-      // Pega max-hours do primeiro input de início disponível para estimar
-      var first = document.querySelector('input.day-time-pair[data-pair-role="start"]');
-      if (!first) return;
-      var maxHours = parseFloat(first.getAttribute('data-max-hours') || '0');
-      if (!maxHours) return;
-      var sp = bulkStart.value.split(':').map(Number);
-      var totalMin = sp[0] * 60 + sp[1] + Math.round(maxHours * 60);
-      var endH = Math.floor(totalMin / 60) % 24;
-      var endM = totalMin % 60;
-      bulkEnd.value = String(endH).padStart(2, '0') + ':' + String(endM).padStart(2, '0');
-      // Propaga para todos os .col-end (bulk sempre sobrescreve)
-      document.querySelectorAll('.col-end').forEach(function(i) { i.value = bulkEnd.value; });
-    });
-  }
-
-  // Revalida ao mudar qualquer horário (feedback imediato) + sugere fim ao preencher início
-  document.addEventListener('change', function (e) {
+  // Sugere fim + revalida ao preencher col-start individual (per-day)
+  document.addEventListener('input', function (e) {
     if (!e.target.classList.contains('day-time-pair')) return;
     if (e.target.getAttribute('data-pair-role') === 'start') suggestEndTime(e.target);
     var form = e.target.closest('form');
