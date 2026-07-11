@@ -403,7 +403,7 @@
           %>
           <div class="content-card" style="padding:1.1rem 1.25rem; display:flex; flex-direction:column; gap:0.85rem;">
 
-            <%# Cabeçalho: nome + setor + escala %>
+            <%# Cabeçalho: nome + setor + escala + ações %>
             <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:0.5rem;">
               <div style="min-width:0;">
                 <div style="font-size:0.92rem; font-weight:700; color:#18181b; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
@@ -413,15 +413,25 @@
                   <i class="bi bi-grid-3x3-gap"></i> <%= sector.name %>
                 </span>
               </div>
-              <% if has_sched %>
-                <span style="flex-shrink:0; display:inline-flex; align-items:center; gap:0.25rem; background:#dcfce7; border:1px solid #86efac; border-radius:5px; padding:2px 8px; font-size:0.65rem; font-weight:700; color:#15803d; white-space:nowrap;">
-                  <i class="bi bi-calendar-check"></i> Escala ok
-                </span>
-              <% else %>
-                <span style="flex-shrink:0; display:inline-flex; align-items:center; gap:0.25rem; background:#fef2f2; border:1px solid #fca5a5; border-radius:5px; padding:2px 8px; font-size:0.65rem; font-weight:700; color:#dc2626; white-space:nowrap;">
-                  <i class="bi bi-calendar-x"></i> Sem escala
-                </span>
-              <% end %>
+              <div style="display:flex; align-items:center; gap:0.35rem; flex-shrink:0;">
+                <% if has_sched %>
+                  <span style="display:inline-flex; align-items:center; gap:0.25rem; background:#dcfce7; border:1px solid #86efac; border-radius:5px; padding:2px 8px; font-size:0.65rem; font-weight:700; color:#15803d; white-space:nowrap;">
+                    <i class="bi bi-calendar-check"></i> Escala ok
+                  </span>
+                <% else %>
+                  <span style="display:inline-flex; align-items:center; gap:0.25rem; background:#fef2f2; border:1px solid #fca5a5; border-radius:5px; padding:2px 8px; font-size:0.65rem; font-weight:700; color:#dc2626; white-space:nowrap;">
+                    <i class="bi bi-calendar-x"></i> Sem escala
+                  </span>
+                <% end %>
+                <% if policy(team).credentials? %>
+                  <%= link_to credentials_team_path(team),
+                        target: "_blank",
+                        title: "Imprimir credenciais",
+                        style: "display:inline-flex; align-items:center; justify-content:center; width:28px; height:28px; border-radius:6px; border:1px solid #e4e4e7; background:#fff; color:#71717a; text-decoration:none; font-size:0.8rem; flex-shrink:0;" do %>
+                    <i class="bi bi-printer"></i>
+                  <% end %>
+                <% end %>
+              </div>
             </div>
 
             <%# Coordenador %>
