@@ -306,8 +306,8 @@
   var bulkStart = document.getElementById('bulk_start');
   var bulkEnd   = document.getElementById('bulk_end');
   if (bulkStart && bulkEnd) {
-    bulkStart.addEventListener('change', function () {
-      if (!bulkStart.value || bulkEnd.value) return;
+    bulkStart.addEventListener('input', function () {
+      if (!bulkStart.value) return;
       // Pega max-hours do primeiro input de início disponível para estimar
       var first = document.querySelector('input.day-time-pair[data-pair-role="start"]');
       if (!first) return;
@@ -318,8 +318,8 @@
       var endH = Math.floor(totalMin / 60) % 24;
       var endM = totalMin % 60;
       bulkEnd.value = String(endH).padStart(2, '0') + ':' + String(endM).padStart(2, '0');
-      // Propaga para todos os .col-end vazios
-      document.querySelectorAll('.col-end').forEach(function(i) { if (!i.value) i.value = bulkEnd.value; });
+      // Propaga para todos os .col-end (bulk sempre sobrescreve)
+      document.querySelectorAll('.col-end').forEach(function(i) { i.value = bulkEnd.value; });
     });
   }
 
