@@ -1,5 +1,5 @@
 class EventsController < ApplicationController
-  before_action :set_event, only: %i[show edit update destroy print transition revert]
+  before_action :set_event, only: %i[show edit update destroy print credentials transition revert]
 
   TRANSITIONS = { "draft" => "active", "active" => "closed" }.freeze
 
@@ -184,6 +184,51 @@ class EventsController < ApplicationController
                page_size: "A4",
                orientation: "Portrait",
                margin: { top: 10, bottom: 10, left: 10, right: 10 },
+               disposition: "attachment"
+      end
+    end
+  end
+
+  def credentials
+    authorize @event, :credentials?
+
+    @badge_config = @event.badge_config || BadgeConfig.defaults
+
+    teams = Team.joins(:sector)
+                .where(sectors: { event_id: @event.id })
+                .includes(:sector, team_memberships: [:event_function, { user: { avatar_attachment: :blob } }])
+                .order("sectors.name, teams.name")
+
+    @members = []
+    teams.each do |team|
+      team.team_memberships.sort_by { |tm| [tm.coordinator? ? 0 : 1, tm.user&.name.to_s] }.each do |tm|
+        user = tm.user
+        next unless user
+        avatar_b64 = if user.avatar.attached?
+          blob = user.avatar.blob
+          "data:#{blob.content_type};base64,#{Base64.strict_encode64(blob.download)}"
+        end
+        @members << {
+          user:            user,
+          team:            team,
+          is_coordinator:  tm.coordinator?,
+          credential_code: tm.full_credential_code,
+          function_name:   tm.event_function&.name,
+          avatar_base64:   avatar_b64
+        }
+      end
+    end
+
+    respond_to do |format|
+      format.html { render layout: "credentials_preview" }
+      format.pdf do
+        render pdf: "credenciais-#{@event.name.parameterize}",
+               template: "events/credentials_pdf",
+               layout: "credential_pdf",
+               formats: [:html],
+               page_size: "A4",
+               orientation: "Portrait",
+               margin: { top: 20, bottom: 20, left: 20, right: 20 },
                disposition: "attachment"
       end
     end

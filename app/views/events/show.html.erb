@@ -58,6 +58,11 @@
         <i class="bi bi-printer"></i> Imprimir
       <% end %>
     <% end %>
+    <% if policy(@event).credentials? %>
+      <%= link_to credentials_event_path(@event), class: "btn-secondary", target: "_blank" do %>
+        <i class="bi bi-person-badge"></i> Credenciais
+      <% end %>
+    <% end %>
     <% if policy(@event).edit? %>
       <%= link_to edit_event_badge_config_path(@event), class: "btn-secondary" do %>
         <i class="bi bi-person-badge"></i> <%= t("badge_config.configure") %>

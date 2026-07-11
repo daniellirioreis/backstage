@@ -16,7 +16,8 @@ class EventPolicy < ApplicationPolicy
   def transition? = can?("update")
   def revert?     = can?("update")
 
-  def print? = can?("print")
+  def print?        = can?("print")
+  def credentials?  = can?("print")
 
   private
 
