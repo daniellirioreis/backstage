@@ -167,10 +167,15 @@
           existing_shifts: @existing_shifts,
           submitted_members: @submitted_members %>
 
-    <div style="display:flex; gap:0.5rem; margin-top:0.5rem;">
-      <button type="submit" class="btn-primary">
+    <div style="display:flex; align-items:center; gap:0.75rem; margin-top:0.75rem; flex-wrap:wrap;">
+      <button type="submit" id="save-shifts-btn-<%= uid %>" class="btn-primary" disabled
+              style="opacity:0.5; cursor:not-allowed; transition:opacity 0.2s;">
         <i class="bi bi-calendar-check"></i> Salvar Alterações
       </button>
+      <span id="unsaved-badge-<%= uid %>"
+            style="display:none; font-size:0.72rem; font-weight:600; color:#92400e; background:#fef3c7; border:1px solid #fcd34d; border-radius:5px; padding:2px 9px;">
+        <i class="bi bi-circle-fill" style="font-size:0.45rem; vertical-align:middle;"></i> Alterações não salvas
+      </span>
       <% if params[:modal] == "1" %>
         <button type="button" class="btn-secondary" onclick="window.parent.closeShiftModal()">Cancelar</button>
       <% elsif params[:wizard] == "1" %>
@@ -180,6 +185,61 @@
       <% end %>
     </div>
   <% end %>
+
+  <script>
+  (function () {
+    var uid    = <%= uid %>;
+    var btn    = document.getElementById('save-shifts-btn-' + uid);
+    var badge  = document.getElementById('unsaved-badge-' + uid);
+    var form   = btn && btn.closest('form');
+    if (!btn || !form) return;
+
+    // Activa o botão e mostra badge quando qualquer campo muda
+    function markDirty() {
+      btn.disabled = false;
+      btn.style.opacity = '1';
+      btn.style.cursor  = 'pointer';
+      if (badge) badge.style.display = 'inline-flex';
+    }
+
+    // Verifica se há ao menos uma hora preenchida (col-start ou col-end)
+    function hasAnyTime() {
+      return Array.from(form.querySelectorAll('.col-start, .col-end')).some(function(i) {
+        return i.value && i.value !== '--:--';
+      });
+    }
+
+    form.addEventListener('input', function (e) {
+      var el = e.target;
+      // Reage a: checkboxes de membro, qualquer input de horário
+      if (el.classList.contains('member-check') || el.classList.contains('col-start') || el.classList.contains('col-end')) {
+        if (hasAnyTime()) markDirty();
+      }
+    });
+
+    form.addEventListener('change', function (e) {
+      var el = e.target;
+      if (el.classList.contains('member-check') || el.classList.contains('col-start') || el.classList.contains('col-end')) {
+        if (hasAnyTime()) markDirty();
+      }
+    });
+
+    // Ao submeter, desabilita o botão e remove badge (evita double-submit)
+    form.addEventListener('submit', function () {
+      btn.disabled = true;
+      btn.style.opacity = '0.6';
+      btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Salvando…';
+      if (badge) badge.style.display = 'none';
+    });
+
+    // Se já há horários salvos na página, habilita o botão imediatamente (edição de escala existente)
+    if (hasAnyTime()) {
+      btn.disabled = false;
+      btn.style.opacity = '1';
+      btn.style.cursor  = 'pointer';
+    }
+  })();
+  </script>
 <% else %>
   <%# Nenhum dia confirmado: instrução para selecionar %>
   <div style="background:#f5f3ff; border:1px dashed #c4b5fd; border-radius:10px; padding:1.5rem; text-align:center; color:#7c3aed; font-size:0.85rem; margin-top:0.5rem;">
