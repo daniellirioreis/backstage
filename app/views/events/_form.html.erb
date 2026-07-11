@@ -2,13 +2,13 @@
 
 <%# ─── Type group definitions ─────────────────────────────────────────────── %>
 <% type_groups = {
-  "shows"       => { label: "Shows e Cultura",  icon: "bi-music-note-beamed", types: %w[show festival concert theater dance circus opera stand_up] },
-  "sports"      => { label: "Esportivo",         icon: "bi-trophy",            types: %w[sports race tournament championship] },
-  "corporate"   => { label: "Corporativo",       icon: "bi-briefcase",         types: %w[corporate conference seminar workshop hackathon trade_show product_launch award_ceremony] },
-  "social"      => { label: "Social",            icon: "bi-balloon-heart",     types: %w[wedding graduation birthday debutante social_gathering new_year carnival] },
-  "cultural"    => { label: "Cultural",          icon: "bi-easel",             types: %w[cultural art_exhibition gastronomy religious church_service] },
-  "educational" => { label: "Educacional",       icon: "bi-book",              types: %w[educational lecture governmental] },
-  "other"       => { label: "Outro",             icon: "bi-three-dots",        types: %w[other] },
+  "shows"       => { label: I18n.t("event_type_groups.shows"),       icon: "bi-music-note-beamed", types: %w[show festival concert theater dance circus opera stand_up] },
+  "sports"      => { label: I18n.t("event_type_groups.sports"),      icon: "bi-trophy",            types: %w[sports race tournament championship] },
+  "corporate"   => { label: I18n.t("event_type_groups.corporate"),   icon: "bi-briefcase",         types: %w[corporate conference seminar workshop hackathon trade_show product_launch award_ceremony] },
+  "social"      => { label: I18n.t("event_type_groups.social"),      icon: "bi-balloon-heart",     types: %w[wedding graduation birthday debutante social_gathering new_year carnival] },
+  "cultural"    => { label: I18n.t("event_type_groups.cultural"),    icon: "bi-easel",             types: %w[cultural art_exhibition gastronomy religious church_service] },
+  "educational" => { label: I18n.t("event_type_groups.educational"), icon: "bi-book",              types: %w[educational lecture governmental] },
+  "other"       => { label: I18n.t("event_type_groups.other"),       icon: "bi-three-dots",        types: %w[other] },
 } %>
 
 <%= form_with model: event do |f| %>
@@ -34,29 +34,23 @@
   <div style="border:1px solid #e4e4e7; border-radius:14px; overflow:hidden; margin-bottom:1.5rem; box-shadow:0 1px 3px rgba(0,0,0,0.05);">
 
     <%# Tab bar %>
-    <div style="display:flex; align-items:stretch; border-bottom:2px solid #e4e4e7; background:#fafafa; overflow-x:auto;">
+    <div style="display:flex; align-items:stretch; border-bottom:2px solid #18181b; background:#18181b; overflow-x:auto; border-radius:14px 14px 0 0;">
 
       <button type="button" class="form-tab-btn" onclick="switchFormTab(this,'ftab-identificacao')"
-              style="display:flex;align-items:center;gap:0.4rem;padding:0.65rem 1.1rem;border:none;background:none;cursor:pointer;font-size:0.82rem;font-weight:600;white-space:nowrap;flex-shrink:0;border-bottom:2px solid #7c3aed;color:#7c3aed;margin-bottom:-2px;transition:color 0.15s,border-color 0.15s;">
+              style="display:flex;align-items:center;gap:0.4rem;padding:0.65rem 1.1rem;border:none;background:none;cursor:pointer;font-size:0.82rem;font-weight:600;white-space:nowrap;flex-shrink:0;border-bottom:2px solid #ffffff;color:#ffffff;margin-bottom:-2px;transition:color 0.15s,border-color 0.15s;">
         <i class="bi bi-pencil" style="font-size:0.75rem;"></i> Identificação
       </button>
 
       <button type="button" class="form-tab-btn" onclick="switchFormTab(this,'ftab-tipo')"
-              style="display:flex;align-items:center;gap:0.4rem;padding:0.65rem 1.1rem;border:none;background:none;cursor:pointer;font-size:0.82rem;font-weight:400;white-space:nowrap;flex-shrink:0;border-bottom:2px solid transparent;color:#71717a;margin-bottom:-2px;transition:color 0.15s,border-color 0.15s;">
-        <i class="bi bi-tag" style="font-size:0.75rem;"></i> Tipo de evento
+              style="display:flex;align-items:center;gap:0.4rem;padding:0.65rem 1.1rem;border:none;background:none;cursor:pointer;font-size:0.82rem;font-weight:400;white-space:nowrap;flex-shrink:0;border-bottom:2px solid transparent;color:#9ca3af;margin-bottom:-2px;transition:color 0.15s,border-color 0.15s;">
+        <i class="bi bi-tag" style="font-size:0.75rem;"></i> Tipo de evento <span style="color:#dc2626;font-size:0.7rem;">*</span>
       </button>
 
-      <button type="button" class="form-tab-btn" onclick="switchFormTab(this,'ftab-dias')"
-              style="display:flex;align-items:center;gap:0.4rem;padding:0.65rem 1.1rem;border:none;background:none;cursor:pointer;font-size:0.82rem;font-weight:400;white-space:nowrap;flex-shrink:0;border-bottom:2px solid transparent;color:#71717a;margin-bottom:-2px;transition:color 0.15s,border-color 0.15s;">
-        <i class="bi bi-calendar3" style="font-size:0.75rem;"></i> Dias do evento
-      </button>
 
-      <% if event.persisted? %>
-        <button type="button" class="form-tab-btn" onclick="switchFormTab(this,'ftab-funcoes')"
-                style="display:flex;align-items:center;gap:0.4rem;padding:0.65rem 1.1rem;border:none;background:none;cursor:pointer;font-size:0.82rem;font-weight:400;white-space:nowrap;flex-shrink:0;border-bottom:2px solid transparent;color:#71717a;margin-bottom:-2px;transition:color 0.15s,border-color 0.15s;">
-          <i class="bi bi-briefcase" style="font-size:0.75rem;"></i> Funções
-        </button>
-      <% end %>
+      <button type="button" class="form-tab-btn" onclick="switchFormTab(this,'ftab-funcoes')"
+              style="display:flex;align-items:center;gap:0.4rem;padding:0.65rem 1.1rem;border:none;background:none;cursor:pointer;font-size:0.82rem;font-weight:400;white-space:nowrap;flex-shrink:0;border-bottom:2px solid transparent;color:#9ca3af;margin-bottom:-2px;transition:color 0.15s,border-color 0.15s;">
+        <i class="bi bi-briefcase" style="font-size:0.75rem;"></i> Funções <span style="color:#dc2626;font-size:0.7rem;">*</span>
+      </button>
 
     </div>
 
@@ -78,16 +72,16 @@
             <small style="color:#71717a;font-size:0.72rem;">Prefixo das credenciais · 2–10 letras/números</small>
           </div>
           <div>
-            <%= f.label :location, "Local", class: "form-label" %>
+            <%= f.label :location, class: "form-label" do %>Local <span style="color:#dc2626;">*</span><% end %>
             <%= f.text_field :location, class: "form-control", placeholder: "São Paulo, SP" %>
           </div>
           <div>
             <%= f.label :start_date, "Data de início", class: "form-label" %>
-            <%= f.date_field :start_date, class: "form-control" %>
+            <%= f.date_field :start_date, class: "form-control", onchange: "autoPopulateDays()" %>
           </div>
           <div>
             <%= f.label :end_date, "Data de fim", class: "form-label" %>
-            <%= f.date_field :end_date, class: "form-control" %>
+            <%= f.date_field :end_date, class: "form-control", onchange: "autoPopulateDays()" %>
           </div>
           <% if event.persisted? %>
             <div>
@@ -96,6 +90,69 @@
                   {}, class: "form-select form-control" %>
             </div>
           <% end %>
+        </div>
+
+        <%# ── Dias do evento (inline) ── %>
+        <div style="margin-top:1rem;">
+          <div style="font-size:0.78rem;font-weight:600;color:#52525b;margin-bottom:0.4rem;">
+            <i class="bi bi-calendar3" style="font-size:0.73rem;margin-right:0.25rem;"></i>Dias do evento
+          </div>
+          <div style="margin-bottom:0.5rem;">
+            <span style="font-size:0.76rem;color:#71717a;"><i class="bi bi-info-circle"></i> Dias gerados automaticamente a partir do período informado. Ajuste a carga horária se necessário.</span>
+          </div>
+          <div id="ed-rows" style="display:grid;grid-template-columns:repeat(3,1fr);gap:0.5rem;">
+            <% event.event_days.ordered.each do |ed| %>
+              <%= f.fields_for :event_days, ed do |ff| %>
+                <div class="ed-row" style="background:#f9f9fb;border:1px solid #e4e4e7;border-radius:8px;padding:0.6rem 0.7rem;position:relative;">
+                  <% days_pt = %w[Dom Seg Ter Qua Qui Sex Sáb] %>
+                  <div class="ed-day-label" style="font-size:0.7rem;color:#52525b;margin-bottom:0.3rem;font-weight:600;">
+                    <% if ed.date %><%= days_pt[ed.date.wday] %> <%= ed.date.strftime("%d/%m") %><% else %>Data<% end %>
+                  </div>
+                  <%= ff.date_field :date, class: "form-control ed-date-input",
+                      style: "font-size:0.78rem;padding:0.3rem 0.5rem;margin-bottom:0.3rem;",
+                      onchange: "updateDayLabel(this)" %>
+                  <div style="display:flex;align-items:center;gap:0.3rem;">
+                    <%= ff.number_field :hours, class: "form-control ed-hours",
+                        step: "0.5", min: "0.5", max: "24",
+                        style: "font-size:0.82rem;padding:0.3rem 0.5rem;flex:1;" %>
+                    <span style="font-size:0.72rem;color:#71717a;flex-shrink:0;">h</span>
+                  </div>
+                  <% if ed.persisted? %>
+                    <%= ff.check_box :_destroy, { style: "display:none;", class: "ed-destroy-cb" }, "1", "0" %>
+                    <button type="button" onclick="toggleEdDestroy(this)"
+                            style="position:absolute;top:5px;right:5px;background:none;border:none;color:#a1a1aa;cursor:pointer;font-size:0.8rem;padding:2px;line-height:1;">
+                      <i class="bi bi-x"></i>
+                    </button>
+                  <% else %>
+                    <button type="button" onclick="this.closest('.ed-row').remove()"
+                            style="position:absolute;top:5px;right:5px;background:none;border:none;color:#a1a1aa;cursor:pointer;font-size:0.8rem;padding:2px;line-height:1;">
+                      <i class="bi bi-x"></i>
+                    </button>
+                  <% end %>
+                </div>
+              <% end %>
+            <% end %>
+          </div>
+
+          <template id="ed-template">
+            <div class="ed-row" style="background:#f9f9fb;border:1px solid #e4e4e7;border-radius:8px;padding:0.6rem 0.7rem;position:relative;">
+              <div class="ed-day-label" style="font-size:0.7rem;color:#52525b;margin-bottom:0.3rem;font-weight:600;">Data</div>
+              <input type="date" name="event[event_days_attributes][__IDX__][date]"
+                     class="form-control ed-date-input"
+                     style="font-size:0.78rem;padding:0.3rem 0.5rem;margin-bottom:0.3rem;"
+                     onchange="updateDayLabel(this)">
+              <div style="display:flex;align-items:center;gap:0.3rem;">
+                <input type="number" name="event[event_days_attributes][__IDX__][hours]"
+                       class="form-control ed-hours" step="0.5" min="0.5" max="24" value="8"
+                       style="font-size:0.82rem;padding:0.3rem 0.5rem;flex:1;">
+                <span style="font-size:0.72rem;color:#71717a;flex-shrink:0;">h</span>
+              </div>
+              <button type="button" onclick="this.closest('.ed-row').remove()"
+                      style="position:absolute;top:5px;right:5px;background:none;border:none;color:#a1a1aa;cursor:pointer;font-size:0.8rem;padding:2px;line-height:1;">
+                <i class="bi bi-x"></i>
+              </button>
+            </div>
+          </template>
         </div>
       </div>
 
@@ -123,111 +180,43 @@
         </div>
 
         <div id="event-type-stats-panel" style="display:none;">
-          <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:0.7rem 1rem;">
+          <div style="background:#f4f4f5;border:1px solid #e4e4e7;border-radius:10px;padding:0.7rem 1rem;">
             <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.6rem;">
-              <i class="bi bi-bar-chart-line" style="color:#1d4ed8;font-size:0.82rem;"></i>
-              <span style="font-size:0.76rem;font-weight:700;color:#1d4ed8;">
+              <i class="bi bi-bar-chart-line" style="color:#71717a;font-size:0.82rem;"></i>
+              <span style="font-size:0.76rem;font-weight:700;color:#52525b;">
                 Histórico — <span id="ets-tipo-label"></span>
               </span>
-              <span id="ets-ev-count" style="margin-left:auto;font-size:0.68rem;background:#dbeafe;color:#1d4ed8;border:1px solid #bfdbfe;border-radius:6px;padding:2px 7px;font-weight:600;"></span>
+              <span id="ets-ev-count" style="margin-left:auto;font-size:0.68rem;background:#e4e4e7;color:#52525b;border:1px solid #d4d4d8;border-radius:6px;padding:2px 7px;font-weight:600;"></span>
             </div>
             <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:0.5rem;">
-              <div style="background:white;border-radius:7px;padding:0.55rem 0.7rem;border:1px solid #e0e7ff;text-align:center;">
-                <div style="font-size:0.6rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#6366f1;margin-bottom:2px;">Colaboradores</div>
+              <div style="background:white;border-radius:7px;padding:0.55rem 0.7rem;border:1px solid #e4e4e7;text-align:center;">
+                <div style="font-size:0.6rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#71717a;margin-bottom:2px;">Colaboradores</div>
                 <div id="ets-avg-collab" style="font-size:1.05rem;font-weight:700;color:#18181b;"></div>
                 <div id="ets-range-collab" style="font-size:0.6rem;color:#71717a;"></div>
               </div>
-              <div style="background:white;border-radius:7px;padding:0.55rem 0.7rem;border:1px solid #e0e7ff;text-align:center;">
-                <div style="font-size:0.6rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#6366f1;margin-bottom:2px;">Duração média</div>
+              <div style="background:white;border-radius:7px;padding:0.55rem 0.7rem;border:1px solid #e4e4e7;text-align:center;">
+                <div style="font-size:0.6rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#71717a;margin-bottom:2px;">Duração média</div>
                 <div id="ets-avg-days" style="font-size:1.05rem;font-weight:700;color:#18181b;"></div>
                 <div style="font-size:0.6rem;color:#71717a;">dias por evento</div>
               </div>
-              <div style="background:white;border-radius:7px;padding:0.55rem 0.7rem;border:1px solid #e0e7ff;text-align:center;">
-                <div style="font-size:0.6rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#6366f1;margin-bottom:2px;">Custo médio</div>
+              <div style="background:white;border-radius:7px;padding:0.55rem 0.7rem;border:1px solid #e4e4e7;text-align:center;">
+                <div style="font-size:0.6rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#71717a;margin-bottom:2px;">Custo médio</div>
                 <div id="ets-avg-cost" style="font-size:1.05rem;font-weight:700;color:#18181b;"></div>
                 <div style="font-size:0.6rem;color:#71717a;">por evento</div>
               </div>
             </div>
-            <div style="margin-top:0.45rem;font-size:0.63rem;color:#3b82f6;">
+            <div style="margin-top:0.45rem;font-size:0.63rem;color:#71717a;">
               <i class="bi bi-info-circle"></i> Calculado a partir dos eventos realizados na plataforma.
             </div>
           </div>
         </div>
       </div>
 
-      <%# ── Dias do evento ── %>
-      <div id="ftab-dias" class="form-tab-panel" style="display:none;">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.85rem;">
-          <span style="font-size:0.78rem;color:#71717a;">Configure as datas e carga horária de cada dia.</span>
-          <button type="button" onclick="autoPopulateDays()" class="btn-secondary" style="font-size:0.78rem;padding:0.3rem 0.7rem;">
-            <i class="bi bi-magic"></i> Gerar das datas
-          </button>
-        </div>
-
-        <div id="ed-rows" style="display:grid;grid-template-columns:repeat(3,1fr);gap:0.5rem;">
-          <% event.event_days.ordered.each do |ed| %>
-            <%= f.fields_for :event_days, ed do |ff| %>
-              <div class="ed-row" style="background:#f9f9fb;border:1px solid #e4e4e7;border-radius:8px;padding:0.6rem 0.7rem;position:relative;">
-                <% days_pt = %w[Dom Seg Ter Qua Qui Sex Sáb] %>
-                <div class="ed-day-label" style="font-size:0.7rem;color:#52525b;margin-bottom:0.3rem;font-weight:600;">
-                  <% if ed.date %><%= days_pt[ed.date.wday] %> <%= ed.date.strftime("%d/%m") %><% else %>Data<% end %>
-                </div>
-                <%= ff.date_field :date, class: "form-control ed-date-input",
-                    style: "font-size:0.78rem;padding:0.3rem 0.5rem;margin-bottom:0.3rem;",
-                    onchange: "updateDayLabel(this)" %>
-                <div style="display:flex;align-items:center;gap:0.3rem;">
-                  <%= ff.number_field :hours, class: "form-control ed-hours",
-                      step: "0.5", min: "0.5", max: "24",
-                      style: "font-size:0.82rem;padding:0.3rem 0.5rem;flex:1;" %>
-                  <span style="font-size:0.72rem;color:#71717a;flex-shrink:0;">h</span>
-                </div>
-                <% if ed.persisted? %>
-                  <%= ff.check_box :_destroy, { style: "display:none;", class: "ed-destroy-cb" }, "1", "0" %>
-                  <button type="button" onclick="toggleEdDestroy(this)"
-                          style="position:absolute;top:5px;right:5px;background:none;border:none;color:#a1a1aa;cursor:pointer;font-size:0.8rem;padding:2px;line-height:1;">
-                    <i class="bi bi-x"></i>
-                  </button>
-                <% else %>
-                  <button type="button" onclick="this.closest('.ed-row').remove()"
-                          style="position:absolute;top:5px;right:5px;background:none;border:none;color:#a1a1aa;cursor:pointer;font-size:0.8rem;padding:2px;line-height:1;">
-                    <i class="bi bi-x"></i>
-                  </button>
-                <% end %>
-              </div>
-            <% end %>
-          <% end %>
-        </div>
-
-        <template id="ed-template">
-          <div class="ed-row" style="background:#f9f9fb;border:1px solid #e4e4e7;border-radius:8px;padding:0.6rem 0.7rem;position:relative;">
-            <div class="ed-day-label" style="font-size:0.7rem;color:#52525b;margin-bottom:0.3rem;font-weight:600;">Data</div>
-            <input type="date" name="event[event_days_attributes][__IDX__][date]"
-                   class="form-control ed-date-input"
-                   style="font-size:0.78rem;padding:0.3rem 0.5rem;margin-bottom:0.3rem;"
-                   onchange="updateDayLabel(this)">
-            <div style="display:flex;align-items:center;gap:0.3rem;">
-              <input type="number" name="event[event_days_attributes][__IDX__][hours]"
-                     class="form-control ed-hours" step="0.5" min="0.5" max="24" value="8"
-                     style="font-size:0.82rem;padding:0.3rem 0.5rem;flex:1;">
-              <span style="font-size:0.72rem;color:#71717a;flex-shrink:0;">h</span>
-            </div>
-            <button type="button" onclick="this.closest('.ed-row').remove()"
-                    style="position:absolute;top:5px;right:5px;background:none;border:none;color:#a1a1aa;cursor:pointer;font-size:0.8rem;padding:2px;line-height:1;">
-              <i class="bi bi-x"></i>
-            </button>
-          </div>
-        </template>
-
-        <button type="button" onclick="addEdRow()" style="display:inline-flex;align-items:center;gap:0.35rem;padding:0.28rem 0.75rem;border:none;border-radius:6px;background:#16a34a;color:#fff;font-size:0.8rem;font-weight:500;cursor:pointer;margin-top:0.6rem;transition:background .15s;" onmouseover="this.style.background='#15803d';" onmouseout="this.style.background='#16a34a';">
-          <i class="bi bi-plus-circle-fill" style="font-size:0.75rem;"></i> Adicionar dia
-        </button>
-      </div>
-
       <%# ── Funções e valores/hora ── %>
-      <% if event.persisted? %>
         <div id="ftab-funcoes" class="form-tab-panel" style="display:none;">
           <div id="fn-fields">
-            <% event.event_functions.each do |ef| %>
+            <% fns_to_render = event.event_functions.presence || [event.event_functions.build] %>
+            <% fns_to_render.each do |ef| %>
               <%= f.fields_for :event_functions, ef do |ff| %>
                 <div class="fn-row" style="display:flex;gap:0.6rem;align-items:center;margin-bottom:0.5rem;">
                   <%= ff.text_field :name, class: "form-control", placeholder: "Nome da função", style: "width:280px;flex-shrink:0;" %>
@@ -261,7 +250,6 @@
             <i class="bi bi-plus-circle-fill" style="font-size:0.75rem;"></i> Adicionar função
           </button>
         </div>
-      <% end %>
 
     </div><%# /panels %>
   </div><%# /tab container %>
@@ -288,18 +276,19 @@
 
   var TYPE_GROUPS = <%= raw(type_groups.transform_values { |v| v[:types] }.to_json) %>;
   var TYPE_LABELS = <%= raw(Event::EVENT_TYPES.map { |t| [t, I18n.t("event_types.#{t}")] }.to_h.to_json) %>;
-  var ETS_STATS_URL = "<%= event_type_stats_events_path %>";
-  var currentType   = "<%= event.event_type.to_s %>";
+  var ETS_STATS_URL  = "<%= event_type_stats_events_path %>";
+  var ETS_EXCLUDE_ID = "<%= event.persisted? ? event.id : '' %>";
+  var currentType    = "<%= event.event_type.to_s %>";
 
   // ── Tab switching ──────────────────────────────────────────────────────────
   window.switchFormTab = function (btn, panelId) {
     document.querySelectorAll('.form-tab-btn').forEach(function (b) {
       b.style.borderBottomColor = 'transparent';
-      b.style.color             = '#71717a';
+      b.style.color             = '#9ca3af';
       b.style.fontWeight        = '400';
     });
-    btn.style.borderBottomColor = '#7c3aed';
-    btn.style.color             = '#7c3aed';
+    btn.style.borderBottomColor = '#ffffff';
+    btn.style.color             = '#ffffff';
     btn.style.fontWeight        = '600';
 
     document.querySelectorAll('.form-tab-panel').forEach(function (p) {
@@ -350,7 +339,8 @@
   window.loadEventTypeStats = function (eventType) {
     var panel = document.getElementById("event-type-stats-panel");
     if (!eventType) { panel.style.display = "none"; return; }
-    fetch(ETS_STATS_URL + "?event_type=" + encodeURIComponent(eventType), {
+    var excludeParam = ETS_EXCLUDE_ID ? "&exclude_event_id=" + ETS_EXCLUDE_ID : "";
+    fetch(ETS_STATS_URL + "?event_type=" + encodeURIComponent(eventType) + excludeParam, {
       headers: { "Accept": "application/json", "X-Requested-With": "XMLHttpRequest" }
     })
     .then(function (r) { return r.json(); })
@@ -418,13 +408,31 @@
   window.autoPopulateDays = function () {
     var startEl = document.querySelector("input[name='event[start_date]']");
     var endEl   = document.querySelector("input[name='event[end_date]']");
-    if (!startEl?.value || !endEl?.value) {
-      alert("Preencha as datas de início e fim primeiro (aba Identificação).");
-      return;
-    }
+    if (!startEl?.value || !endEl?.value) return;
     var start = new Date(startEl.value + "T00:00:00");
     var end   = new Date(endEl.value   + "T00:00:00");
-    if (end < start) { alert("Data de fim deve ser após o início."); return; }
+    if (end < start) return;
+
+    // ── Remover dias fora do novo período ──────────────────────────────────
+    document.querySelectorAll("#ed-rows .ed-row").forEach(function (row) {
+      var cb = row.querySelector(".ed-destroy-cb");
+      if (cb && cb.checked) return; // já marcado para destruir
+      var d = row.querySelector(".ed-date-input")?.value;
+      if (!d) return;
+      var dt = new Date(d + "T00:00:00");
+      if (dt < start || dt > end) {
+        if (cb) {
+          // persistido: marcar para destruir e ocultar
+          cb.checked        = true;
+          row.style.display = "none";
+        } else {
+          // novo (só no DOM): remover diretamente
+          row.remove();
+        }
+      }
+    });
+
+    // ── Adicionar dias que ainda não existem no período ────────────────────
     var existing = new Set();
     document.querySelectorAll("#ed-rows .ed-row").forEach(function (row) {
       var cb = row.querySelector(".ed-destroy-cb");
@@ -465,5 +473,10 @@
       row.remove();
     }
   };
+
+  // ── Auto-populate days on page load (for new events with dates pre-filled) ──
+  document.addEventListener("DOMContentLoaded", function () {
+    autoPopulateDays();
+  });
 })();
 </script>

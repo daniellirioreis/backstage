@@ -21,7 +21,7 @@
   <div style="border:1px solid #e4e4e7; border-radius:14px; overflow:hidden; margin-bottom:1.5rem; box-shadow:0 1px 3px rgba(0,0,0,0.05);">
 
     <%# ── Tab bar ──────────────────────────────────────────────────────────── %>
-    <div id="sector-tab-bar" style="display:flex; align-items:stretch; border-bottom:2px solid #e4e4e7; background:#fafafa; overflow-x:auto;">
+    <div id="sector-tab-bar" style="display:flex; align-items:stretch; border-bottom:2px solid #18181b; background:#18181b; overflow-x:auto;">
 
       <% @sectors.each_with_index do |sector, i| %>
         <button type="button"
@@ -29,7 +29,7 @@
                 class="sector-tab-btn"
                 data-panel="spanel-<%= sector.id %>"
                 onclick="switchSectorTab(this)"
-                style="display:flex;align-items:center;gap:0.35rem;padding:0.65rem 0.95rem;border:none;background:none;cursor:pointer;font-size:0.82rem;font-weight:<%= i == 0 ? '600' : '400' %>;white-space:nowrap;flex-shrink:0;border-bottom:2px solid <%= i == 0 ? '#7c3aed' : 'transparent' %>;color:<%= i == 0 ? '#7c3aed' : '#71717a' %>;margin-bottom:-2px;transition:color 0.15s,border-color 0.15s;">
+                style="display:flex;align-items:center;gap:0.35rem;padding:0.65rem 0.95rem;border:none;background:none;cursor:pointer;font-size:0.82rem;font-weight:<%= i == 0 ? '600' : '400' %>;white-space:nowrap;flex-shrink:0;border-bottom:2px solid <%= i == 0 ? '#ffffff' : 'transparent' %>;color:<%= i == 0 ? '#ffffff' : '#9ca3af' %>;margin-bottom:-2px;transition:color 0.15s,border-color 0.15s;">
           <i class="bi bi-grid-3x3-gap" style="font-size:0.7rem;"></i>
           <span class="stab-label"><%= sector.name.present? ? sector.name : "Setor" %></span>
           <span onclick="event.stopPropagation();removeSectorTab(this)"
@@ -45,7 +45,7 @@
                 class="sector-tab-btn"
                 data-panel="spanel-new_0"
                 onclick="switchSectorTab(this)"
-                style="display:flex;align-items:center;gap:0.35rem;padding:0.65rem 0.95rem;border:none;background:none;cursor:pointer;font-size:0.82rem;font-weight:600;white-space:nowrap;flex-shrink:0;border-bottom:2px solid #7c3aed;color:#7c3aed;margin-bottom:-2px;">
+                style="display:flex;align-items:center;gap:0.35rem;padding:0.65rem 0.95rem;border:none;background:none;cursor:pointer;font-size:0.82rem;font-weight:600;white-space:nowrap;flex-shrink:0;border-bottom:2px solid #ffffff;color:#ffffff;margin-bottom:-2px;">
           <i class="bi bi-grid-3x3-gap" style="font-size:0.7rem;"></i>
           <span class="stab-label">Novo setor</span>
           <span onclick="event.stopPropagation();removeSectorTab(this)"
@@ -103,7 +103,8 @@
   var sectorIdx   = <%= Time.now.to_i %>;
   var FN_RATES    = <%= raw(@event_functions.each_with_object({}) { |ef, h| h[ef.id.to_s] = ef.hourly_rate.to_f }.to_json) %>;
   var EVENT_HOURS = <%= @event_hours || 8.0 %>;
-  var STS_URL     = "<%= sector_type_stats_sectors_path %>";
+  var STS_URL        = "<%= sector_type_stats_sectors_path %>";
+  var STS_EXCLUDE_ID = "<%= @event.id %>";
 
   // ── Custo/estimativa ─────────────────────────────────────────────────────
   function formatBRL(n) {
@@ -160,7 +161,7 @@
     if (!panel) return;
     var sectorType = select.value;
     if (!sectorType) { panel.style.display = "none"; return; }
-    fetch(STS_URL + "?sector_type=" + encodeURIComponent(sectorType), {
+    fetch(STS_URL + "?sector_type=" + encodeURIComponent(sectorType) + (STS_EXCLUDE_ID ? "&exclude_event_id=" + STS_EXCLUDE_ID : ""), {
       headers: { "Accept": "application/json", "X-Requested-With": "XMLHttpRequest" }
     })
     .then(function (r) { return r.json(); })
@@ -214,11 +215,11 @@
   window.switchSectorTab = function (btn) {
     document.querySelectorAll('#sector-tab-bar .sector-tab-btn').forEach(function (b) {
       b.style.borderBottomColor = 'transparent';
-      b.style.color             = '#71717a';
+      b.style.color             = '#9ca3af';
       b.style.fontWeight        = '400';
     });
-    btn.style.borderBottomColor = '#7c3aed';
-    btn.style.color             = '#7c3aed';
+    btn.style.borderBottomColor = '#ffffff';
+    btn.style.color             = '#ffffff';
     btn.style.fontWeight        = '600';
 
     document.querySelectorAll('#sector-panels > div').forEach(function (p) {
@@ -255,7 +256,7 @@
     tabBtn.className = 'sector-tab-btn';
     tabBtn.dataset.panel = panelId;
     tabBtn.onclick = function () { switchSectorTab(this); };
-    tabBtn.style.cssText = 'display:flex;align-items:center;gap:0.35rem;padding:0.65rem 0.95rem;border:none;background:none;cursor:pointer;font-size:0.82rem;font-weight:600;white-space:nowrap;flex-shrink:0;border-bottom:2px solid #7c3aed;color:#7c3aed;margin-bottom:-2px;transition:color 0.15s,border-color 0.15s;';
+    tabBtn.style.cssText = 'display:flex;align-items:center;gap:0.35rem;padding:0.65rem 0.95rem;border:none;background:none;cursor:pointer;font-size:0.82rem;font-weight:600;white-space:nowrap;flex-shrink:0;border-bottom:2px solid #ffffff;color:#ffffff;margin-bottom:-2px;transition:color 0.15s,border-color 0.15s;';
     tabBtn.innerHTML =
       '<i class="bi bi-grid-3x3-gap" style="font-size:0.7rem;"></i>' +
       ' <span class="stab-label">Novo setor</span>' +

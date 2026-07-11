@@ -8,22 +8,44 @@
 <%= render "wizard_nav", current_step: 3, event: @event %>
 
 <%= form_with url: teams_event_setup_path(@event), method: :post, local: true, id: "teams-form" do |f| %>
+  <input type="hidden" id="active-sector-id" name="active_sector_id" value="<%= @sectors.first&.id %>">
 
   <div style="border:1px solid #e4e4e7;border-radius:14px;margin-bottom:1rem;box-shadow:0 1px 3px rgba(0,0,0,.05);">
 
+    <%# ── Pré-computa status de funções planejadas por setor ── %>
+    <%
+      sector_dot_color = @sectors.each_with_object({}) do |sector, h|
+        next h[sector.id] = nil unless sector.sector_functions.any?
+        fn_cnt = Hash.new(0)
+        sector.teams.each do |team|
+          team.team_memberships.each do |tm|
+            fn_cnt[tm.event_function_id.to_s] += 1 if tm.event_function_id
+          end
+        end
+        any_short    = sector.sector_functions.any? { |sf| fn_cnt[sf.event_function_id.to_s] < sf.quantity }
+        any_exceeded = sector.sector_functions.any? { |sf| fn_cnt[sf.event_function_id.to_s] > sf.quantity }
+        h[sector.id] = any_short ? '#dc2626' : (any_exceeded ? '#d97706' : '#16a34a')
+      end
+    %>
+
     <%# ── Aba de setores ──────────────────────────────────────────────────────── %>
-    <div id="sector-tabs-bar" style="display:flex;align-items:stretch;border-bottom:2px solid #e4e4e7;background:#fafafa;overflow-x:auto;border-radius:14px 14px 0 0;">
+    <div id="sector-tabs-bar" style="display:flex;align-items:stretch;border-bottom:2px solid #18181b;background:#18181b;overflow-x:auto;border-radius:14px 14px 0 0;">
       <% @sectors.each_with_index do |sector, i| %>
+        <% dot = sector_dot_color[sector.id] %>
         <button type="button"
                 id="stab-<%= sector.id %>"
                 class="sector-team-tab"
                 data-panel="stpanel-<%= sector.id %>"
                 onclick="switchSectorTeamTab(this)"
-                style="display:flex;align-items:center;gap:0.4rem;padding:0.65rem 1.1rem;border:none;background:none;cursor:pointer;font-size:0.83rem;font-weight:<%= i == 0 ? '600' : '400' %>;white-space:nowrap;flex-shrink:0;border-bottom:2px solid <%= i == 0 ? '#7c3aed' : 'transparent' %>;color:<%= i == 0 ? '#7c3aed' : '#71717a' %>;margin-bottom:-2px;transition:color .15s,border-color .15s;">
-          <i class="bi bi-grid-3x3-gap" style="font-size:0.72rem;"></i>
+                style="display:flex;align-items:center;gap:0.4rem;padding:0.65rem 1.1rem;border:none;background:none;cursor:pointer;font-size:0.83rem;font-weight:<%= i == 0 ? '600' : '400' %>;white-space:nowrap;flex-shrink:0;border-bottom:2px solid <%= i == 0 ? '#ffffff' : 'transparent' %>;color:<%= i == 0 ? '#ffffff' : '#9ca3af' %>;margin-bottom:-2px;transition:color .15s,border-color .15s;">
+          <% if dot %>
+            <span style="width:7px;height:7px;border-radius:50%;background:<%= dot %>;flex-shrink:0;display:inline-block;"></span>
+          <% else %>
+            <i class="bi bi-grid-3x3-gap" style="font-size:0.72rem;"></i>
+          <% end %>
           <%= sector.name %>
           <% if sector.sector_type.present? %>
-            <span style="font-size:0.68rem;font-weight:400;color:<%= i == 0 ? '#a78bfa' : '#a1a1aa' %>;">· <%= sector.sector_type_label %></span>
+            <span style="font-size:0.68rem;font-weight:400;color:<%= i == 0 ? '#d1d5db' : '#6b7280' %>;">· <%= sector.sector_type_label %></span>
           <% end %>
         </button>
       <% end %>
@@ -49,13 +71,13 @@
 
           <%# ── Funções planejadas (se existirem) ─────────────────────────────── %>
           <% if sector.sector_functions.any? %>
-            <div style="background:linear-gradient(135deg,#f5f3ff 0%,#ede9fe 100%);border:1px solid #ddd6fe;border-radius:10px;padding:0.6rem 1rem;margin-bottom:1rem;">
-              <div style="font-size:0.62rem;font-weight:700;color:#6d28d9;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:0.4rem;">
+            <div style="background:#f4f4f5;border:1px solid #e4e4e7;border-radius:10px;padding:0.6rem 1rem;margin-bottom:1rem;">
+              <div style="font-size:0.62rem;font-weight:700;color:#71717a;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:0.4rem;">
                 <i class="bi bi-clipboard-check"></i> Funções planejadas
               </div>
               <div style="display:grid;grid-template-columns:1fr auto 80px auto;gap:0.25rem 0.65rem;align-items:center;">
-                <span style="font-size:0.6rem;font-weight:600;color:#7c3aed;text-transform:uppercase;letter-spacing:0.05em;">Função</span>
-                <span style="font-size:0.6rem;font-weight:600;color:#7c3aed;text-transform:uppercase;letter-spacing:0.05em;text-align:right;">Atribuído</span>
+                <span style="font-size:0.6rem;font-weight:600;color:#71717a;text-transform:uppercase;letter-spacing:0.05em;">Função</span>
+                <span style="font-size:0.6rem;font-weight:600;color:#71717a;text-transform:uppercase;letter-spacing:0.05em;text-align:right;">Atribuído</span>
                 <span></span><span></span>
                 <% sector.sector_functions.each do |sf| %>
                   <% ef       = sf.event_function
@@ -70,10 +92,10 @@
                               : complete ? "Completo"
                               : "#{qty - done} vaga#{qty - done == 1 ? '' : 's'}"
                   %>
-                  <span style="font-size:0.78rem;color:#3b0764;"><%= ef&.name %></span>
+                  <span style="font-size:0.78rem;color:#3f3f46;"><%= ef&.name %></span>
                   <span class="fn-plan-count" data-fn-id="<%= sf.event_function_id %>" data-qty="<%= qty %>"
-                        style="font-size:0.78rem;font-weight:600;color:#4c1d95;text-align:right;"><%= done %>&nbsp;/&nbsp;<%= qty %></span>
-                  <div style="height:4px;background:#c4b5fd;border-radius:99px;overflow:hidden;">
+                        style="font-size:0.78rem;font-weight:600;color:#52525b;text-align:right;"><%= done %>&nbsp;/&nbsp;<%= qty %></span>
+                  <div style="height:4px;background:#d4d4d8;border-radius:99px;overflow:hidden;">
                     <div class="fn-plan-bar" data-fn-id="<%= sf.event_function_id %>"
                          style="height:100%;width:<%= pct %>%;background:<%= color %>;border-radius:99px;transition:width .3s;"></div>
                   </div>
@@ -87,22 +109,29 @@
           <%# ── Abas de equipes ────────────────────────────────────────────────── %>
           <div class="team-tab-container">
 
-            <div class="team-tab-bar" style="display:flex;border-bottom:2px solid #e4e4e7;margin-bottom:1rem;overflow-x:auto;">
+            <div class="team-tab-bar" style="display:flex;border-bottom:2px solid #18181b;background:#18181b;margin-bottom:1rem;overflow-x:auto;">
               <% sector.teams.each_with_index do |team, ti| %>
                 <button type="button"
                         class="team-tab-btn<%= ti == 0 ? ' active-tab' : '' %>"
                         data-panel="team-panel-<%= team.id %>"
                         onclick="switchTeamTab(this)"
-                        style="padding:0.45rem 0.85rem;border:none;border-bottom:2px solid <%= ti == 0 ? '#7c3aed' : 'transparent' %>;margin-bottom:-2px;background:transparent;cursor:pointer;font-size:0.8rem;color:<%= ti == 0 ? '#7c3aed' : '#71717a' %>;font-weight:<%= ti == 0 ? '600' : '400' %>;white-space:nowrap;flex-shrink:0;transition:color .15s,border-color .15s;">
+                        style="padding:0.45rem 0.85rem;border:none;border-bottom:2px solid <%= ti == 0 ? '#ffffff' : 'transparent' %>;margin-bottom:-2px;background:transparent;cursor:pointer;font-size:0.8rem;color:<%= ti == 0 ? '#ffffff' : '#9ca3af' %>;font-weight:<%= ti == 0 ? '600' : '400' %>;white-space:nowrap;flex-shrink:0;transition:color .15s,border-color .15s;">
                   <i class="bi bi-people" style="font-size:0.68rem;margin-right:3px;"></i><%= team.name %>
                 </button>
               <% end %>
               <button type="button" class="team-add-btn"
                       onclick="addTeamTab(this, '<%= sector.id %>')"
-                      style="display:flex;align-items:center;gap:0.3rem;padding:0.22rem 0.7rem;border:none;border-radius:6px;background:#16a34a;cursor:pointer;font-size:0.78rem;font-weight:500;color:#fff;white-space:nowrap;flex-shrink:0;margin:auto 0.35rem;transition:background .15s;"
+                      style="display:flex;align-items:center;gap:0.3rem;padding:0.22rem 0.7rem;border:none;border-radius:6px;background:#16a34a;cursor:pointer;font-size:0.78rem;font-weight:500;color:#fff;white-space:nowrap;flex-shrink:0;margin:auto 0.35rem auto 0;transition:background .15s;"
                       onmouseover="this.style.background='#15803d';"
                       onmouseout="this.style.background='#16a34a';">
                 <i class="bi bi-plus-circle-fill" style="font-size:0.72rem;"></i> Nova equipe
+              </button>
+              <button type="button"
+                      onclick="openImportModal('<%= sector.id %>', '<%= j(sector.name) %>')"
+                      style="display:flex;align-items:center;gap:0.3rem;padding:0.22rem 0.7rem;border:1px solid #3f3f46;border-radius:6px;background:transparent;cursor:pointer;font-size:0.78rem;font-weight:500;color:#d4d4d8;white-space:nowrap;flex-shrink:0;margin:auto 0.35rem auto 0;transition:background .15s,color .15s;"
+                      onmouseover="this.style.background='#27272a';this.style.color='#fff';"
+                      onmouseout="this.style.background='transparent';this.style.color='#d4d4d8';">
+                <i class="bi bi-box-arrow-in-down" style="font-size:0.72rem;"></i> Importar equipes
               </button>
             </div>
 
@@ -190,10 +219,15 @@
                   <button type="button" onclick="addMemberRow(this)" style="display:inline-flex;align-items:center;gap:0.35rem;padding:0.28rem 0.75rem;border:none;border-radius:6px;background:#16a34a;color:#fff;font-size:0.8rem;font-weight:500;cursor:pointer;transition:background .15s;" onmouseover="this.style.background='#15803d';" onmouseout="this.style.background='#16a34a';">
                     <i class="bi bi-person-plus-fill" style="font-size:0.75rem;"></i> Adicionar colaborador
                   </button>
-                  <button type="button" onclick="markTeamDestroy(this)"
-                          style="padding:0.25rem 0.6rem;font-size:0.75rem;border:1px solid #e4e4e7;border-radius:6px;background:transparent;color:#a1a1aa;cursor:pointer;">
-                    <i class="bi bi-trash"></i> Remover equipe
-                  </button>
+                  <div style="display:flex;gap:0.5rem;align-items:center;">
+                    <button type="submit" name="commit" value="save_and_stay" style="display:inline-flex;align-items:center;gap:0.35rem;padding:0.28rem 0.85rem;border:none;border-radius:6px;background:#7c3aed;color:#fff;font-size:0.8rem;font-weight:500;cursor:pointer;transition:background .15s;" onmouseover="this.style.background='#6d28d9';" onmouseout="this.style.background='#7c3aed';">
+                      <i class="bi bi-floppy-fill" style="font-size:0.75rem;"></i> Salvar equipe
+                    </button>
+                    <button type="button" onclick="markTeamDestroy(this)"
+                            style="padding:0.25rem 0.6rem;font-size:0.75rem;border:1px solid #e4e4e7;border-radius:6px;background:transparent;color:#a1a1aa;cursor:pointer;">
+                      <i class="bi bi-trash"></i> Remover equipe
+                    </button>
+                  </div>
                 </div>
               </div>
             <% end %>
@@ -255,10 +289,15 @@
                   <button type="button" onclick="addMemberRow(this)" style="display:inline-flex;align-items:center;gap:0.35rem;padding:0.28rem 0.75rem;border:none;border-radius:6px;background:#16a34a;color:#fff;font-size:0.8rem;font-weight:500;cursor:pointer;transition:background .15s;" onmouseover="this.style.background='#15803d';" onmouseout="this.style.background='#16a34a';">
                     <i class="bi bi-person-plus-fill" style="font-size:0.75rem;"></i> Adicionar colaborador
                   </button>
-                  <button type="button" onclick="removeTeamPanel(this)"
-                          style="padding:0.25rem 0.6rem;font-size:0.75rem;border:1px solid #e4e4e7;border-radius:6px;background:transparent;color:#a1a1aa;cursor:pointer;">
-                    <i class="bi bi-x"></i> Cancelar
-                  </button>
+                  <div style="display:flex;gap:0.5rem;align-items:center;">
+                    <button type="submit" name="commit" value="save_and_stay" style="display:inline-flex;align-items:center;gap:0.35rem;padding:0.28rem 0.85rem;border:none;border-radius:6px;background:#7c3aed;color:#fff;font-size:0.8rem;font-weight:500;cursor:pointer;transition:background .15s;" onmouseover="this.style.background='#6d28d9';" onmouseout="this.style.background='#7c3aed';">
+                      <i class="bi bi-floppy-fill" style="font-size:0.75rem;"></i> Salvar equipe
+                    </button>
+                    <button type="button" onclick="removeTeamPanel(this)"
+                            style="padding:0.25rem 0.6rem;font-size:0.75rem;border:1px solid #e4e4e7;border-radius:6px;background:transparent;color:#a1a1aa;cursor:pointer;">
+                      <i class="bi bi-x"></i> Cancelar
+                    </button>
+                  </div>
                 </div>
               </div>
             </template>
@@ -296,11 +335,11 @@
   window.switchSectorTeamTab = function (btn) {
     document.querySelectorAll('.sector-team-tab').forEach(function (b) {
       b.style.borderBottomColor = 'transparent';
-      b.style.color             = '#71717a';
+      b.style.color             = '#9ca3af';
       b.style.fontWeight        = '400';
     });
-    btn.style.borderBottomColor = '#7c3aed';
-    btn.style.color             = '#7c3aed';
+    btn.style.borderBottomColor = '#ffffff';
+    btn.style.color             = '#ffffff';
     btn.style.fontWeight        = '600';
 
     document.querySelectorAll('.sector-team-panel').forEach(function (p) {
@@ -308,7 +347,21 @@
     });
     var panel = document.getElementById(btn.dataset.panel);
     if (panel) panel.style.display = 'block';
+
+    // guarda o setor ativo para o submit "salvar e voltar"
+    var sectorId = btn.id.replace('stab-', '');
+    var hidField = document.getElementById('active-sector-id');
+    if (hidField) hidField.value = sectorId;
   };
+
+  // ── Ativa o setor correto no carregamento (após redirect com sector_id) ──
+  (function () {
+    var targetSectorId = "<%= params[:sector_id] %>";
+    if (targetSectorId) {
+      var btn = document.getElementById("stab-" + targetSectorId);
+      if (btn) switchSectorTeamTab(btn);
+    }
+  })();
 
   // ── Autocomplete de usuário ──────────────────────────────────────────────
   function initUserAc(wrapper, onSelectCb) {
@@ -318,10 +371,11 @@
     if (!input || !dropdown) return;
     var timer;
     function renderResults(users) {
+      var rows = "";
       if (!Array.isArray(users) || !users.length) {
-        dropdown.innerHTML = '<div style="padding:0.5rem 0.75rem;font-size:0.82rem;color:#a1a1aa;">Nenhum resultado</div>';
+        rows = '<div style="padding:0.5rem 0.75rem;font-size:0.82rem;color:#a1a1aa;">Nenhum resultado</div>';
       } else {
-        dropdown.innerHTML = users.map(function (u) {
+        rows = users.map(function (u) {
           var av = u.avatar_url
             ? '<img src="' + u.avatar_url + '" style="width:26px;height:26px;border-radius:50%;object-fit:cover;flex-shrink:0;">'
             : '<div style="width:26px;height:26px;border-radius:50%;background:#f4f4f5;border:1px solid #e4e4e7;display:flex;align-items:center;justify-content:center;font-size:0.5rem;font-weight:700;color:#52525b;flex-shrink:0;">' + (u.initials || "") + "</div>";
@@ -333,6 +387,12 @@
             + '<div style="font-size:0.7rem;color:#a1a1aa;font-family:monospace;">' + (u.cpf || "") + "</div></div></div>";
         }).join("");
       }
+      rows += '<div class="user-quick-add" '
+        + 'style="display:flex;align-items:center;gap:0.5rem;padding:0.45rem 0.75rem;cursor:pointer;border-top:1px solid #e4e4e7;color:#7c3aed;font-size:0.82rem;font-weight:500;" '
+        + 'onmouseover="this.style.background=\'#f5f3ff\'" onmouseout="this.style.background=\'\'">'
+        + '<i class="bi bi-person-plus-fill" style="font-size:0.78rem;"></i> Cadastrar novo colaborador'
+        + '</div>';
+      dropdown.innerHTML = rows;
       dropdown.style.display = "block";
       dropdown.querySelectorAll(".user-option").forEach(function (opt) {
         opt.addEventListener("mousedown", function (e) {
@@ -343,6 +403,14 @@
           if (onSelectCb) onSelectCb(this.dataset.id, this.dataset.name);
         });
       });
+      var quickAdd = dropdown.querySelector(".user-quick-add");
+      if (quickAdd) {
+        quickAdd.addEventListener("mousedown", function (e) {
+          e.preventDefault();
+          dropdown.style.display = "none";
+          openQuickCollabModal(input, hidden);
+        });
+      }
     }
     input.addEventListener("input", function () {
       clearTimeout(timer);
@@ -456,12 +524,11 @@
     tabBar.querySelectorAll(".team-tab-btn").forEach(function (b) {
       b.style.borderBottomColor = "transparent";
       b.style.fontWeight        = "400";
-      b.style.color             = b.classList.contains("new-tab") ? "#16a34a" : "#71717a";
+      b.style.color             = "#9ca3af";
     });
-    var isNew = btn.classList.contains("new-tab");
-    btn.style.borderBottomColor = isNew ? "#16a34a" : "#7c3aed";
+    btn.style.borderBottomColor = "#ffffff";
     btn.style.fontWeight        = "600";
-    btn.style.color             = isNew ? "#16a34a" : "#7c3aed";
+    btn.style.color             = "#ffffff";
     container.querySelectorAll(".team-tab-panel").forEach(function (p) {
       p.style.display = "none";
     });
@@ -497,8 +564,8 @@
     tabBtn.className = "team-tab-btn new-tab";
     tabBtn.dataset.panel = panelId;
     tabBtn.setAttribute("onclick", "switchTeamTab(this)");
-    tabBtn.innerHTML = '<i class="bi bi-plus-circle-fill" style="font-size:0.68rem;margin-right:3px;"></i>Nova equipe';
-    tabBtn.style.cssText = "display:inline-flex;align-items:center;gap:0.3rem;padding:0.22rem 0.65rem;border:none;border-radius:6px;background:#16a34a;cursor:pointer;font-size:0.78rem;font-weight:500;color:#fff;white-space:nowrap;flex-shrink:0;margin:auto 0.35rem;transition:background .15s;";
+    tabBtn.innerHTML = 'Nova equipe';
+    tabBtn.style.cssText = "padding:0.45rem 0.85rem;border:none;border-bottom:2px solid #ffffff;margin-bottom:-2px;background:transparent;cursor:pointer;font-size:0.8rem;color:#ffffff;font-weight:600;white-space:nowrap;flex-shrink:0;transition:color .15s,border-color .15s;";
     var addBtn = tabBar.querySelector(".team-add-btn");
     tabBar.insertBefore(tabBtn, addBtn);
     switchTeamTab(tabBtn);
@@ -508,7 +575,7 @@
       nameInput.focus();
       nameInput.addEventListener("input", function () {
         var label = this.value.trim() || "Nova equipe";
-        tabBtn.innerHTML = '<i class="bi bi-plus-circle" style="font-size:0.68rem;margin-right:3px;"></i>' + label;
+        tabBtn.textContent = label;
       });
     }
   };
@@ -586,6 +653,481 @@
   // ── Inicializa autocompletes dos painéis existentes ──────────────────────
   document.querySelectorAll(".existing-team").forEach(function (panel) {
     initTeamCard(panel);
+  });
+})();
+</script>
+
+<%# ── Modal de cadastro rápido de colaborador ─────────────────────────────── %>
+<div id="quick-collab-modal"
+     style="display:none;position:fixed;inset:0;z-index:1100;background:rgba(0,0,0,0.45);align-items:center;justify-content:center;">
+  <div style="background:#fff;border-radius:14px;width:460px;max-width:95vw;box-shadow:0 8px 32px rgba(0,0,0,0.18);overflow:hidden;">
+
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:1rem 1.25rem;border-bottom:1px solid #e4e4e7;">
+      <div>
+        <div style="font-size:0.95rem;font-weight:700;color:#18181b;">Novo colaborador</div>
+        <div style="font-size:0.78rem;color:#71717a;margin-top:2px;">Cadastro rápido</div>
+      </div>
+      <button type="button" onclick="closeQuickCollabModal()"
+              style="background:none;border:none;cursor:pointer;color:#71717a;font-size:1.1rem;padding:4px;">
+        <i class="bi bi-x-lg"></i>
+      </button>
+    </div>
+
+    <div style="padding:1.25rem;">
+      <div id="quick-collab-error"
+           style="display:none;background:#fee2e2;border:1px solid #fca5a5;border-radius:8px;padding:0.55rem 0.8rem;font-size:0.8rem;color:#b91c1c;margin-bottom:0.85rem;"></div>
+
+      <div style="margin-bottom:0.85rem;">
+        <label style="font-size:0.78rem;font-weight:600;color:#52525b;display:block;margin-bottom:4px;">
+          Nome completo <span style="color:#dc2626;">*</span>
+        </label>
+        <input id="qc-name" type="text" class="form-control" placeholder="Ex: Maria Souza">
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;margin-bottom:0.85rem;">
+        <div>
+          <label style="font-size:0.78rem;font-weight:600;color:#52525b;display:block;margin-bottom:4px;">
+            CPF <span style="color:#dc2626;">*</span>
+          </label>
+          <input id="qc-cpf" type="text" class="form-control" placeholder="000.000.000-00"
+                 oninput="maskCpf(this)">
+        </div>
+        <div>
+          <label style="font-size:0.78rem;font-weight:600;color:#52525b;display:block;margin-bottom:4px;">
+            Telefone <span style="color:#dc2626;">*</span>
+          </label>
+          <input id="qc-phone" type="text" class="form-control" placeholder="(11) 91234-5678"
+                 oninput="maskPhone(this)">
+        </div>
+      </div>
+
+      <div style="margin-bottom:0.5rem;">
+        <label style="font-size:0.78rem;font-weight:600;color:#52525b;display:block;margin-bottom:4px;">
+          Perfil <span style="color:#dc2626;">*</span>
+        </label>
+        <select id="qc-role" class="form-select form-control">
+          <option value="">— Selecione um perfil —</option>
+          <% @roles.each do |role| %>
+            <option value="<%= role.id %>"><%= role.name %></option>
+          <% end %>
+        </select>
+      </div>
+
+      <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:0.5rem 0.75rem;font-size:0.75rem;color:#92400e;margin-top:0.85rem;">
+        <i class="bi bi-info-circle"></i>
+        Dados complementares (foto, dados bancários) podem ser preenchidos depois em <strong>Colaboradores</strong>.
+      </div>
+    </div>
+
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:0.85rem 1.25rem;border-top:1px solid #e4e4e7;">
+      <button type="button" onclick="closeQuickCollabModal()"
+              style="padding:0.38rem 0.85rem;border:1px solid #e4e4e7;border-radius:7px;background:#fff;font-size:0.83rem;cursor:pointer;color:#52525b;">
+        Cancelar
+      </button>
+      <button type="button" id="qc-submit-btn" onclick="submitQuickCollab()"
+              style="display:inline-flex;align-items:center;gap:0.35rem;padding:0.38rem 0.9rem;border:none;border-radius:7px;background:#7c3aed;color:#fff;font-size:0.83rem;font-weight:600;cursor:pointer;transition:background .15s;"
+              onmouseover="this.style.background='#6d28d9';" onmouseout="this.style.background='#7c3aed';">
+        <i class="bi bi-person-plus-fill" style="font-size:0.75rem;"></i> Cadastrar e adicionar
+      </button>
+    </div>
+  </div>
+</div>
+
+<%# ── Modal de importação de equipes ───────────────────────────────────────── %>
+<div id="import-teams-modal"
+     style="display:none;position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,0.45);align-items:center;justify-content:center;">
+  <div style="background:#fff;border-radius:14px;width:580px;max-width:95vw;max-height:88vh;display:flex;flex-direction:column;box-shadow:0 8px 32px rgba(0,0,0,0.18);">
+
+    <%# cabeçalho %>
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:1rem 1.25rem;border-bottom:1px solid #e4e4e7;flex-shrink:0;">
+      <div>
+        <div style="font-size:0.95rem;font-weight:700;color:#18181b;">Importar equipes</div>
+        <div id="import-modal-sector-label" style="font-size:0.78rem;color:#71717a;margin-top:2px;"></div>
+      </div>
+      <button type="button" onclick="closeImportModal()"
+              style="background:none;border:none;cursor:pointer;color:#71717a;font-size:1.1rem;padding:4px;">
+        <i class="bi bi-x-lg"></i>
+      </button>
+    </div>
+
+    <%# seletor de evento %>
+    <div style="padding:0.85rem 1.25rem;border-bottom:1px solid #f4f4f5;flex-shrink:0;">
+      <label style="font-size:0.78rem;font-weight:600;color:#52525b;display:block;margin-bottom:0.35rem;">Copiar equipes de qual evento?</label>
+      <select id="import-event-select" onchange="loadImportTeams(this.value)"
+              style="width:100%;padding:0.4rem 0.6rem;border:1px solid #e4e4e7;border-radius:7px;font-size:0.85rem;color:#18181b;background:#fff;">
+        <option value="">— Selecione um evento —</option>
+      </select>
+    </div>
+
+    <%# lista de equipes + membros %>
+    <div id="import-teams-list" style="flex:1;overflow-y:auto;padding:0.75rem 1.25rem;">
+      <div style="text-align:center;color:#a1a1aa;font-size:0.83rem;padding:2rem 0;">
+        Selecione um evento para ver as equipes disponíveis.
+      </div>
+    </div>
+
+    <%# rodapé %>
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:0.85rem 1.25rem;border-top:1px solid #e4e4e7;gap:0.75rem;flex-shrink:0;">
+      <span id="import-selected-count" style="font-size:0.78rem;color:#71717a;">Nenhum colaborador selecionado</span>
+      <div style="display:flex;gap:0.5rem;">
+        <button type="button" onclick="closeImportModal()"
+                style="padding:0.38rem 0.85rem;border:1px solid #e4e4e7;border-radius:7px;background:#fff;font-size:0.83rem;cursor:pointer;color:#52525b;">
+          Cancelar
+        </button>
+        <button type="button" id="import-confirm-btn" onclick="confirmImport()" disabled
+                style="padding:0.38rem 0.85rem;border:none;border-radius:7px;background:#7c3aed;color:#fff;font-size:0.83rem;font-weight:600;cursor:pointer;opacity:0.5;transition:opacity .15s;">
+          <i class="bi bi-box-arrow-in-down" style="font-size:0.75rem;"></i> Importar selecionados
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<%# Form hidden que submete a seleção %>
+<form id="import-teams-form" method="post" action="<%= import_teams_event_setup_path(@event) %>" style="display:none;">
+  <%= hidden_field_tag :authenticity_token, form_authenticity_token %>
+  <input type="hidden" id="import-form-sector-id" name="sector_id">
+  <div id="import-form-payload"></div>
+</form>
+
+<script>
+(function () {
+  var IMPORT_SOURCE_EVENTS_URL = "<%= import_source_events_event_setup_path(@event) %>";
+  var IMPORT_SOURCE_TEAMS_URL  = "<%= import_source_sector_teams_event_setup_path(@event) %>";
+
+  var currentSectorId = null;
+  // { teamId: { name, userIds: Set } }
+  var selections = {};
+
+  window.openImportModal = function (sectorId, sectorName) {
+    currentSectorId = sectorId;
+    selections = {};
+    document.getElementById("import-modal-sector-label").textContent = "Setor: " + sectorName;
+    document.getElementById("import-teams-list").innerHTML =
+      '<div style="text-align:center;color:#a1a1aa;font-size:0.83rem;padding:2rem 0;">Selecione um evento para ver as equipes disponíveis.</div>';
+    document.getElementById("import-event-select").value = "";
+    updateFooter();
+
+    var sel = document.getElementById("import-event-select");
+    if (sel.options.length <= 1) {
+      fetch(IMPORT_SOURCE_EVENTS_URL, { headers: { "X-Requested-With": "XMLHttpRequest" } })
+        .then(function (r) { return r.json(); })
+        .then(function (events) {
+          events.forEach(function (e) {
+            var opt = document.createElement("option");
+            opt.value = e.id;
+            opt.textContent = e.name + (e.date ? " · " + e.date : "");
+            sel.appendChild(opt);
+          });
+          if (!events.length) {
+            var opt = document.createElement("option");
+            opt.disabled = true;
+            opt.textContent = "Nenhum outro evento encontrado";
+            sel.appendChild(opt);
+          }
+        });
+    }
+
+    document.getElementById("import-teams-modal").style.display = "flex";
+    document.addEventListener("keydown", escListener);
+  };
+
+  window.closeImportModal = function () {
+    document.getElementById("import-teams-modal").style.display = "none";
+    document.removeEventListener("keydown", escListener);
+  };
+
+  function escListener(e) { if (e.key === "Escape") closeImportModal(); }
+
+  window.loadImportTeams = function (sourceEventId) {
+    if (!sourceEventId) return;
+    selections = {};
+    updateFooter();
+    var list = document.getElementById("import-teams-list");
+    list.innerHTML = '<div style="text-align:center;color:#a1a1aa;font-size:0.83rem;padding:2rem 0;">Carregando...</div>';
+
+    fetch(IMPORT_SOURCE_TEAMS_URL + "?source_event_id=" + sourceEventId, {
+      headers: { "X-Requested-With": "XMLHttpRequest" }
+    })
+      .then(function (r) { return r.json(); })
+      .then(function (sectors) {
+        list.innerHTML = "";
+        var total = sectors.reduce(function (n, s) { return n + s.teams.length; }, 0);
+        if (!total) {
+          list.innerHTML = '<div style="text-align:center;color:#a1a1aa;font-size:0.83rem;padding:2rem 0;">Nenhuma equipe encontrada neste evento.</div>';
+          return;
+        }
+
+        sectors.forEach(function (s) {
+          if (!s.teams.length) return;
+
+          // ── Label do setor de origem ──
+          var sectorLbl = document.createElement("div");
+          sectorLbl.style.cssText = "font-size:0.68rem;font-weight:700;color:#71717a;text-transform:uppercase;letter-spacing:0.06em;margin:0.85rem 0 0.4rem;";
+          sectorLbl.textContent = s.sector_name;
+          list.appendChild(sectorLbl);
+
+          s.teams.forEach(function (t) {
+            selections[t.id] = { name: t.name, userIds: new Set() };
+
+            // ── Card da equipe ──
+            var card = document.createElement("div");
+            card.style.cssText = "border:1px solid #e4e4e7;border-radius:9px;margin-bottom:0.6rem;overflow:hidden;";
+
+            // cabeçalho da equipe com checkbox "selecionar todos"
+            var hdr = document.createElement("div");
+            hdr.style.cssText = "display:flex;align-items:center;gap:0.6rem;padding:0.5rem 0.75rem;background:#f9f9fb;cursor:pointer;";
+
+            var teamCb = document.createElement("input");
+            teamCb.type = "checkbox";
+            teamCb.style.accentColor = "#7c3aed";
+            teamCb.dataset.teamId = t.id;
+
+            var teamLbl = document.createElement("span");
+            teamLbl.style.cssText = "font-size:0.85rem;font-weight:600;color:#18181b;flex:1;";
+            teamLbl.textContent = t.name;
+
+            var memberCount = document.createElement("span");
+            memberCount.style.cssText = "font-size:0.72rem;color:#71717a;";
+            memberCount.textContent = t.members.length + " colaborador" + (t.members.length !== 1 ? "es" : "");
+
+            hdr.appendChild(teamCb);
+            hdr.appendChild(teamLbl);
+            hdr.appendChild(memberCount);
+            card.appendChild(hdr);
+
+            // ── Lista de membros ──
+            if (t.members.length) {
+              var memberList = document.createElement("div");
+              memberList.style.cssText = "padding:0.3rem 0;";
+
+              t.members.forEach(function (m) {
+                var mrow = document.createElement("label");
+                mrow.style.cssText = "display:flex;align-items:center;gap:0.6rem;padding:0.35rem 0.75rem 0.35rem 2.2rem;cursor:pointer;transition:background .1s;";
+                mrow.onmouseover = function () { mrow.style.background = "#f4f4f5"; };
+                mrow.onmouseout  = function () { mrow.style.background = "transparent"; };
+
+                var mCb = document.createElement("input");
+                mCb.type  = "checkbox";
+                mCb.value = m.user_id;
+                mCb.style.accentColor = "#7c3aed";
+                mCb.dataset.teamId = t.id;
+
+                var mLbl = document.createElement("span");
+                mLbl.style.cssText = "font-size:0.82rem;color:#3f3f46;flex:1;";
+                mLbl.textContent = m.name;
+
+                mrow.appendChild(mCb);
+                mrow.appendChild(mLbl);
+
+                if (m.function_name) {
+                  var fnTag = document.createElement("span");
+                  fnTag.style.cssText = "font-size:0.68rem;background:#f4f4f5;color:#52525b;border:1px solid #e4e4e7;border-radius:99px;padding:1px 7px;white-space:nowrap;";
+                  fnTag.textContent = m.function_name;
+                  mrow.appendChild(fnTag);
+                }
+
+                if (m.coordinator) {
+                  var badge = document.createElement("span");
+                  badge.style.cssText = "font-size:0.65rem;background:#dbeafe;color:#1d4ed8;border-radius:99px;padding:1px 6px;font-weight:600;white-space:nowrap;";
+                  badge.textContent = "Coord.";
+                  mrow.appendChild(badge);
+                }
+
+                mCb.onchange = function () {
+                  if (mCb.checked) selections[t.id].userIds.add(m.user_id);
+                  else             selections[t.id].userIds.delete(m.user_id);
+                  syncTeamCheckbox(teamCb, t);
+                  updateFooter();
+                };
+
+                memberList.appendChild(mrow);
+              });
+
+              card.appendChild(memberList);
+
+              // checkbox da equipe → seleciona/desmarca todos os membros
+              teamCb.onchange = function () {
+                memberList.querySelectorAll("input[type=checkbox]").forEach(function (cb) {
+                  cb.checked = teamCb.checked;
+                  if (teamCb.checked) selections[t.id].userIds.add(Number(cb.value));
+                  else                selections[t.id].userIds.delete(Number(cb.value));
+                });
+                updateFooter();
+              };
+
+              // clique no cabeçalho também alterna
+              hdr.onclick = function (e) {
+                if (e.target === teamCb) return;
+                teamCb.checked = !teamCb.checked;
+                teamCb.onchange();
+              };
+            } else {
+              var empty = document.createElement("div");
+              empty.style.cssText = "padding:0.4rem 0.75rem 0.4rem 2.2rem;font-size:0.78rem;color:#a1a1aa;";
+              empty.textContent = "Sem colaboradores cadastrados";
+              card.appendChild(empty);
+            }
+
+            list.appendChild(card);
+          });
+        });
+      });
+  };
+
+  function syncTeamCheckbox(teamCb, t) {
+    var allIds  = t.members.map(function (m) { return m.user_id; });
+    var selSize = selections[t.id].userIds.size;
+    teamCb.indeterminate = selSize > 0 && selSize < allIds.length;
+    teamCb.checked       = selSize === allIds.length && allIds.length > 0;
+  }
+
+  function totalSelected() {
+    return Object.values(selections).reduce(function (n, s) { return n + s.userIds.size; }, 0);
+  }
+
+  function updateFooter() {
+    var n   = totalSelected();
+    var btn = document.getElementById("import-confirm-btn");
+    document.getElementById("import-selected-count").textContent =
+      n === 0 ? "Nenhum colaborador selecionado" : n + " colaborador(es) selecionado(s)";
+    btn.disabled      = n === 0;
+    btn.style.opacity = n === 0 ? "0.5" : "1";
+    btn.style.cursor  = n === 0 ? "default" : "pointer";
+  }
+
+  window.confirmImport = function () {
+    if (totalSelected() === 0) return;
+    document.getElementById("import-form-sector-id").value = currentSectorId;
+    var payload = document.getElementById("import-form-payload");
+    payload.innerHTML = "";
+    var idx = 0;
+    Object.entries(selections).forEach(function (entry) {
+      var teamId  = entry[0];
+      var sel     = entry[1];
+      if (!sel.userIds.size) return;
+      var hidTeam = document.createElement("input");
+      hidTeam.type  = "hidden";
+      hidTeam.name  = "imports[" + idx + "][source_team_id]";
+      hidTeam.value = teamId;
+      payload.appendChild(hidTeam);
+      sel.userIds.forEach(function (uid) {
+        var hidUser = document.createElement("input");
+        hidUser.type  = "hidden";
+        hidUser.name  = "imports[" + idx + "][user_ids][]";
+        hidUser.value = uid;
+        payload.appendChild(hidUser);
+      });
+      idx++;
+    });
+    document.getElementById("import-teams-form").submit();
+  };
+
+  document.getElementById("import-teams-modal").addEventListener("click", function (e) {
+    if (e.target === this) closeImportModal();
+  });
+})();
+</script>
+
+<script>
+(function () {
+  var QUICK_COLLAB_URL = "<%= quick_add_collaborator_event_setup_path(@event) %>";
+  var qcTargetInput  = null;
+  var qcTargetHidden = null;
+
+  // ── Abre o modal a partir do autocomplete ────────────────────────────────
+  window.openQuickCollabModal = function (acInput, acHidden) {
+    qcTargetInput  = acInput;
+    qcTargetHidden = acHidden;
+    document.getElementById("qc-name").value  = acInput.value.trim();
+    document.getElementById("qc-cpf").value   = "";
+    document.getElementById("qc-phone").value = "";
+    document.getElementById("qc-role").value  = "";
+    document.getElementById("quick-collab-error").style.display = "none";
+    document.getElementById("quick-collab-modal").style.display = "flex";
+    document.getElementById("qc-name").focus();
+    document.addEventListener("keydown", qcEsc);
+  };
+
+  window.closeQuickCollabModal = function () {
+    document.getElementById("quick-collab-modal").style.display = "none";
+    document.removeEventListener("keydown", qcEsc);
+  };
+
+  function qcEsc(e) { if (e.key === "Escape") closeQuickCollabModal(); }
+
+  // ── Máscaras ─────────────────────────────────────────────────────────────
+  window.maskCpf = function (el) {
+    var v = el.value.replace(/\D/g, "").slice(0, 11);
+    el.value = v.replace(/(\d{3})(\d)/, "$1.$2")
+                .replace(/(\d{3})\.(\d{3})(\d)/, "$1.$2.$3")
+                .replace(/(\d{3})\.(\d{3})\.(\d{3})(\d)/, "$1.$2.$3-$4");
+  };
+
+  window.maskPhone = function (el) {
+    var v = el.value.replace(/\D/g, "").slice(0, 11);
+    if (v.length <= 10)
+      el.value = v.replace(/(\d{2})(\d{4})(\d)/, "($1) $2-$3");
+    else
+      el.value = v.replace(/(\d{2})(\d{5})(\d)/, "($1) $2-$3");
+  };
+
+  // ── Submete o formulário via AJAX ─────────────────────────────────────────
+  window.submitQuickCollab = function () {
+    var name  = document.getElementById("qc-name").value.trim();
+    var cpf   = document.getElementById("qc-cpf").value.trim();
+    var phone = document.getElementById("qc-phone").value.trim();
+    var role  = document.getElementById("qc-role").value;
+    var errEl = document.getElementById("quick-collab-error");
+    errEl.style.display = "none";
+
+    if (!name || !cpf || !phone || !role) {
+      errEl.textContent = "Preencha todos os campos obrigatórios.";
+      errEl.style.display = "block";
+      return;
+    }
+
+    var btn = document.getElementById("qc-submit-btn");
+    btn.disabled = true;
+    btn.textContent = "Salvando...";
+
+    var body = new URLSearchParams({
+      authenticity_token: document.querySelector("meta[name='csrf-token']")?.content || "",
+      name: name, cpf: cpf, phone: phone, role_id: role
+    });
+
+    fetch(QUICK_COLLAB_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded", "X-Requested-With": "XMLHttpRequest" },
+      body: body.toString()
+    })
+      .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, data: d }; }); })
+      .then(function (res) {
+        if (!res.ok) {
+          errEl.textContent = res.data.error || "Erro ao cadastrar.";
+          errEl.style.display = "block";
+          btn.disabled = false;
+          btn.innerHTML = '<i class="bi bi-person-plus-fill" style="font-size:0.75rem;"></i> Cadastrar e adicionar';
+          return;
+        }
+        var u = res.data;
+        if (qcTargetInput)  qcTargetInput.value  = u.name;
+        if (qcTargetHidden) qcTargetHidden.value = u.id;
+        closeQuickCollabModal();
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-person-plus-fill" style="font-size:0.75rem;"></i> Cadastrar e adicionar';
+      })
+      .catch(function () {
+        errEl.textContent = "Erro de conexão. Tente novamente.";
+        errEl.style.display = "block";
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-person-plus-fill" style="font-size:0.75rem;"></i> Cadastrar e adicionar';
+      });
+  };
+
+  // ── Fecha ao clicar fora ─────────────────────────────────────────────────
+  document.getElementById("quick-collab-modal").addEventListener("click", function (e) {
+    if (e.target === this) closeQuickCollabModal();
   });
 })();
 </script>

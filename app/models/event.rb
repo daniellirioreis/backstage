@@ -35,12 +35,17 @@ class Event < ApplicationRecord
 
   enum :status, { draft: "draft", active: "active", closed: "closed" }, validate: true
 
-  validates :name, presence: true
-  validates :event_type, inclusion: { in: EVENT_TYPES }, allow_blank: true
+  attr_accessor :require_step1_complete
+
+  validates :name,       presence: true
+  validates :location,   presence: true
+  validates :event_type, presence: true, inclusion: { in: EVENT_TYPES }
   validates :code, format: { with: /\A[A-Z0-9]{2,10}\z/i, message: "deve ter 2 a 10 letras/números" }, allow_blank: true
   validates :start_date, presence: true
-  validates :end_date, presence: true
-  validate :end_date_after_start_date
+  validates :end_date,   presence: true
+  validate  :end_date_after_start_date
+  validate  :at_least_one_event_day,      if: :require_step1_complete
+  validate  :at_least_one_event_function, if: :require_step1_complete
   after_validation :translate_nested_errors
 
   private
@@ -48,6 +53,16 @@ class Event < ApplicationRecord
   def end_date_after_start_date
     return if start_date.blank? || end_date.blank?
     errors.add(:end_date, :after_start_date) if end_date < start_date
+  end
+
+  def at_least_one_event_day
+    valid_days = event_days.reject(&:marked_for_destruction?)
+    errors.add(:base, "Adicione pelo menos um dia ao evento") if valid_days.empty?
+  end
+
+  def at_least_one_event_function
+    valid_fns = event_functions.reject(&:marked_for_destruction?)
+    errors.add(:base, "Adicione pelo menos uma função ao evento") if valid_fns.empty?
   end
 
   def translate_nested_errors

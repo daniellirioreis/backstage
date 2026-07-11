@@ -32,28 +32,28 @@
 
   <%# ── Painel de histórico por tipo (colapsável) ─────────────────────────── %>
   <div class="sector-type-stats-panel" style="display:none;margin-bottom:1rem;">
-    <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;overflow:hidden;">
+    <div style="background:#f4f4f5;border:1px solid #e4e4e7;border-radius:10px;overflow:hidden;">
 
       <button type="button" onclick="toggleStsPanel(this)"
               style="width:100%;display:flex;align-items:center;gap:0.5rem;padding:0.65rem 1rem;background:transparent;border:none;cursor:pointer;text-align:left;">
-        <i class="bi bi-bar-chart-line" style="color:#15803d;font-size:0.9rem;flex-shrink:0;"></i>
-        <span style="font-size:0.8rem;font-weight:700;color:#15803d;">
+        <i class="bi bi-bar-chart-line" style="color:#71717a;font-size:0.9rem;flex-shrink:0;"></i>
+        <span style="font-size:0.8rem;font-weight:700;color:#52525b;">
           Histórico — <span class="sts-tipo-label"></span>
         </span>
         <span class="sts-sec-count"
-              style="margin-left:auto;font-size:0.7rem;background:#dcfce7;color:#15803d;border:1px solid #bbf7d0;border-radius:6px;padding:2px 8px;font-weight:600;flex-shrink:0;"></span>
-        <i class="bi bi-chevron-down sts-chevron" style="color:#15803d;font-size:0.75rem;flex-shrink:0;transition:transform 0.2s;"></i>
+              style="margin-left:auto;font-size:0.7rem;background:#e4e4e7;color:#52525b;border:1px solid #d4d4d8;border-radius:6px;padding:2px 8px;font-weight:600;flex-shrink:0;"></span>
+        <i class="bi bi-chevron-down sts-chevron" style="color:#71717a;font-size:0.75rem;flex-shrink:0;transition:transform 0.2s;"></i>
       </button>
 
       <div class="sts-body" style="display:none;padding:0 1rem 1rem;">
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;margin-bottom:0.85rem;">
-          <div style="background:white;border-radius:8px;padding:0.65rem 0.75rem;border:1px solid #d1fae5;">
-            <div style="font-size:0.62rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#16a34a;margin-bottom:3px;">Colaboradores</div>
+          <div style="background:white;border-radius:8px;padding:0.65rem 0.75rem;border:1px solid #e4e4e7;">
+            <div style="font-size:0.62rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#71717a;margin-bottom:3px;">Colaboradores</div>
             <div class="sts-avg-collab" style="font-size:1.2rem;font-weight:700;color:#18181b;"></div>
             <div class="sts-range-collab" style="font-size:0.65rem;color:#71717a;"></div>
           </div>
-          <div style="background:white;border-radius:8px;padding:0.65rem 0.75rem;border:1px solid #d1fae5;">
-            <div style="font-size:0.62rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#16a34a;margin-bottom:3px;">Funções identificadas</div>
+          <div style="background:white;border-radius:8px;padding:0.65rem 0.75rem;border:1px solid #e4e4e7;">
+            <div style="font-size:0.62rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#71717a;margin-bottom:3px;">Funções identificadas</div>
             <div class="sts-fn-count" style="font-size:1.2rem;font-weight:700;color:#18181b;"></div>
             <div style="font-size:0.65rem;color:#71717a;">tipos distintos</div>
           </div>
@@ -62,7 +62,7 @@
           Funções mais usadas neste tipo de setor
         </div>
         <div class="sts-functions-chart"></div>
-        <div style="margin-top:0.65rem;padding-top:0.55rem;border-top:1px solid #bbf7d0;font-size:0.65rem;color:#16a34a;">
+        <div style="margin-top:0.65rem;padding-top:0.55rem;border-top:1px solid #e4e4e7;font-size:0.65rem;color:#71717a;">
           <i class="bi bi-info-circle"></i>
           Qtd. média planejada por setor, baseada em setores similares já cadastrados.
         </div>
@@ -141,5 +141,11 @@
       <i class="bi bi-plus-circle-fill" style="font-size:0.75rem;"></i> Adicionar função
     </button>
   <% end %>
+
+  <div style="display:flex;justify-content:flex-end;margin-top:1rem;padding-top:0.75rem;border-top:1px solid #f4f4f5;">
+    <button type="submit" name="commit" value="save_and_stay" style="display:inline-flex;align-items:center;gap:0.35rem;padding:0.28rem 0.85rem;border:none;border-radius:6px;background:#7c3aed;color:#fff;font-size:0.8rem;font-weight:500;cursor:pointer;transition:background .15s;" onmouseover="this.style.background='#6d28d9';" onmouseout="this.style.background='#7c3aed';">
+      <i class="bi bi-floppy-fill" style="font-size:0.75rem;"></i> Salvar setor
+    </button>
+  </div>
 
 </div>

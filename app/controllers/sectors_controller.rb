@@ -22,7 +22,9 @@ class SectorsController < ApplicationController
 
     # Escopo: setores visíveis para o usuário (via empresa)
     company_ids = current_user.admin? ? Company.pluck(:id) : current_user.company_users.pluck(:company_id)
-    event_ids   = Event.where(company_id: company_ids).pluck(:id)
+    ev_scope    = Event.where(company_id: company_ids)
+    ev_scope    = ev_scope.where.not(id: params[:exclude_event_id]) if params[:exclude_event_id].present?
+    event_ids   = ev_scope.pluck(:id)
     sector_ids  = Sector.where(event_id: event_ids, sector_type: sector_type).pluck(:id)
     total       = sector_ids.size
 

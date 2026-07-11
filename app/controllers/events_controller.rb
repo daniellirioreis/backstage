@@ -198,7 +198,9 @@ class EventsController < ApplicationController
 
     # Escopo de eventos visíveis pelo usuário
     company_ids = current_user.admin? ? Company.pluck(:id) : current_user.company_users.pluck(:company_id)
-    event_ids   = Event.where(company_id: company_ids, event_type: event_type).pluck(:id)
+    scope       = Event.where(company_id: company_ids, event_type: event_type)
+    scope       = scope.where.not(id: params[:exclude_event_id]) if params[:exclude_event_id].present?
+    event_ids   = scope.pluck(:id)
     total_ev    = event_ids.size
 
     if total_ev == 0
@@ -341,6 +343,7 @@ class EventsController < ApplicationController
       return
     end
 
+    @event.require_step1_complete = true
     if @event.save
       redirect_to sectors_event_setup_path(@event), notice: "Evento criado! Agora configure os setores."
     else
@@ -355,8 +358,10 @@ class EventsController < ApplicationController
 
   def update
     authorize @event
+    advancing = params[:save_and_continue].present? || params[:commit] == "Próximo: Setores →"
+    @event.require_step1_complete = true if advancing
     if @event.update(event_params)
-      if params[:save_and_continue].present?
+      if advancing
         redirect_to sectors_event_setup_path(@event), notice: "Dados salvos. Configure os setores."
       else
         redirect_to event_path(@event), notice: t("notices.updated", model: Event.model_name.human)

@@ -15,32 +15,39 @@
 
 <div style="display:flex;align-items:center;background:#f9f9fb;border:1px solid #e4e4e7;border-radius:12px;padding:14px 20px;margin-bottom:1.75rem;">
   <% steps.each_with_index do |step, i| %>
-    <% done    = step[:n] < current_step %>
-    <% active  = step[:n] == current_step %>
-    <% pending = step[:n] > current_step %>
-    <% path    = step_paths[i] %>
+    <% done      = step[:n] < current_step %>
+    <% active    = step[:n] == current_step %>
+    <% pending   = step[:n] > current_step %>
+    <% path      = step_paths[i] %>
     <% clickable = edit_mode && !active && path.present? %>
 
     <div style="display:flex;align-items:center;gap:0.6rem;flex:1;">
-      <%# Circle %>
-      <div style="
-        width:28px;height:28px;border-radius:50%;flex-shrink:0;
-        display:flex;align-items:center;justify-content:center;font-size:0.78rem;font-weight:600;
-        <%= done    ? 'background:#16a34a;color:#fff;'   : '' %>
-        <%= active  ? 'background:#18181b;color:#fff;'   : '' %>
-        <%= pending ? 'background:#e4e4e7;color:#a1a1aa;' : '' %>
-      ">
-        <%= done ? raw('<i class="bi bi-check" style="font-size:0.9rem;"></i>') : step[:n] %>
-      </div>
+      <%# Circle + Label wrapped in link when clickable %>
+      <% circle_html = capture do %>
+        <div style="
+          width:28px;height:28px;border-radius:50%;flex-shrink:0;
+          display:flex;align-items:center;justify-content:center;font-size:0.78rem;font-weight:600;
+          <%= done    ? 'background:#16a34a;color:#fff;'    : '' %>
+          <%= active  ? 'background:#18181b;color:#fff;'    : '' %>
+          <%= pending ? 'background:#e4e4e7;color:#a1a1aa;' : '' %>
+        ">
+          <%= done ? raw('<i class="bi bi-check" style="font-size:0.9rem;"></i>') : step[:n] %>
+        </div>
+        <span style="font-size:0.82rem;white-space:nowrap;font-weight:<%= active ? '700' : '500' %>;color:<%= done ? '#16a34a' : active ? '#18181b' : '#a1a1aa' %>;"><%= step[:label] %></span>
+      <% end %>
 
-      <%# Label — link if clickable, span otherwise %>
-      <% label_style = "font-size:0.82rem;white-space:nowrap;font-weight:#{active ? '700' : '500'};color:#{done ? '#16a34a' : active ? '#18181b' : '#a1a1aa'};" %>
       <% if clickable %>
-        <%= link_to step[:label], path,
-            style: label_style + "text-decoration:none;",
-            title: "Ir para #{step[:label].downcase}" %>
+        <%= link_to path,
+            style: "display:flex;align-items:center;gap:0.6rem;text-decoration:none;border-radius:8px;padding:4px 8px;margin:-4px -8px;transition:background 0.15s;",
+            onmouseover: "this.style.background='#f0f0f2'",
+            onmouseout:  "this.style.background='transparent'",
+            title: "Ir para #{step[:label].downcase}" do %>
+          <%= circle_html %>
+        <% end %>
       <% else %>
-        <span style="<%= label_style %>"><%= step[:label] %></span>
+        <div style="display:flex;align-items:center;gap:0.6rem;padding:4px 8px;margin:-4px -8px;">
+          <%= circle_html %>
+        </div>
       <% end %>
     </div>
 

@@ -122,6 +122,15 @@ pt-BR:
       operator: "Operador"
       collaborator: "Colaborador"
 
+  event_type_groups:
+    shows: "Shows e Cultura"
+    sports: "Esportivo"
+    corporate: "Corporativo"
+    social: "Social"
+    cultural: "Cultural"
+    educational: "Educacional"
+    other: "Outro"
+
   event_types:
     show: "Show Musical"
     festival: "Festival"
@@ -190,6 +199,7 @@ pt-BR:
         record_invalid: "A validação falhou: %{errors}"
         taken: "já está em uso"
         blank: "não pode ficar em branco"
+        inclusion: "não é uma opção válida"
         invalid: "é inválido"
         required: "é obrigatório(a)"
         not_a_number: "não é um número"
@@ -275,6 +285,7 @@ pt-BR:
       event:
         name: "Nome"
         location: "Local"
+        event_type: "Tipo de evento"
         start_date: "Data de início"
         end_date: "Data de fim"
         status: "Status"

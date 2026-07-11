@@ -53,10 +53,14 @@ Rails.application.routes.draw do
     resources :event_functions, only: [:create, :update, :destroy]
     resource :setup, only: [], controller: 'events/setup' do
       get  :sectors
-      post :sectors,   action: :save_sectors
+      post :sectors,        action: :save_sectors
       get  :teams
-      post :teams,     action: :save_teams
+      post :teams,          action: :save_teams
       get  :schedules
+      get  :import_source_events
+      get  :import_source_sector_teams
+      post :import_teams
+      post :quick_add_collaborator
     end
     collection do
       get :event_type_stats
