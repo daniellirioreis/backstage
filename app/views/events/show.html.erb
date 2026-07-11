@@ -112,6 +112,10 @@
           style="padding:0.6rem 1.25rem; border:none; background:none; cursor:pointer; font-size:0.88rem; font-weight:600; color:#71717a; border-bottom:2px solid transparent; margin-bottom:-2px; transition:all 0.15s;">
     <i class="bi bi-grid"></i> Setores
   </button>
+  <button id="tab-btn-equipes" onclick="switchEventTab('equipes')"
+          style="padding:0.6rem 1.25rem; border:none; background:none; cursor:pointer; font-size:0.88rem; font-weight:600; color:#71717a; border-bottom:2px solid transparent; margin-bottom:-2px; transition:all 0.15s;">
+    <i class="bi bi-people"></i> Equipes
+  </button>
   <% if has_financial %>
     <button id="tab-btn-financeiro" onclick="switchEventTab('financeiro')"
             style="padding:0.6rem 1.25rem; border:none; background:none; cursor:pointer; font-size:0.88rem; font-weight:600; color:#71717a; border-bottom:2px solid transparent; margin-bottom:-2px; transition:all 0.15s;">
@@ -362,6 +366,121 @@
 </div><%# /tab-setores %>
 
 <%# ══════════════════════════════════════════════════════════════════════════ %>
+<%# ABA: EQUIPES                                                              %>
+<%# ══════════════════════════════════════════════════════════════════════════ %>
+<div id="tab-equipes" style="display:none;">
+  <%
+    all_teams       = @sectors.flat_map(&:teams)
+    teams_with_sched = all_teams.count { |t| @teams_with_shifts.include?(t.id) }
+    teams_no_sched   = all_teams.count { |t| !@teams_with_shifts.include?(t.id) }
+  %>
+
+  <%# ── Resumo ── %>
+  <% if all_teams.any? %>
+    <div class="content-card" style="margin-bottom:1.25rem; padding:0.85rem 1.25rem;">
+      <div style="display:flex; align-items:center; gap:1.5rem; flex-wrap:wrap;">
+        <span style="font-size:0.78rem; color:#71717a;"><i class="bi bi-people" style="color:#7c3aed;"></i> <strong style="color:#18181b;"><%= all_teams.size %></strong> equipes</span>
+        <span style="font-size:0.78rem; color:#15803d;"><i class="bi bi-calendar-check"></i> <strong><%= teams_with_sched %></strong> com escala</span>
+        <% if teams_no_sched > 0 %>
+          <span style="font-size:0.78rem; color:#dc2626;"><i class="bi bi-calendar-x"></i> <strong><%= teams_no_sched %></strong> sem escala</span>
+        <% end %>
+      </div>
+    </div>
+  <% end %>
+
+  <% if all_teams.empty? %>
+    <div class="content-card" style="text-align:center; padding:2.5rem; color:#a1a1aa;">
+      <i class="bi bi-people" style="font-size:2rem; display:block; margin-bottom:0.5rem;"></i>
+      <p style="margin:0; font-size:0.88rem;">Nenhuma equipe cadastrada para este evento.</p>
+    </div>
+  <% else %>
+    <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(300px, 1fr)); gap:1rem;">
+      <% @sectors.each do |sector| %>
+        <% sector.teams.each do |team| %>
+          <%
+            has_sched  = @teams_with_shifts.include?(team.id)
+            members    = team.users
+          %>
+          <div class="content-card" style="padding:1.1rem 1.25rem; display:flex; flex-direction:column; gap:0.85rem;">
+
+            <%# Cabeçalho: nome + setor + escala %>
+            <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:0.5rem;">
+              <div style="min-width:0;">
+                <div style="font-size:0.92rem; font-weight:700; color:#18181b; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                  <%= team.name %>
+                </div>
+                <span style="font-size:0.68rem; font-weight:600; background:#f5f3ff; color:#7c3aed; border-radius:4px; padding:1px 7px; margin-top:2px; display:inline-block;">
+                  <i class="bi bi-grid-3x3-gap"></i> <%= sector.name %>
+                </span>
+              </div>
+              <% if has_sched %>
+                <span style="flex-shrink:0; display:inline-flex; align-items:center; gap:0.25rem; background:#dcfce7; border:1px solid #86efac; border-radius:5px; padding:2px 8px; font-size:0.65rem; font-weight:700; color:#15803d; white-space:nowrap;">
+                  <i class="bi bi-calendar-check"></i> Escala ok
+                </span>
+              <% else %>
+                <span style="flex-shrink:0; display:inline-flex; align-items:center; gap:0.25rem; background:#fef2f2; border:1px solid #fca5a5; border-radius:5px; padding:2px 8px; font-size:0.65rem; font-weight:700; color:#dc2626; white-space:nowrap;">
+                  <i class="bi bi-calendar-x"></i> Sem escala
+                </span>
+              <% end %>
+            </div>
+
+            <%# Coordenador %>
+            <% if team.coordinator %>
+              <div style="display:flex; align-items:center; gap:0.5rem; background:#fefce8; border:1px solid #fde68a; border-radius:7px; padding:0.45rem 0.65rem;">
+                <div style="width:24px; height:24px; border-radius:50%; overflow:hidden; background:#fef3c7; border:2px solid #fcd34d; display:flex; align-items:center; justify-content:center; font-size:0.5rem; font-weight:700; color:#92400e; flex-shrink:0;">
+                  <% if team.coordinator.avatar.attached? %>
+                    <%= image_tag team.coordinator.avatar, style:"width:100%;height:100%;object-fit:cover;" %>
+                  <% else %>
+                    <%= team.coordinator.name.split.map(&:first).first(2).join.upcase %>
+                  <% end %>
+                </div>
+                <div style="min-width:0;">
+                  <div style="font-size:0.75rem; font-weight:600; color:#92400e; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;"><%= team.coordinator.name %></div>
+                  <div style="font-size:0.65rem; color:#b45309;">Coordenador</div>
+                </div>
+                <% if team.radio_channel.present? %>
+                  <span style="margin-left:auto; flex-shrink:0; display:inline-flex; align-items:center; gap:0.2rem; background:#fef3c7; border:1px solid #fcd34d; border-radius:5px; padding:1px 7px; font-size:0.68rem; font-weight:600; color:#92400e;">
+                    <i class="bi bi-broadcast" style="font-size:0.6rem;"></i> <%= team.radio_channel %>
+                  </span>
+                <% end %>
+              </div>
+            <% end %>
+
+            <%# Membros %>
+            <div>
+              <div style="font-size:0.68rem; font-weight:600; text-transform:uppercase; letter-spacing:0.06em; color:#71717a; margin-bottom:0.4rem;">
+                <i class="bi bi-person-badge"></i> <%= members.size %> colaborador<%= members.size == 1 ? '' : 'es' %>
+              </div>
+              <% if members.any? %>
+                <div style="display:flex; flex-wrap:wrap; gap:0.3rem;">
+                  <% members.first(8).each do |user| %>
+                    <div title="<%= user.name %>" style="width:28px; height:28px; border-radius:50%; overflow:hidden; background:#e4e4e7; border:2px solid #fff; box-shadow:0 0 0 1px #d4d4d8; display:flex; align-items:center; justify-content:center; font-size:0.52rem; font-weight:700; color:#71717a; flex-shrink:0;">
+                      <% if user.avatar.attached? %>
+                        <%= image_tag user.avatar, style:"width:100%;height:100%;object-fit:cover;" %>
+                      <% else %>
+                        <%= user.name.split.map(&:first).first(2).join.upcase %>
+                      <% end %>
+                    </div>
+                  <% end %>
+                  <% if members.size > 8 %>
+                    <div style="width:28px; height:28px; border-radius:50%; background:#f4f4f5; border:2px solid #fff; box-shadow:0 0 0 1px #d4d4d8; display:flex; align-items:center; justify-content:center; font-size:0.6rem; font-weight:700; color:#71717a;">
+                      +<%= members.size - 8 %>
+                    </div>
+                  <% end %>
+                </div>
+              <% else %>
+                <span style="font-size:0.78rem; color:#a1a1aa;">Nenhum colaborador</span>
+              <% end %>
+            </div>
+
+          </div>
+        <% end %>
+      <% end %>
+    </div>
+  <% end %>
+</div><%# /tab-equipes %>
+
+<%# ══════════════════════════════════════════════════════════════════════════ %>
 <%# ABA: FINANCEIRO                                                           %>
 <%# ══════════════════════════════════════════════════════════════════════════ %>
 <div id="tab-financeiro" style="display:none;">
@@ -603,7 +722,7 @@
 
 <script>
 function switchEventTab(name) {
-  ['geral', 'setores', 'financeiro'].forEach(function(t) {
+  ['geral', 'setores', 'equipes', 'financeiro'].forEach(function(t) {
     var panel = document.getElementById('tab-' + t);
     var btn   = document.getElementById('tab-btn-' + t);
     if (!panel || !btn) return;
@@ -617,6 +736,6 @@ function switchEventTab(name) {
 
 document.addEventListener('DOMContentLoaded', function() {
   var hash = window.location.hash.replace('#', '');
-  if (['setores', 'financeiro'].includes(hash)) switchEventTab(hash);
+  if (['setores', 'equipes', 'financeiro'].includes(hash)) switchEventTab(hash);
 });
 </script>
