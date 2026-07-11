@@ -2,7 +2,9 @@
   # selected_days: array de EventDay objects
   # existing_shifts: { [user_id, date_str] => Shift } OU {} (novo)
   # submitted_members: params preservados em caso de erro
-  per_day = selected_days.any?
+  per_day          = selected_days.any?
+  t_uid            = team.id
+  default_day_hours = selected_days.any? ? selected_days.first.hours.to_f : 8.0
 %>
 
 <div class="content-card" style="margin-bottom: 1.5rem; overflow-x: auto;">
@@ -12,13 +14,13 @@
     </h3>
     <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
       <label style="font-size: 0.78rem; color: #71717a; margin: 0;">Horário padrão:</label>
-      <input type="time" id="bulk_start"
+      <input type="time" id="bulk_start_<%= t_uid %>"
              style="font-size: 0.82rem; padding: 0.3rem 0.5rem; border: 1px solid #e4e4e7; border-radius: 6px; color: #18181b;"
-             oninput="document.querySelectorAll('.col-start').forEach(i=>i.value=this.value)">
+             oninput="bulkStartInput_<%= t_uid %>(this)">
       <span style="color: #a1a1aa;">→</span>
-      <input type="time" id="bulk_end"
+      <input type="time" id="bulk_end_<%= t_uid %>"
              style="font-size: 0.82rem; padding: 0.3rem 0.5rem; border: 1px solid #e4e4e7; border-radius: 6px; color: #18181b;"
-             oninput="document.querySelectorAll('.col-end').forEach(i=>i.value=this.value)">
+             oninput="bulkEndInput_<%= t_uid %>(this)">
       <span style="font-size: 0.72rem; color: #a1a1aa;">(aplica a todos)</span>
     </div>
   </div>
@@ -197,12 +199,13 @@
   <% end %>
 </div>
 
-<%# ── Script SEMPRE renderizado: cálculo automático de hora fim ────────── %>
-<% default_day_hours = selected_days.any? ? selected_days.first.hours.to_f : 8.0 %>
 <script>
 (function () {
+  var tUid  = '<%= t_uid %>';
+  var frame = document.getElementById('shift-frame-' + tUid) || document;
   var DEFAULT_HOURS = <%= default_day_hours %>;
 
+  // ── Helpers ──────────────────────────────────────────────────────────
   function calcEnd(startVal, hours) {
     if (!startVal || !hours) return '';
     var p   = startVal.split(':').map(Number);
@@ -210,33 +213,127 @@
     return String(Math.floor(min / 60) % 24).padStart(2, '0') + ':' + String(min % 60).padStart(2, '0');
   }
 
-  function hoursForInput(startInput) {
-    var mh = startInput && parseFloat(startInput.getAttribute('data-max-hours'));
+  function dayHours() {
+    var first = frame.querySelector('.col-start[data-max-hours]');
+    var mh = first && parseFloat(first.getAttribute('data-max-hours'));
     return (mh && mh > 0) ? mh : DEFAULT_HOURS;
   }
 
-  // ── Bulk start → calcula fim e propaga (funciona em qualquer modo) ──
-  var bulkStart = document.getElementById('bulk_start');
-  var bulkEnd   = document.getElementById('bulk_end');
-  if (bulkStart && bulkEnd) {
-    bulkStart.addEventListener('input', function () {
-      if (!bulkStart.value) return;
-      var first = document.querySelector('.col-start');
-      bulkEnd.value = calcEnd(bulkStart.value, hoursForInput(first));
-      document.querySelectorAll('.col-end').forEach(function(i) { i.value = bulkEnd.value; });
-    });
+  // ── Bulk start: propaga início + calcula e propaga fim ───────────────
+  window['bulkStartInput_' + tUid] = function (el) {
+    frame.querySelectorAll('.col-start').forEach(function(i) { i.value = el.value; });
+    if (!el.value) return;
+    var endVal = calcEnd(el.value, dayHours());
+    var be = document.getElementById('bulk_end_' + tUid);
+    if (be) be.value = endVal;
+    frame.querySelectorAll('.col-end').forEach(function(i) { i.value = endVal; });
+    // Notifica o save button
+    frame.dispatchEvent(new Event('bulk-filled', { bubbles: true }));
+  };
+
+  // ── Bulk end: apenas propaga ─────────────────────────────────────────
+  window['bulkEndInput_' + tUid] = function (el) {
+    frame.querySelectorAll('.col-end').forEach(function(i) { i.value = el.value; });
+    frame.dispatchEvent(new Event('bulk-filled', { bubbles: true }));
+  };
+
+  <% if per_day %>
+  // ── Per-day: sugere hora fim ao preencher hora início individual ─────
+  function suggestEndTime(startInput) {
+    var hours = parseFloat(startInput.getAttribute('data-max-hours') || '0') || DEFAULT_HOURS;
+    if (!startInput.value) return;
+    var startTd  = startInput.closest('td');
+    var endTd    = startTd && startTd.nextElementSibling;
+    var endInput = endTd && endTd.querySelector('input.day-time-pair[data-pair-role="end"]');
+    if (!endInput || endInput.value) return;
+    endInput.value = calcEnd(startInput.value, hours);
   }
 
-  // ── Individual col-start em modo legado (sem dia confirmado) ────────
-  document.addEventListener('input', function (e) {
+  // ── Per-day: validação de duração ────────────────────────────────────
+  function validateDurations(form) {
+    var errors = [];
+    form.querySelectorAll('input.day-time-pair[data-pair-role="start"]').forEach(function (startInput) {
+      var startTd  = startInput.closest('td');
+      var endTd    = startTd && startTd.nextElementSibling;
+      var endInput = endTd && endTd.querySelector('input.day-time-pair[data-pair-role="end"]');
+      if (!endInput) return;
+      var row   = startInput.closest('tr');
+      var check = row && row.querySelector('.member-check');
+      if (check && !check.checked) {
+        startInput.style.borderColor = '';
+        endInput.style.borderColor   = '';
+        return;
+      }
+      var sv = startInput.value, ev = endInput.value;
+      if (!sv || !ev) {
+        startInput.style.borderColor = '';
+        endInput.style.borderColor   = '';
+        return;
+      }
+      var maxHours  = parseFloat(startInput.getAttribute('data-max-hours') || '0');
+      var dateLabel = startInput.getAttribute('data-date-label') || '';
+      var sp = sv.split(':').map(Number), ep = ev.split(':').map(Number);
+      var startMin = sp[0] * 60 + sp[1], endMin = ep[0] * 60 + ep[1];
+      var durationMin = endMin > startMin ? endMin - startMin
+                      : (endMin === startMin ? 0 : (1440 - startMin) + endMin);
+      var maxMin = maxHours * 60;
+      if (durationMin === 0) {
+        startInput.style.borderColor = '#ef4444';
+        endInput.style.borderColor   = '#ef4444';
+        errors.push('<strong>' + dateLabel + '</strong>: início e fim iguais');
+      } else if (maxMin > 0 && durationMin > maxMin) {
+        startInput.style.borderColor = '#ef4444';
+        endInput.style.borderColor   = '#ef4444';
+        var dh = Math.floor(durationMin / 60), dm = durationMin % 60;
+        var limStr = maxHours === Math.floor(maxHours) ? Math.floor(maxHours) + 'h' : maxHours + 'h';
+        errors.push('<strong>' + dateLabel + '</strong>: ' + (dm === 0 ? dh + 'h' : dh + 'h' + dm + 'min') + ' excede ' + limStr);
+      } else {
+        startInput.style.borderColor = '';
+        endInput.style.borderColor   = '';
+      }
+    });
+    var box  = frame.querySelector('#duration-error-box');
+    var list = frame.querySelector('#duration-error-list');
+    if (box && list) {
+      if (errors.length > 0) {
+        list.innerHTML = errors.map(function(e) { return '<div style="padding:2px 0;">' + e + '</div>'; }).join('');
+        box.style.display = 'block';
+        box.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      } else {
+        box.style.display = 'none';
+      }
+    }
+    return errors.length === 0;
+  }
+
+  frame.addEventListener('input', function (e) {
+    if (!e.target.classList.contains('day-time-pair')) return;
+    if (e.target.getAttribute('data-pair-role') === 'start') suggestEndTime(e.target);
+    var form = e.target.closest('form');
+    if (form) validateDurations(form);
+  });
+
+  frame.addEventListener('submit', function (e) {
+    var form = e.target;
+    if (!form || !form.querySelector('input.day-time-pair')) return;
+    if (!validateDurations(form)) {
+      e.preventDefault();
+      e.stopImmediatePropagation();
+    }
+  }, true);
+  <% end %>
+
+  // ── Legacy (sem dias): sugere col-end ao preencher col-start individual ──
+  <% unless per_day %>
+  frame.addEventListener('input', function (e) {
     if (!e.target.classList.contains('col-start')) return;
-    if (e.target.classList.contains('day-time-pair')) return; // per-day cuida deles abaixo
     var row = e.target.closest('tr');
     if (!row) return;
     var endInput = row.querySelector('.col-end');
-    if (!endInput || endInput.value) return; // não sobrescreve se já preenchido
+    if (!endInput || endInput.value) return;
     endInput.value = calcEnd(e.target.value, DEFAULT_HOURS);
   });
+  <% end %>
 })();
 </script>
 
@@ -247,121 +344,4 @@
   </div>
   <div id="duration-error-list" style="font-size:0.8rem; color:#991b1b;"></div>
 </div>
-
-<script>
-(function () {
-  // Valida duração de cada par início/fim contra o limite do dia (data-max-hours)
-  function validateDurations(form) {
-    var errors = [];
-
-    // Agrupa inputs por (user_id, date): encontra pares start+end na mesma célula (mesma linha, mesma coluna)
-    form.querySelectorAll('input.day-time-pair[data-pair-role="start"]').forEach(function (startInput) {
-      // O end_time está na próxima <td>
-      var startTd = startInput.closest('td');
-      var endTd   = startTd && startTd.nextElementSibling;
-      var endInput = endTd && endTd.querySelector('input.day-time-pair[data-pair-role="end"]');
-      if (!endInput) return;
-
-      // Verifica se o colaborador desta linha está marcado
-      var row   = startInput.closest('tr');
-      var check = row && row.querySelector('.member-check');
-      if (check && !check.checked) {
-        // Reseta bordas
-        startInput.style.borderColor = '';
-        endInput.style.borderColor   = '';
-        return;
-      }
-
-      var sv = startInput.value;
-      var ev = endInput.value;
-      if (!sv || !ev) {
-        startInput.style.borderColor = '';
-        endInput.style.borderColor   = '';
-        return;
-      }
-
-      var maxHours  = parseFloat(startInput.getAttribute('data-max-hours') || '0');
-      var dateLabel = startInput.getAttribute('data-date-label') || '';
-
-      var sp = sv.split(':').map(Number);
-      var ep = ev.split(':').map(Number);
-      var startMin = sp[0] * 60 + sp[1];
-      var endMin   = ep[0] * 60 + ep[1];
-
-      // Duração: se end <= start assume overnight (+24h)
-      var durationMin = endMin > startMin
-        ? endMin - startMin
-        : (endMin === startMin ? 0 : (1440 - startMin) + endMin);
-
-      var maxMin = maxHours * 60;
-
-      if (durationMin === 0) {
-        startInput.style.borderColor = '#ef4444';
-        endInput.style.borderColor   = '#ef4444';
-        errors.push('<strong>' + dateLabel + '</strong>: início e fim iguais');
-      } else if (durationMin > maxMin) {
-        startInput.style.borderColor = '#ef4444';
-        endInput.style.borderColor   = '#ef4444';
-        var dh = Math.floor(durationMin / 60);
-        var dm = durationMin % 60;
-        var durStr = dm === 0 ? dh + 'h' : dh + 'h' + dm + 'min';
-        var limStr = maxHours === Math.floor(maxHours) ? Math.floor(maxHours) + 'h' : maxHours + 'h';
-        errors.push('<strong>' + dateLabel + '</strong>: ' + durStr + ' excede o limite de ' + limStr);
-      } else {
-        startInput.style.borderColor = '';
-        endInput.style.borderColor   = '';
-      }
-    });
-
-    var box  = document.getElementById('duration-error-box');
-    var list = document.getElementById('duration-error-list');
-    if (!box || !list) return errors.length === 0;
-
-    if (errors.length > 0) {
-      list.innerHTML = errors.map(function(e) { return '<div style="padding:2px 0;">' + e + '</div>'; }).join('');
-      box.style.display = 'block';
-      box.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    } else {
-      box.style.display = 'none';
-    }
-
-    return errors.length === 0;
-  }
-
-  // Sugere hora fim quando o usuário preenche hora início (só se fim estiver vazio)
-  function suggestEndTime(startInput) {
-    var maxHours = parseFloat(startInput.getAttribute('data-max-hours') || '0');
-    if (!maxHours || !startInput.value) return;
-
-    var startTd  = startInput.closest('td');
-    var endTd    = startTd && startTd.nextElementSibling;
-    var endInput = endTd && endTd.querySelector('input.day-time-pair[data-pair-role="end"]');
-    if (!endInput || endInput.value) return; // só sugere se fim estiver vazio
-
-    var sp = startInput.value.split(':').map(Number);
-    var totalMin = sp[0] * 60 + sp[1] + Math.round(maxHours * 60);
-    var endH = Math.floor(totalMin / 60) % 24;
-    var endM = totalMin % 60;
-    endInput.value = String(endH).padStart(2, '0') + ':' + String(endM).padStart(2, '0');
-  }
-
-  // Sugere fim + revalida ao preencher col-start individual (per-day)
-  document.addEventListener('input', function (e) {
-    if (!e.target.classList.contains('day-time-pair')) return;
-    if (e.target.getAttribute('data-pair-role') === 'start') suggestEndTime(e.target);
-    var form = e.target.closest('form');
-    if (form) validateDurations(form);
-  });
-
-  // Bloqueia submit se houver erros
-  document.addEventListener('submit', function (e) {
-    var form = e.target;
-    if (!form.querySelector('input.day-time-pair')) return;
-    if (!validateDurations(form)) {
-      e.preventDefault();
-      e.stopImmediatePropagation();
-    }
-  }, true);
-})();
-</script>
 <% end %>

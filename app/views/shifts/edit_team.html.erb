@@ -211,7 +211,6 @@
 
     form.addEventListener('input', function (e) {
       var el = e.target;
-      // Reage a: checkboxes de membro, qualquer input de horário
       if (el.classList.contains('member-check') || el.classList.contains('col-start') || el.classList.contains('col-end')) {
         if (hasAnyTime()) markDirty();
       }
@@ -222,6 +221,12 @@
       if (el.classList.contains('member-check') || el.classList.contains('col-start') || el.classList.contains('col-end')) {
         if (hasAnyTime()) markDirty();
       }
+    });
+
+    // Bulk fill define valores programaticamente (não dispara input em col-end),
+    // então ouvimos o evento customizado para habilitar o botão
+    form.addEventListener('bulk-filled', function () {
+      if (hasAnyTime()) markDirty();
     });
 
     // Ao submeter, desabilita o botão e remove badge (evita double-submit)
