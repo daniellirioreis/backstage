@@ -11,8 +11,8 @@ class TeamPolicy < ApplicationPolicy
   def edit?   = can?("update") && (user.admin? || event_draft?)
   def update? = can?("update") && (user.admin? || event_draft?)
 
-  # Credenciais: só com evento ativo
-  def credentials? = can?("show") && (user.admin? || event_active?)
+  # Credenciais: disponível em rascunho e ativo
+  def credentials? = can?("show")
 
   # Gestão de membros: adicionar/importar colaboradores (qualquer status de evento)
   def manage_members? = user.admin? || can?("manage_members")
