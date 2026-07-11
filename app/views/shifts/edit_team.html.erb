@@ -100,82 +100,91 @@
   <% end %>
 <% end %>
 
-<%# ── PASSO 2: Tabela + Salvar ── %>
-<%= form_with url: update_team_shifts_path, method: :patch, local: true, data: { turbo: false } do |f| %>
-  <input type="hidden" name="team_id" value="<%= uid %>">
-  <%= hidden_field_tag :modal,  params[:modal]  if params[:modal].present? %>
-  <%= hidden_field_tag :wizard, params[:wizard] if params[:wizard].present? %>
+<%# ── PASSO 2: Tabela + Salvar (só aparece após confirmar dia) ── %>
+<% show_table = @selected_days.any? || @event_days.empty? %>
 
-  <% if @event_days.empty? %>
-    <div class="content-card" style="margin-bottom:1rem;">
-      <h3 style="font-size:0.82rem; font-weight:600; text-transform:uppercase; letter-spacing:0.05em; color:#71717a; margin:0 0 1rem;">
-        <i class="bi bi-calendar3"></i> Período
-      </h3>
-      <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
-        <div>
-          <label class="form-label">
-            Data início <span style="color:#ef4444;">*</span>
-            <% if @event %>
-              <span style="font-weight:400; color:#a1a1aa;">(<%= l(@event.start_date, format: :short) %> → <%= l(@event.end_date, format: :short) %>)</span>
-            <% end %>
-          </label>
-          <input type="date" name="date" value="<%= @ref_date || params[:date] %>" class="form-control" required
-                 <% if @event %> min="<%= @event.start_date %>" max="<%= @event.end_date %>" <% end %>>
-        </div>
-        <div>
-          <label class="form-label">Data fim <span style="color:#a1a1aa; font-weight:400;">(opcional)</span></label>
-          <input type="date" name="end_date" value="<%= @ref_end_date || params[:end_date] %>" class="form-control"
-                 <% if @event %> min="<%= @event.start_date %>" max="<%= @event.end_date %>" <% end %>>
+<% if show_table %>
+  <%= form_with url: update_team_shifts_path, method: :patch, local: true, data: { turbo: false } do |f| %>
+    <input type="hidden" name="team_id" value="<%= uid %>">
+    <%= hidden_field_tag :modal,  params[:modal]  if params[:modal].present? %>
+    <%= hidden_field_tag :wizard, params[:wizard] if params[:wizard].present? %>
+
+    <% if @event_days.empty? %>
+      <div class="content-card" style="margin-bottom:1rem;">
+        <h3 style="font-size:0.82rem; font-weight:600; text-transform:uppercase; letter-spacing:0.05em; color:#71717a; margin:0 0 1rem;">
+          <i class="bi bi-calendar3"></i> Período
+        </h3>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
+          <div>
+            <label class="form-label">
+              Data início <span style="color:#ef4444;">*</span>
+              <% if @event %>
+                <span style="font-weight:400; color:#a1a1aa;">(<%= l(@event.start_date, format: :short) %> → <%= l(@event.end_date, format: :short) %>)</span>
+              <% end %>
+            </label>
+            <input type="date" name="date" value="<%= @ref_date || params[:date] %>" class="form-control" required
+                   <% if @event %> min="<%= @event.start_date %>" max="<%= @event.end_date %>" <% end %>>
+          </div>
+          <div>
+            <label class="form-label">Data fim <span style="color:#a1a1aa; font-weight:400;">(opcional)</span></label>
+            <input type="date" name="end_date" value="<%= @ref_end_date || params[:end_date] %>" class="form-control"
+                   <% if @event %> min="<%= @event.start_date %>" max="<%= @event.end_date %>" <% end %>>
+          </div>
         </div>
       </div>
-    </div>
-  <% else %>
-    <input type="hidden" name="date"     value="<%= @selected_days.first&.date || params[:date] %>">
-    <input type="hidden" name="end_date" value="<%= @selected_days.size > 1 ? @selected_days.last.date : '' %>">
-  <% end %>
+    <% else %>
+      <input type="hidden" name="date"     value="<%= @selected_days.first&.date || params[:date] %>">
+      <input type="hidden" name="end_date" value="<%= @selected_days.size > 1 ? @selected_days.last.date : '' %>">
+    <% end %>
 
-  <% if @selected_days.any? %>
-    <% total_h = @selected_days.sum { |ed| ed.hours.to_f } %>
-    <div class="content-card" style="margin-bottom:1rem; padding:0.85rem 1.25rem;">
-      <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:0.5rem;">
-        <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
-          <span style="font-size:0.75rem; font-weight:600; text-transform:uppercase; letter-spacing:0.05em; color:#71717a;">
-            <i class="bi bi-calendar3"></i> Editando dias:
-          </span>
-          <% @selected_days.each do |ed| %>
-            <span style="font-size:0.75rem; font-weight:600; background:#f5f3ff; color:#7c3aed; border:1px solid #ddd6fe; border-radius:5px; padding:2px 8px;">
-              <%= I18n.l(ed.date, format: "%a %d/%m") %> · <%= ed.hours.to_f == ed.hours.to_i ? ed.hours.to_i : ed.hours %>h
+    <% if @selected_days.any? %>
+      <% total_h = @selected_days.sum { |ed| ed.hours.to_f } %>
+      <div class="content-card" style="margin-bottom:1rem; padding:0.85rem 1.25rem;">
+        <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:0.5rem;">
+          <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
+            <span style="font-size:0.75rem; font-weight:600; text-transform:uppercase; letter-spacing:0.05em; color:#71717a;">
+              <i class="bi bi-calendar3"></i> Editando dias:
+            </span>
+            <% @selected_days.each do |ed| %>
+              <span style="font-size:0.75rem; font-weight:600; background:#f5f3ff; color:#7c3aed; border:1px solid #ddd6fe; border-radius:5px; padding:2px 8px;">
+                <%= I18n.l(ed.date, format: "%a %d/%m") %> · <%= ed.hours.to_f == ed.hours.to_i ? ed.hours.to_i : ed.hours %>h
+              </span>
+            <% end %>
+          </div>
+          <% if total_h > 0 %>
+            <span style="font-size:0.78rem; font-weight:700; color:#7c3aed;">
+              <%= total_h.to_f == total_h.to_i ? total_h.to_i : total_h %>h total
             </span>
           <% end %>
         </div>
-        <% if total_h > 0 %>
-          <span style="font-size:0.78rem; font-weight:700; color:#7c3aed;">
-            <%= total_h.to_f == total_h.to_i ? total_h.to_i : total_h %>h total
-          </span>
-        <% end %>
       </div>
+    <% end %>
+
+    <%= render "shifts/members_table",
+          team: @selected_team,
+          team_members: @team_members,
+          selected_days: @selected_days,
+          existing_shifts: @existing_shifts,
+          submitted_members: @submitted_members %>
+
+    <div style="display:flex; gap:0.5rem; margin-top:0.5rem;">
+      <button type="submit" class="btn-primary">
+        <i class="bi bi-calendar-check"></i> Salvar Alterações
+      </button>
+      <% if params[:modal] == "1" %>
+        <button type="button" class="btn-secondary" onclick="window.parent.closeShiftModal()">Cancelar</button>
+      <% elsif params[:wizard] == "1" %>
+        <%= link_to "Cancelar", schedules_event_setup_path(@event), class: "btn-secondary", data: { turbo_frame: "_top" } %>
+      <% else %>
+        <%= link_to "Cancelar", shifts_path, class: "btn-secondary" %>
+      <% end %>
     </div>
   <% end %>
-
-  <%= render "shifts/members_table",
-        team: @selected_team,
-        team_members: @team_members,
-        selected_days: @selected_days,
-        existing_shifts: @existing_shifts,
-        submitted_members: @submitted_members %>
-
-  <div style="display:flex; gap:0.5rem; margin-top:0.5rem;">
-    <button type="submit" class="btn-primary" <%= 'disabled' if @selected_days.empty? && @event_days.any? %>>
-      <i class="bi bi-calendar-check"></i> Salvar Alterações
-    </button>
-    <% if params[:modal] == "1" %>
-      <button type="button" class="btn-secondary" onclick="window.parent.closeShiftModal()">Cancelar</button>
-    <% elsif params[:wizard] == "1" %>
-      <%# No frame: link escapes para o topo (data-turbo-frame="_top") %>
-      <%= link_to "Cancelar", schedules_event_setup_path(@event), class: "btn-secondary", data: { turbo_frame: "_top" } %>
-    <% else %>
-      <%= link_to "Cancelar", shifts_path, class: "btn-secondary" %>
-    <% end %>
+<% else %>
+  <%# Nenhum dia confirmado: instrução para selecionar %>
+  <div style="background:#f5f3ff; border:1px dashed #c4b5fd; border-radius:10px; padding:1.5rem; text-align:center; color:#7c3aed; font-size:0.85rem; margin-top:0.5rem;">
+    <i class="bi bi-hand-index-thumb" style="font-size:1.4rem; display:block; margin-bottom:0.4rem;"></i>
+    Selecione um ou mais dias acima e clique em <strong>Confirmar seleção</strong> para configurar os horários.
   </div>
 <% end %>
 
