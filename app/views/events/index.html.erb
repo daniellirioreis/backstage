@@ -150,25 +150,10 @@
             <i class="bi bi-person-check"></i> Presenças
           <% end %>
         <% end %>
-        <% if policy(Team).index? %>
-          <%= link_to teams_path, style: "display:inline-flex;align-items:center;gap:0.4rem;background:#1f1f1f;color:#a1a1aa;font-size:0.78rem;font-weight:600;border-radius:7px;padding:0.4rem 0.9rem;text-decoration:none;" do %>
-            <i class="bi bi-people"></i> Equipes
-          <% end %>
-        <% end %>
       <% elsif current_event.draft? %>
-        <% if policy(User).index? %>
-          <%= link_to users_path, style: "display:inline-flex;align-items:center;gap:0.4rem;background:#4ade8022;color:#4ade80;border:1px solid #4ade8044;font-size:0.78rem;font-weight:600;border-radius:7px;padding:0.4rem 0.9rem;text-decoration:none;" do %>
-            <i class="bi bi-person-badge"></i> Colaboradores
-          <% end %>
-        <% end %>
-        <% if policy(Sector).index? %>
-          <%= link_to sectors_path, style: "display:inline-flex;align-items:center;gap:0.4rem;background:#60a5fa22;color:#60a5fa;border:1px solid #60a5fa44;font-size:0.78rem;font-weight:600;border-radius:7px;padding:0.4rem 0.9rem;text-decoration:none;" do %>
-            <i class="bi bi-diagram-3"></i> Setores
-          <% end %>
-        <% end %>
-        <% if policy(Team).index? %>
-          <%= link_to teams_path, style: "display:inline-flex;align-items:center;gap:0.4rem;background:#a78bfa22;color:#a78bfa;border:1px solid #a78bfa44;font-size:0.78rem;font-weight:600;border-radius:7px;padding:0.4rem 0.9rem;text-decoration:none;" do %>
-            <i class="bi bi-people"></i> Equipes
+        <% if policy(current_event).update? %>
+          <%= link_to sectors_event_setup_path(current_event), style: "display:inline-flex;align-items:center;gap:0.4rem;background:#a78bfa22;color:#a78bfa;border:1px solid #a78bfa44;font-size:0.78rem;font-weight:700;border-radius:7px;padding:0.4rem 0.9rem;text-decoration:none;" do %>
+            <i class="bi bi-sliders"></i> Configurar evento
           <% end %>
         <% end %>
         <% if policy(current_event).edit? %>
