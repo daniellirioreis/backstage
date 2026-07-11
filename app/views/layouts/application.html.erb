@@ -77,45 +77,40 @@
           <% end %>
 
           <% if policy(Event).index? %>
-            <div class="sidebar-section">Operações</div>
-            <%= link_to events_path, class: "sidebar-link #{controller_name == 'events' ? 'active' : ''}" do %>
+            <div class="sidebar-section">Evento</div>
+            <%= link_to events_path, class: "sidebar-link #{controller_name == 'events' && controller_path != 'events/setup' ? 'active' : ''}" do %>
               <i class="bi bi-calendar-event"></i> <%= Event.model_name.human(count: 2) %>
             <% end %>
-          <% end %>
-
-          <% if policy(Sector).index? %>
-            <%= link_to sectors_path, class: "sidebar-link #{controller_name == 'sectors' ? 'active' : ''}" do %>
-              <i class="bi bi-diagram-3"></i> <%= Sector.model_name.human(count: 2) %>
-            <% end %>
-          <% end %>
-
-          <% if policy(Team).index? %>
-            <%= link_to teams_path, class: "sidebar-link #{controller_name == 'teams' ? 'active' : ''}" do %>
-              <i class="bi bi-people"></i> <%= Team.model_name.human(count: 2) %>
+            <% if current_event && policy(current_event).update? %>
+              <%= link_to sectors_event_setup_path(current_event),
+                    class: "sidebar-link #{controller_path == 'events/setup' ? 'active' : ''}" do %>
+                <i class="bi bi-sliders"></i> Configurar evento
+              <% end %>
             <% end %>
           <% end %>
 
           <% if policy(Shift).index? %>
+            <div class="sidebar-section">Operações</div>
             <%= link_to timeline_shifts_path, class: "sidebar-link #{controller_name == 'shifts' && action_name == 'timeline' ? 'active' : ''}" do %>
               <i class="bi bi-calendar-range"></i> Timeline
-            <% end %>
-          <% end %>
-
-          <% if policy(Vehicle).index? %>
-            <%= link_to vehicles_path, class: "sidebar-link #{controller_name == 'vehicles' ? 'active' : ''}" do %>
-              <i class="bi bi-car-front"></i> <%= Vehicle.model_name.human(count: 2) %>
-            <% end %>
-          <% end %>
-
-          <% if policy(:attendance).index? %>
-            <%= link_to attendances_path, class: "sidebar-link #{controller_name == 'attendances' && action_name != 'scan' ? 'active' : ''}" do %>
-              <i class="bi bi-person-check"></i> Check-ins
             <% end %>
           <% end %>
 
           <% if policy(:attendance).scan? %>
             <%= link_to scan_attendances_path, class: "sidebar-link #{controller_name == 'attendances' && action_name == 'scan' ? 'active' : ''}" do %>
               <i class="bi bi-qr-code-scan"></i> Check-in
+            <% end %>
+          <% end %>
+
+          <% if policy(:attendance).index? %>
+            <%= link_to attendances_path, class: "sidebar-link #{controller_name == 'attendances' && action_name != 'scan' ? 'active' : ''}" do %>
+              <i class="bi bi-person-check"></i> Presenças
+            <% end %>
+          <% end %>
+
+          <% if policy(Vehicle).index? %>
+            <%= link_to vehicles_path, class: "sidebar-link #{controller_name == 'vehicles' ? 'active' : ''}" do %>
+              <i class="bi bi-car-front"></i> <%= Vehicle.model_name.human(count: 2) %>
             <% end %>
           <% end %>
 
