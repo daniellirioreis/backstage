@@ -108,6 +108,10 @@
           style="padding:0.6rem 1.25rem; border:none; background:none; cursor:pointer; font-size:0.88rem; font-weight:600; color:#7c3aed; border-bottom:2px solid #7c3aed; margin-bottom:-2px; transition:all 0.15s;">
     <i class="bi bi-grid-3x3-gap"></i> Geral
   </button>
+  <button id="tab-btn-setores" onclick="switchEventTab('setores')"
+          style="padding:0.6rem 1.25rem; border:none; background:none; cursor:pointer; font-size:0.88rem; font-weight:600; color:#71717a; border-bottom:2px solid transparent; margin-bottom:-2px; transition:all 0.15s;">
+    <i class="bi bi-grid"></i> Setores
+  </button>
   <% if has_financial %>
     <button id="tab-btn-financeiro" onclick="switchEventTab('financeiro')"
             style="padding:0.6rem 1.25rem; border:none; background:none; cursor:pointer; font-size:0.88rem; font-weight:600; color:#71717a; border-bottom:2px solid transparent; margin-bottom:-2px; transition:all 0.15s;">
@@ -175,7 +179,13 @@
     </div>
   <% end %>
 
-  <%# ── Setores ── %>
+</div><%# /tab-geral %>
+
+<%# ══════════════════════════════════════════════════════════════════════════ %>
+<%# ABA: SETORES                                                              %>
+<%# ══════════════════════════════════════════════════════════════════════════ %>
+<div id="tab-setores" style="display:none;">
+
   <%
     total_expected = @sectors.sum { |s| s.planned_headcount }
     total_scaled   = @sectors.flat_map(&:teams).flat_map(&:users).uniq.size
@@ -185,12 +195,6 @@
       s.teams.flat_map(&:users).uniq.size >= s.planned_headcount
     }
   %>
-
-  <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem;">
-    <h2 style="font-size: 1rem; font-weight: 600; color: #18181b; margin: 0;">
-      <%= Sector.model_name.human(count: 2) %>
-    </h2>
-  </div>
 
   <% if sectors_with_expected > 0 %>
     <div class="content-card" style="margin-bottom: 1.25rem; padding: 1rem 1.25rem;">
@@ -206,7 +210,7 @@
       <div style="height:8px; background:#f4f4f5; border-radius:99px; overflow:hidden; margin-bottom:0.75rem;">
         <div style="height:100%; width:<%= overall_pct %>%; background:<%= overall_pct >= 100 ? '#4ade80' : overall_pct >= 60 ? '#fb923c' : '#f87171' %>; border-radius:99px; transition:width 0.4s ease;"></div>
       </div>
-      <div style="display:flex; gap:1.5rem; font-size:0.78rem; color:#71717a;">
+      <div style="display:flex; gap:1.5rem; font-size:0.78rem; color:#71717a; flex-wrap:wrap;">
         <span><i class="bi bi-check-circle-fill" style="color:#4ade80;"></i> <%= sectors_complete %> setor<%= sectors_complete == 1 ? '' : 'es' %> completo<%= sectors_complete == 1 ? '' : 's' %></span>
         <span><i class="bi bi-hourglass-split" style="color:#fb923c;"></i> <%= sectors_with_expected - sectors_complete %> incompleto<%= (sectors_with_expected - sectors_complete) == 1 ? '' : 's' %></span>
         <span><i class="bi bi-dash-circle" style="color:#d4d4d8;"></i> <%= @sectors.size - sectors_with_expected %> sem previsão</span>
@@ -224,9 +228,16 @@
       <% @sectors.each do |sector| %>
         <div class="content-card" style="padding: 1.25rem; display: flex; flex-direction: column; gap: 1rem;">
           <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 0.5rem;">
-            <h3 style="font-size: 0.92rem; font-weight: 600; color: #18181b; margin: 0;">
-              <%= sector.name %>
-            </h3>
+            <div>
+              <h3 style="font-size: 0.92rem; font-weight: 600; color: #18181b; margin: 0 0 0.2rem;">
+                <%= sector.name %>
+              </h3>
+              <% if sector.sector_type.present? %>
+                <span style="font-size:0.68rem; font-weight:600; background:#f4f4f5; color:#52525b; border-radius:4px; padding:1px 7px; border:1px solid #e4e4e7;">
+                  <%= t("sector_types.#{sector.sector_type}", default: sector.sector_type.humanize) %>
+                </span>
+              <% end %>
+            </div>
             <div style="display: flex; gap: 0.35rem; flex-shrink: 0;">
               <% if policy(sector).edit? %>
                 <%= link_to edit_sector_path(sector), class: "btn-secondary", style: "padding: 0.3rem 0.55rem;" do %>
@@ -243,26 +254,56 @@
             </div>
           </div>
 
-          <% if sector.planned_headcount > 0
-               scaled_count = sector.teams.flat_map(&:users).uniq.size
-               expected     = sector.planned_headcount
-               pct          = [(scaled_count * 100.0 / expected).round, 100].min
-               bar_color    = pct >= 100 ? '#4ade80' : pct >= 60 ? '#fb923c' : '#f87171'
-               text_color   = pct >= 100 ? '#15803d' : pct >= 60 ? '#92400e' : '#991b1b'
-          %>
-            <div style="background:#f9f9f9; border-radius:8px; padding:0.6rem 0.75rem;">
-              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.35rem;">
-                <span style="font-size:0.7rem; color:#71717a; font-weight:600; text-transform:uppercase; letter-spacing:0.05em;">Preenchimento</span>
-                <span style="font-size:0.78rem; font-weight:700; color:<%= text_color %>;">
-                  <%= scaled_count %> / <%= expected %>
-                </span>
+          <%# ── Funções planejadas ── %>
+          <% if sector.sector_functions.any? %>
+            <div style="background:#f9f9f9; border-radius:8px; padding:0.65rem 0.75rem;">
+              <div style="font-size:0.68rem; font-weight:600; text-transform:uppercase; letter-spacing:0.06em; color:#71717a; margin-bottom:0.5rem;">
+                <i class="bi bi-list-check"></i> Funções planejadas
               </div>
-              <div style="height:5px; background:#e4e4e7; border-radius:99px; overflow:hidden;">
-                <div style="height:100%; width:<%= pct %>%; background:<%= bar_color %>; border-radius:99px;"></div>
+              <%
+                fn_filled = Hash.new(0)
+                sector.teams.each do |t|
+                  t.team_memberships.each do |tm|
+                    fn_filled[tm.event_function_id] += 1 if tm.event_function_id
+                  end
+                end
+              %>
+              <div style="display:flex; flex-direction:column; gap:0.35rem;">
+                <% sector.sector_functions.each do |sf| %>
+                  <%
+                    filled   = fn_filled[sf.event_function_id].to_i
+                    planned  = sf.quantity.to_i
+                    fn_pct   = planned > 0 ? [(filled * 100.0 / planned).round, 100].min : 0
+                    fn_color = filled >= planned ? '#15803d' : filled > 0 ? '#92400e' : '#a1a1aa'
+                    fn_bar   = filled >= planned ? '#4ade80' : filled > 0 ? '#fb923c' : '#e4e4e7'
+                  %>
+                  <div>
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:2px;">
+                      <span style="font-size:0.75rem; color:#3f3f46;"><%= sf.event_function&.name %></span>
+                      <span style="font-size:0.72rem; font-weight:700; color:<%= fn_color %>;"><%= filled %>/<%= planned %></span>
+                    </div>
+                    <div style="height:4px; background:#e4e4e7; border-radius:99px; overflow:hidden;">
+                      <div style="height:100%; width:<%= fn_pct %>%; background:<%= fn_bar %>; border-radius:99px;"></div>
+                    </div>
+                  </div>
+                <% end %>
               </div>
+              <%
+                sec_scaled = sector.teams.flat_map(&:users).uniq.size
+                sec_exp    = sector.planned_headcount
+                sec_pct    = sec_exp > 0 ? [(sec_scaled * 100.0 / sec_exp).round, 100].min : 0
+                sec_color  = sec_pct >= 100 ? '#15803d' : sec_pct >= 60 ? '#92400e' : '#991b1b'
+              %>
+              <% if sec_exp > 0 %>
+                <div style="margin-top:0.5rem; padding-top:0.5rem; border-top:1px solid #e4e4e7; display:flex; justify-content:space-between; align-items:center;">
+                  <span style="font-size:0.68rem; color:#71717a;">Total</span>
+                  <span style="font-size:0.75rem; font-weight:700; color:<%= sec_color %>;"><%= sec_scaled %>/<%= sec_exp %> col.</span>
+                </div>
+              <% end %>
             </div>
           <% end %>
 
+          <%# ── Equipes ── %>
           <div style="border-top: 1px solid #f4f4f5; padding-top: 0.9rem;">
             <div style="font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: #71717a; margin-bottom: 0.5rem;">
               <i class="bi bi-people"></i> <%= sector.teams.size %> <%= sector.teams.size == 1 ? "equipe" : "equipes" %>
@@ -318,7 +359,7 @@
     </div>
   <% end %>
 
-</div><%# /tab-geral %>
+</div><%# /tab-setores %>
 
 <%# ══════════════════════════════════════════════════════════════════════════ %>
 <%# ABA: FINANCEIRO                                                           %>
@@ -562,7 +603,7 @@
 
 <script>
 function switchEventTab(name) {
-  ['geral', 'financeiro'].forEach(function(t) {
+  ['geral', 'setores', 'financeiro'].forEach(function(t) {
     var panel = document.getElementById('tab-' + t);
     var btn   = document.getElementById('tab-btn-' + t);
     if (!panel || !btn) return;
@@ -571,13 +612,11 @@ function switchEventTab(name) {
     btn.style.color        = active ? '#7c3aed' : '#71717a';
     btn.style.borderBottomColor = active ? '#7c3aed' : 'transparent';
   });
-  // Persiste no hash da URL sem recarregar
   history.replaceState(null, '', '#' + name);
 }
 
-// Abre a aba correta ao carregar (por hash ou padrão)
 document.addEventListener('DOMContentLoaded', function() {
   var hash = window.location.hash.replace('#', '');
-  if (hash === 'financeiro') switchEventTab('financeiro');
+  if (['setores', 'financeiro'].includes(hash)) switchEventTab(hash);
 });
 </script>

@@ -75,7 +75,8 @@ class EventsController < ApplicationController
     end
 
     @sectors = @event.sectors.includes(sector_functions: :event_function,
-                                       teams: [:users, :coordinator]).order(:name)
+                                       teams: [:users, :coordinator,
+                                               { team_memberships: :event_function }]).order(:name)
     all_team_ids = @sectors.flat_map { |s| s.teams.map(&:id) }
     @teams_with_shifts = Shift.where(team_id: all_team_ids).distinct.pluck(:team_id).to_set
     @event_functions = @event.event_functions.order(:name)
