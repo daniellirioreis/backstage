@@ -191,11 +191,42 @@ class ShiftsController < ApplicationController
     end_date_str = params[:end_date].presence || @ref_end_date&.to_s
     @selected_days = resolve_selected_days(@event_days, date_str, end_date_str)
 
-    # Indexado por [user_id, date_str] para suporte por-dia
+    # Indexado por [user_id, date_str] para suporte por-dia.
+    # Pré-carrega também turnos de outras equipes do mesmo evento como fallback
+    # (coordenadores que já foram escalados em outra equipe aparecem pré-preenchidos).
     @existing_shifts = {}
+
+    if @event
+      user_ids = @team_members.map(&:user_id)
+      # 1º: turnos de outras equipes do mesmo evento (prioridade menor)
+      Shift.joins(:sector)
+           .where(sectors: { event_id: @event.id })
+           .where(user_id: user_ids)
+           .where.not(team_id: @selected_team.id)
+           .order(:date)
+           .each do |s|
+        dates = s.end_date.present? ? (s.date..s.end_date).to_a : [s.date]
+        dates.each { |d| @existing_shifts[[s.user_id, d.to_s]] = s }
+      end
+    end
+
+    # 2º: turnos da própria equipe (sobrescrevem — prioridade maior)
     existing.each do |s|
       dates = s.end_date.present? ? (s.date..s.end_date).to_a : [s.date]
       dates.each { |d| @existing_shifts[[s.user_id, d.to_s]] = s }
+    end
+  end
+
+  def delete_team
+    authorize Shift, :edit?
+    team  = Team.find(params[:team_id])
+    count = Shift.where(team_id: team.id).count
+    Shift.where(team_id: team.id).destroy_all
+    msg = "#{count} turno(s) de \"#{team.name}\" excluídos."
+    if params[:modal] == "1"
+      render html: "<script>window.parent.closeShiftModal(); window.parent.location.reload();</script>".html_safe, layout: false
+    else
+      redirect_back fallback_location: shifts_path, notice: msg
     end
   end
 
@@ -305,6 +336,7 @@ class ShiftsController < ApplicationController
   # Cria 1 Shift por colaborador por dia (modo por-dia)
   # members: { user_id => { "selected" => "1", "2026-07-03" => { start_time:, end_time: }, ... } }
   def create_per_day(team, members)
+    event_id = team.sector&.event_id
     created = 0; failures = []; skipped = []
     members.each do |user_id, user_data|
       next unless user_data["selected"] == "1"
@@ -319,6 +351,10 @@ class ShiftsController < ApplicationController
           skipped << "#{user_name} (#{date_str})" unless skipped.include?("#{user_name} (#{date_str})")
           next
         end
+        # Pula se já existe turno idêntico em outra equipe do mesmo evento
+        # (coordenadores em múltiplas equipes não devem ter horas duplicadas no fechamento)
+        next if duplicate_shift_in_event?(event_id, user_id, date_str, times["start_time"], times["end_time"])
+
         shift = Shift.new(
           user_id:    user_id,
           sector_id:  team.sector_id,
@@ -341,12 +377,15 @@ class ShiftsController < ApplicationController
 
   # Modo legado: 1 Shift por colaborador com date/end_date
   def create_legacy(team, members, date, end_date)
+    event_id = team.sector&.event_id
     created = 0; failures = []; skipped = []
     members.each do |user_id, data|
       next unless data["selected"] == "1"
       if data["start_time"].blank? || data["end_time"].blank?
         skipped << User.find_by(id: user_id)&.name; next
       end
+      next if duplicate_shift_in_event?(event_id, user_id, date, data["start_time"], data["end_time"])
+
       shift = Shift.new(user_id: user_id, sector_id: team.sector_id, team_id: team.id,
                         date: date, end_date: end_date,
                         start_time: data["start_time"], end_time: data["end_time"])
@@ -357,6 +396,7 @@ class ShiftsController < ApplicationController
 
   # Modo legado: atualiza/cria 1 Shift por colaborador
   def update_legacy(team, members, date, end_date)
+    event_id = team.sector&.event_id
     updated = 0; created = 0; failures = []; skipped = []
     members.each do |user_id, data|
       next unless data["selected"] == "1"
@@ -368,10 +408,23 @@ class ShiftsController < ApplicationController
       if existing
         existing.update(attrs) ? (updated += 1) : failures << { name: User.find_by(id: user_id)&.name, messages: existing.errors.full_messages }
       else
+        # Pula se já existe turno idêntico em outra equipe do mesmo evento
+        next if duplicate_shift_in_event?(event_id, user_id, date, data["start_time"], data["end_time"])
+
         s = Shift.new(attrs.merge(user_id: user_id, sector_id: team.sector_id, team_id: team.id))
         s.save ? (created += 1) : failures << { name: User.find_by(id: user_id)&.name, messages: s.errors.full_messages }
       end
     end
     [updated, created, failures, skipped]
+  end
+
+  # Retorna true se o colaborador já possui turno com mesma data e horário
+  # em qualquer equipe do mesmo evento (evita duplicação no fechamento).
+  def duplicate_shift_in_event?(event_id, user_id, date, start_time, end_time)
+    return false if event_id.blank?
+    Shift.joins(:sector)
+         .where(sectors: { event_id: event_id })
+         .where(user_id: user_id, date: date, start_time: start_time, end_time: end_time)
+         .exists?
   end
 end

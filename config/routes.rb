@@ -97,10 +97,11 @@ Rails.application.routes.draw do
   end
   resources :shifts do
     collection do
-      get   :print
-      get   :timeline
-      get   :edit_team
-      patch :update_team
+      get    :print
+      get    :timeline
+      get    :edit_team
+      patch  :update_team
+      delete :delete_team
     end
   end
   resources :vehicles

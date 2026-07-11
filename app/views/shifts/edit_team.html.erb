@@ -104,7 +104,9 @@
 <% show_table = @selected_days.any? || @event_days.empty? %>
 
 <% if show_table %>
-  <%= form_with url: update_team_shifts_path, method: :patch, local: true, data: { turbo: false } do |f| %>
+  <%= form_with url: update_team_shifts_path, method: :patch, local: true,
+                id: "save-form-#{uid}",
+                data: { turbo: false } do |f| %>
     <input type="hidden" name="team_id" value="<%= uid %>">
     <%= hidden_field_tag :modal,  params[:modal]  if params[:modal].present? %>
     <%= hidden_field_tag :wizard, params[:wizard] if params[:wizard].present? %>
@@ -167,6 +169,7 @@
           existing_shifts: @existing_shifts,
           submitted_members: @submitted_members %>
 
+    <%# Apenas salvar + badge aqui — botão excluir fica fora (forms não podem ser aninhados) %>
     <div style="display:flex; align-items:center; gap:0.75rem; margin-top:0.75rem; flex-wrap:wrap;">
       <button type="submit" id="save-shifts-btn-<%= uid %>" class="btn-primary" disabled
               style="opacity:0.5; cursor:not-allowed; transition:opacity 0.2s;">
@@ -176,22 +179,44 @@
             style="display:none; font-size:0.72rem; font-weight:600; color:#92400e; background:#fef3c7; border:1px solid #fcd34d; border-radius:5px; padding:2px 9px;">
         <i class="bi bi-circle-fill" style="font-size:0.45rem; vertical-align:middle;"></i> Alterações não salvas
       </span>
-      <% if params[:modal] == "1" %>
-        <button type="button" class="btn-secondary" onclick="window.parent.closeShiftModal()">Cancelar</button>
-      <% elsif params[:wizard] == "1" %>
-        <%= link_to "Cancelar", schedules_event_setup_path(@event), class: "btn-secondary", data: { turbo_frame: "_top" } %>
-      <% else %>
-        <%= link_to "Cancelar", shifts_path, class: "btn-secondary" %>
-      <% end %>
+      <%# Placeholder que mantém o espaço — o botão real é inserido por JS após o form %>
     </div>
   <% end %>
+
+  <%# Botão excluir — fora do form principal (button_to gera seu próprio <form>) %>
+  <div id="delete-row-<%= uid %>"></div>
+  <script>
+  (function () {
+    var row = document.getElementById('delete-row-<%= uid %>');
+    if (!row) return;
+    var actionRow = row.previousElementSibling && row.previousElementSibling.querySelector('[style*="display:flex"]');
+    // Injeta o botão via JS para mantê-lo na mesma linha do salvar
+    var saveRow = document.getElementById('save-shifts-btn-<%= uid %>') &&
+                  document.getElementById('save-shifts-btn-<%= uid %>').closest('[style*="display:flex"]');
+    if (saveRow) {
+      var frm = document.createElement('form');
+      frm.action  = '<%= delete_team_shifts_path(team_id: uid, wizard: params[:wizard], modal: params[:modal]) %>';
+      frm.method  = 'post';
+      frm.style.cssText = 'display:contents;';
+      frm.setAttribute('data-turbo-frame', '_top');
+      frm.innerHTML =
+        '<input type="hidden" name="_method" value="delete">' +
+        '<input type="hidden" name="authenticity_token" value="' + document.querySelector('meta[name=csrf-token]').content + '">' +
+        '<button type="submit" class="btn-danger" style="font-size:0.82rem;"' +
+        ' onclick="return confirm(\'Excluir todos os horários de &quot;<%= j @selected_team.name %>&quot;? Esta ação não pode ser desfeita.\')">' +
+        '<i class=\'bi bi-trash\'></i> Excluir horários</button>';
+      saveRow.appendChild(frm);
+    }
+    row.remove();
+  })();
+  </script>
 
   <script>
   (function () {
     var uid    = <%= uid %>;
     var btn    = document.getElementById('save-shifts-btn-' + uid);
     var badge  = document.getElementById('unsaved-badge-' + uid);
-    var form   = btn && btn.closest('form');
+    var form   = document.getElementById('save-form-' + uid);
     if (!btn || !form) return;
 
     // Activa o botão e mostra badge quando qualquer campo muda
