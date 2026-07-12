@@ -108,22 +108,22 @@
 <%# ── Tab nav ─────────────────────────────────────────────────────────────── %>
 <% has_financial = @plan_cost_by_function.any? || @cost_by_function.any? %>
 
-<div style="display:flex; align-items:stretch; border-bottom:2px solid #e4e4e7; margin-bottom:1.5rem; gap:0;">
+<div style="display:flex; gap:4px; border-bottom:1px solid #e4e4e7; margin-bottom:1.5rem;">
   <button id="tab-btn-geral" onclick="switchEventTab('geral')"
-          style="padding:0.6rem 1.25rem; border:none; background:none; cursor:pointer; font-size:0.88rem; font-weight:600; color:#7c3aed; border-bottom:2px solid #7c3aed; margin-bottom:-2px; transition:all 0.15s;">
+          style="padding:0.6rem 1.25rem; border:1px solid #e4e4e7; border-bottom:1px solid #ffffff; border-radius:6px 6px 0 0; background:#ffffff; cursor:pointer; font-size:0.88rem; font-weight:600; color:#18181b; margin-bottom:-1px; box-shadow:inset 0 2px 0 #18181b; position:relative; z-index:1; transition:all 0.15s;">
     <i class="bi bi-grid-3x3-gap"></i> Geral
   </button>
   <button id="tab-btn-setores" onclick="switchEventTab('setores')"
-          style="padding:0.6rem 1.25rem; border:none; background:none; cursor:pointer; font-size:0.88rem; font-weight:600; color:#71717a; border-bottom:2px solid transparent; margin-bottom:-2px; transition:all 0.15s;">
+          style="padding:0.6rem 1.25rem; border:1px solid transparent; border-bottom:none; border-radius:6px 6px 0 0; background:transparent; cursor:pointer; font-size:0.88rem; font-weight:400; color:#71717a; margin-bottom:-1px; transition:all 0.15s;">
     <i class="bi bi-grid"></i> Setores
   </button>
   <button id="tab-btn-equipes" onclick="switchEventTab('equipes')"
-          style="padding:0.6rem 1.25rem; border:none; background:none; cursor:pointer; font-size:0.88rem; font-weight:600; color:#71717a; border-bottom:2px solid transparent; margin-bottom:-2px; transition:all 0.15s;">
+          style="padding:0.6rem 1.25rem; border:1px solid transparent; border-bottom:none; border-radius:6px 6px 0 0; background:transparent; cursor:pointer; font-size:0.88rem; font-weight:400; color:#71717a; margin-bottom:-1px; transition:all 0.15s;">
     <i class="bi bi-people"></i> Equipes
   </button>
   <% if has_financial %>
     <button id="tab-btn-financeiro" onclick="switchEventTab('financeiro')"
-            style="padding:0.6rem 1.25rem; border:none; background:none; cursor:pointer; font-size:0.88rem; font-weight:600; color:#71717a; border-bottom:2px solid transparent; margin-bottom:-2px; transition:all 0.15s;">
+            style="padding:0.6rem 1.25rem; border:1px solid transparent; border-bottom:none; border-radius:6px 6px 0 0; background:transparent; cursor:pointer; font-size:0.88rem; font-weight:400; color:#71717a; margin-bottom:-1px; transition:all 0.15s;">
       <i class="bi bi-cash-stack"></i> Financeiro
     </button>
   <% end %>
@@ -742,9 +742,14 @@ function switchEventTab(name) {
     var btn   = document.getElementById('tab-btn-' + t);
     if (!panel || !btn) return;
     var active = t === name;
-    panel.style.display    = active ? 'block' : 'none';
-    btn.style.color        = active ? '#7c3aed' : '#71717a';
-    btn.style.borderBottomColor = active ? '#7c3aed' : 'transparent';
+    panel.style.display   = active ? 'block' : 'none';
+    btn.style.border      = active ? '1px solid #e4e4e7' : '1px solid transparent';
+    btn.style.borderBottom = active ? '1px solid #ffffff' : 'none';
+    btn.style.background  = active ? '#ffffff' : 'transparent';
+    btn.style.color       = active ? '#18181b' : '#71717a';
+    btn.style.fontWeight  = active ? '600' : '400';
+    btn.style.boxShadow   = active ? 'inset 0 2px 0 #18181b' : 'none';
+    btn.style.zIndex      = active ? '1' : '0';
   });
   history.replaceState(null, '', '#' + name);
 }

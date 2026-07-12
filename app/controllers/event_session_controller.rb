@@ -9,7 +9,10 @@ class EventSessionController < ApplicationController
       Event.includes(:company).where(company_id: company_ids)
     end
 
-    @events = @events.where(status: %w[active draft]).order(start_date: :desc)
+    @events = @events.order(
+      Arel.sql("CASE status WHEN 'active' THEN 0 WHEN 'draft' THEN 1 ELSE 2 END"),
+      start_date: :desc
+    )
 
     if @events.empty?
       if policy(Event).new?

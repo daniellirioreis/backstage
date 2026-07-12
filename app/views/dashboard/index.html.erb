@@ -33,20 +33,20 @@
 </div>
 
 <%# ── Tab bar ─────────────────────────────────────────────────────────────── %>
-<div id="dash-tab-bar" style="display:flex;gap:0.35rem;margin-bottom:1.5rem;border-bottom:2px solid #e4e4e7;padding-bottom:0;">
+<div id="dash-tab-bar" style="display:flex;gap:4px;margin-bottom:1.5rem;border-bottom:1px solid #e4e4e7;">
   <button id="tab-btn-visao-geral"
           onclick="switchTab('visao-geral')"
-          style="display:flex;align-items:center;gap:0.4rem;padding:0.5rem 1rem;border:none;background:none;cursor:pointer;font-size:0.85rem;font-weight:700;color:#18181b;border-bottom:2px solid #18181b;margin-bottom:-2px;border-radius:0;transition:color 0.15s;">
+          style="display:flex;align-items:center;gap:0.4rem;padding:0.5rem 1rem;border:1px solid #e4e4e7;border-bottom:1px solid #ffffff;border-radius:6px 6px 0 0;background:#ffffff;cursor:pointer;font-size:0.85rem;font-weight:600;color:#18181b;margin-bottom:-1px;box-shadow:inset 0 2px 0 #18181b;position:relative;z-index:1;transition:all 0.15s;">
     <i class="bi bi-grid-1x2" style="font-size:0.85rem;"></i> Visão Geral
   </button>
   <button id="tab-btn-financeiro"
           onclick="switchTab('financeiro')"
-          style="display:flex;align-items:center;gap:0.4rem;padding:0.5rem 1rem;border:none;background:none;cursor:pointer;font-size:0.85rem;font-weight:600;color:#71717a;border-bottom:2px solid transparent;margin-bottom:-2px;border-radius:0;transition:color 0.15s;">
+          style="display:flex;align-items:center;gap:0.4rem;padding:0.5rem 1rem;border:1px solid transparent;border-bottom:none;border-radius:6px 6px 0 0;background:transparent;cursor:pointer;font-size:0.85rem;font-weight:400;color:#71717a;margin-bottom:-1px;transition:all 0.15s;">
     <i class="bi bi-cash-stack" style="font-size:0.85rem;"></i> Financeiro
   </button>
   <button id="tab-btn-colaboradores"
           onclick="switchTab('colaboradores')"
-          style="display:flex;align-items:center;gap:0.4rem;padding:0.5rem 1rem;border:none;background:none;cursor:pointer;font-size:0.85rem;font-weight:600;color:#71717a;border-bottom:2px solid transparent;margin-bottom:-2px;border-radius:0;transition:color 0.15s;">
+          style="display:flex;align-items:center;gap:0.4rem;padding:0.5rem 1rem;border:1px solid transparent;border-bottom:none;border-radius:6px 6px 0 0;background:transparent;cursor:pointer;font-size:0.85rem;font-weight:400;color:#71717a;margin-bottom:-1px;transition:all 0.15s;">
     <i class="bi bi-people" style="font-size:0.85rem;"></i> Colaboradores
   </button>
 </div>
@@ -539,12 +539,6 @@
 
 <%# ── Tab switcher JS ─────────────────────────────────────────────────────── %>
 <script>
-  var TAB_COLORS = {
-    'visao-geral':  { active: '#18181b', icon: 'bi-grid-1x2' },
-    'financeiro':   { active: '#15803d', icon: 'bi-cash-stack' },
-    'colaboradores':{ active: '#1d4ed8', icon: 'bi-people' }
-  };
-
   function switchTab(name) {
     ['visao-geral', 'financeiro', 'colaboradores'].forEach(function(tab) {
       var panel = document.getElementById('tab-' + tab);
@@ -552,12 +546,14 @@
       if (!panel || !btn) return;
 
       var isActive = tab === name;
-      panel.style.display = isActive ? '' : 'none';
-
-      var color = TAB_COLORS[tab];
-      btn.style.color       = isActive ? color.active : '#71717a';
-      btn.style.fontWeight  = isActive ? '700' : '600';
-      btn.style.borderBottomColor = isActive ? color.active : 'transparent';
+      panel.style.display   = isActive ? '' : 'none';
+      btn.style.border      = isActive ? '1px solid #e4e4e7' : '1px solid transparent';
+      btn.style.borderBottom = isActive ? '1px solid #ffffff' : 'none';
+      btn.style.background  = isActive ? '#ffffff' : 'transparent';
+      btn.style.color       = isActive ? '#18181b' : '#71717a';
+      btn.style.fontWeight  = isActive ? '600' : '400';
+      btn.style.boxShadow   = isActive ? 'inset 0 2px 0 #18181b' : 'none';
+      btn.style.zIndex      = isActive ? '1' : '0';
     });
 
     // Persiste a aba ativa no sessionStorage

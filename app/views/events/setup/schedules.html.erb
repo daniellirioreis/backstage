@@ -30,12 +30,12 @@
     </div>
   <% end %>
 
-  <div style="border:1px solid #e4e4e7; border-radius:14px; overflow:hidden; box-shadow:0 1px 3px rgba(0,0,0,0.05);">
+  <div id="sched-container">
 
     <% active_id = (params[:tab].presence || all_teams.first&.id).to_s %>
 
     <%# ── Tab bar ── %>
-    <div style="display:flex; align-items:stretch; border-bottom:2px solid #18181b; background:#18181b; overflow-x:auto;">
+    <div style="display:flex; gap:4px; border-bottom:1px solid #e4e4e7; overflow-x:auto;">
       <% all_teams.each do |team| %>
         <%
           with_shift = @users_with_shift_by_team[team.id].to_i
@@ -50,14 +50,19 @@
           onclick="switchSchedTab(this, 'sched-panel-<%= team.id %>')"
           style="
             display:flex; align-items:center; gap:0.4rem;
-            padding:0.7rem 1.1rem; border:none; background:none; cursor:pointer;
-            font-size:0.82rem; font-weight:600; white-space:nowrap; flex-shrink:0;
-            border-bottom:2px solid <%= is_active ? '#ffffff' : 'transparent' %>;
-            color:<%= is_active ? '#ffffff' : '#9ca3af' %>;
-            transition:color 0.15s, border-color 0.15s;">
+            padding:0.6rem 1.1rem; cursor:pointer;
+            font-size:0.82rem; font-weight:<%= is_active ? '600' : '400' %>; white-space:nowrap; flex-shrink:0;
+            border:<%= is_active ? '1px solid #e4e4e7' : '1px solid transparent' %>;
+            border-bottom:<%= is_active ? '1px solid #ffffff' : 'none' %>;
+            border-radius:6px 6px 0 0;
+            background:<%= is_active ? '#ffffff' : 'transparent' %>;
+            color:<%= is_active ? '#18181b' : '#71717a' %>;
+            margin-bottom:-1px;
+            <%= is_active ? 'box-shadow:inset 0 2px 0 #18181b;position:relative;z-index:1;' : '' %>
+            transition:color 0.15s;">
           <span style="width:8px; height:8px; border-radius:50%; background:<%= dot_color %>; flex-shrink:0; display:inline-block;"></span>
           <%= team.name %>
-          <span style="font-size:0.7rem; color:<%= is_active ? '#d1d5db' : '#6b7280' %>; font-weight:400;">
+          <span style="font-size:0.7rem; color:<%= is_active ? '#52525b' : '#a1a1aa' %>; font-weight:400;">
             · <%= team.sector.name %>
           </span>
         </button>
@@ -65,21 +70,23 @@
     </div>
 
     <%# ── Tab panels — cada um é um turbo-frame ── %>
-    <% all_teams.each do |team| %>
-      <% is_active = team.id.to_s == active_id %>
-      <div id="sched-panel-<%= team.id %>"
-           style="display:<%= is_active ? 'block' : 'none' %>; padding:1.25rem 1.5rem;">
-        <turbo-frame
-          id="shift-frame-<%= team.id %>"
-          data-url="<%= edit_team_shifts_path(team_id: team.id, wizard: 1) %>"
-          style="display:block;">
-          <%# Placeholder enquanto carrega %>
-          <div style="padding:2rem; text-align:center; color:#a1a1aa;">
-            <i class="bi bi-hourglass-split"></i> Carregando escala...
-          </div>
-        </turbo-frame>
-      </div>
-    <% end %>
+    <div style="border:1px solid #e4e4e7; border-top:none; border-radius:0 0 14px 14px; box-shadow:0 1px 3px rgba(0,0,0,0.05);">
+      <% all_teams.each do |team| %>
+        <% is_active = team.id.to_s == active_id %>
+        <div id="sched-panel-<%= team.id %>"
+             style="display:<%= is_active ? 'block' : 'none' %>; padding:1.25rem 1.5rem;">
+          <turbo-frame
+            id="shift-frame-<%= team.id %>"
+            data-url="<%= edit_team_shifts_path(team_id: team.id, wizard: 1) %>"
+            style="display:block;">
+            <%# Placeholder enquanto carrega %>
+            <div style="padding:2rem; text-align:center; color:#a1a1aa;">
+              <i class="bi bi-hourglass-split"></i> Carregando escala...
+            </div>
+          </turbo-frame>
+        </div>
+      <% end %>
+    </div>
 
   </div>
 
@@ -104,18 +111,28 @@ function loadSchedFrame(panel) {
 }
 
 function switchSchedTab(btn, panelId) {
-  var container = btn.closest('[style*="border:1px solid #e4e4e7"]');
+  var container = document.getElementById('sched-container');
 
   container.querySelectorAll('[id^="sched-tab-"]').forEach(function(b) {
-    b.style.borderBottomColor = 'transparent';
-    b.style.color = '#9ca3af';
+    b.style.border      = '1px solid transparent';
+    b.style.borderBottom = 'none';
+    b.style.background  = 'transparent';
+    b.style.color       = '#71717a';
+    b.style.fontWeight  = '400';
+    b.style.boxShadow   = 'none';
+    b.style.zIndex      = '0';
   });
   container.querySelectorAll('[id^="sched-panel-"]').forEach(function(p) {
     p.style.display = 'none';
   });
 
-  btn.style.borderBottomColor = '#ffffff';
-  btn.style.color = '#ffffff';
+  btn.style.border      = '1px solid #e4e4e7';
+  btn.style.borderBottom = '1px solid #ffffff';
+  btn.style.background  = '#ffffff';
+  btn.style.color       = '#18181b';
+  btn.style.fontWeight  = '600';
+  btn.style.boxShadow   = 'inset 0 2px 0 #18181b';
+  btn.style.zIndex      = '1';
 
   var panel = document.getElementById(panelId);
   if (panel) {

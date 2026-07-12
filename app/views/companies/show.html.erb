@@ -33,14 +33,15 @@
 </div>
 
 <%# ── Tabs ───────────────────────────────────────────────────────────────── %>
-<div style="display:flex; gap:0; border-bottom:2px solid #e4e4e7; margin-bottom:1.25rem;">
+<div style="display:flex; gap:4px; border-bottom:1px solid #e4e4e7; margin-bottom:1.25rem;">
   <% [
     ["dados",    "bi-building",    "Dados"],
     ["usuarios", "bi-people",      "Usuários"],
     ["plano",   "bi-box",         "Plano"],
   ].compact.each do |key, icon, label| %>
+    <% is_active = active_tab == key %>
     <%= link_to company_path(@company, tab: key),
-          style: "display:inline-flex; align-items:center; gap:0.35rem; padding:0.55rem 1rem; font-size:0.83rem; font-weight:#{active_tab == key ? '700' : '500'}; color:#{active_tab == key ? '#18181b' : '#71717a'}; text-decoration:none; border-bottom:#{active_tab == key ? '2px solid #18181b' : '2px solid transparent'}; margin-bottom:-2px;" do %>
+          style: "display:inline-flex; align-items:center; gap:0.35rem; padding:0.55rem 1rem; font-size:0.83rem; font-weight:#{is_active ? '600' : '400'}; color:#{is_active ? '#18181b' : '#71717a'}; text-decoration:none; border:#{is_active ? '1px solid #e4e4e7' : '1px solid transparent'}; border-bottom:#{is_active ? '1px solid #ffffff' : 'none'}; border-radius:6px 6px 0 0; background:#{is_active ? '#ffffff' : 'transparent'}; margin-bottom:-1px; #{ is_active ? 'box-shadow:inset 0 2px 0 #18181b;position:relative;z-index:1;' : '' }" do %>
       <i class="bi <%= icon %>"></i> <%= label %>
     <% end %>
   <% end %>
