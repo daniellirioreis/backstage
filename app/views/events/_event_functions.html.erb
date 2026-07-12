@@ -3,9 +3,16 @@
 
 <div id="funcoes" style="margin-bottom: 2rem;">
   <div class="content-card" style="padding: 1.25rem; max-width: 700px;">
-    <h2 style="font-size: 0.95rem; font-weight: 700; color: #18181b; margin: 0 0 1rem;">
-      <i class="bi bi-briefcase"></i> Funções e Valores por Hora
-    </h2>
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:0.75rem;margin-bottom:1rem;">
+      <h2 style="font-size: 0.95rem; font-weight: 700; color: #18181b; margin: 0;">
+        <i class="bi bi-briefcase"></i> Funções e Valores por Hora
+      </h2>
+      <% if policy(EventFunction).create? || policy(EventFunction).index? %>
+        <%= link_to event_event_functions_path(@event), class: "btn-secondary", style: "font-size:0.78rem;padding:0.25rem 0.65rem;" do %>
+          <i class="bi bi-pencil-square"></i> Gerenciar
+        <% end %>
+      <% end %>
+    </div>
 
     <%# Tabela de funções existentes %>
     <% if @event.event_functions.any? %>

@@ -50,7 +50,7 @@ Rails.application.routes.draw do
     resource  :badge_config, only: [:edit, :update] do
       get :preview, on: :member
     end
-    resources :event_functions, only: [:create, :update, :destroy]
+    resources :event_functions, only: [:index, :create, :update, :destroy]
     resource :setup, only: [], controller: 'events/setup' do
       get  :sectors
       post :sectors,        action: :save_sectors

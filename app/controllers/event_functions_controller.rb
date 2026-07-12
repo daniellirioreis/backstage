@@ -1,54 +1,44 @@
 class EventFunctionsController < ApplicationController
   before_action :set_event
-  before_action :set_event_function, only: %i[edit update destroy]
+  before_action :set_event_function, only: %i[update destroy]
+
+  def index
+    authorize EventFunction
+    @event_functions = @event.event_functions.order(:name)
+  end
 
   def create
     authorize EventFunction
-    raw = params[:functions]
 
-    if raw.blank?
-      redirect_to edit_event_path(@event, anchor: "funcoes"), alert: "Informe ao menos uma função com nome e valor."
+    name        = params.dig(:event_function, :name)&.strip
+    hourly_rate = params.dig(:event_function, :hourly_rate)
+
+    if name.blank? || hourly_rate.blank?
+      redirect_to event_event_functions_path(@event), alert: "Informe nome e valor da função."
       return
     end
 
-    # permit! libera os params aninhados indexados (functions[0][name], etc.)
-    rows  = raw.permit!.to_h.values
-    valid = rows.select { |r| r["name"].present? && r["hourly_rate"].present? }
-
-    if valid.empty?
-      redirect_to edit_event_path(@event, anchor: "funcoes"), alert: "Informe ao menos uma função com nome e valor."
-      return
+    ef = @event.event_functions.build(name: name, hourly_rate: hourly_rate)
+    if ef.save
+      redirect_to event_event_functions_path(@event), notice: "Função \"#{ef.name}\" criada."
+    else
+      redirect_to event_event_functions_path(@event), alert: ef.errors.full_messages.to_sentence
     end
-
-    created = 0
-    errors  = []
-    valid.each do |row|
-      ef = @event.event_functions.build(name: row["name"], hourly_rate: row["hourly_rate"])
-      if ef.save
-        created += 1
-      else
-        errors << "#{row["name"]}: #{ef.errors.full_messages.to_sentence}"
-      end
-    end
-
-    msg = "#{created} função(ões) criada(s)."
-    msg += " Erros: #{errors.join(' | ')}" if errors.any?
-    redirect_to edit_event_path(@event, anchor: "funcoes"), notice: msg
   end
 
   def update
     authorize @event_function
     if @event_function.update(event_function_params)
-      redirect_to edit_event_path(@event, anchor: "funcoes"), notice: "Função atualizada."
+      redirect_to event_event_functions_path(@event), notice: "Função atualizada."
     else
-      redirect_to edit_event_path(@event, anchor: "funcoes"), alert: @event_function.errors.full_messages.to_sentence
+      redirect_to event_event_functions_path(@event), alert: @event_function.errors.full_messages.to_sentence
     end
   end
 
   def destroy
     authorize @event_function
     @event_function.destroy
-    redirect_to edit_event_path(@event, anchor: "funcoes"), notice: "Função removida."
+    redirect_to event_event_functions_path(@event), notice: "Função removida."
   end
 
   private
