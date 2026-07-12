@@ -190,8 +190,10 @@
           <div style="text-align:right; flex-shrink:0;">
             <span style="font-size:0.62rem; font-weight:700; color:<%= sc %>; background:<%= sb %>; padding:2px 7px; border-radius:99px; display:block; margin-bottom:3px;"><%= sl %></span>
             <% if tm.user.phone.present? %>
-              <a href="tel:<%= tm.user.phone.gsub(/\D/, '') %>" style="font-size:0.65rem; color:#3b82f6; display:flex; align-items:center; justify-content:flex-end; gap:2px; text-decoration:none;">
-                <i class="bi bi-telephone" style="font-size:0.58rem;"></i> ligar
+              <% phone_digits = tm.user.phone.gsub(/\D/, '') %>
+              <% wa_number = phone_digits.start_with?('55') ? phone_digits : "55#{phone_digits}" %>
+              <a href="https://wa.me/<%= wa_number %>" target="_blank" rel="noopener" style="font-size:0.65rem; color:#16a34a; display:flex; align-items:center; justify-content:flex-end; gap:2px; text-decoration:none;">
+                <i class="bi bi-whatsapp" style="font-size:0.7rem;"></i> WhatsApp
               </a>
             <% end %>
           </div>
