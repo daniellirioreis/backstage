@@ -118,8 +118,9 @@
     <i class="bi <%= icon %>" style="color:<%= icon_color %>;"></i> <%= label %>
   </div>
   <% members.each do |tm|
-    att    = td[:all_attendances][tm.user_id]
-    shift  = td[:shifts_today][tm.user_id]
+    att        = td[:all_attendances][tm.user_id]
+    shift      = td[:shifts_today][tm.user_id]
+    next_shift = shift ? nil : td[:next_shifts][tm.user_id]
     inits  = tm.user.name.split.map(&:first).first(2).join.upcase
     sc     = status_color.(status)
     sb     = status_bg.(status)
@@ -140,8 +141,13 @@
           <% if tm.credential_code.present? %>
             <span style="font-family:monospace; font-size:0.62rem; font-weight:700; background:#f4f4f5; border:1px solid #e4e4e7; border-radius:4px; padding:1px 5px; color:#52525b; letter-spacing:0.04em;"><%= tm.credential_code %></span>
           <% end %>
-          <% unless shift %>
-            <span style="font-size:0.58rem; font-weight:700; background:#fff7ed; border:1px solid #fed7aa; color:#c2410c; border-radius:4px; padding:1px 5px;">sem escala</span>
+          <% if next_shift %>
+            <span style="font-size:0.58rem; font-weight:700; background:#fff7ed; border:1px solid #fed7aa; color:#c2410c; border-radius:4px; padding:1px 5px;">
+              <i class="bi bi-calendar3" style="font-size:0.52rem;"></i>
+              escalado <%= l(next_shift.date, format: :short) %>
+            </span>
+          <% elsif !shift %>
+            <span style="font-size:0.58rem; font-weight:700; background:#f4f4f5; border:1px solid #e4e4e7; color:#71717a; border-radius:4px; padding:1px 5px;">sem escala</span>
           <% end %>
         </div>
         <div style="font-size:0.68rem; color:#71717a;"><%= tm.event_function&.name || "Sem função" %></div>

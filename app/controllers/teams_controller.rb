@@ -61,7 +61,15 @@ class TeamsController < ApplicationController
       all_att   = Attendance.where(user_id: all_user_ids, event_id: current_event.id)
                             .order(checked_in_at: :desc).group_by(&:user_id).transform_values(&:first)
 
-      # Lista principal: tem escala OU fez check-in hoje (mesmo sem escala)
+      # Para membros sem escala hoje mas com check-in: buscar o próximo turno deles
+      unscheduled_user_ids = all_user_ids - shifts.keys
+      next_shifts = Shift.where(user_id: unscheduled_user_ids, sector_id: team.sector_id)
+                         .where("date >= ?", Date.today)
+                         .order(:date)
+                         .group_by(&:user_id)
+                         .transform_values(&:first)
+
+      # Lista principal: tem escala hoje OU fez check-in hoje (mesmo sem escala)
       memberships = all_memberships.select { |tm| shifts.key?(tm.user_id) || today_att.key?(tm.user_id) }
 
       # "Sem escala" = sem escala E sem check-in (não aparecem na lista principal)
@@ -84,6 +92,7 @@ class TeamsController < ApplicationController
         memberships_no_shift:  memberships_no_shift,
         all_attendances:       all_att,
         shifts_today:          shifts,
+        next_shifts:           next_shifts,
         member_status:         member_status,
         total:                 scheduled_ids.size,
         total_members:         all_memberships.size,
