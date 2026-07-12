@@ -1040,6 +1040,7 @@ body {
   .ev-stats-grid    { grid-template-columns: repeat(2, 1fr) !important; }
   .dash-metrics-grid{ grid-template-columns: repeat(2, 1fr) !important; }
   .dash-main-grid   { grid-template-columns: 1fr !important; }
+  .dash-metrics-span{ grid-column: auto !important; }
 
   // ── Paginação compacta ────────────────────────────────────────────────────
   .pagination a,

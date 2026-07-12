@@ -52,8 +52,8 @@
           <i class="bi bi-plus-circle"></i> Adicionar Funções
         </div>
         <%= form_with url: event_event_functions_path(@event), method: :post, local: true, id: "fn-bulk-form" do %>
-          <div id="fn-rows">
-            <div class="fn-row" style="display:flex;gap:0.6rem;align-items:center;margin-bottom:0.5rem;">
+          <div id="fn-rows" style="overflow-x:auto;">
+            <div class="fn-row" style="display:flex;gap:0.6rem;align-items:center;margin-bottom:0.5rem;min-width:480px;">
               <input type="text" name="functions[0][name]" class="form-control"
                      placeholder="Nome da função" style="width:280px;flex-shrink:0;">
               <div style="position:relative;width:160px;">
@@ -89,7 +89,7 @@
     var i = count++;
     var div = document.createElement("div");
     div.className = "fn-row";
-    div.style.cssText = "display:flex;gap:0.6rem;align-items:center;margin-bottom:0.5rem;";
+    div.style.cssText = "display:flex;gap:0.6rem;align-items:center;margin-bottom:0.5rem;min-width:480px;";
     div.innerHTML =
       '<input type="text" name="functions[' + i + '][name]" class="form-control" placeholder="Nome da função" style="width:280px;flex-shrink:0;">' +
       '<div style="position:relative;width:160px;">' +

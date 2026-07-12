@@ -213,11 +213,11 @@
 
       <%# ── Funções e valores/hora ── %>
         <div id="ftab-funcoes" class="form-tab-panel" style="display:none;">
-          <div id="fn-fields">
+          <div id="fn-fields" style="overflow-x:auto;">
             <% fns_to_render = event.event_functions.presence || [event.event_functions.build] %>
             <% fns_to_render.each do |ef| %>
               <%= f.fields_for :event_functions, ef do |ff| %>
-                <div class="fn-row" style="display:flex;gap:0.6rem;align-items:center;margin-bottom:0.5rem;">
+                <div class="fn-row" style="display:flex;gap:0.6rem;align-items:center;margin-bottom:0.5rem;min-width:480px;">
                   <%= ff.text_field :name, class: "form-control", placeholder: "Nome da função", style: "width:280px;flex-shrink:0;" %>
                   <div style="position:relative;width:160px;flex-shrink:0;">
                     <span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:#71717a;font-size:0.82rem;pointer-events:none;">R$</span>
@@ -232,7 +232,7 @@
             <% end %>
           </div>
           <template id="fn-template">
-            <div class="fn-row" style="display:flex;gap:0.6rem;align-items:center;margin-bottom:0.5rem;">
+            <div class="fn-row" style="display:flex;gap:0.6rem;align-items:center;margin-bottom:0.5rem;min-width:480px;">
               <input type="text" name="event[event_functions_attributes][__IDX__][name]"
                      class="form-control" placeholder="Nome da função" style="width:280px;flex-shrink:0;">
               <div style="position:relative;width:160px;flex-shrink:0;">
