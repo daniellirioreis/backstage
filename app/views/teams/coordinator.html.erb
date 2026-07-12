@@ -64,24 +64,29 @@
             <span style="font-size:0.55rem; color:#16a34a; text-transform:uppercase; letter-spacing:.05em; margin-top:2px; font-weight:700;">scan</span>
           <% end %>
         <% end %>
-        <div style="display:flex; flex-direction:column; align-items:center; background:#1a1a1a; border-radius:8px; padding:0.35rem 0.65rem; min-width:44px;">
+        <div style="display:flex; flex-direction:column; align-items:center; background:#1a1a1a; border-radius:8px; padding:0.35rem 0.65rem; min-width:44px; cursor:default;"
+             title="Presentes: fez check-in e check-out — turno encerrado">
           <span style="font-size:1.1rem; font-weight:800; color:#16a34a; line-height:1;"><%= td[:present] %></span>
           <span style="font-size:0.55rem; color:#52525b; text-transform:uppercase; letter-spacing:.05em; margin-top:2px;">pres.</span>
         </div>
-        <div style="display:flex; flex-direction:column; align-items:center; background:#1a1a1a; border-radius:8px; padding:0.35rem 0.65rem; min-width:44px;">
+        <div style="display:flex; flex-direction:column; align-items:center; background:#1a1a1a; border-radius:8px; padding:0.35rem 0.65rem; min-width:44px; cursor:default;"
+             title="Em atividade: fez check-in mas ainda não fez check-out">
           <span style="font-size:1.1rem; font-weight:800; color:<%= td[:active] > 0 ? '#2563eb' : '#3f3f46' %>; line-height:1;"><%= td[:active] %></span>
           <span style="font-size:0.55rem; color:#52525b; text-transform:uppercase; letter-spacing:.05em; margin-top:2px;">ativ.</span>
         </div>
-        <div style="display:flex; flex-direction:column; align-items:center; background:#1a1a1a; border-radius:8px; padding:0.35rem 0.65rem; min-width:44px;">
+        <div style="display:flex; flex-direction:column; align-items:center; background:#1a1a1a; border-radius:8px; padding:0.35rem 0.65rem; min-width:44px; cursor:default;"
+             title="Ausentes: tem escala hoje mas não fez check-in">
           <span style="font-size:1.1rem; font-weight:800; color:<%= td[:absent] > 0 ? '#dc2626' : '#3f3f46' %>; line-height:1;"><%= td[:absent] %></span>
           <span style="font-size:0.55rem; color:#52525b; text-transform:uppercase; letter-spacing:.05em; margin-top:2px;">aus.</span>
         </div>
-        <div style="display:flex; flex-direction:column; align-items:center; background:#1a1a1a; border-radius:8px; padding:0.35rem 0.65rem; min-width:44px; border:1px solid #27272a;">
+        <div style="display:flex; flex-direction:column; align-items:center; background:#1a1a1a; border-radius:8px; padding:0.35rem 0.65rem; min-width:44px; border:1px solid #27272a; cursor:default;"
+             title="Escalados: total de membros com escala para hoje">
           <span style="font-size:1.1rem; font-weight:800; color:#71717a; line-height:1;"><%= td[:total] %></span>
           <span style="font-size:0.55rem; color:#52525b; text-transform:uppercase; letter-spacing:.05em; margin-top:2px;">esc.</span>
         </div>
         <% if td[:unscheduled_checkin] > 0 %>
-          <div style="display:flex; flex-direction:column; align-items:center; background:#1a1a1a; border-radius:8px; padding:0.35rem 0.65rem; min-width:44px; border:1px solid #d97706;" title="Check-ins sem escala">
+          <div style="display:flex; flex-direction:column; align-items:center; background:#1a1a1a; border-radius:8px; padding:0.35rem 0.65rem; min-width:44px; border:1px solid #d97706; cursor:default;"
+               title="Check-ins extras: fizeram check-in mas não têm escala para hoje">
             <span style="font-size:1.1rem; font-weight:800; color:#d97706; line-height:1;">+<%= td[:unscheduled_checkin] %></span>
             <span style="font-size:0.55rem; color:#d97706; text-transform:uppercase; letter-spacing:.05em; margin-top:2px;">extra</span>
           </div>
