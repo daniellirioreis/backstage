@@ -67,8 +67,14 @@
       </div>
       <div style="display:flex; flex-direction:column; align-items:center; background:#1a1a1a; border-radius:8px; padding:0.35rem 0.65rem; min-width:44px; border:1px solid #27272a;">
         <span style="font-size:1.1rem; font-weight:800; color:#71717a; line-height:1;"><%= td[:total] %></span>
-        <span style="font-size:0.55rem; color:#52525b; text-transform:uppercase; letter-spacing:.05em; margin-top:2px;">total</span>
+        <span style="font-size:0.55rem; color:#52525b; text-transform:uppercase; letter-spacing:.05em; margin-top:2px;">esc.</span>
       </div>
+      <% if td[:unscheduled_checkin] > 0 %>
+        <div style="display:flex; flex-direction:column; align-items:center; background:#1a1a1a; border-radius:8px; padding:0.35rem 0.65rem; min-width:44px; border:1px solid #d97706;" title="Check-ins sem escala">
+          <span style="font-size:1.1rem; font-weight:800; color:#d97706; line-height:1;">+<%= td[:unscheduled_checkin] %></span>
+          <span style="font-size:0.55rem; color:#d97706; text-transform:uppercase; letter-spacing:.05em; margin-top:2px;">extra</span>
+        </div>
+      <% end %>
     </div>
   </div>
   <%# ── Barra de presença embutida ── %>
@@ -133,6 +139,9 @@
           <span style="font-size:0.82rem; font-weight:700; color:#18181b;"><%= tm.user.name %></span>
           <% if tm.credential_code.present? %>
             <span style="font-family:monospace; font-size:0.62rem; font-weight:700; background:#f4f4f5; border:1px solid #e4e4e7; border-radius:4px; padding:1px 5px; color:#52525b; letter-spacing:0.04em;"><%= tm.credential_code %></span>
+          <% end %>
+          <% unless shift %>
+            <span style="font-size:0.58rem; font-weight:700; background:#fff7ed; border:1px solid #fed7aa; color:#c2410c; border-radius:4px; padding:1px 5px;">sem escala</span>
           <% end %>
         </div>
         <div style="font-size:0.68rem; color:#71717a;"><%= tm.event_function&.name || "Sem função" %></div>

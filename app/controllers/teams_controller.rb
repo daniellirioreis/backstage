@@ -51,34 +51,43 @@ class TeamsController < ApplicationController
       all_memberships = team.team_memberships.sort_by { |tm| [tm.role == "coordinator" ? 0 : 1, tm.user.name] }
       all_user_ids    = all_memberships.map(&:user_id)
 
-      shifts    = Shift.where(user_id: all_user_ids, sector_id: team.sector_id, date: Date.today).index_by(&:user_id)
+      shifts = Shift.where(user_id: all_user_ids, sector_id: team.sector_id, date: Date.today).index_by(&:user_id)
 
-      # Apenas membros com escala hoje
-      memberships = all_memberships.select { |tm| shifts.key?(tm.user_id) }
-      user_ids    = memberships.map(&:user_id)
-
-      today_att = Attendance.where(user_id: user_ids, event_id: current_event.id, checked_in_date: Date.today).index_by(&:user_id)
-      all_att   = Attendance.where(user_id: user_ids, event_id: current_event.id)
+      # Presenças de TODOS os membros (com ou sem escala)
+      today_att = Attendance.where(user_id: all_user_ids, event_id: current_event.id, checked_in_date: Date.today).index_by(&:user_id)
+      all_att   = Attendance.where(user_id: all_user_ids, event_id: current_event.id)
                             .order(checked_in_at: :desc).group_by(&:user_id).transform_values(&:first)
+
+      # Lista principal: tem escala OU fez check-in hoje (mesmo sem escala)
+      memberships = all_memberships.select { |tm| shifts.key?(tm.user_id) || today_att.key?(tm.user_id) }
+
+      # "Sem escala" = sem escala E sem check-in (não aparecem na lista principal)
+      memberships_no_shift = all_memberships.reject { |tm| shifts.key?(tm.user_id) || today_att.key?(tm.user_id) }
 
       member_status = memberships.each_with_object({}) do |tm, h|
         att = today_att[tm.user_id]
         h[tm.user_id] = att.nil? ? :absent : att.checked_out_at.nil? ? :active : :present
       end
 
+      # Stats baseados nos membros com escala (expectativa do dia)
+      scheduled_ids       = shifts.keys
+      scheduled_att       = today_att.select { |uid, _| scheduled_ids.include?(uid) }
+      unscheduled_checkin = today_att.reject { |uid, _| scheduled_ids.include?(uid) }
+
       {
         team:                  team,
         event:                 current_event,
         memberships:           memberships,
-        memberships_no_shift:  all_memberships.reject { |tm| shifts.key?(tm.user_id) },
+        memberships_no_shift:  memberships_no_shift,
         all_attendances:       all_att,
         shifts_today:          shifts,
         member_status:         member_status,
-        total:                 memberships.size,
+        total:                 scheduled_ids.size,
         total_members:         all_memberships.size,
-        present:               today_att.size,
-        active:                today_att.values.count { |a| a.checked_out_at.nil? },
-        absent:                memberships.size - today_att.size
+        present:               scheduled_att.values.count { |a| a.checked_out_at.present? },
+        active:                scheduled_att.values.count { |a| a.checked_out_at.nil? },
+        absent:                scheduled_ids.size - scheduled_att.size,
+        unscheduled_checkin:   unscheduled_checkin.size
       }
     end
   end
