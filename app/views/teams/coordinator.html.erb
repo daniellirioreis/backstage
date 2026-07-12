@@ -152,7 +152,7 @@
         </div>
         <div style="font-size:0.68rem; color:#71717a;"><%= tm.event_function&.name || "Sem função" %></div>
         <% if shift %>
-          <div style="font-size:0.63rem; color:#a1a1aa;"><i class="bi bi-clock" style="font-size:0.58rem;"></i> <%= shift.start_time.strftime("%H:%M") %> – <%= shift.end_time.strftime("%H:%M") %></div>
+          <div style="font-size:0.63rem; color:#a1a1aa;"><i class="bi bi-clock" style="font-size:0.58rem;"></i> <%= l(shift.date, format: :short) %> · <%= shift.start_time.strftime("%H:%M") %> – <%= shift.end_time.strftime("%H:%M") %></div>
         <% end %>
         <% if att && status == :active %>
           <div style="font-size:0.63rem; color:#2563eb;"><i class="bi bi-circle-fill" style="font-size:0.4rem;"></i> Check-in às <%= att.checked_in_at.strftime("%H:%M") %></div>
