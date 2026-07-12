@@ -155,9 +155,9 @@
           <div style="font-size:0.63rem; color:#a1a1aa;"><i class="bi bi-clock" style="font-size:0.58rem;"></i> <%= l(shift.date, format: :short) %> · <%= shift.start_time.strftime("%H:%M") %> – <%= shift.end_time.strftime("%H:%M") %></div>
         <% end %>
         <% if att && status == :active %>
-          <div style="font-size:0.63rem; color:#2563eb;"><i class="bi bi-circle-fill" style="font-size:0.4rem;"></i> Check-in às <%= att.checked_in_at.strftime("%H:%M") %></div>
+          <div style="font-size:0.63rem; color:#2563eb;"><i class="bi bi-circle-fill" style="font-size:0.4rem;"></i> Check-in <%= l(att.checked_in_at.to_date, format: :short) %> às <%= att.checked_in_at.strftime("%H:%M") %></div>
         <% elsif att && status == :present %>
-          <div style="font-size:0.63rem; color:#16a34a;"><i class="bi bi-check-circle"></i> <%= att.checked_in_at.strftime("%H:%M") %> – <%= att.checked_out_at&.strftime("%H:%M") || "—" %></div>
+          <div style="font-size:0.63rem; color:#16a34a;"><i class="bi bi-check-circle"></i> <%= l(att.checked_in_at.to_date, format: :short) %> · <%= att.checked_in_at.strftime("%H:%M") %> – <%= att.checked_out_at&.strftime("%H:%M") || "—" %></div>
         <% end %>
       </div>
       <div style="text-align:right; flex-shrink:0;">
