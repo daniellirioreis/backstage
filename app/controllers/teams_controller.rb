@@ -51,7 +51,10 @@ class TeamsController < ApplicationController
       all_memberships = team.team_memberships.sort_by { |tm| [tm.role == "coordinator" ? 0 : 1, tm.user.name] }
       all_user_ids    = all_memberships.map(&:user_id)
 
-      shifts = Shift.where(user_id: all_user_ids, sector_id: team.sector_id, date: Date.today).index_by(&:user_id)
+      # Busca turnos que cobrem hoje (incluindo multi-dia: date <= hoje <= end_date)
+      shifts = Shift.where(user_id: all_user_ids, sector_id: team.sector_id)
+                    .where("date <= ? AND (end_date IS NULL OR end_date >= ?)", Date.today, Date.today)
+                    .index_by(&:user_id)
 
       # Presenças de TODOS os membros (com ou sem escala)
       today_att = Attendance.where(user_id: all_user_ids, event_id: current_event.id, checked_in_date: Date.today).index_by(&:user_id)
@@ -117,9 +120,10 @@ class TeamsController < ApplicationController
       .group_by(&:user_id)
       .transform_values(&:first)
 
-    # Turnos de hoje
+    # Turnos de hoje (incluindo multi-dia: date <= hoje <= end_date)
     @shifts_today = Shift
-      .where(user_id: user_ids, sector_id: @team.sector_id, date: Date.today)
+      .where(user_id: user_ids, sector_id: @team.sector_id)
+      .where("date <= ? AND (end_date IS NULL OR end_date >= ?)", Date.today, Date.today)
       .index_by(&:user_id)
 
     @total_members = @memberships.size
