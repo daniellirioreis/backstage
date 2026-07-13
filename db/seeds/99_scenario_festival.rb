@@ -49,8 +49,9 @@ functions_rates = {
 
 fn = {}
 functions_rates.each do |name, rate|
-  fn[name] = EventFunction.find_or_create_by!(event: event, name: name) { |f| f.hourly_rate = rate }
-  fn[name].update!(hourly_rate: rate)
+  catalog_rate = EventFunction.find_by(event_id: nil, name: name)&.hourly_rate || rate
+  fn[name] = EventFunction.find_or_create_by!(event: event, name: name) { |f| f.hourly_rate = catalog_rate }
+  fn[name].update!(hourly_rate: catalog_rate)
 end
 puts "   Funções: #{fn.size}"
 

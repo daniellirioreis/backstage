@@ -240,10 +240,11 @@ events_config.each do |cfg|
   cfg[:sectors].each do |sc|
     members = pool[sc[:members]]
 
-    # -- Funções do evento
+    # -- Funções do evento (busca taxa do catálogo quando disponível)
     fns = sc[:functions].map do |fn_name, rate|
+      catalog_rate = EventFunction.find_by(event_id: nil, name: fn_name)&.hourly_rate || rate
       ef = EventFunction.find_or_initialize_by(event: event, name: fn_name)
-      ef.hourly_rate = rate
+      ef.hourly_rate = catalog_rate
       ef.save!(validate: false)
       ef
     end

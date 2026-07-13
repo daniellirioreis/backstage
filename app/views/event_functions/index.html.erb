@@ -1,34 +1,209 @@
-<div class="page-header" style="margin-bottom:1.5rem;">
-  <div>
-    <div style="font-size:0.75rem;color:#71717a;margin-bottom:0.25rem;">
-      <%= link_to @event.name, event_path(@event), style:"color:#71717a;text-decoration:none;" %>
-      <i class="bi bi-chevron-right" style="font-size:0.65rem;"></i>
-      Funções
+<% if @event %>
+  <%# ── Contexto de evento ── %>
+  <div class="page-header" style="margin-bottom:1.5rem;">
+    <div>
+      <div style="font-size:0.75rem;color:#71717a;margin-bottom:0.25rem;">
+        <%= link_to @event.name, event_path(@event), style:"color:#71717a;text-decoration:none;" %>
+        <i class="bi bi-chevron-right" style="font-size:0.65rem;"></i>
+        Funções
+      </div>
+      <h1 style="font-size:1.35rem;font-weight:700;color:#18181b;margin:0;">
+        <i class="bi bi-briefcase" style="color:#7c3aed;"></i> Funções do evento
+      </h1>
+      <p style="font-size:0.82rem;color:#71717a;margin:0.25rem 0 0;">
+        Defina as funções e o valor por hora de cada uma para este evento.
+      </p>
     </div>
-    <h1 style="font-size:1.35rem;font-weight:700;color:#18181b;margin:0;">
-      <i class="bi bi-briefcase" style="color:#7c3aed;"></i> Funções do evento
-    </h1>
-    <p style="font-size:0.82rem;color:#71717a;margin:0.25rem 0 0;">
-      Defina as funções e o valor por hora de cada uma para este evento.
-    </p>
+    <% if policy(EventFunction).create? %>
+      <button onclick="openFnModal()" class="btn-primary">
+        <i class="bi bi-plus-lg"></i> Nova função
+      </button>
+    <% end %>
   </div>
-  <% if policy(EventFunction).create? %>
-    <button onclick="openFnModal()" class="btn-primary">
-      <i class="bi bi-plus-lg"></i> Nova função
-    </button>
-  <% end %>
-</div>
 
-<div class="content-card" style="padding:0; overflow:hidden;">
-  <% if @event_functions.empty? %>
-    <div style="text-align:center; padding:3rem 2rem; color:#a1a1aa;">
-      <i class="bi bi-briefcase" style="font-size:2rem; display:block; margin-bottom:0.5rem;"></i>
-      <p style="margin:0 0 1rem; font-size:0.88rem;">Nenhuma função cadastrada ainda.</p>
-      <% if policy(EventFunction).create? %>
-        <button onclick="openFnModal()" class="btn-primary" style="font-size:0.82rem;">
-          <i class="bi bi-plus-lg"></i> Cadastrar primeira função
+  <div class="content-card" style="padding:0; overflow:hidden;">
+    <% if @event_functions.empty? %>
+      <div style="text-align:center; padding:3rem 2rem; color:#a1a1aa;">
+        <i class="bi bi-briefcase" style="font-size:2rem; display:block; margin-bottom:0.5rem;"></i>
+        <p style="margin:0 0 1rem; font-size:0.88rem;">Nenhuma função cadastrada ainda.</p>
+        <% if policy(EventFunction).create? %>
+          <button onclick="openFnModal()" class="btn-primary" style="font-size:0.82rem;">
+            <i class="bi bi-plus-lg"></i> Cadastrar primeira função
+          </button>
+        <% end %>
+      </div>
+    <% else %>
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Função</th>
+            <th>Valor / hora</th>
+            <th style="width:1%;white-space:nowrap;"></th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @event_functions.each do |ef| %>
+            <tr>
+              <td style="font-weight:500; color:#18181b;"><%= ef.name %></td>
+              <td style="color:#16a34a; font-weight:600; font-variant-numeric:tabular-nums;">
+                R$ <%= format('%.2f', ef.hourly_rate) %>/h
+              </td>
+              <td>
+                <div style="display:flex; gap:0.35rem; justify-content:flex-end;">
+                  <% if policy(ef).edit? %>
+                    <button onclick="openFnModal(<%= ef.id %>, '<%= j ef.name %>', '<%= ef.hourly_rate %>')"
+                            class="btn-secondary" style="padding:0.25rem 0.55rem; font-size:0.78rem;"
+                            title="Editar">
+                      <i class="bi bi-pencil"></i>
+                    </button>
+                  <% end %>
+                  <% if policy(ef).destroy? %>
+                    <%= button_to event_event_function_path(@event, ef), method: :delete,
+                        form: { data: { turbo_confirm: "Remover a função \"#{ef.name}\"? Membros que usam essa função perderão a referência." } },
+                        class: "btn-danger", style: "padding:0.25rem 0.55rem; font-size:0.78rem;",
+                        title: "Remover" do %>
+                      <i class="bi bi-trash"></i>
+                    <% end %>
+                  <% end %>
+                </div>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    <% end %>
+  </div>
+
+  <%# ── Importar do catálogo ── %>
+  <% if @catalog_functions.any? && policy(EventFunction).create? %>
+    <div style="margin-top:1.5rem;">
+      <div style="font-size:0.78rem; font-weight:700; color:#52525b; text-transform:uppercase; letter-spacing:.06em; margin-bottom:0.75rem;">
+        <i class="bi bi-bookmark-star"></i> Importar do catálogo
+      </div>
+      <div class="content-card" style="padding:0; overflow:hidden;">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Função</th>
+              <th>Valor / hora</th>
+              <th style="width:1%;"></th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @catalog_functions.each do |cf| %>
+              <tr>
+                <td style="font-weight:500; color:#18181b;"><%= cf.name %></td>
+                <td style="color:#a1a1aa; font-size:0.78rem;">catálogo: R$ <%= format('%.2f', cf.hourly_rate) %>/h</td>
+                <td>
+                  <button type="button"
+                          onclick="openCatalogModal('<%= j cf.name %>', '<%= cf.hourly_rate %>', '<%= cf.id %>')"
+                          class="btn-secondary"
+                          style="padding:0.25rem 0.65rem; font-size:0.78rem; white-space:nowrap;">
+                    <i class="bi bi-plus"></i> Adicionar
+                  </button>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  <% end %>
+
+  <div style="margin-top:1.25rem;">
+    <%= link_to event_path(@event), class: "btn-secondary", style: "font-size:0.82rem;" do %>
+      <i class="bi bi-arrow-left"></i> Voltar para o evento
+    <% end %>
+  </div>
+
+  <%# ── Modal: adicionar do catálogo com preço editável ── %>
+  <div id="catalog-modal-overlay"
+       style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.45); z-index:600; align-items:center; justify-content:center;"
+       onclick="if(event.target===this) closeCatalogModal()">
+    <div style="background:#fff; border-radius:14px; padding:1.75rem; width:100%; max-width:400px; box-shadow:0 16px 48px rgba(0,0,0,0.2);">
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1.25rem;">
+        <h2 style="font-size:1rem; font-weight:700; color:#18181b; margin:0;">Adicionar função ao evento</h2>
+        <button onclick="closeCatalogModal()" style="background:none;border:none;cursor:pointer;color:#71717a;padding:0.25rem;border-radius:6px;">
+          <i class="bi bi-x-lg"></i>
         </button>
+      </div>
+      <%= form_with url: add_from_catalog_event_event_functions_path(@event), method: :post, local: true, id: "catalog-add-form" do |f| %>
+        <%= f.hidden_field :catalog_id, id: "catalog-modal-id" %>
+        <div style="margin-bottom:1rem;">
+          <label class="form-label">Função</label>
+          <input type="text" id="catalog-modal-name-display" class="form-control"
+                 style="background:#f4f4f5; color:#52525b;" readonly>
+        </div>
+        <div style="margin-bottom:1.5rem;">
+          <label class="form-label">Valor por hora para este evento (R$)</label>
+          <div style="position:relative;">
+            <span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:#71717a;font-size:0.85rem;pointer-events:none;">R$</span>
+            <%= f.number_field :hourly_rate, id: "catalog-modal-rate", class: "form-control",
+                placeholder: "0,00", step: "0.01", min: 0, style: "padding-left:2rem;" %>
+          </div>
+          <p style="font-size:0.72rem; color:#a1a1aa; margin:0.35rem 0 0;">
+            <i class="bi bi-info-circle"></i> Este valor é específico para este evento e não altera o catálogo.
+          </p>
+        </div>
+        <div style="display:flex; gap:0.5rem; justify-content:flex-end;">
+          <button type="button" onclick="closeCatalogModal()" class="btn-secondary">Cancelar</button>
+          <button type="submit" class="btn-primary"><i class="bi bi-plus-lg"></i> Adicionar ao evento</button>
+        </div>
       <% end %>
+    </div>
+  </div>
+  <script>
+  (function() {
+    var overlay = document.getElementById("catalog-modal-overlay");
+    window.openCatalogModal = function(name, rate, id) {
+      document.getElementById("catalog-modal-id").value = id;
+      document.getElementById("catalog-modal-name-display").value = name;
+      document.getElementById("catalog-modal-rate").value = rate;
+      overlay.style.display = "flex";
+      setTimeout(function() { document.getElementById("catalog-modal-rate").select(); }, 50);
+    };
+    window.closeCatalogModal = function() { overlay.style.display = "none"; };
+    document.addEventListener("keydown", function(e) { if (e.key === "Escape") closeCatalogModal(); });
+  })();
+  </script>
+
+<% else %>
+  <%# ── Catálogo global ── %>
+  <div class="page-header">
+    <div>
+      <h1 style="margin:0;">Funções</h1>
+      <div style="font-size:0.8rem;color:#a1a1aa;margin-top:0.2rem;">
+        <%= @event_functions.total_entries %> <%= @event_functions.total_entries == 1 ? "função" : "funções" %> no catálogo
+      </div>
+    </div>
+    <% if policy(EventFunction.new).create? %>
+      <%= link_to new_event_function_path, class: "btn-primary" do %>
+        <i class="bi bi-plus"></i> Nova função
+      <% end %>
+    <% end %>
+  </div>
+
+  <%= form_with url: event_functions_path, method: :get, local: true, style: "margin-bottom:1.25rem;" do |f| %>
+    <div style="display:flex;gap:0.75rem;flex-wrap:wrap;align-items:flex-end;">
+      <div style="flex:1;min-width:200px;">
+        <label style="display:block;font-size:0.72rem;font-weight:600;color:#71717a;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.3rem;">Buscar</label>
+        <%= f.text_field :q, value: params[:q], placeholder: "Nome da função…", class: "form-control", style: "margin:0;" %>
+      </div>
+      <div style="display:flex;gap:0.5rem;padding-bottom:1px;">
+        <%= f.submit "Filtrar", class: "btn-primary" %>
+        <% if params[:q].present? %>
+          <%= link_to event_functions_path, class: "btn-secondary" do %>
+            <i class="bi bi-x"></i> Limpar
+          <% end %>
+        <% end %>
+      </div>
+    </div>
+  <% end %>
+
+  <% if @event_functions.empty? %>
+    <div style="text-align:center;padding:3rem 2rem;color:#a1a1aa;">
+      <i class="bi bi-briefcase" style="font-size:2rem;display:block;margin-bottom:0.5rem;"></i>
+      <p style="margin:0;font-size:0.88rem;">Nenhuma função cadastrada ainda.</p>
     </div>
   <% else %>
     <table class="data-table">
@@ -36,30 +211,27 @@
         <tr>
           <th>Função</th>
           <th>Valor / hora</th>
-          <th style="width:1%;white-space:nowrap;"></th>
+          <th></th>
         </tr>
       </thead>
       <tbody>
         <% @event_functions.each do |ef| %>
           <tr>
-            <td style="font-weight:500; color:#18181b;"><%= ef.name %></td>
-            <td style="color:#16a34a; font-weight:600; font-variant-numeric:tabular-nums;">
+            <td style="font-weight:500;color:#18181b;"><%= ef.name %></td>
+            <td style="color:#16a34a;font-weight:600;font-variant-numeric:tabular-nums;">
               R$ <%= format('%.2f', ef.hourly_rate) %>/h
             </td>
-            <td>
-              <div style="display:flex; gap:0.35rem; justify-content:flex-end;">
+            <td class="td-actions">
+              <div style="display:flex;gap:0.35rem;justify-content:flex-end;">
                 <% if policy(ef).edit? %>
-                  <button onclick="openFnModal(<%= ef.id %>, '<%= j ef.name %>', '<%= ef.hourly_rate %>')"
-                          class="btn-secondary" style="padding:0.25rem 0.55rem; font-size:0.78rem;"
-                          title="Editar">
+                  <%= link_to edit_event_function_path(ef), class: "btn-secondary", title: "Editar" do %>
                     <i class="bi bi-pencil"></i>
-                  </button>
+                  <% end %>
                 <% end %>
                 <% if policy(ef).destroy? %>
-                  <%= button_to event_event_function_path(@event, ef), method: :delete,
-                      form: { data: { turbo_confirm: "Remover a função \"#{ef.name}\"? Membros que usam essa função perderão a referência." } },
-                      class: "btn-danger", style: "padding:0.25rem 0.55rem; font-size:0.78rem;",
-                      title: "Remover" do %>
+                  <%= button_to event_function_path(ef), method: :delete,
+                      form: { data: { turbo_confirm: "Remover \"#{ef.name}\" do catálogo?" } },
+                      class: "btn-danger", title: "Remover" do %>
                     <i class="bi bi-trash"></i>
                   <% end %>
                 <% end %>
@@ -69,20 +241,26 @@
         <% end %>
       </tbody>
     </table>
-  <% end %>
-</div>
 
-<div style="margin-top:1.25rem;">
-  <%= link_to event_path(@event), class: "btn-secondary", style: "font-size:0.82rem;" do %>
-    <i class="bi bi-arrow-left"></i> Voltar para o evento
+    <%# Paginação %>
+    <% if @event_functions.total_pages > 1 %>
+      <div style="display:flex; justify-content:center; align-items:center; gap:0.4rem; margin-top:1.5rem;">
+        <%= will_paginate @event_functions,
+            previous_label: "‹ Anterior",
+            next_label:     "Próximo ›",
+            inner_window:   2,
+            outer_window:   1,
+            renderer:       "BackstagePaginationRenderer" %>
+      </div>
+    <% end %>
   <% end %>
-</div>
+<% end %>
 
-<%# ── Modal criar / editar ── %>
-<div id="fn-modal-overlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.45); z-index:500; display:none; align-items:center; justify-content:center;"
+<%# ── Modal criar / editar (contexto de evento) ── %>
+<% if @event %>
+<div id="fn-modal-overlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.45); z-index:500; align-items:center; justify-content:center;"
      onclick="if(event.target===this) closeFnModal()">
   <div style="background:#fff; border-radius:14px; padding:1.75rem; width:100%; max-width:420px; box-shadow:0 16px 48px rgba(0,0,0,0.2);">
-
     <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1.25rem;">
       <h2 id="fn-modal-title" style="font-size:1rem; font-weight:700; color:#18181b; margin:0;">Nova função</h2>
       <button onclick="closeFnModal()" style="background:none;border:none;cursor:pointer;color:#71717a;padding:0.25rem;border-radius:6px;"
@@ -90,8 +268,6 @@
         <i class="bi bi-x-lg"></i>
       </button>
     </div>
-
-    <%# Formulário de criação (POST) %>
     <%= form_with url: event_event_functions_path(@event), method: :post, id: "fn-create-form", local: true do |f| %>
       <div style="margin-bottom:1rem;">
         <%= f.label :name, "Nome da função", class: "form-label" %>
@@ -111,98 +287,64 @@
         <button type="submit" class="btn-primary"><i class="bi bi-check-lg"></i> Salvar</button>
       </div>
     <% end %>
-
-    <%# Formulário de edição (PATCH) — action trocado via JS %>
     <%= form_with url: "#", method: :patch, id: "fn-edit-form", local: true, style: "display:none;" do |f| %>
       <%= f.hidden_field :name, id: "fn-edit-name" %>
       <%= f.hidden_field :hourly_rate, id: "fn-edit-rate" %>
     <% end %>
   </div>
 </div>
-
 <script>
 (function () {
   var overlay = document.getElementById("fn-modal-overlay");
-
   window.openFnModal = function (id, name, rate) {
     var creating = !id;
     document.getElementById("fn-modal-title").textContent = creating ? "Nova função" : "Editar função";
-
     var createForm = document.getElementById("fn-create-form");
     var editForm   = document.getElementById("fn-edit-form");
-
     if (creating) {
       document.getElementById("fn-modal-name").value = "";
       document.getElementById("fn-modal-rate").value = "";
       createForm.style.display = "";
       editForm.style.display   = "none";
     } else {
-      // Preenche o form de edição e aponta para o endpoint correto
       var base = "<%= event_event_functions_path(@event) %>/";
       editForm.action = base + id;
       document.getElementById("fn-edit-name").value = name || "";
       document.getElementById("fn-edit-rate").value = rate || "";
-      // Copia campos visíveis do create-form para que o usuário veja/edite
       document.getElementById("fn-modal-name").value = name || "";
       document.getElementById("fn-modal-rate").value = rate || "";
-      // Ao submeter o create-form redireciona para o patch — reaproveitamos os campos visuais
       createForm.style.display = "none";
       editForm.style.display   = "";
-      // Gera um mini-form visível dentro do edit-form para o usuário digitar
-      renderEditFields(editForm, name, rate, base + id);
+      renderEditFields(editForm, name, rate);
     }
-
     overlay.style.display = "flex";
-    setTimeout(function () {
-      var inp = document.getElementById("fn-modal-name");
-      if (inp) inp.focus();
-    }, 50);
+    setTimeout(function () { var inp = document.getElementById("fn-modal-name"); if (inp) inp.focus(); }, 50);
   };
-
-  function renderEditFields(container, name, rate, action) {
-    // Remove campos anteriores se houver
+  function renderEditFields(container, name, rate) {
     var prev = container.querySelector(".fn-edit-visible");
     if (prev) prev.remove();
-
     var div = document.createElement("div");
     div.className = "fn-edit-visible";
     div.innerHTML =
-      '<div style="margin-bottom:1rem;">' +
-        '<label class="form-label">Nome da função</label>' +
-        '<input type="text" id="fn-edit-visible-name" class="form-control" placeholder="Ex: Assistente de palco" autocomplete="off" value="' + escHtml(name || '') + '">' +
-      '</div>' +
-      '<div style="margin-bottom:1.5rem;">' +
-        '<label class="form-label">Valor por hora (R$)</label>' +
-        '<div style="position:relative;">' +
-          '<span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:#71717a;font-size:0.85rem;pointer-events:none;">R$</span>' +
-          '<input type="number" id="fn-edit-visible-rate" class="form-control" placeholder="0,00" step="0.01" min="0" style="padding-left:2rem;" value="' + (rate || '') + '">' +
-        '</div>' +
-      '</div>' +
+      '<div style="margin-bottom:1rem;"><label class="form-label">Nome da função</label>' +
+      '<input type="text" id="fn-edit-visible-name" class="form-control" placeholder="Ex: Assistente de palco" autocomplete="off" value="' + escHtml(name || '') + '"></div>' +
+      '<div style="margin-bottom:1.5rem;"><label class="form-label">Valor por hora (R$)</label>' +
+      '<div style="position:relative;"><span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:#71717a;font-size:0.85rem;pointer-events:none;">R$</span>' +
+      '<input type="number" id="fn-edit-visible-rate" class="form-control" placeholder="0,00" step="0.01" min="0" style="padding-left:2rem;" value="' + (rate || '') + '"></div></div>' +
       '<div style="display:flex;gap:0.5rem;justify-content:flex-end;">' +
-        '<button type="button" onclick="closeFnModal()" class="btn-secondary">Cancelar</button>' +
-        '<button type="submit" class="btn-primary"><i class="bi bi-check-lg"></i> Salvar</button>' +
-      '</div>';
-    container.insertBefore(div, container.querySelector("div[style*='display:flex']") || null);
-
-    // Antes de submeter, copia valores visíveis para os hidden fields
-    container.addEventListener("submit", function syncFields() {
+      '<button type="button" onclick="closeFnModal()" class="btn-secondary">Cancelar</button>' +
+      '<button type="submit" class="btn-primary"><i class="bi bi-check-lg"></i> Salvar</button></div>';
+    container.insertBefore(div, container.firstChild);
+    container.addEventListener("submit", function () {
       var vn = document.getElementById("fn-edit-visible-name");
       var vr = document.getElementById("fn-edit-visible-rate");
       if (vn) document.getElementById("fn-edit-name").value = vn.value;
       if (vr) document.getElementById("fn-edit-rate").value = vr.value;
     }, { once: false });
   }
-
-  function escHtml(str) {
-    return str.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-  }
-
-  window.closeFnModal = function () {
-    overlay.style.display = "none";
-  };
-
-  document.addEventListener("keydown", function (e) {
-    if (e.key === "Escape") closeFnModal();
-  });
+  function escHtml(str) { return str.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  window.closeFnModal = function () { overlay.style.display = "none"; };
+  document.addEventListener("keydown", function (e) { if (e.key === "Escape") closeFnModal(); });
 })();
 </script>
+<% end %>

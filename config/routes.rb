@@ -46,11 +46,18 @@ Rails.application.routes.draw do
       get :my_schedule
     end
   end
+  # Catálogo de funções (independente de evento)
+  resources :event_functions, only: [:index, :new, :create, :edit, :update, :destroy]
+
   resources :events do
     resource  :badge_config, only: [:edit, :update] do
       get :preview, on: :member
     end
-    resources :event_functions, only: [:index, :create, :update, :destroy]
+    resources :event_functions, only: [:index, :create, :update, :destroy] do
+      collection do
+        post :add_from_catalog
+      end
+    end
     resource :setup, only: [], controller: 'events/setup' do
       get  :sectors
       post :sectors,        action: :save_sectors

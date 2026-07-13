@@ -19,5 +19,5 @@ else
     cpf:      "52998224725"
   )
   admin.save!
-  puts "   Admin criado: admin@backstage.com / senha123"
+  puts "   Admin criado: admin@backstage.com / senha123 / CPF: #{admin.cpf}"
 end

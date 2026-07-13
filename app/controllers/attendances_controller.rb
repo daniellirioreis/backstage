@@ -191,10 +191,8 @@ class AttendancesController < ApplicationController
     @event_days = EventDay.where(event: @event).order(:date)
     @selected_date = if params[:date].present?
                        Date.parse(params[:date]) rescue Date.today
-                     elsif @event_days.any? { |ed| ed.date == Date.today }
-                       Date.today
                      else
-                       @event_days.first&.date || Date.today
+                       Date.today
                      end
 
     scope = Attendance.where(event: @event, checked_in_date: @selected_date)
@@ -228,8 +226,8 @@ class AttendancesController < ApplicationController
     # Totais para estatísticas (respeitam filtro de setor)
     membership_scope = TeamMembership.joins(team: :sector).where(sectors: { event_id: @event.id })
     membership_scope = membership_scope.where(sectors: { id: params[:sector_id] }) if params[:sector_id].present?
-    @total_collaborators = membership_scope.count
-    @total_substitutes   = membership_scope.where(substitute: true).count
+    @total_collaborators = membership_scope.distinct.count(:user_id)
+    @total_substitutes   = membership_scope.where(substitute: true).distinct.count(:user_id)
 
     @sectors = Sector.where(event_id: @event.id).order(:name)
 
@@ -242,10 +240,13 @@ class AttendancesController < ApplicationController
 
     checked_in_user_ids = Attendance.where(event: @event, checked_in_date: @selected_date).pluck(:user_id).to_set
 
-    # Horário previsto de saída por user (primeiro shift encontrado)
-    @expected_end_by_user = shifts_today.each_with_object({}) do |shift, h|
-      h[shift.user_id] ||= shift.end_time
+    # Shift completo por user (primeiro encontrado) — usado na listagem de check-ins
+    @shifts_today_by_user = shifts_today.each_with_object({}) do |shift, h|
+      h[shift.user_id] ||= shift
     end
+
+    # Horário previsto de saída por user (primeiro shift encontrado)
+    @expected_end_by_user = @shifts_today_by_user.transform_values(&:end_time)
 
     # Agrupa por user e monta lista de não chegaram
     from_shifts = shifts_today
@@ -262,26 +263,30 @@ class AttendancesController < ApplicationController
         }
       end
 
-    # Substitutos sem escala que ainda não fizeram check-in
+    # Membros sem escala que ainda não fizeram check-in (substitutos e regulares)
     shift_user_ids = from_shifts.map { |r| r[:user].id }.to_set
-    substitute_scope = TeamMembership
+    no_shift_scope = TeamMembership
       .joins(team: :sector)
-      .where(sectors: { event_id: @event.id }, substitute: true)
+      .where(sectors: { event_id: @event.id })
       .where.not(user_id: checked_in_user_ids + shift_user_ids)
       .includes(:event_function, user: { avatar_attachment: :blob }, team: :sector)
-    substitute_scope = substitute_scope.where(sectors: { id: params[:sector_id] }) if params[:sector_id].present?
+    no_shift_scope = no_shift_scope.where(sectors: { id: params[:sector_id] }) if params[:sector_id].present?
 
-    from_substitutes = substitute_scope.map do |tm|
-      {
+    # Deduplica por user_id (membro em mais de uma equipe aparece uma vez)
+    seen_ids = Set.new
+    from_no_shift = no_shift_scope.each_with_object([]) do |tm, arr|
+      next if seen_ids.include?(tm.user_id)
+      seen_ids.add(tm.user_id)
+      arr << {
         user:            tm.user,
         team:            tm.team,
         shifts:          [],
         credential_code: @credential_codes[tm.user_id],
-        substitute:      true
+        substitute:      @substitute_user_ids.include?(tm.user_id)
       }
     end
 
-    @not_checked_in = (from_shifts + from_substitutes).sort_by { |r| r[:user].name }
+    @not_checked_in = (from_shifts + from_no_shift).sort_by { |r| r[:user].name }
   end
 
   private

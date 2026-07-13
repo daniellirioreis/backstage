@@ -1,184 +1,222 @@
 <%# ── Cabeçalho ──────────────────────────────────────────────────────────── %>
-<div style="background:#0d0d0d; color:#fff; padding:1rem 1.25rem; border-radius:12px; margin-bottom:1rem;">
-  <div style="font-size:0.65rem; color:#52525b; text-transform:uppercase; letter-spacing:.1em; margin-bottom:0.3rem; display:flex; align-items:center; gap:0.4rem;">
-    <% if @event.active? %>
-      <span style="width:7px;height:7px;border-radius:50%;background:#2563eb;display:inline-block;animation:pulse-dot 1.5s infinite;flex-shrink:0;"></span>
-    <% end %>
-    Painel do coordenador
-  </div>
-  <h1 style="font-size:1.2rem; font-weight:700; color:#fff; margin:0 0 0.3rem;"><%= @team.name %></h1>
-  <div style="font-size:0.75rem; color:#a1a1aa; display:flex; gap:0.75rem; flex-wrap:wrap;">
-    <span><i class="bi bi-diagram-3"></i> <%= @team.sector.name %></span>
-    <span style="color:#3f3f46;">·</span>
-    <span><i class="bi bi-calendar-event"></i> <%= @event.name %></span>
-    <span style="color:#3f3f46;">·</span>
-    <span style="padding:1px 8px; border-radius:99px; font-size:0.65rem; font-weight:700;
-      background:<%= @event.active? ? '#14532d' : '#27272a' %>;
-      color:<%= @event.active? ? '#4ade80' : '#a1a1aa' %>;">
-      <%= t("event_statuses.#{@event.status}") %>
-    </span>
-  </div>
-</div>
-
-<%# ── 4 stats ──────────────────────────────────────────────────────────── %>
-<div style="display:grid; grid-template-columns:repeat(4,1fr); gap:0.5rem; margin-bottom:1rem;">
-  <div class="content-card" style="padding:0.65rem 0.5rem; text-align:center;">
-    <div style="font-size:1.5rem; font-weight:800; color:#16a34a; line-height:1;"><%= @present_today %></div>
-    <div style="font-size:0.62rem; color:#71717a; margin-top:0.2rem; text-transform:uppercase; letter-spacing:.04em;">presentes</div>
-  </div>
-  <div class="content-card" style="padding:0.65rem 0.5rem; text-align:center;">
-    <div style="font-size:1.5rem; font-weight:800; color:<%= @active_now > 0 ? '#d97706' : '#a1a1aa' %>; line-height:1;"><%= @active_now %></div>
-    <div style="font-size:0.62rem; color:#71717a; margin-top:0.2rem; text-transform:uppercase; letter-spacing:.04em;">em atividade</div>
-  </div>
-  <div class="content-card" style="padding:0.65rem 0.5rem; text-align:center;">
-    <div style="font-size:1.5rem; font-weight:800; color:<%= @absent_today > 0 ? '#dc2626' : '#a1a1aa' %>; line-height:1;"><%= @absent_today %></div>
-    <div style="font-size:0.62rem; color:#71717a; margin-top:0.2rem; text-transform:uppercase; letter-spacing:.04em;">ausentes</div>
-  </div>
-  <div class="content-card" style="padding:0.65rem 0.5rem; text-align:center;">
-    <div style="font-size:1.5rem; font-weight:800; color:#71717a; line-height:1;"><%= @total_members %></div>
-    <div style="font-size:0.62rem; color:#71717a; margin-top:0.2rem; text-transform:uppercase; letter-spacing:.04em;">total</div>
-  </div>
-</div>
-
-<%# ── Barra de presença ─────────────────────────────────────────────────── %>
-<% pct = @total_members > 0 ? (@present_today * 100 / @total_members) : 0 %>
-<% bar_color = pct >= 80 ? '#16a34a' : pct >= 50 ? '#d97706' : '#dc2626' %>
-<div class="content-card" style="padding:0.75rem 1rem; margin-bottom:1rem;">
-  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.4rem;">
-    <span style="font-size:0.75rem; font-weight:600; color:#18181b;">Presença da equipe</span>
-    <span style="font-size:0.8rem; font-weight:800; color:<%= bar_color %>;"><%= pct %>%</span>
-  </div>
-  <div style="height:6px; background:#f4f4f5; border-radius:99px; overflow:hidden;">
-    <div style="height:100%; width:<%= pct %>%; background:<%= bar_color %>; border-radius:99px; transition:width .4s;"></div>
-  </div>
-  <div style="font-size:0.65rem; color:#a1a1aa; margin-top:0.35rem; display:flex; justify-content:space-between;">
-    <span><%= @present_today %> de <%= @total_members %> membros · <%= l(Date.today, format: :short) %></span>
-    <% shift_times = @shifts_today.values.first %>
-    <% if shift_times %>
-      <span>turno: <%= shift_times.start_time.strftime("%H:%M") %> – <%= shift_times.end_time.strftime("%H:%M") %></span>
-    <% end %>
-  </div>
-</div>
-
-<%# ── Alerta de ausências ───────────────────────────────────────────────── %>
-<% if @absent_today > 0 %>
-  <div style="background:#fef2f2; border:1px solid #fecaca; border-radius:8px; padding:0.65rem 1rem; margin-bottom:1rem; display:flex; align-items:center; gap:0.5rem; font-size:0.8rem; color:#b91c1c; font-weight:600;">
-    <i class="bi bi-exclamation-triangle-fill"></i>
-    <%= @absent_today %> <%= @absent_today == 1 ? "colaborador ainda não fez check-in" : "colaboradores ainda não fizeram check-in" %>
-  </div>
-<% end %>
-
-<%# ── Ações rápidas ──────────────────────────────────────────────────────── %>
-<div style="display:grid; grid-template-columns:1fr 1fr; gap:0.5rem; margin-bottom:1.25rem;">
-  <% if policy(:attendance).scan? %>
-    <%= link_to scan_attendances_path, style: "background:#18181b; color:#fff; border-radius:8px; padding:0.75rem 1rem; display:flex; align-items:center; justify-content:center; gap:0.5rem; text-decoration:none; font-size:0.82rem; font-weight:600;" do %>
-      <i class="bi bi-qr-code-scan"></i> Escanear QR
-    <% end %>
-  <% end %>
-  <%= link_to credentials_team_path(@team, format: :html), style: "background:#fff; color:#18181b; border:1px solid #e4e4e7; border-radius:8px; padding:0.75rem 1rem; display:flex; align-items:center; justify-content:center; gap:0.5rem; text-decoration:none; font-size:0.82rem; font-weight:600;" do %>
-    <i class="bi bi-person-badge"></i> Credenciais
-  <% end %>
-</div>
-
-<%# ── Helpers de status ──────────────────────────────────────────────────── %>
 <%
-  def_status_color = ->(s) { s == :present ? '#16a34a' : s == :active ? '#d97706' : '#dc2626' }
-  def_status_bg    = ->(s) { s == :present ? '#f0fdf4' : s == :active ? '#fffbeb' : '#fef2f2' }
-  def_status_label = ->(s) { s == :present ? 'presente' : s == :active ? 'em atividade' : 'ausente' }
-  def_border_color = ->(s) { s == :present ? '#22c55e' : s == :active ? '#f59e0b' : '#ef4444' }
+  pct     = @total_scheduled > 0 ? ((@present_today + @active_now) * 100 / @total_scheduled) : 0
+  bar_col = pct >= 80 ? '#16a34a' : pct >= 50 ? '#d97706' : '#dc2626'
 
   absent_members  = @memberships.select { |tm| @member_status[tm.user_id] == :absent }
   active_members  = @memberships.select { |tm| @member_status[tm.user_id] == :active }
   present_members = @memberships.select { |tm| @member_status[tm.user_id] == :present }
+
+  status_color = ->(s) { s == :present ? '#16a34a' : s == :active ? '#2563eb' : '#dc2626' }
+  status_bg    = ->(s) { s == :present ? '#f0fdf4' : s == :active ? '#eff6ff' : '#fef2f2' }
+  status_label = ->(s) { s == :present ? 'presente' : s == :active ? 'em atividade' : 'ausente' }
+  border_color = ->(s) { s == :present ? '#22c55e' : s == :active ? '#3b82f6' : '#ef4444' }
 %>
 
-<%# ── Macro para renderizar linha de membro ─────────────────────────────── %>
-<% render_member = ->(tm, status) do
-  att      = @all_attendances[tm.user_id]
-  shift    = @shifts_today[tm.user_id]
-  initials = tm.user.name.split.map(&:first).first(2).join.upcase
-  sc       = def_status_color.(status)
-  sb       = def_status_bg.(status)
-  sl       = def_status_label.(status)
-  bc       = def_border_color.(status)
-%>
-  <div style="display:flex; align-items:center; gap:0.75rem; padding:0.75rem 1rem; background:#fff; border-radius:0 8px 8px 0; border:0.5px solid #e4e4e7; border-left:3px solid <%= bc %>; margin-bottom:6px;">
-    <div style="width:36px; height:36px; border-radius:50%; background:<%= sb %>; display:flex; align-items:center; justify-content:center; font-size:0.75rem; font-weight:700; color:<%= sc %>; flex-shrink:0; position:relative;">
-      <% if tm.user.avatar.attached? %>
-        <%= image_tag tm.user.avatar, style:"width:100%;height:100%;object-fit:cover;border-radius:50%;" %>
-      <% else %>
-        <%= initials %>
+<%# ══ Card único ══════════════════════════════════════════════════════════ %>
+<div style="border:1px solid #e4e4e7; border-radius:14px; overflow:hidden; margin-bottom:1.25rem; box-shadow:0 1px 4px rgba(0,0,0,0.06);">
+
+  <%# ── Header escuro ── %>
+  <div style="background:#0d0d0d; padding:1rem 1.25rem;">
+    <div style="font-size:0.65rem; color:#52525b; text-transform:uppercase; letter-spacing:.1em; margin-bottom:0.25rem; display:flex; align-items:center; gap:0.4rem;">
+      <% if @event.active? %>
+        <span style="width:7px;height:7px;border-radius:50%;background:#2563eb;display:inline-block;animation:pulse-dot 1.5s infinite;flex-shrink:0;"></span>
       <% end %>
+      Painel do coordenador
     </div>
-
-    <div style="flex:1; min-width:0;">
-      <div style="font-size:0.85rem; font-weight:700; color:#18181b; display:flex; align-items:center; gap:0.35rem; flex-wrap:wrap;">
-        <%= tm.user.name %>
-        <% if tm.coordinator? %>
-          <span style="font-size:0.6rem; background:#18181b; color:#fff; padding:1px 6px; border-radius:99px;">coord.</span>
+    <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:0.75rem;">
+      <div>
+        <div style="font-size:1.05rem; font-weight:700; color:#fff; margin-bottom:0.2rem;"><%= @team.name %></div>
+        <div style="font-size:0.73rem; color:#a1a1aa; display:flex; gap:0.6rem; flex-wrap:wrap; align-items:center;">
+          <span><i class="bi bi-diagram-3"></i> <%= @team.sector.name %></span>
+          <span style="color:#3f3f46;">·</span>
+          <span><i class="bi bi-calendar-event"></i> <%= @event.name %></span>
+          <span style="color:#3f3f46;">·</span>
+          <span style="padding:1px 8px; border-radius:99px; font-size:0.62rem; font-weight:700;
+            background:<%= @event.active? ? '#14532d' : '#27272a' %>;
+            color:<%= @event.active? ? '#4ade80' : '#a1a1aa' %>;">
+            <%= t("event_statuses.#{@event.status}") %>
+          </span>
+        </div>
+      </div>
+      <%# ── Stats ── %>
+      <div style="display:flex; gap:0.4rem; flex-wrap:wrap; align-items:center;">
+        <% if policy(:attendance).scan? %>
+          <%= link_to scan_attendances_path,
+              style: "display:flex; flex-direction:column; align-items:center; background:#1a1a1a; border:1px solid #16a34a; border-radius:8px; padding:0.35rem 0.65rem; min-width:44px; text-decoration:none; cursor:pointer;",
+              title: "Escanear QR" do %>
+            <i class="bi bi-qr-code-scan" style="font-size:1rem; color:#16a34a; line-height:1.2;"></i>
+            <span style="font-size:0.55rem; color:#16a34a; text-transform:uppercase; letter-spacing:.05em; margin-top:2px; font-weight:700;">scan</span>
+          <% end %>
+        <% end %>
+        <div style="display:flex; flex-direction:column; align-items:center; background:#1a1a1a; border-radius:8px; padding:0.35rem 0.65rem; min-width:44px; cursor:default;"
+             title="Presentes: fez check-in e check-out — turno encerrado">
+          <span style="font-size:1.1rem; font-weight:800; color:#16a34a; line-height:1;"><%= @present_today %></span>
+          <span style="font-size:0.55rem; color:#52525b; text-transform:uppercase; letter-spacing:.05em; margin-top:2px;">pres.</span>
+        </div>
+        <div style="display:flex; flex-direction:column; align-items:center; background:#1a1a1a; border-radius:8px; padding:0.35rem 0.65rem; min-width:44px; cursor:default;"
+             title="Em atividade: fez check-in mas ainda não fez check-out">
+          <span style="font-size:1.1rem; font-weight:800; color:<%= @active_now > 0 ? '#2563eb' : '#3f3f46' %>; line-height:1;"><%= @active_now %></span>
+          <span style="font-size:0.55rem; color:#52525b; text-transform:uppercase; letter-spacing:.05em; margin-top:2px;">ativ.</span>
+        </div>
+        <div style="display:flex; flex-direction:column; align-items:center; background:#1a1a1a; border-radius:8px; padding:0.35rem 0.65rem; min-width:44px; cursor:default;"
+             title="Ausentes: tem escala hoje mas não fez check-in">
+          <span style="font-size:1.1rem; font-weight:800; color:<%= @absent_today > 0 ? '#dc2626' : '#3f3f46' %>; line-height:1;"><%= @absent_today %></span>
+          <span style="font-size:0.55rem; color:#52525b; text-transform:uppercase; letter-spacing:.05em; margin-top:2px;">aus.</span>
+        </div>
+        <div style="display:flex; flex-direction:column; align-items:center; background:#1a1a1a; border-radius:8px; padding:0.35rem 0.65rem; min-width:44px; border:1px solid #27272a; cursor:default;"
+             title="Escalados: total de membros com escala para hoje">
+          <span style="font-size:1.1rem; font-weight:800; color:#71717a; line-height:1;"><%= @total_scheduled %></span>
+          <span style="font-size:0.55rem; color:#52525b; text-transform:uppercase; letter-spacing:.05em; margin-top:2px;">esc.</span>
+        </div>
+        <% if @unscheduled_checkin > 0 %>
+          <div style="display:flex; flex-direction:column; align-items:center; background:#1a1a1a; border-radius:8px; padding:0.35rem 0.65rem; min-width:44px; border:1px solid #d97706; cursor:default;"
+               title="Check-ins extras: fizeram check-in mas não têm escala para hoje">
+            <span style="font-size:1.1rem; font-weight:800; color:#d97706; line-height:1;">+<%= @unscheduled_checkin %></span>
+            <span style="font-size:0.55rem; color:#d97706; text-transform:uppercase; letter-spacing:.05em; margin-top:2px;">extra</span>
+          </div>
         <% end %>
       </div>
-      <div style="font-size:0.7rem; color:#71717a; margin-top:1px;"><%= tm.event_function&.name || "Sem função definida" %></div>
-      <% if shift %>
-        <div style="font-size:0.65rem; color:#a1a1aa; margin-top:1px;">
-          <i class="bi bi-clock" style="font-size:0.6rem;"></i>
-          <%= shift.start_time.strftime("%H:%M") %> – <%= shift.end_time.strftime("%H:%M") %>
-        </div>
-      <% end %>
-      <% if att && status == :active %>
-        <div style="font-size:0.65rem; color:#d97706; margin-top:1px;">
-          <i class="bi bi-circle-fill" style="font-size:0.4rem; animation:pulse-dot 1.5s infinite;"></i>
-          Check-in às <%= att.checked_in_at.strftime("%H:%M") %>
-        </div>
-      <% elsif att && status == :present %>
-        <div style="font-size:0.65rem; color:#16a34a; margin-top:1px;">
-          <i class="bi bi-check-circle"></i>
-          <%= att.checked_in_at.strftime("%H:%M") %> – <%= att.checked_out_at&.strftime("%H:%M") || "—" %>
-        </div>
-      <% end %>
     </div>
 
-    <div style="text-align:right; flex-shrink:0;">
-      <span style="font-size:0.65rem; font-weight:700; color:<%= sc %>; background:<%= sb %>; padding:2px 8px; border-radius:99px; display:block; margin-bottom:4px;"><%= sl %></span>
-      <% if tm.user.phone.present? %>
-        <a href="tel:<%= tm.user.phone.gsub(/\D/, '') %>" style="font-size:0.68rem; color:#3b82f6; display:flex; align-items:center; justify-content:flex-end; gap:2px; text-decoration:none;">
-          <i class="bi bi-telephone" style="font-size:0.6rem;"></i> ligar
-        </a>
-      <% end %>
+    <%# ── Barra de presença ── %>
+    <div style="margin-top:0.85rem;">
+      <div style="display:flex; justify-content:flex-end; margin-bottom:0.3rem;">
+        <span style="font-size:0.82rem; font-weight:800; color:<%= bar_col %>;"><%= pct %>%</span>
+      </div>
+      <div style="height:4px; background:#1a1a1a; border-radius:99px; overflow:hidden;">
+        <div style="height:100%; width:<%= pct %>%; background:<%= bar_col %>; border-radius:99px; transition:width 0.4s ease;"></div>
+      </div>
+      <div style="font-size:0.6rem; color:#3f3f46; margin-top:0.25rem;"><%= @present_today + @active_now %> de <%= @total_scheduled %> membros confirmados · <%= l(Date.today, format: :short) %></div>
+    </div>
+
+    <%# ── Legenda ── %>
+    <div style="display:flex; flex-wrap:wrap; gap:0.75rem; margin-top:0.85rem; padding-top:0.75rem; border-top:1px solid #1f1f1f;">
+      <span style="font-size:0.6rem; color:#a1a1aa; display:flex; align-items:center; gap:0.3rem;">
+        <span style="width:8px; height:8px; border-radius:50%; background:#16a34a; flex-shrink:0;"></span>
+        <strong style="color:#fff;">Pres.</strong> — turno encerrado (check-in + check-out)
+      </span>
+      <span style="font-size:0.6rem; color:#a1a1aa; display:flex; align-items:center; gap:0.3rem;">
+        <span style="width:8px; height:8px; border-radius:50%; background:#2563eb; flex-shrink:0;"></span>
+        <strong style="color:#fff;">Ativ.</strong> — em serviço agora (check-in sem check-out)
+      </span>
+      <span style="font-size:0.6rem; color:#a1a1aa; display:flex; align-items:center; gap:0.3rem;">
+        <span style="width:8px; height:8px; border-radius:50%; background:#dc2626; flex-shrink:0;"></span>
+        <strong style="color:#fff;">Aus.</strong> — tem escala hoje mas não fez check-in
+      </span>
+      <span style="font-size:0.6rem; color:#a1a1aa; display:flex; align-items:center; gap:0.3rem;">
+        <span style="width:8px; height:8px; border-radius:2px; background:#27272a; border:1px solid #3f3f46; flex-shrink:0;"></span>
+        <strong style="color:#fff;">Esc.</strong> — total escalado para hoje
+      </span>
     </div>
   </div>
-<% end %>
 
-<%# ── Seção: precisam de atenção ─────────────────────────────────────────── %>
-<% if absent_members.any? %>
-  <div style="font-size:0.68rem; font-weight:700; color:#52525b; text-transform:uppercase; letter-spacing:.07em; margin-bottom:0.5rem;">
-    <i class="bi bi-exclamation-circle" style="color:#dc2626;"></i> Precisam de atenção
-  </div>
-  <% absent_members.each { |tm| render_member.(tm, :absent) } %>
-<% end %>
+  <%# ── Corpo do card (fundo claro) ── %>
+  <div style="padding:1rem 1.25rem;">
 
-<%# ── Seção: em atividade ────────────────────────────────────────────────── %>
-<% if active_members.any? %>
-  <div style="font-size:0.68rem; font-weight:700; color:#52525b; text-transform:uppercase; letter-spacing:.07em; margin-bottom:0.5rem; margin-top:<%= absent_members.any? ? '1rem' : '0' %>;">
-    <i class="bi bi-circle-fill" style="color:#d97706; font-size:0.5rem;"></i> Em atividade agora
-  </div>
-  <% active_members.each { |tm| render_member.(tm, :active) } %>
-<% end %>
+    <%# ── Alerta ausências ── %>
+    <% if @absent_today > 0 %>
+      <div style="background:#fef2f2; border:1px solid #fecaca; border-radius:8px; padding:0.5rem 0.85rem; margin-bottom:0.85rem; display:flex; align-items:center; gap:0.5rem; font-size:0.75rem; color:#b91c1c; font-weight:600;">
+        <i class="bi bi-exclamation-triangle-fill"></i>
+        <%= @absent_today %> <%= @absent_today == 1 ? "colaborador ainda não fez check-in" : "colaboradores ainda não fizeram check-in" %>
+      </div>
+    <% end %>
 
-<%# ── Seção: confirmados ─────────────────────────────────────────────────── %>
-<% if present_members.any? %>
-  <div style="font-size:0.68rem; font-weight:700; color:#52525b; text-transform:uppercase; letter-spacing:.07em; margin-bottom:0.5rem; margin-top:<%= (absent_members.any? || active_members.any?) ? '1rem' : '0' %>;">
-    <i class="bi bi-check-circle-fill" style="color:#16a34a;"></i> Confirmados
-  </div>
-  <% present_members.each { |tm| render_member.(tm, :present) } %>
-<% end %>
+    <%# ── Lista de membros agrupada por status ── %>
+    <% [[absent_members, :absent, "Precisam de atenção", "bi-exclamation-circle", "#dc2626"],
+        [active_members, :active, "Em atividade agora", "bi-circle-fill", "#2563eb"],
+        [present_members, :present, "Confirmados", "bi-check-circle-fill", "#16a34a"]].each do |members, status, label, icon, icon_color| %>
+      <% next if members.empty? %>
+      <div style="font-size:0.65rem; font-weight:700; color:#52525b; text-transform:uppercase; letter-spacing:.07em; margin-bottom:0.4rem; margin-top:0.75rem;">
+        <i class="bi <%= icon %>" style="color:<%= icon_color %>;"></i> <%= label %>
+      </div>
+      <% members.each do |tm|
+        att        = @all_attendances[tm.user_id]
+        shift      = @shifts_today[tm.user_id]
+        next_shift = shift ? nil : @next_shifts[tm.user_id]
+        inits  = tm.user.name.split.map(&:first).first(2).join.upcase
+        sc     = status_color.(status)
+        sb     = status_bg.(status)
+        sl     = status_label.(status)
+        bc     = border_color.(status)
+      %>
+        <div style="display:flex; align-items:center; gap:0.7rem; padding:0.65rem 0.9rem; background:#fff; border-radius:0 8px 8px 0; border:0.5px solid #e4e4e7; border-left:3px solid <%= bc %>; margin-bottom:5px;">
+          <div style="width:34px; height:34px; border-radius:50%; background:<%= sb %>; display:flex; align-items:center; justify-content:center; font-size:0.72rem; font-weight:700; color:<%= sc %>; flex-shrink:0;">
+            <% if tm.user.avatar.attached? %>
+              <%= image_tag tm.user.avatar, style:"width:100%;height:100%;object-fit:cover;border-radius:50%;" %>
+            <% else %>
+              <%= inits %>
+            <% end %>
+          </div>
+          <div style="flex:1; min-width:0;">
+            <div style="display:flex; align-items:center; gap:0.4rem; flex-wrap:wrap;">
+              <span style="font-size:0.82rem; font-weight:700; color:#18181b;"><%= tm.user.name %></span>
+              <% if tm.coordinator? %>
+                <span style="font-size:0.6rem; background:#18181b; color:#fff; padding:1px 6px; border-radius:99px;">coord.</span>
+              <% end %>
+              <% if tm.credential_code.present? %>
+                <span style="font-family:monospace; font-size:0.62rem; font-weight:700; background:#f4f4f5; border:1px solid #e4e4e7; border-radius:4px; padding:1px 5px; color:#52525b; letter-spacing:0.04em;"><%= tm.credential_code %></span>
+              <% end %>
+              <% if next_shift %>
+                <span style="font-size:0.58rem; font-weight:700; background:#fff7ed; border:1px solid #fed7aa; color:#c2410c; border-radius:4px; padding:1px 5px;">
+                  <i class="bi bi-calendar3" style="font-size:0.52rem;"></i>
+                  escalado <%= l(next_shift.date, format: :short) %>
+                </span>
+              <% elsif !shift %>
+                <span style="font-size:0.58rem; font-weight:700; background:#f4f4f5; border:1px solid #e4e4e7; color:#71717a; border-radius:4px; padding:1px 5px;">sem escala</span>
+              <% end %>
+            </div>
+            <div style="font-size:0.68rem; color:#71717a;"><%= tm.event_function&.name || "Sem função" %></div>
+            <% if shift %>
+              <div style="font-size:0.63rem; color:#a1a1aa;"><i class="bi bi-clock" style="font-size:0.58rem;"></i> <%= l(shift.date, format: :short) %> · <%= shift.start_time.strftime("%H:%M") %> – <%= shift.end_time.strftime("%H:%M") %></div>
+            <% end %>
+            <% if att && status == :active %>
+              <div style="font-size:0.63rem; color:#2563eb;"><i class="bi bi-circle-fill" style="font-size:0.4rem;"></i> Check-in <%= l(att.checked_in_at.to_date, format: :short) %> às <%= att.checked_in_at.strftime("%H:%M") %></div>
+            <% elsif att && status == :present %>
+              <div style="font-size:0.63rem; color:#16a34a;"><i class="bi bi-check-circle"></i> <%= l(att.checked_in_at.to_date, format: :short) %> · <%= att.checked_in_at.strftime("%H:%M") %> – <%= att.checked_out_at&.strftime("%H:%M") || "—" %></div>
+            <% end %>
+          </div>
+          <div style="text-align:right; flex-shrink:0;">
+            <span style="font-size:0.62rem; font-weight:700; color:<%= sc %>; background:<%= sb %>; padding:2px 7px; border-radius:99px; display:block; margin-bottom:3px;"><%= sl %></span>
+            <% if tm.user.phone.present? %>
+              <% phone_digits = tm.user.phone.gsub(/\D/, '') %>
+              <% wa_number = phone_digits.start_with?('55') ? phone_digits : "55#{phone_digits}" %>
+              <a href="https://wa.me/<%= wa_number %>" target="_blank" rel="noopener" style="font-size:0.65rem; color:#16a34a; display:flex; align-items:center; justify-content:flex-end; gap:2px; text-decoration:none;">
+                <i class="bi bi-whatsapp" style="font-size:0.7rem;"></i> WhatsApp
+              </a>
+            <% end %>
+          </div>
+        </div>
+      <% end %>
+    <% end %>
 
-<% if @memberships.empty? %>
-  <div class="content-card" style="text-align:center; padding:2rem; color:#a1a1aa;">
-    <i class="bi bi-people" style="font-size:1.5rem; display:block; margin-bottom:0.5rem;"></i>
-    <p style="margin:0; font-size:0.85rem;">Nenhum membro nesta equipe.</p>
-  </div>
-<% end %>
+    <% if @memberships.empty? && @total_members == 0 %>
+      <p style="font-size:0.82rem; color:#a1a1aa; text-align:center; padding:1rem 0;">Nenhum membro nesta equipe.</p>
+    <% end %>
+
+    <%# ── Aviso: membros sem escala ── %>
+    <% if @memberships_no_shift.any? %>
+      <div style="display:flex; align-items:flex-start; gap:0.6rem; background:#fffbeb; border:1px solid #fde68a; border-radius:8px; padding:0.65rem 0.85rem; margin-top:0.75rem;">
+        <i class="bi bi-exclamation-triangle-fill" style="color:#d97706; font-size:0.9rem; flex-shrink:0; margin-top:2px;"></i>
+        <div style="flex:1; min-width:0;">
+          <div style="font-size:0.78rem; font-weight:700; color:#92400e; margin-bottom:0.3rem;">
+            Sem escala para hoje (<%= @memberships_no_shift.size %>)
+          </div>
+          <% @memberships_no_shift.each do |tm| %>
+            <div style="display:flex; align-items:center; gap:0.4rem; font-size:0.72rem; color:#b45309; margin-bottom:2px;">
+              <i class="bi bi-person" style="font-size:0.65rem; flex-shrink:0;"></i>
+              <span><%= tm.user.name %></span>
+              <% if tm.event_function.present? %>
+                <span style="color:#d97706; font-size:0.65rem;">· <%= tm.event_function.name %></span>
+              <% end %>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    <% end %>
+
+  </div><%# /corpo %>
+</div><%# /card %>
 
 <style>
   @keyframes pulse-dot { 0%,100%{opacity:1} 50%{opacity:.35} }

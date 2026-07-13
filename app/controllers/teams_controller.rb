@@ -109,13 +109,13 @@ class TeamsController < ApplicationController
 
     @event = @team.sector.event
 
-    @memberships = TeamMembership
+    all_memberships = TeamMembership
       .where(team_id: @team.id)
       .includes(:event_function, user: { avatar_attachment: :blob })
       .joins(:user)
-      .order(role: :desc, "users.name": :asc)   # coordenadores aparecem primeiro
+      .order(role: :desc, "users.name": :asc)
 
-    user_ids = @memberships.map(&:user_id)
+    user_ids = all_memberships.map(&:user_id)
 
     # Presenças de hoje neste evento
     today_attendances = Attendance
@@ -135,13 +135,34 @@ class TeamsController < ApplicationController
       .where("date <= ? AND (end_date IS NULL OR end_date >= ?)", Date.today, Date.today)
       .index_by(&:user_id)
 
-    @total_members = @memberships.size
-    @present_today = today_attendances.size
-    @active_now    = today_attendances.values.count { |a| a.checked_out_at.nil? }
-    @absent_today  = @total_members - @present_today
+    # Próximas escalas para membros sem turno hoje
+    scheduled_ids        = @shifts_today.keys
+    unscheduled_user_ids = user_ids - scheduled_ids
+    @next_shifts = Shift
+      .where(user_id: unscheduled_user_ids, sector_id: @team.sector_id)
+      .where("date >= ?", Date.today)
+      .order(:date)
+      .group_by(&:user_id)
+      .transform_values(&:first)
+
+    # Lista principal: tem escala hoje OU fez check-in hoje (sem escala)
+    @memberships         = all_memberships.select { |tm| @shifts_today.key?(tm.user_id) || today_attendances.key?(tm.user_id) }
+    @memberships_no_shift = all_memberships.reject { |tm| @shifts_today.key?(tm.user_id) || today_attendances.key?(tm.user_id) }
+
+    @total_members = all_memberships.size
+
+    # Stats baseados nos membros com escala (expectativa do dia)
+    scheduled_att        = today_attendances.select { |uid, _| scheduled_ids.include?(uid) }
+    unscheduled_checkin  = today_attendances.reject { |uid, _| scheduled_ids.include?(uid) }
+
+    @total_scheduled     = scheduled_ids.size
+    @present_today       = scheduled_att.values.count { |a| a.checked_out_at.present? }
+    @active_now          = scheduled_att.values.count { |a| a.checked_out_at.nil? }
+    @absent_today        = scheduled_ids.size - scheduled_att.size
+    @unscheduled_checkin = unscheduled_checkin.size
 
     # Para a view saber o status de cada membro
-    @member_status = @memberships.each_with_object({}) do |tm, h|
+    @member_status = all_memberships.each_with_object({}) do |tm, h|
       att = today_attendances[tm.user_id]
       h[tm.user_id] = if att.nil?
         :absent

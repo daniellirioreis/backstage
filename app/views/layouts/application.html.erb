@@ -155,8 +155,13 @@
             <% end %>
           <% end %>
 
-          <% if policy(User).index? || current_user.admin? %>
+          <% if policy(User).index? || current_user.admin? || policy(EventFunction.new).index? %>
             <div class="sidebar-section">Administração</div>
+          <% end %>
+          <% if policy(EventFunction.new).index? %>
+            <%= link_to event_functions_path, class: "sidebar-link #{controller_name == 'event_functions' ? 'active' : ''}" do %>
+              <i class="bi bi-briefcase"></i> Funções
+            <% end %>
           <% end %>
 
           <% if policy(User).index? %>

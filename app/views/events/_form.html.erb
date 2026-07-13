@@ -212,27 +212,91 @@
       </div>
 
       <%# ── Funções e valores/hora ── %>
+        <% ef_catalog = EventFunction.catalog.order(:name) %>
         <div id="ftab-funcoes" class="form-tab-panel" style="display:none;">
-          <% if event.persisted? %>
-            <% fn_count = event.event_functions.count %>
-            <div style="display:flex;align-items:center;justify-content:space-between;gap:1rem;padding:1rem;background:#f9f9fb;border:1px solid #e4e4e7;border-radius:10px;">
-              <div>
-                <div style="font-size:0.88rem;font-weight:600;color:#18181b;">
-                  <i class="bi bi-briefcase" style="color:#7c3aed;"></i>
-                  <%= fn_count > 0 ? "#{fn_count} função#{'ões' if fn_count != 1} cadastrada#{'s' if fn_count != 1}" : "Nenhuma função cadastrada" %>
-                </div>
-                <div style="font-size:0.75rem;color:#71717a;margin-top:0.2rem;">
-                  Gerencie as funções e valores por hora em uma página dedicada.
-                </div>
-              </div>
-              <%= link_to event_event_functions_path(event), class: "btn-primary", style: "white-space:nowrap;font-size:0.82rem;" do %>
-                <i class="bi bi-arrow-right"></i> Gerenciar funções
+          <% if ef_catalog.empty? %>
+            <div style="text-align:center;padding:2rem;background:#f9f9fb;border:1px dashed #d4d4d8;border-radius:10px;color:#71717a;">
+              <i class="bi bi-bookmark-star" style="font-size:1.5rem;display:block;margin-bottom:0.5rem;color:#7c3aed;opacity:0.5;"></i>
+              <p style="margin:0 0 0.75rem;font-size:0.85rem;">Nenhuma função no catálogo ainda.</p>
+              <%= link_to new_event_function_path, target: "_blank", class: "btn-secondary", style: "font-size:0.82rem;" do %>
+                <i class="bi bi-plus-circle"></i> Cadastrar funções no catálogo
               <% end %>
             </div>
           <% else %>
-            <div style="text-align:center;padding:2rem;background:#f9f9fb;border:1px dashed #d4d4d8;border-radius:10px;color:#71717a;">
-              <i class="bi bi-briefcase" style="font-size:1.5rem;display:block;margin-bottom:0.5rem;"></i>
-              <p style="margin:0;font-size:0.85rem;">Salve o evento primeiro para cadastrar funções.</p>
+            <div style="margin-bottom:0.6rem;">
+              <span style="font-size:0.76rem;color:#71717a;">
+                <i class="bi bi-info-circle"></i> Selecione as funções do catálogo. O valor por hora pode ser ajustado para este evento.
+              </span>
+            </div>
+
+            <div id="ef-rows" style="display:flex;flex-direction:column;gap:0.4rem;">
+              <% event.event_functions.each do |ef| %>
+                <%= f.fields_for :event_functions, ef do |ff| %>
+                  <div class="ef-row" style="display:flex;align-items:center;gap:0.5rem;padding:0.5rem 0.65rem;border:1px solid #e4e4e7;border-radius:8px;background:#fff;">
+                    <div style="flex:1;">
+                      <%= ff.select :name,
+                          ef_catalog.map { |cf| [cf.name, cf.name] },
+                          { include_blank: "— Selecione uma função —" },
+                          class: "form-select form-control ef-name-select",
+                          style: "font-size:0.85rem;",
+                          onchange: "efSelectChange(this)" %>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:0.3rem;flex-shrink:0;">
+                      <span style="font-size:0.78rem;color:#71717a;">R$</span>
+                      <%= ff.number_field :hourly_rate, class: "form-control ef-rate-input",
+                          placeholder: "0,00", step: "0.01", min: 0,
+                          style: "width:90px;font-size:0.82rem;font-weight:600;color:#16a34a;text-align:right;" %>
+                      <span style="font-size:0.72rem;color:#71717a;">/h</span>
+                    </div>
+                    <% if ef.persisted? %>
+                      <%= ff.check_box :_destroy, { style: "display:none;", class: "ef-destroy-cb" }, "1", "0" %>
+                      <button type="button" onclick="toggleEfDestroy(this)"
+                              style="background:none;border:none;color:#a1a1aa;cursor:pointer;font-size:0.85rem;padding:2px;line-height:1;flex-shrink:0;">
+                        <i class="bi bi-x"></i>
+                      </button>
+                    <% else %>
+                      <button type="button" onclick="this.closest('.ef-row').remove()"
+                              style="background:none;border:none;color:#a1a1aa;cursor:pointer;font-size:0.85rem;padding:2px;line-height:1;flex-shrink:0;">
+                        <i class="bi bi-x"></i>
+                      </button>
+                    <% end %>
+                  </div>
+                <% end %>
+              <% end %>
+            </div>
+
+            <template id="ef-template">
+              <div class="ef-row" style="display:flex;align-items:center;gap:0.5rem;padding:0.5rem 0.65rem;border:1px solid #e4e4e7;border-radius:8px;background:#fff;">
+                <div style="flex:1;">
+                  <select name="event[event_functions_attributes][__IDX__][name]"
+                          class="form-select form-control ef-name-select"
+                          style="font-size:0.85rem;"
+                          onchange="efSelectChange(this)">
+                    <option value="">— Selecione uma função —</option>
+                    <% ef_catalog.each do |cf| %>
+                      <option value="<%= cf.name %>" data-rate="<%= cf.hourly_rate %>"><%= cf.name %></option>
+                    <% end %>
+                  </select>
+                </div>
+                <div style="display:flex;align-items:center;gap:0.3rem;flex-shrink:0;">
+                  <span style="font-size:0.78rem;color:#71717a;">R$</span>
+                  <input type="number" name="event[event_functions_attributes][__IDX__][hourly_rate]"
+                         class="form-control ef-rate-input" placeholder="0,00" step="0.01" min="0"
+                         style="width:90px;font-size:0.82rem;font-weight:600;color:#16a34a;text-align:right;">
+                  <span style="font-size:0.72rem;color:#71717a;">/h</span>
+                </div>
+                <button type="button" onclick="this.closest('.ef-row').remove()"
+                        style="background:none;border:none;color:#a1a1aa;cursor:pointer;font-size:0.85rem;padding:2px;line-height:1;flex-shrink:0;">
+                  <i class="bi bi-x"></i>
+                </button>
+              </div>
+            </template>
+
+            <div style="margin-top:0.6rem;">
+              <button type="button" onclick="addEfRow()"
+                      style="display:inline-flex;align-items:center;gap:0.35rem;font-size:0.8rem;color:#7c3aed;background:none;border:1px dashed #c4b5fd;border-radius:6px;padding:0.3rem 0.75rem;cursor:pointer;font-family:inherit;">
+                <i class="bi bi-plus-circle"></i> Adicionar função
+              </button>
             </div>
           <% end %>
         </div>
@@ -446,5 +510,46 @@
   document.addEventListener("DOMContentLoaded", function () {
     autoPopulateDays();
   });
+
+  // ── Funções (nested) ──────────────────────────────────────────────────────
+  var efIdx = Date.now() + 10000;
+
+  // Mapa nome → taxa do catálogo (para auto-fill)
+  var EF_CATALOG_RATES = {};
+  <% EventFunction.catalog.each do |cf| %>
+  EF_CATALOG_RATES["<%= j(cf.name) %>"] = "<%= cf.hourly_rate %>";
+  <% end %>
+
+  window.efSelectChange = function (select) {
+    var name = select.value;
+    var row  = select.closest(".ef-row");
+    var rateInput = row && row.querySelector(".ef-rate-input");
+    if (!rateInput) return;
+    if (name && EF_CATALOG_RATES[name]) {
+      rateInput.value = parseFloat(EF_CATALOG_RATES[name]).toFixed(2);
+    } else {
+      rateInput.value = "";
+    }
+  };
+
+  window.addEfRow = function () {
+    var tpl = document.getElementById("ef-template");
+    if (!tpl) return;
+    var clone = tpl.content.cloneNode(true);
+    var row   = clone.querySelector(".ef-row");
+    var idx   = efIdx++;
+    row.innerHTML = row.innerHTML.replace(/__IDX__/g, idx);
+    document.getElementById("ef-rows").appendChild(row);
+  };
+
+  window.toggleEfDestroy = function (btn) {
+    var row = btn.closest(".ef-row");
+    var cb  = row.querySelector(".ef-destroy-cb");
+    cb.checked        = !cb.checked;
+    row.style.opacity = cb.checked ? "0.38" : "1";
+    btn.innerHTML     = cb.checked
+      ? '<i class="bi bi-arrow-counterclockwise"></i>'
+      : '<i class="bi bi-x"></i>';
+  };
 })();
 </script>
