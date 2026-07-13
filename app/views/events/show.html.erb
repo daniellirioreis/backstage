@@ -501,228 +501,175 @@
 <div id="tab-financeiro" style="display:none;">
 
   <%# ── Estimativa de planejamento ── %>
-  <% if @plan_cost_by_function.any? %>
+  <% if @plan_cost_by_function.any? || @cost_by_function.any? %>
     <%
+      all_functions      = (@plan_cost_by_function.keys + @cost_by_function.keys).uniq
       total_planned      = @headcount_by_function.values.sum { |v| v[:planned] }
-      total_assigned     = @headcount_by_function.values.sum { |v| v[:assigned] }
-      hc_total_pct       = total_planned > 0 ? [(total_assigned * 100.0 / total_planned).round, 100].min : 0
-      hc_total_color     = hc_total_pct >= 100 ? '#15803d' : hc_total_pct >= 60 ? '#92400e' : '#991b1b'
-      total_assigned_cost = @headcount_by_function.sum do |ef, v|
-        v[:assigned] * ef.hourly_rate.to_f * @total_event_hours
-      end
+      total_shift_people = @people_by_function.values.sum(&:size)
+      total_shift_cost   = @estimated_cost
+      delta_total        = total_shift_cost - @plan_total_cost
+      covered_pct        = total_planned > 0 ? [(total_shift_people.to_f / total_planned * 100).round, 100].min : 0
+      sorted_functions   = all_functions.sort_by { |ef| -(@cost_by_function[ef].to_f + @plan_cost_by_function[ef].to_f) }
+      payable_cost       = @estimated_cost - @absent_cost.to_f
+      paid_pct           = payable_cost > 0 ? [(@total_paid / payable_cost * 100).round, 100].min : 0
     %>
-    <div class="content-card" style="margin-bottom: 2rem; padding: 1.25rem 1.5rem;">
-      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1rem;">
-        <h2 style="font-size:0.9rem; font-weight:600; color:#18181b; margin:0;">
+
+    <div class="content-card" style="margin-bottom:2rem; padding:0; overflow:hidden;">
+
+      <%# Cabeçalho %>
+      <div style="padding:14px 20px; border-bottom:1px solid #f4f4f5; display:flex; align-items:center; justify-content:space-between;">
+        <div style="font-size:0.78rem; font-weight:700; color:#52525b; text-transform:uppercase; letter-spacing:0.06em; display:flex; align-items:center; gap:0.5rem;">
           <i class="bi bi-calculator" style="color:#7c3aed;"></i> Estimativa de planejamento
-          <span style="font-size:0.72rem; font-weight:400; color:#a1a1aa; margin-left:0.35rem;">
-            <% if @event_days_records.any? %>
-              <%= @event_days_records.size %> dia<%= @event_days_records.size == 1 ? '' : 's' %> · <%= @total_event_hours.to_i == @total_event_hours ? @total_event_hours.to_i : @total_event_hours %>h total
-            <% else %>
-              <%= (@total_event_hours / 8).round %> dia<%= (@total_event_hours / 8).round == 1 ? '' : 's' %> · <%= @total_event_hours.to_i %>h total
-            <% end %>
-          </span>
-        </h2>
-        <div style="display:flex; align-items:center; gap:1rem;">
-          <% if total_planned > 0 %>
-            <span style="font-size:0.8rem; font-weight:600; color:<%= hc_total_color %>;">
-              <i class="bi bi-person-check"></i> <%= total_assigned %>/<%= total_planned %> atribuídos
-              <% if total_assigned_cost > 0 %>
-                · <%= number_to_currency(total_assigned_cost, unit: "R$", separator: ",", delimiter: ".", precision: 0) %>
-              <% end %>
-            </span>
+        </div>
+        <div style="font-size:0.75rem; color:#a1a1aa;">
+          <% if @event_days_records.any? %>
+            <%= @event_days_records.size %> dia<%= @event_days_records.size == 1 ? '' : 's' %> · <%= @total_event_hours.to_i == @total_event_hours ? @total_event_hours.to_i : @total_event_hours %>h total
+          <% else %>
+            <%= @total_event_hours.to_i %>h total
           <% end %>
-          <span style="font-size:0.95rem; font-weight:700; color:#7c3aed;">
-            <%= number_to_currency(@plan_total_cost, unit: "R$", separator: ",", delimiter: ".", precision: 2) %>
-          </span>
         </div>
       </div>
 
-      <%
-        sorted_plan = @plan_cost_by_function.sort_by { |_, v| -v }
-        max_plan    = sorted_plan.first&.last.to_f
-      %>
-      <div style="display:flex; flex-direction:column; gap:0.75rem;">
-        <% sorted_plan.each do |ef, cost| %>
-          <%
-            sf_total_qty   = @sectors.sum { |s| s.sector_functions.select { |sf| sf.event_function_id == ef.id }.sum(&:quantity) }
-            pct            = max_plan > 0 ? (cost / max_plan * 100).round(1) : 0
-            hc             = @headcount_by_function[ef]
-            hc_planned     = hc ? hc[:planned]  : 0
-            hc_assigned    = hc ? hc[:assigned] : 0
-            hc_over        = hc_planned > 0 && hc_assigned > hc_planned
-            hc_pct         = hc_planned > 0 ? [(hc_assigned * 100.0 / hc_planned).round, 100].min : 0
-            hc_color       = hc_over ? '#92400e' : hc_pct >= 100 ? '#15803d' : hc_pct > 0 ? '#92400e' : '#a1a1aa'
-            hc_bg          = hc_over ? '#ffedd5' : hc_pct >= 100 ? '#dcfce7' : hc_pct > 0 ? '#fef3c7' : '#f4f4f5'
-            hc_border      = hc_over ? '1px solid #fb923c' : 'none'
-            hc_bar         = hc_over ? '#f97316' : hc_pct >= 100 ? '#4ade80' : hc_pct > 0 ? '#fb923c' : '#e4e4e7'
-            assigned_cost  = hc_assigned * ef.hourly_rate.to_f * @total_event_hours
-          %>
-          <div>
-            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:0.3rem;">
-              <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
-                <span style="font-size:0.83rem; font-weight:500; color:#18181b;"><%= ef.name %></span>
-                <span style="font-size:0.72rem; color:#a1a1aa;"><%= sf_total_qty %> × <%= ef.hourly_rate_formatted %></span>
-                <% if hc_planned > 0 %>
-                  <span style="font-size:0.7rem; font-weight:600; background:<%= hc_bg %>; color:<%= hc_color %>; border:<%= hc_border %>; border-radius:4px; padding:1px 7px; white-space:nowrap;">
-                    <% if hc_over %>
-                      <i class="bi bi-exclamation-triangle-fill"></i>
-                    <% elsif hc_pct >= 100 %>
-                      <i class="bi bi-check-circle-fill"></i>
-                    <% else %>
-                      <i class="bi bi-person-fill"></i>
-                    <% end %>
-                    <%= hc_assigned %>/<%= hc_planned %>
-                    <% if hc_over %>
-                      <span style="font-size:0.62rem; opacity:0.8;">(+<%= hc_assigned - hc_planned %>)</span>
-                    <% end %>
-                    <% if assigned_cost > 0 %>
-                      · <%= number_to_currency(assigned_cost, unit: "R$", separator: ",", delimiter: ".", precision: 0) %>
-                    <% end %>
-                  </span>
-                <% end %>
-              </div>
-              <span style="font-size:0.85rem; font-weight:700; color:#7c3aed; flex-shrink:0; margin-left:0.75rem;">
-                <%= number_to_currency(cost, unit: "R$", separator: ",", delimiter: ".", precision: 2) %>
-              </span>
-            </div>
-            <div style="height:5px; background:#f4f4f5; border-radius:99px; overflow:hidden; margin-bottom:2px;">
-              <div style="height:100%; width:<%= pct %>%; background:#a78bfa; border-radius:99px;"></div>
-            </div>
-            <% if hc_planned > 0 %>
-              <div style="height:3px; background:#f4f4f5; border-radius:99px; overflow:hidden;">
-                <div style="height:100%; width:<%= hc_pct %>%; background:<%= hc_bar %>; border-radius:99px;"></div>
-              </div>
-            <% end %>
-          </div>
-        <% end %>
+      <%# 4 cards de resumo %>
+      <div style="display:grid; grid-template-columns:repeat(4,1fr); border-bottom:1px solid #f4f4f5;">
+        <div style="padding:14px 20px; border-right:1px solid #f4f4f5;">
+          <div style="font-size:0.65rem; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color:#a1a1aa; margin-bottom:4px;">Orçado</div>
+          <div style="font-size:1.1rem; font-weight:800; color:#7c3aed;"><%= number_to_currency(@plan_total_cost, unit: "R$", separator: ",", delimiter: ".", precision: 0) %></div>
+          <div style="font-size:0.68rem; color:#a1a1aa; margin-top:2px;"><%= total_planned %> vaga<%= total_planned == 1 ? '' : 's' %></div>
+        </div>
+        <div style="padding:14px 20px; border-right:1px solid #f4f4f5;">
+          <div style="font-size:0.65rem; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color:#a1a1aa; margin-bottom:4px;">Por escala</div>
+          <div style="font-size:1.1rem; font-weight:800; color:#15803d;"><%= number_to_currency(total_shift_cost, unit: "R$", separator: ",", delimiter: ".", precision: 0) %></div>
+          <div style="font-size:0.68rem; color:#a1a1aa; margin-top:2px;"><%= total_shift_people %> pessoa<%= total_shift_people == 1 ? '' : 's' %> escalada<%= total_shift_people == 1 ? '' : 's' %></div>
+        </div>
+        <div style="padding:14px 20px; border-right:1px solid #f4f4f5;">
+          <div style="font-size:0.65rem; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color:#a1a1aa; margin-bottom:4px;">Diferença</div>
+          <% if delta_total.abs < 0.01 %>
+            <div style="font-size:1.1rem; font-weight:800; color:#18181b;">—</div>
+            <div style="font-size:0.68rem; color:#a1a1aa; margin-top:2px;">no orçamento</div>
+          <% elsif delta_total > 0 %>
+            <div style="font-size:1.1rem; font-weight:800; color:#dc2626;">+<%= number_to_currency(delta_total, unit: "R$", separator: ",", delimiter: ".", precision: 0) %></div>
+            <div style="font-size:0.68rem; color:#a1a1aa; margin-top:2px;">acima do orçado</div>
+          <% else %>
+            <div style="font-size:1.1rem; font-weight:800; color:#15803d;"><%= number_to_currency(delta_total, unit: "R$", separator: ",", delimiter: ".", precision: 0) %></div>
+            <div style="font-size:0.68rem; color:#a1a1aa; margin-top:2px;">abaixo do orçado</div>
+          <% end %>
+        </div>
+        <div style="padding:14px 20px;">
+          <div style="font-size:0.65rem; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color:#a1a1aa; margin-bottom:4px;">Cobertura</div>
+          <div style="font-size:1.1rem; font-weight:800; color:<%= covered_pct >= 100 ? '#15803d' : covered_pct >= 60 ? '#92400e' : '#dc2626' %>;"><%= covered_pct %>%</div>
+          <div style="font-size:0.68rem; color:#a1a1aa; margin-top:2px;"><%= covered_pct >= 100 ? 'todas as vagas cobertas' : 'vagas em aberto' %></div>
+        </div>
       </div>
 
-      <% if total_assigned_cost > 0 %>
+      <%# Tabela por função %>
+      <table style="width:100%; border-collapse:collapse;">
+        <thead>
+          <tr>
+            <th style="font-size:0.65rem; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color:#a1a1aa; padding:8px 20px; text-align:left; border-bottom:1px solid #f4f4f5;">Função</th>
+            <th style="font-size:0.65rem; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color:#a1a1aa; padding:8px 12px; text-align:left; border-bottom:1px solid #f4f4f5; width:110px;">Pessoas</th>
+            <th style="font-size:0.65rem; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color:#a1a1aa; padding:8px 12px; text-align:left; border-bottom:1px solid #f4f4f5; width:70px;">Horas</th>
+            <th style="font-size:0.65rem; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color:#a1a1aa; padding:8px 20px; text-align:right; border-bottom:1px solid #f4f4f5; width:130px;">Por escala</th>
+            <th style="font-size:0.65rem; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color:#a1a1aa; padding:8px 20px; text-align:right; border-bottom:1px solid #f4f4f5; width:120px;">Orçado</th>
+            <th style="font-size:0.65rem; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color:#a1a1aa; padding:8px 20px; text-align:right; border-bottom:1px solid #f4f4f5; width:110px;">Δ</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% sorted_functions.each do |ef| %>
+            <%
+              hc_planned  = @headcount_by_function[ef]&.dig(:planned) || 0
+              shift_ppl   = @people_by_function[ef].size
+              hours_real  = @hours_by_function[ef]
+              cost_shift  = @cost_by_function[ef]
+              cost_plan   = @plan_cost_by_function[ef]
+              row_delta   = cost_shift - cost_plan
+              status      = shift_ppl > hc_planned ? :over : shift_ppl < hc_planned ? :under : (hc_planned > 0 ? :ok : :neutral)
+              slot_bg     = status == :over ? '#fff7ed' : status == :under ? '#fefce8' : status == :ok ? '#f0fdf4' : '#f4f4f5'
+              slot_color  = status == :over ? '#c2410c' : status == :under ? '#92400e' : status == :ok ? '#15803d' : '#71717a'
+              slot_border = status == :over ? '#fed7aa' : status == :under ? '#fde68a' : status == :ok ? '#bbf7d0' : '#e4e4e7'
+              hours_fmt   = hours_real == hours_real.to_i ? "#{hours_real.to_i}h" : "#{'%.1f' % hours_real}h"
+            %>
+            <tr style="border-bottom:1px solid #f4f4f5;">
+              <td style="padding:10px 20px; vertical-align:middle;">
+                <div style="font-size:0.85rem; font-weight:600; color:#18181b;"><%= ef.name %></div>
+                <div style="font-size:0.7rem; color:#a1a1aa; margin-top:1px;">R$<%= ef.hourly_rate %>/h · <%= hc_planned %> vaga<%= hc_planned == 1 ? '' : 's' %> planejada<%= hc_planned == 1 ? '' : 's' %></div>
+              </td>
+              <td style="padding:10px 12px; vertical-align:middle;">
+                <span style="display:inline-flex; align-items:center; gap:4px; font-size:0.75rem; font-weight:700; padding:2px 8px; border-radius:6px; background:<%= slot_bg %>; color:<%= slot_color %>; border:1px solid <%= slot_border %>; white-space:nowrap;">
+                  <% if status == :over %>▲<% elsif status == :under %>▼<% elsif status == :ok %>✓<% else %>–<% end %>
+                  <%= shift_ppl %>/<%= hc_planned %>
+                </span>
+              </td>
+              <td style="padding:10px 12px; vertical-align:middle; font-size:0.8rem; font-weight:600; color:#52525b;">
+                <%= hours_real > 0 ? hours_fmt : '—' %>
+              </td>
+              <td style="padding:10px 20px; vertical-align:middle; text-align:right; white-space:nowrap;">
+                <div style="font-size:0.85rem; font-weight:800; color:#15803d;"><%= cost_shift > 0 ? number_to_currency(cost_shift, unit: "R$", separator: ",", delimiter: ".", precision: 2) : '—' %></div>
+              </td>
+              <td style="padding:10px 20px; vertical-align:middle; text-align:right; white-space:nowrap;">
+                <div style="font-size:0.8rem; font-weight:600; color:#7c3aed;"><%= cost_plan > 0 ? number_to_currency(cost_plan, unit: "R$", separator: ",", delimiter: ".", precision: 2) : '—' %></div>
+              </td>
+              <td style="padding:10px 20px; vertical-align:middle; text-align:right; white-space:nowrap;">
+                <% if row_delta.abs < 0.01 %>
+                  <div style="font-size:0.78rem; color:#a1a1aa;">–</div>
+                <% elsif row_delta > 0 %>
+                  <div style="font-size:0.78rem; font-weight:700; color:#dc2626;">+<%= number_to_currency(row_delta, unit: "R$", separator: ",", delimiter: ".", precision: 0) %></div>
+                <% else %>
+                  <div style="font-size:0.78rem; font-weight:700; color:#15803d;"><%= number_to_currency(row_delta, unit: "R$", separator: ",", delimiter: ".", precision: 0) %></div>
+                <% end %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+
+      <%# Legenda %>
+      <div style="display:flex; gap:1rem; align-items:center; padding:10px 20px; border-top:1px solid #f4f4f5; background:#fafafa;">
+        <span style="display:flex; align-items:center; gap:5px; font-size:0.68rem; color:#71717a;"><span style="width:10px;height:10px;border-radius:3px;background:#7c3aed;display:inline-block;"></span> Orçado</span>
+        <span style="display:flex; align-items:center; gap:5px; font-size:0.68rem; color:#71717a;"><span style="width:10px;height:10px;border-radius:3px;background:#15803d;display:inline-block;"></span> Por escala (ok)</span>
+        <span style="display:flex; align-items:center; gap:5px; font-size:0.68rem; color:#71717a;"><span style="width:10px;height:10px;border-radius:3px;background:#dc2626;display:inline-block;"></span> Acima do orçado</span>
+        <span style="display:flex; align-items:center; gap:5px; font-size:0.68rem; color:#71717a;"><span style="width:10px;height:10px;border-radius:3px;background:#eab308;display:inline-block;"></span> Abaixo do planejado</span>
+      </div>
+
+      <%# Pagamentos (mantém a seção existente se houver) %>
+      <% if @total_paid > 0 %>
         <%
-          covered_pct  = @plan_total_cost > 0 ? [(total_assigned_cost / @plan_total_cost * 100).round, 100].min : 0
-          payable_cost = @estimated_cost - @absent_cost.to_f
-          paid_pct     = payable_cost > 0 ? [(@total_paid / payable_cost * 100).round, 100].min : 0
-          gap          = @plan_total_cost - total_assigned_cost
+          absent_pct        = @estimated_cost > 0 ? [(@absent_cost.to_f / @estimated_cost * 100).round, 100].min : 0
+          truly_pending     = @estimated_cost - @total_paid - @absent_cost.to_f
+          truly_pending_pct = [100 - paid_pct - absent_pct, 0].max
         %>
-        <div style="margin-top:1rem; padding-top:0.75rem; border-top:1px solid #e4e4e7;">
-          <div style="display:flex; justify-content:space-between; align-items:flex-end;">
+        <div style="padding:14px 20px; border-top:1px solid #e4e4e7;">
+          <div style="display:flex; gap:1.5rem; flex-wrap:wrap; align-items:flex-end; justify-content:space-between;">
             <div style="display:flex; gap:1.5rem; flex-wrap:wrap;">
               <div>
-                <div style="font-size:0.68rem; font-weight:600; text-transform:uppercase; letter-spacing:0.05em; color:#a1a1aa; margin-bottom:1px;">Atribuído</div>
-                <div style="font-size:0.88rem; font-weight:700; color:<%= hc_total_color %>;">
-                  <%= number_to_currency(total_assigned_cost, unit: "R$", separator: ",", delimiter: ".", precision: 2) %>
-                </div>
+                <div style="font-size:0.65rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:#a1a1aa; margin-bottom:2px;">Pago</div>
+                <div style="font-size:0.88rem; font-weight:700; color:#15803d;"><%= number_to_currency(@total_paid, unit: "R$", separator: ",", delimiter: ".", precision: 2) %></div>
               </div>
-              <div>
-                <div style="font-size:0.68rem; font-weight:600; text-transform:uppercase; letter-spacing:0.05em; color:#a1a1aa; margin-bottom:1px;">Planejado</div>
-                <div style="font-size:0.88rem; font-weight:700; color:#7c3aed;">
-                  <%= number_to_currency(@plan_total_cost, unit: "R$", separator: ",", delimiter: ".", precision: 2) %>
-                </div>
-              </div>
-              <% if @total_paid > 0 %>
+              <% if @absent_cost.to_f > 0 %>
                 <div>
-                  <div style="font-size:0.68rem; font-weight:600; text-transform:uppercase; letter-spacing:0.05em; color:#a1a1aa; margin-bottom:1px;">Pago</div>
-                  <div style="font-size:0.88rem; font-weight:700; color:#15803d;">
-                    <%= number_to_currency(@total_paid, unit: "R$", separator: ",", delimiter: ".", precision: 2) %>
-                  </div>
+                  <div style="font-size:0.65rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:#a1a1aa; margin-bottom:2px;">Ausências</div>
+                  <div style="font-size:0.88rem; font-weight:700; color:#6b7280;"><%= number_to_currency(@absent_cost, unit: "R$", separator: ",", delimiter: ".", precision: 2) %></div>
                 </div>
-                <% if @absent_cost.to_f > 0 %>
-                  <div>
-                    <div style="font-size:0.68rem; font-weight:600; text-transform:uppercase; letter-spacing:0.05em; color:#a1a1aa; margin-bottom:1px;">Ausências</div>
-                    <div style="font-size:0.88rem; font-weight:700; color:#6b7280;">
-                      <%= number_to_currency(@absent_cost, unit: "R$", separator: ",", delimiter: ".", precision: 2) %>
-                      <span style="font-size:0.65rem; font-weight:500; color:#a1a1aa;">economia</span>
-                    </div>
-                  </div>
-                <% end %>
-                <% truly_pending = @estimated_cost - @total_paid - @absent_cost.to_f %>
-                <% if truly_pending > 0.01 %>
-                  <div>
-                    <div style="font-size:0.68rem; font-weight:600; text-transform:uppercase; letter-spacing:0.05em; color:#a1a1aa; margin-bottom:1px;">A pagar</div>
-                    <div style="font-size:0.88rem; font-weight:700; color:#d97706;">
-                      <%= number_to_currency(truly_pending, unit: "R$", separator: ",", delimiter: ".", precision: 2) %>
-                    </div>
-                  </div>
-                <% end %>
-              <% elsif gap > 0 %>
+              <% end %>
+              <% if truly_pending > 0.01 %>
                 <div>
-                  <div style="font-size:0.68rem; font-weight:600; text-transform:uppercase; letter-spacing:0.05em; color:#a1a1aa; margin-bottom:1px;">Faltam</div>
-                  <div style="font-size:0.88rem; font-weight:700; color:#dc2626;">
-                    <%= number_to_currency(gap, unit: "R$", separator: ",", delimiter: ".", precision: 2) %>
-                  </div>
+                  <div style="font-size:0.65rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:#a1a1aa; margin-bottom:2px;">A pagar</div>
+                  <div style="font-size:0.88rem; font-weight:700; color:#d97706;"><%= number_to_currency(truly_pending, unit: "R$", separator: ",", delimiter: ".", precision: 2) %></div>
                 </div>
               <% end %>
             </div>
-            <span style="font-size:0.78rem; font-weight:700; color:<%= covered_pct >= 100 ? '#15803d' : covered_pct >= 60 ? '#92400e' : '#71717a' %>;">
-              <%= covered_pct %>% coberto
-            </span>
+            <span style="font-size:0.75rem; font-weight:700; color:<%= paid_pct >= 100 ? '#15803d' : '#92400e' %>;"><%= paid_pct %>% pago</span>
           </div>
-          <% if @total_paid > 0 %>
-            <%
-              absent_pct        = @estimated_cost > 0 ? [(@absent_cost.to_f / @estimated_cost * 100).round, 100].min : 0
-              truly_pending_pct = [100 - paid_pct - absent_pct, 0].max
-            %>
-            <div style="margin-top:0.75rem;">
-              <div style="display:flex; justify-content:space-between; margin-bottom:3px;">
-                <span style="font-size:0.68rem; color:#71717a;">Pagamentos realizados</span>
-                <span style="font-size:0.68rem; font-weight:700; color:#15803d;"><%= paid_pct %>%</span>
-              </div>
-              <div style="height:6px; background:#e4e4e7; border-radius:4px; overflow:hidden; display:flex;">
-                <div style="height:100%; width:<%= paid_pct %>%; background:#16a34a; transition:width 0.3s;"></div>
-                <div style="height:100%; width:<%= absent_pct %>%; background:#d1d5db; transition:width 0.3s;"></div>
-                <div style="height:100%; width:<%= truly_pending_pct %>%; background:#fbbf24; transition:width 0.3s;"></div>
-              </div>
-              <div style="display:flex; gap:0.75rem; margin-top:4px;">
-                <span style="font-size:0.62rem; color:#15803d; display:flex; align-items:center; gap:3px;"><span style="width:8px;height:8px;border-radius:50%;background:#16a34a;display:inline-block;"></span>Pago</span>
-                <% if absent_pct > 0 %>
-                  <span style="font-size:0.62rem; color:#6b7280; display:flex; align-items:center; gap:3px;"><span style="width:8px;height:8px;border-radius:50%;background:#d1d5db;display:inline-block;"></span>Ausências</span>
-                <% end %>
-                <% if truly_pending_pct > 0 %>
-                  <span style="font-size:0.62rem; color:#d97706; display:flex; align-items:center; gap:3px;"><span style="width:8px;height:8px;border-radius:50%;background:#fbbf24;display:inline-block;"></span>A pagar</span>
-                <% end %>
-              </div>
+          <div style="margin-top:0.6rem;">
+            <div style="height:6px; background:#e4e4e7; border-radius:4px; overflow:hidden; display:flex;">
+              <div style="height:100%; width:<%= paid_pct %>%; background:#16a34a;"></div>
+              <div style="height:100%; width:<%= absent_pct %>%; background:#d1d5db;"></div>
+              <div style="height:100%; width:<%= truly_pending_pct %>%; background:#fbbf24;"></div>
             </div>
-          <% end %>
+          </div>
         </div>
       <% end %>
-    </div>
-  <% end %>
 
-  <%# ── Custo realizado por função ── %>
-  <% if @cost_by_function.any? %>
-    <div class="content-card" style="margin-bottom: 2rem; padding: 1.25rem 1.5rem;">
-      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem;">
-        <h2 style="font-size: 0.9rem; font-weight: 600; color: #18181b; margin: 0;">
-          <i class="bi bi-cash-stack" style="color: #16a34a;"></i> Custo realizado por função
-        </h2>
-        <span style="font-size: 0.88rem; font-weight: 700; color: #15803d;">
-          Total: <%= number_to_currency(@estimated_cost, unit: "R$", separator: ",", delimiter: ".", precision: 2) %>
-        </span>
-      </div>
-      <%
-        sorted   = @cost_by_function.sort_by { |_, v| -v }
-        max_cost = sorted.first&.last.to_f
-      %>
-      <div style="display: flex; flex-direction: column; gap: 0.65rem;">
-        <% sorted.each do |ef, cost| %>
-          <% pct = max_cost > 0 ? (cost / max_cost * 100).round(1) : 0 %>
-          <div>
-            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.3rem;">
-              <div style="display: flex; align-items: center; gap: 0.5rem;">
-                <span style="font-size: 0.83rem; font-weight: 500; color: #18181b;"><%= ef.name %></span>
-                <span style="font-size: 0.72rem; color: #a1a1aa;"><%= ef.hourly_rate_formatted %></span>
-              </div>
-              <span style="font-size: 0.85rem; font-weight: 700; color: #15803d;">
-                <%= number_to_currency(cost, unit: "R$", separator: ",", delimiter: ".", precision: 2) %>
-              </span>
-            </div>
-            <div style="height: 6px; background: #f4f4f5; border-radius: 99px; overflow: hidden;">
-              <div style="height: 100%; width: <%= pct %>%; background: #4ade80; border-radius: 99px; transition: width 0.4s ease;"></div>
-            </div>
-          </div>
-        <% end %>
-      </div>
     </div>
   <% end %>
 
