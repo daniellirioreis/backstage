@@ -58,3 +58,78 @@
     <% end %>
   <% end %>
 </div>
+
+<%# ── Card de orientação por passo ───────────────────────────────────────── %>
+<%
+  guide = case current_step
+  when 1 then {
+    icon:  "bi-pencil-square",
+    title: "Passo 1 — Dados do evento",
+    color: "#2563eb",
+    bg:    "#eff6ff",
+    border:"#bfdbfe",
+    items: [
+      { icon: "bi-calendar-event",     text: "Preencha o <strong>nome, datas e local</strong> do evento." },
+      { icon: "bi-sun",                text: "Adicione os <strong>dias do evento</strong> e informe a duração de cada dia em horas — isso define o total de horas usado em todas as estimativas financeiras." },
+      { icon: "bi-person-badge",       text: "Cadastre as <strong>funções</strong> (ex: Garçom, Segurança) com o valor por hora de cada uma. Esses dados são usados nos setores e equipes." },
+      { icon: "bi-arrow-right-circle", text: "Após salvar, avance para <strong>Setores</strong>." }
+    ]
+  }
+  when 2 then {
+    icon:  "bi-grid-3x3-gap",
+    title: "Passo 2 — Setores",
+    color: "#7c3aed",
+    bg:    "#f5f3ff",
+    border:"#ddd6fe",
+    items: [
+      { icon: "bi-plus-circle",        text: "Crie um setor para cada <strong>área de trabalho</strong> do evento (Recepção, Bar, Palco, Segurança...)." },
+      { icon: "bi-clipboard-check",    text: "Em cada setor, adicione as <strong>funções planejadas</strong> e a quantidade de pessoas necessárias." },
+      { icon: "bi-calculator",         text: "A <strong>estimativa</strong> é calculada automaticamente: Qtd × Taxa/h × Horas do evento. O total aparece no rodapé da tabela." },
+      { icon: "bi-floppy",             text: "Clique em <strong>Salvar setor</strong> em cada aba antes de avançar." }
+    ]
+  }
+  when 3 then {
+    icon:  "bi-people",
+    title: "Passo 3 — Equipes",
+    color: "#0891b2",
+    bg:    "#ecfeff",
+    border:"#a5f3fc",
+    items: [
+      { icon: "bi-diagram-3",          text: "Dentro de cada setor, crie uma ou mais <strong>equipes</strong> para organizar os grupos de trabalho." },
+      { icon: "bi-person-plus",        text: "Adicione os <strong>colaboradores</strong> à equipe e atribua a função de cada um." },
+      { icon: "bi-check2-circle",      text: "O painel indica o preenchimento das vagas planejadas — vermelho significa equipe incompleta." },
+      { icon: "bi-arrow-right-circle", text: "Com as equipes formadas, avance para <strong>Escalas</strong> para definir os horários." }
+    ]
+  }
+  when 4 then {
+    icon:  "bi-calendar-week",
+    title: "Passo 4 — Escalas",
+    color: "#059669",
+    bg:    "#f0fdf4",
+    border:"#bbf7d0",
+    items: [
+      { icon: "bi-clock",                  text: "Defina o <strong>horário de entrada e saída</strong> de cada equipe em cada dia do evento." },
+      { icon: "bi-currency-dollar",        text: "O <strong>custo real</strong> é calculado pelas horas escaladas (não pelas horas planejadas) — veja no painel financeiro do evento." },
+      { icon: "bi-exclamation-triangle",   text: "Escalas com duração menor que o dia do evento são permitidas. O sistema bloqueia apenas conflitos de horário." },
+      { icon: "bi-graph-up",               text: "Após concluir, acesse o evento para acompanhar o financeiro e a cobertura por função em tempo real." }
+    ]
+  }
+  end
+%>
+
+<% if guide %>
+  <div style="background:<%= guide[:bg] %>;border:1px solid <%= guide[:border] %>;border-radius:12px;padding:0.85rem 1.1rem;margin-bottom:1.75rem;">
+    <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.65rem;">
+      <i class="bi <%= guide[:icon] %>" style="color:<%= guide[:color] %>;font-size:1rem;"></i>
+      <span style="font-size:0.82rem;font-weight:700;color:<%= guide[:color] %>;"><%= guide[:title] %></span>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:0.45rem;">
+      <% guide[:items].each do |item| %>
+        <div style="display:flex;align-items:flex-start;gap:0.5rem;font-size:0.75rem;color:#374151;line-height:1.5;">
+          <i class="bi <%= item[:icon] %>" style="color:<%= guide[:color] %>;margin-top:2px;flex-shrink:0;"></i>
+          <span><%= raw(item[:text]) %></span>
+        </div>
+      <% end %>
+    </div>
+  </div>
+<% end %>
