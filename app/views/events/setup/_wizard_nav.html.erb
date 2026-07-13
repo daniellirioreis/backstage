@@ -59,22 +59,6 @@
   <% end %>
 </div>
 
-<% if event&.persisted? && event.name.present? %>
-  <div style="font-size:0.78rem;color:#71717a;margin-bottom:1rem;margin-top:-0.75rem;">
-    <i class="bi bi-calendar2-event" style="color:#0891b2;"></i>
-    <strong style="color:#18181b;"><%= event.name %></strong>
-    <% if event.start_date.present? %>
-      &middot; <%= event.start_date.strftime("%d/%m/%Y") %>
-      <% if event.end_date.present? && event.end_date != event.start_date %>
-        – <%= event.end_date.strftime("%d/%m/%Y") %>
-      <% end %>
-    <% end %>
-    <% if event.location.present? %>
-      &middot; <%= event.location %>
-    <% end %>
-  </div>
-<% end %>
-
 <%# ── Card de orientação por passo ───────────────────────────────────────── %>
 <%
   svg1 = <<~SVG
