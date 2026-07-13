@@ -120,12 +120,30 @@
     var rate  = fnId ? (FN_RATES[fnId] || 0) : 0;
     var costH = qty * rate;
     var est   = costH * EVENT_HOURS;
-    var rateEl = row.querySelector(".sf-rate");
-    var costEl = row.querySelector(".sf-cost");
-    var estEl  = row.querySelector(".sf-est");
-    if (rateEl) rateEl.textContent = rate  > 0 ? formatBRL(rate)  + "/h" : "—";
-    if (costEl) costEl.textContent = costH > 0 ? formatBRL(costH) + "/h" : "—";
-    if (estEl)  estEl.textContent  = est   > 0 ? formatBRL(est)          : "—";
+    var rateEl  = row.querySelector(".sf-rate");
+    var costEl  = row.querySelector(".sf-cost");
+    var hoursEl = row.querySelector(".sf-hours");
+    var estEl   = row.querySelector(".sf-est");
+    if (rateEl)  rateEl.textContent  = rate  > 0 ? formatBRL(rate)  + "/h" : "—";
+    if (costEl)  costEl.textContent  = costH > 0 ? formatBRL(costH) + "/h" : "—";
+    if (hoursEl) hoursEl.textContent = EVENT_HOURS + "h";
+    if (estEl)   estEl.textContent   = est   > 0 ? formatBRL(est)           : "—";
+    // Atualiza total do setor
+    var sectorRow = row.closest(".sector-row");
+    if (sectorRow) updateSectorTotal(sectorRow);
+  }
+
+  function updateSectorTotal(sectorRow) {
+    var total = 0;
+    sectorRow.querySelectorAll(".sf-row").forEach(function (r) {
+      var estEl = r.querySelector(".sf-est");
+      if (estEl && estEl.textContent !== "—") {
+        var val = parseFloat(estEl.textContent.replace("R$","").replace(/\./g,"").replace(",",".")) || 0;
+        total += val;
+      }
+    });
+    var totalEl = sectorRow.querySelector(".sf-total-val");
+    if (totalEl) totalEl.textContent = total > 0 ? formatBRL(total) : "—";
   }
 
   var form = document.getElementById("sectors-form");
