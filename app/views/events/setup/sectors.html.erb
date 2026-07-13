@@ -7,6 +7,69 @@
 
 <%= render "wizard_nav", current_step: 2, event: @event %>
 
+<%# ── Orientação da tela ─────────────────────────────────────────────────── %>
+<div style="background:#f5f3ff;border:1px solid #ddd6fe;border-radius:12px;margin-bottom:1.25rem;overflow:hidden;">
+  <button type="button"
+          onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'':'none';this.querySelector('.guide-chevron').style.transform=this.querySelector('.guide-chevron').style.transform?'':'rotate(180deg)';"
+          style="width:100%;display:flex;align-items:center;gap:0.6rem;padding:0.75rem 1rem;background:transparent;border:none;cursor:pointer;text-align:left;">
+    <i class="bi bi-map" style="color:#7c3aed;font-size:1rem;flex-shrink:0;"></i>
+    <span style="font-size:0.82rem;font-weight:700;color:#5b21b6;flex:1;">Como configurar os setores do evento?</span>
+    <i class="bi bi-chevron-down guide-chevron" style="color:#7c3aed;font-size:0.75rem;flex-shrink:0;transition:transform 0.2s;"></i>
+  </button>
+
+  <div style="display:none;padding:0 1rem 1rem;">
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:0.75rem;margin-bottom:0.85rem;">
+
+      <div style="background:white;border-radius:10px;padding:0.85rem;border:1px solid #ede9fe;">
+        <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.5rem;">
+          <span style="display:flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;background:#7c3aed;color:white;font-size:0.7rem;font-weight:800;flex-shrink:0;">1</span>
+          <span style="font-size:0.8rem;font-weight:700;color:#3b0764;">Crie os setores</span>
+        </div>
+        <p style="font-size:0.75rem;color:#52525b;margin:0;line-height:1.5;">
+          Cada <strong>setor</strong> representa uma área de trabalho dentro do evento — como Recepção, Bar, Segurança ou Palco. Clique em <strong>+ Novo setor</strong> para adicionar quantos precisar.
+          Escolha o <em>tipo</em> para ativar sugestões baseadas em eventos similares.
+        </p>
+      </div>
+
+      <div style="background:white;border-radius:10px;padding:0.85rem;border:1px solid #ede9fe;">
+        <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.5rem;">
+          <span style="display:flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;background:#7c3aed;color:white;font-size:0.7rem;font-weight:800;flex-shrink:0;">2</span>
+          <span style="font-size:0.8rem;font-weight:700;color:#3b0764;">Adicione funções planejadas</span>
+        </div>
+        <p style="font-size:0.75rem;color:#52525b;margin:0;line-height:1.5;">
+          Em cada setor, clique em <strong>Adicionar função</strong> para definir quais profissionais atuarão ali. Selecione a função, informe a <strong>quantidade</strong> de pessoas e o sistema calculará automaticamente o custo por hora e a estimativa total.
+        </p>
+      </div>
+
+      <div style="background:white;border-radius:10px;padding:0.85rem;border:1px solid #ede9fe;">
+        <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.5rem;">
+          <span style="display:flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;background:#7c3aed;color:white;font-size:0.7rem;font-weight:800;flex-shrink:0;">3</span>
+          <span style="font-size:0.8rem;font-weight:700;color:#3b0764;">Salve cada setor</span>
+        </div>
+        <p style="font-size:0.75rem;color:#52525b;margin:0;line-height:1.5;">
+          Após preencher as funções, clique em <strong>Salvar setor</strong> para confirmar. Você pode editar qualquer setor depois — basta clicar na aba correspondente. Quando todos estiverem prontos, clique em <strong>Próximo: Equipes</strong>.
+        </p>
+      </div>
+
+    </div>
+
+    <div style="display:flex;flex-wrap:wrap;gap:0.5rem;">
+      <div style="display:flex;align-items:flex-start;gap:0.4rem;background:white;border-radius:8px;padding:0.55rem 0.75rem;border:1px solid #ede9fe;font-size:0.72rem;color:#52525b;flex:1;min-width:180px;">
+        <i class="bi bi-bar-chart-line" style="color:#7c3aed;margin-top:1px;flex-shrink:0;"></i>
+        <span><strong>Histórico:</strong> ao escolher o tipo do setor, o sistema exibe quantas pessoas outros eventos similares usaram para cada função — uma referência para você não esquecer nada.</span>
+      </div>
+      <div style="display:flex;align-items:flex-start;gap:0.4rem;background:white;border-radius:8px;padding:0.55rem 0.75rem;border:1px solid #ede9fe;font-size:0.72rem;color:#52525b;flex:1;min-width:180px;">
+        <i class="bi bi-calculator" style="color:#7c3aed;margin-top:1px;flex-shrink:0;"></i>
+        <span><strong>Estimativa:</strong> calculada automaticamente como <em>Qtd × Taxa/h × Horas do evento</em>. O total de cada setor aparece no rodapé da tabela em verde.</span>
+      </div>
+      <div style="display:flex;align-items:flex-start;gap:0.4rem;background:white;border-radius:8px;padding:0.55rem 0.75rem;border:1px solid #ede9fe;font-size:0.72rem;color:#52525b;flex:1;min-width:180px;">
+        <i class="bi bi-info-circle" style="color:#7c3aed;margin-top:1px;flex-shrink:0;"></i>
+        <span><strong>Taxa/h e funções</strong> são definidas nas configurações do evento. Se não aparecerem aqui, edite o evento e adicione as funções antes de continuar.</span>
+      </div>
+    </div>
+  </div>
+</div>
+
 <% if @event_functions.none? %>
   <div style="background:#fefce8;border:1px solid #fef08a;border-radius:8px;padding:0.65rem 0.9rem;font-size:0.78rem;color:#713f12;margin-bottom:1rem;">
     <i class="bi bi-info-circle"></i>
