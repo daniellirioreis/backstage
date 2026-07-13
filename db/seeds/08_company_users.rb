@@ -1,6 +1,6 @@
-puts "→ Associando colaboradores à empresa #1..."
+puts "→ Associando colaboradores à empresa..."
 
-company = Company.find_by(id: 1)
+company = Company.first
 
 unless company
   puts "   AVISO: Empresa id=1 não encontrada, pulando."

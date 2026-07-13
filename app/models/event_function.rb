@@ -8,7 +8,8 @@ class EventFunction < ApplicationRecord
 
   validates :name,        presence: true
   validates :hourly_rate, presence: true, numericality: { greater_than_or_equal_to: 0, allow_nil: true }
-  validates :name, uniqueness: { scope: :event_id, message: "já existe neste evento" }
+  validates :name, uniqueness: { scope: :event_id, message: "já existe neste evento" },
+                  unless: -> { event_id.nil? && event&.new_record? }
 
   def catalog?
     event_id.nil?

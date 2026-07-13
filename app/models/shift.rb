@@ -10,7 +10,6 @@ class Shift < ApplicationRecord
   validate :end_date_not_before_start_date
   validate :end_time_not_equal_start_time
   validate :date_within_event
-  validate :duration_within_event_day_limit
   validate :no_schedule_conflict
 
   # Retorna todas as datas cobertas pelo turno (suporte a turnos multi-dia)
