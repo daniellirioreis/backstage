@@ -1,5 +1,9 @@
 <%= render "events/setup/wizard_nav", current_step: 4, event: @event %>
 
+<div class="page-header">
+  <h1>Configurar escalas</h1>
+</div>
+
 <% all_teams = @sectors.flat_map(&:teams) %>
 
 <% if all_teams.empty? %>
