@@ -1,16 +1,5 @@
 <%= render "events/setup/wizard_nav", current_step: 4, event: @event %>
 
-<div class="page-header" style="margin-bottom: 1.5rem;">
-  <div>
-    <h1 style="font-size:1.35rem; font-weight:700; color:#18181b; margin:0;">
-      <i class="bi bi-calendar-week" style="color:#7c3aed;"></i> Escalas
-    </h1>
-    <p style="font-size:0.82rem; color:#71717a; margin:0.25rem 0 0;">
-      Configure os horários de cada equipe para o evento.
-    </p>
-  </div>
-</div>
-
 <% all_teams = @sectors.flat_map(&:teams) %>
 
 <% if all_teams.empty? %>
