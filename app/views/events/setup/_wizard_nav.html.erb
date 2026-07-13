@@ -106,15 +106,15 @@
 %>
 
 <% if guide %>
-  <div style="background:#f9f9fb;border:1px solid #e4e4e7;border-radius:12px;padding:0.85rem 1.1rem;margin-bottom:1.75rem;">
+  <div style="background:#fefce8;border:1px solid #fef08a;border-radius:12px;padding:0.85rem 1.1rem;margin-bottom:1.75rem;">
     <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.65rem;">
-      <i class="bi <%= guide[:icon] %>" style="color:#71717a;font-size:1rem;"></i>
-      <span style="font-size:0.82rem;font-weight:700;color:#52525b;"><%= guide[:title] %></span>
+      <i class="bi <%= guide[:icon] %>" style="color:#a16207;font-size:1rem;"></i>
+      <span style="font-size:0.82rem;font-weight:700;color:#713f12;"><%= guide[:title] %></span>
     </div>
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:0.45rem;">
       <% guide[:items].each do |item| %>
-        <div style="display:flex;align-items:flex-start;gap:0.5rem;font-size:0.75rem;color:#52525b;line-height:1.5;">
-          <i class="bi <%= item[:icon] %>" style="color:#71717a;margin-top:2px;flex-shrink:0;"></i>
+        <div style="display:flex;align-items:flex-start;gap:0.5rem;font-size:0.75rem;color:#713f12;line-height:1.5;">
+          <i class="bi <%= item[:icon] %>" style="color:#a16207;margin-top:2px;flex-shrink:0;"></i>
           <span><%= raw(item[:text]) %></span>
         </div>
       <% end %>
