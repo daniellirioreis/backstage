@@ -175,6 +175,43 @@ class EventsController < ApplicationController
     end
   end
 
+  def budget
+    authorize @event, :budget?
+    @company  = @event.company
+    @functions = @event.event_functions.order(:name)
+    @total_hours = @event.total_hours
+
+    # membros por função
+    memberships = TeamMembership
+      .joins(team: { sector: :event })
+      .where(sectors: { event_id: @event.id })
+      .where.not(event_function_id: nil)
+      .group(:event_function_id)
+      .count
+
+    @lines = @functions.map do |fn|
+      count = memberships[fn.id] || 0
+      subtotal = count * @total_hours * fn.hourly_rate
+      { function: fn, count: count, hours: @total_hours, rate: fn.hourly_rate, subtotal: subtotal }
+    end
+
+    @grand_total = @lines.sum { |l| l[:subtotal] }
+
+    respond_to do |format|
+      format.html { render layout: "print" }
+      format.pdf do
+        render pdf: "orcamento-#{@event.name.parameterize}",
+               template: "events/budget",
+               layout: "print",
+               formats: [:html],
+               page_size: "A4",
+               orientation: "Portrait",
+               margin: { top: 12, bottom: 12, left: 14, right: 14 },
+               disposition: "attachment"
+      end
+    end
+  end
+
   def print
     authorize @event, :print?
     @sectors = @event.sectors.includes(teams: [:coordinator, { team_memberships: :user }, :users]).order(:name)

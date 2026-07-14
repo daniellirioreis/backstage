@@ -53,6 +53,11 @@
         <% end %>
       <% end %>
     <% end %>
+    <% if policy(@event).budget? %>
+      <%= link_to budget_event_path(@event), class: "btn-secondary", target: "_blank" do %>
+        <i class="bi bi-file-earmark-text"></i> Orçamento
+      <% end %>
+    <% end %>
     <% if policy(@event).print? %>
       <%= link_to print_event_path(@event), class: "btn-secondary" do %>
         <i class="bi bi-printer"></i> Imprimir

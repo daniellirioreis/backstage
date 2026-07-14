@@ -1,0 +1,145 @@
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Helvetica Neue', Arial, sans-serif; color: #18181b; font-size: 0.82rem; }
+
+  .bq-page { max-width: 720px; margin: 0 auto; padding: 32px 28px; }
+
+  /* Cabeçalho */
+  .bq-header { display: flex; justify-content: space-between; align-items: flex-start; padding-bottom: 20px; border-bottom: 2px solid #18181b; margin-bottom: 24px; }
+  .bq-logo-area { display: flex; flex-direction: column; gap: 4px; }
+  .bq-company-name { font-size: 1.1rem; font-weight: 800; color: #18181b; }
+  .bq-company-meta { font-size: 0.72rem; color: #71717a; line-height: 1.6; }
+  .bq-doc-info { text-align: right; }
+  .bq-doc-title { font-size: 1rem; font-weight: 700; color: #18181b; text-transform: uppercase; letter-spacing: 0.05em; }
+  .bq-doc-number { font-size: 0.72rem; color: #71717a; margin-top: 3px; }
+
+  /* Info do evento */
+  .bq-event-box { background: #f4f4f5; border-radius: 8px; padding: 14px 18px; margin-bottom: 24px; }
+  .bq-event-name { font-size: 1rem; font-weight: 700; color: #18181b; margin-bottom: 6px; }
+  .bq-event-meta { display: flex; gap: 20px; flex-wrap: wrap; }
+  .bq-event-meta span { font-size: 0.75rem; color: #52525b; display: flex; align-items: center; gap: 4px; }
+
+  /* Seção */
+  .bq-section-title { font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: #71717a; margin-bottom: 10px; }
+
+  /* Tabela */
+  .bq-table { width: 100%; border-collapse: collapse; margin-bottom: 24px; }
+  .bq-table thead tr { background: #18181b; color: #fff; }
+  .bq-table th { padding: 8px 12px; text-align: left; font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; }
+  .bq-table th:last-child, .bq-table td:last-child { text-align: right; }
+  .bq-table th:nth-child(2), .bq-table td:nth-child(2),
+  .bq-table th:nth-child(3), .bq-table td:nth-child(3),
+  .bq-table th:nth-child(4), .bq-table td:nth-child(4) { text-align: center; }
+  .bq-table td { padding: 9px 12px; border-bottom: 1px solid #e4e4e7; color: #3f3f46; font-size: 0.8rem; }
+  .bq-table tbody tr:last-child td { border-bottom: none; }
+  .bq-table tbody tr:hover { background: #fafafa; }
+  .bq-fn-name { font-weight: 600; color: #18181b; }
+
+  /* Total */
+  .bq-total-row { border-top: 2px solid #18181b; }
+  .bq-total-row td { padding: 12px; font-weight: 700; font-size: 0.88rem; color: #18181b; }
+
+  /* Rodapé */
+  .bq-footer { margin-top: 32px; padding-top: 16px; border-top: 1px solid #e4e4e7; display: flex; justify-content: space-between; align-items: flex-end; gap: 20px; }
+  .bq-validity { font-size: 0.72rem; color: #71717a; }
+  .bq-signature { text-align: right; }
+  .bq-signature-line { width: 200px; border-bottom: 1px solid #18181b; margin-bottom: 4px; height: 32px; display: inline-block; }
+  .bq-signature-label { font-size: 0.68rem; color: #71717a; }
+
+  .bq-empty { text-align: center; padding: 24px; color: #a1a1aa; font-style: italic; font-size: 0.8rem; }
+
+  @media print {
+    body { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+  }
+</style>
+
+<div class="bq-page">
+
+  <%# ── Cabeçalho ──────────────────────────────────────────── %>
+  <div class="bq-header">
+    <div class="bq-logo-area">
+      <div class="bq-company-name"><%= @company&.name || "Backstage" %></div>
+      <div class="bq-company-meta">
+        <% if @company&.cnpj.present? %>CNPJ: <%= @company.cnpj %><br><% end %>
+        <% if @company&.phone.present? %><%= @company.phone %><br><% end %>
+        <% if @company&.email.present? %><%= @company.email %><br><% end %>
+        <% if @company&.city.present? %><%= [@company.city, @company.state].compact.join(" / ") %><% end %>
+      </div>
+    </div>
+    <div class="bq-doc-info">
+      <div class="bq-doc-title">Proposta de Orçamento</div>
+      <div class="bq-doc-number">Emitido em <%= l(Date.today, format: :long) %></div>
+    </div>
+  </div>
+
+  <%# ── Info do evento ─────────────────────────────────────── %>
+  <div class="bq-event-box">
+    <div class="bq-event-name"><%= @event.name %></div>
+    <div class="bq-event-meta">
+      <% if @event.location.present? %>
+        <span>📍 <%= @event.location %></span>
+      <% end %>
+      <span>📅 <%= l(@event.start_date, format: :long) %>
+        <% if @event.end_date != @event.start_date %>→ <%= l(@event.end_date, format: :long) %><% end %>
+      </span>
+      <span>⏱ <%= @total_hours.to_i %>h de operação</span>
+    </div>
+  </div>
+
+  <%# ── Tabela de funções ───────────────────────────────────── %>
+  <div class="bq-section-title">Composição da equipe e custos estimados</div>
+
+  <% if @lines.any? %>
+    <table class="bq-table">
+      <thead>
+        <tr>
+          <th>Função</th>
+          <th>Colaboradores</th>
+          <th>Horas</th>
+          <th>Valor/hora</th>
+          <th>Subtotal</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @lines.each do |line| %>
+          <tr>
+            <td class="bq-fn-name"><%= line[:function].name %></td>
+            <td><%= line[:count] %></td>
+            <td><%= line[:hours].to_i %>h</td>
+            <td>R$ <%= format("%.2f", line[:rate]) %></td>
+            <td><strong>R$ <%= number_with_delimiter(format("%.2f", line[:subtotal]), delimiter: ".", separator: ",") %></strong></td>
+          </tr>
+        <% end %>
+      </tbody>
+      <tfoot>
+        <tr class="bq-total-row">
+          <td colspan="4">Total geral</td>
+          <td>R$ <%= number_with_delimiter(format("%.2f", @grand_total), delimiter: ".", separator: ",") %></td>
+        </tr>
+      </tfoot>
+    </table>
+  <% else %>
+    <div class="bq-empty">Nenhuma função com valor configurada para este evento.</div>
+  <% end %>
+
+  <%# ── Observações ─────────────────────────────────────────── %>
+  <div style="margin-bottom: 32px;">
+    <div class="bq-section-title">Observações</div>
+    <div style="border: 1px solid #e4e4e7; border-radius: 6px; padding: 12px 14px; min-height: 60px; color: #a1a1aa; font-size: 0.78rem; font-style: italic;">
+      Os valores acima são estimados com base nas funções e horas de operação planejadas.
+      Custos adicionais como transporte, alimentação e equipamentos podem ser acordados separadamente.
+    </div>
+  </div>
+
+  <%# ── Rodapé / Assinatura ────────────────────────────────── %>
+  <div class="bq-footer">
+    <div class="bq-validity">
+      Este orçamento tem validade de <strong>30 dias</strong> a partir da data de emissão.
+    </div>
+    <div class="bq-signature">
+      <div class="bq-signature-line"></div>
+      <div class="bq-signature-label"><%= @company&.name || "Responsável" %></div>
+    </div>
+  </div>
+
+</div>

@@ -21,6 +21,7 @@ class EventPolicy < ApplicationPolicy
   def revert?     = can?("update")
 
   def print?        = can?("print")
+  def budget?       = can?("print")
   def credentials?  = can?("print")
 
   private

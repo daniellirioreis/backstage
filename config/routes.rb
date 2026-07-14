@@ -75,6 +75,7 @@ Rails.application.routes.draw do
     end
     member do
       get   :print
+      get   :budget
       get   :credentials
       patch :transition
       patch :revert
