@@ -265,7 +265,7 @@ class EventsController < ApplicationController
                page_size:   "A4",
                orientation: "Landscape",
                margin:      { top: 14, bottom: 20, left: 14, right: 14 },
-               disposition: "inline"
+               disposition: "attachment"
       end
     end
   end
