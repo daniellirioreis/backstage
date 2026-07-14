@@ -211,10 +211,7 @@
     <%= render "shared/empty_state",
           icon: "bi-calendar-event",
           title: "Nenhum evento cadastrado",
-          description: "Crie seu primeiro evento para começar a gerenciar equipes e escalas.",
-          action_label: "Novo evento",
-          action_path: new_event_path,
-          action_policy: policy(Event).new? %>
+          description: "Crie seu primeiro evento para começar a gerenciar equipes e escalas." %>
   </div>
 <% else %>
   <div class="content-card" style="padding: 0; overflow: hidden;">
