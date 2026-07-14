@@ -99,12 +99,17 @@
 
   <%# Cabeçalho %>
   <div class="bq-header">
-    <div>
-      <div class="bq-company-name"><%= @company&.name || "Backstage" %></div>
-      <div class="bq-company-meta">
-        <% if @company&.cnpj.present?  %>CNPJ: <%= @company.cnpj %> &bull; <% end %>
-        <% if @company&.phone.present? %><%= @company.phone %> &bull; <% end %>
-        <% if @company&.email.present? %><%= @company.email %><% end %>
+    <div style="display:flex;align-items:center;gap:10px;">
+      <% if @company_logo_b64 %>
+        <img src="<%= @company_logo_b64 %>" alt="Logo" style="height:64px;width:auto;object-fit:contain;">
+      <% end %>
+      <div>
+        <div class="bq-company-name"><%= @company&.name || "Backstage" %></div>
+        <div class="bq-company-meta">
+          <% if @company&.cnpj.present?  %>CNPJ: <%= @company.cnpj %> &bull; <% end %>
+          <% if @company&.phone.present? %><%= @company.phone %> &bull; <% end %>
+          <% if @company&.email.present? %><%= @company.email %><% end %>
+        </div>
       </div>
     </div>
     <div>

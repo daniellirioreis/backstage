@@ -180,6 +180,11 @@ class EventsController < ApplicationController
     @company     = @event.company
     @total_hours = @event.total_hours
 
+    if @company&.logo&.attached?
+      blob = @company.logo.blob
+      @company_logo_b64 = "data:#{blob.content_type};base64,#{Base64.strict_encode64(blob.download)}"
+    end
+
     # Setor → Equipe → Função
     @sector_breakdown = @event.sectors
       .includes(teams: { team_memberships: :event_function })
