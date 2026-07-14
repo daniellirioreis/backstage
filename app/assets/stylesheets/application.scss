@@ -1118,3 +1118,51 @@ body {
     pointer-events: none;
   }
 }
+
+// ── PWA: Bottom Navigation (mobile, colaborador/coordenador) ──────────────
+.mobile-bottom-nav {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .mobile-bottom-nav {
+    display: flex;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 200;
+    background: #fff;
+    border-top: 1px solid #e4e4e7;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    height: calc(56px + env(safe-area-inset-bottom, 0px));
+    align-items: stretch;
+    box-shadow: 0 -2px 12px rgba(0,0,0,0.06);
+  }
+
+  .mobile-nav-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    text-decoration: none;
+    color: #a1a1aa;
+    font-size: 0.62rem;
+    font-weight: 500;
+    padding: 0 0.5rem;
+    transition: color 0.15s;
+    -webkit-tap-highlight-color: transparent;
+
+    i { font-size: 1.25rem; line-height: 1; }
+
+    &.active, &:hover { color: #18181b; }
+    &.active i        { font-weight: 700; }
+  }
+
+  // Dá espaço para o bottom nav não sobrepor conteúdo
+  .main-content {
+    padding-bottom: calc(56px + env(safe-area-inset-bottom, 0px));
+  }
+}

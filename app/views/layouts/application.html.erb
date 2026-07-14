@@ -2,9 +2,18 @@
 <html lang="pt-BR">
   <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="turbo-cache-control" content="no-cache">
     <title>Backstage</title>
+
+    <%# PWA %>
+    <link rel="manifest" href="/manifest.webmanifest">
+    <meta name="theme-color" content="#18181b">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Backstage">
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
     <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
     <%= csrf_meta_tags %>
     <%= csp_meta_tag %>
@@ -294,6 +303,48 @@
 
           <%= yield %>
         </div>
+
+        <%# ── Bottom nav mobile (colaborador / coordenador) ─────────────────── %>
+        <% if current_user.role&.collaborator? %>
+          <nav class="mobile-bottom-nav" aria-label="Navegação rápida">
+            <%= link_to my_schedule_user_path(current_user),
+                  class: "mobile-nav-item #{controller_name == 'users' && action_name == 'my_schedule' ? 'active' : ''}" do %>
+              <i class="bi bi-calendar2-week"></i>
+              <span>Minha Escala</span>
+            <% end %>
+            <%= link_to root_path,
+                  class: "mobile-nav-item #{current_page?(root_path) ? 'active' : ''}" do %>
+              <i class="bi bi-house"></i>
+              <span>Início</span>
+            <% end %>
+          </nav>
+        <% elsif current_user.coordinator? %>
+          <% coord_team = Team.find_by(coordinator_id: current_user.id) %>
+          <nav class="mobile-bottom-nav" aria-label="Navegação rápida">
+            <% if coord_team %>
+              <%= link_to panel_team_path(coord_team),
+                    class: "mobile-nav-item #{controller_name == 'teams' && action_name == 'panel' ? 'active' : ''}" do %>
+                <i class="bi bi-people"></i>
+                <span>Equipe</span>
+              <% end %>
+              <%= link_to scan_attendances_path,
+                    class: "mobile-nav-item #{controller_name == 'attendances' && action_name == 'scan' ? 'active' : ''}" do %>
+                <i class="bi bi-qr-code-scan"></i>
+                <span>Check-in</span>
+              <% end %>
+              <%= link_to credentials_team_path(coord_team),
+                    class: "mobile-nav-item #{controller_name == 'teams' && action_name == 'credentials' ? 'active' : ''}" do %>
+                <i class="bi bi-person-badge"></i>
+                <span>Credenciais</span>
+              <% end %>
+            <% end %>
+            <%= link_to my_schedule_user_path(current_user),
+                  class: "mobile-nav-item #{controller_name == 'users' && action_name == 'my_schedule' ? 'active' : ''}" do %>
+              <i class="bi bi-calendar2-week"></i>
+              <span>Escala</span>
+            <% end %>
+          </nav>
+        <% end %>
       </main>
 
     <% else %>
@@ -301,6 +352,12 @@
         <%= yield %>
       </div>
     <% end %>
+  <script>
+    // ── Service Worker (PWA) ──────────────────────────────────────────────────
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js').catch(function() {});
+    }
+  </script>
   <script>
     function applyPhoneMask(input) {
       input.addEventListener("input", function(e) {
