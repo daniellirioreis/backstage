@@ -5,21 +5,21 @@
 <div class="content-card" style="max-width: 560px;">
 
   <div class="mb-3">
-    <label class="form-label"><%= t("folha_escala.filter.sector") %></label>
-    <select id="fe_sector_id" class="form-select" onchange="filtrarEquipes(); atualizarLink()">
-      <option value=""><%= t("folha_escala.filter.all_sectors") %></option>
-      <% @sectors.each do |s| %>
-        <option value="<%= s.id %>"><%= s.name %></option>
-      <% end %>
-    </select>
-  </div>
-
-  <div class="mb-3">
     <label class="form-label"><%= t("folha_escala.filter.date") %></label>
     <select id="fe_date" class="form-select" onchange="atualizarLink()">
       <option value=""><%= t("folha_escala.filter.all_dates") %></option>
       <% @available_dates.each do |d| %>
         <option value="<%= d %>"><%= l(d, format: :long) %></option>
+      <% end %>
+    </select>
+  </div>
+
+  <div class="mb-3">
+    <label class="form-label"><%= t("folha_escala.filter.sector") %></label>
+    <select id="fe_sector_id" class="form-select" onchange="filtrarEquipes(); atualizarLink()">
+      <option value=""><%= t("folha_escala.filter.all_sectors") %></option>
+      <% @sectors.each do |s| %>
+        <option value="<%= s.id %>"><%= s.name %></option>
       <% end %>
     </select>
   </div>
