@@ -177,36 +177,53 @@ class EventsController < ApplicationController
 
   def budget
     authorize @event, :budget?
-    @company  = @event.company
-    @functions = @event.event_functions.order(:name)
+    @company     = @event.company
     @total_hours = @event.total_hours
 
-    # membros por função
-    memberships = TeamMembership
-      .joins(team: { sector: :event })
-      .where(sectors: { event_id: @event.id })
-      .where.not(event_function_id: nil)
-      .group(:event_function_id)
-      .count
+    # Setor → Equipe → Função
+    @sector_breakdown = @event.sectors
+      .includes(teams: { team_memberships: :event_function })
+      .order(:name)
+      .map do |sector|
+        teams_data = sector.teams.order(:name).map do |team|
+          fn_lines = team.team_memberships
+            .select { |tm| tm.event_function.present? }
+            .group_by(&:event_function)
+            .sort_by { |fn, _| fn.name }
+            .map do |fn, mbs|
+              count    = mbs.size
+              subtotal = count * @total_hours * fn.hourly_rate
+              { function: fn, count: count, subtotal: subtotal }
+            end
 
-    @lines = @functions.map do |fn|
-      count = memberships[fn.id] || 0
-      subtotal = count * @total_hours * fn.hourly_rate
-      { function: fn, count: count, hours: @total_hours, rate: fn.hourly_rate, subtotal: subtotal }
-    end
+          {
+            team:      team,
+            lines:     fn_lines,
+            headcount: fn_lines.sum { |l| l[:count] },
+            total:     fn_lines.sum { |l| l[:subtotal] }
+          }
+        end.reject { |t| t[:lines].empty? }
 
-    @grand_total = @lines.sum { |l| l[:subtotal] }
+        {
+          sector:    sector,
+          teams:     teams_data,
+          headcount: teams_data.sum { |t| t[:headcount] },
+          total:     teams_data.sum { |t| t[:total] }
+        }
+      end.reject { |s| s[:teams].empty? }
+
+    @grand_total = @sector_breakdown.sum { |s| s[:total] }
 
     respond_to do |format|
-      format.html { render layout: "print" }
+      format.html { render layout: "pdf" }
       format.pdf do
         render pdf: "orcamento-#{@event.name.parameterize}",
                template: "events/budget",
-               layout: "print",
+               layout: "pdf",
                formats: [:html],
                page_size: "A4",
-               orientation: "Portrait",
-               margin: { top: 12, bottom: 12, left: 14, right: 14 },
+               orientation: "Landscape",
+               margin: { top: 14, bottom: 20, left: 14, right: 14 },
                disposition: "attachment"
       end
     end

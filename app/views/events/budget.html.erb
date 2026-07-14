@@ -1,145 +1,193 @@
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: 'Helvetica Neue', Arial, sans-serif; color: #18181b; font-size: 0.82rem; }
-
-  .bq-page { max-width: 720px; margin: 0 auto; padding: 32px 28px; }
+  body {
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    font-size: 12px;
+    color: #18181b;
+    background: #fff;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .bq { padding: 22px 26px 52px; }
 
   /* Cabeçalho */
-  .bq-header { display: flex; justify-content: space-between; align-items: flex-start; padding-bottom: 20px; border-bottom: 2px solid #18181b; margin-bottom: 24px; }
-  .bq-logo-area { display: flex; flex-direction: column; gap: 4px; }
-  .bq-company-name { font-size: 1.1rem; font-weight: 800; color: #18181b; }
-  .bq-company-meta { font-size: 0.72rem; color: #71717a; line-height: 1.6; }
-  .bq-doc-info { text-align: right; }
-  .bq-doc-title { font-size: 1rem; font-weight: 700; color: #18181b; text-transform: uppercase; letter-spacing: 0.05em; }
-  .bq-doc-number { font-size: 0.72rem; color: #71717a; margin-top: 3px; }
-
-  /* Info do evento */
-  .bq-event-box { background: #f4f4f5; border-radius: 8px; padding: 14px 18px; margin-bottom: 24px; }
-  .bq-event-name { font-size: 1rem; font-weight: 700; color: #18181b; margin-bottom: 6px; }
-  .bq-event-meta { display: flex; gap: 20px; flex-wrap: wrap; }
-  .bq-event-meta span { font-size: 0.75rem; color: #52525b; display: flex; align-items: center; gap: 4px; }
-
-  /* Seção */
-  .bq-section-title { font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: #71717a; margin-bottom: 10px; }
-
-  /* Tabela */
-  .bq-table { width: 100%; border-collapse: collapse; margin-bottom: 24px; }
-  .bq-table thead tr { background: #18181b; color: #fff; }
-  .bq-table th { padding: 8px 12px; text-align: left; font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; }
-  .bq-table th:last-child, .bq-table td:last-child { text-align: right; }
-  .bq-table th:nth-child(2), .bq-table td:nth-child(2),
-  .bq-table th:nth-child(3), .bq-table td:nth-child(3),
-  .bq-table th:nth-child(4), .bq-table td:nth-child(4) { text-align: center; }
-  .bq-table td { padding: 9px 12px; border-bottom: 1px solid #e4e4e7; color: #3f3f46; font-size: 0.8rem; }
-  .bq-table tbody tr:last-child td { border-bottom: none; }
-  .bq-table tbody tr:hover { background: #fafafa; }
-  .bq-fn-name { font-weight: 600; color: #18181b; }
-
-  /* Total */
-  .bq-total-row { border-top: 2px solid #18181b; }
-  .bq-total-row td { padding: 12px; font-weight: 700; font-size: 0.88rem; color: #18181b; }
-
-  /* Rodapé */
-  .bq-footer { margin-top: 32px; padding-top: 16px; border-top: 1px solid #e4e4e7; display: flex; justify-content: space-between; align-items: flex-end; gap: 20px; }
-  .bq-validity { font-size: 0.72rem; color: #71717a; }
-  .bq-signature { text-align: right; }
-  .bq-signature-line { width: 200px; border-bottom: 1px solid #18181b; margin-bottom: 4px; height: 32px; display: inline-block; }
-  .bq-signature-label { font-size: 0.68rem; color: #71717a; }
-
-  .bq-empty { text-align: center; padding: 24px; color: #a1a1aa; font-style: italic; font-size: 0.8rem; }
-
-  @media print {
-    body { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+  .bq-header {
+    display: flex; justify-content: space-between; align-items: flex-start;
+    padding-bottom: 13px; border-bottom: 2px solid #18181b; margin-bottom: 16px;
   }
+  .bq-company-name { font-size: 14px; font-weight: 500; }
+  .bq-company-meta { font-size: 10px; color: #71717a; margin-top: 3px; line-height: 1.7; }
+  .bq-doc-title    { font-size: 12px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.04em; text-align: right; }
+  .bq-doc-date     { font-size: 10px; color: #71717a; margin-top: 3px; text-align: right; }
+
+  /* Evento */
+  .bq-event { background: #f4f4f5; border-radius: 6px; padding: 9px 13px; margin-bottom: 18px; }
+  .bq-event-name { font-size: 13px; font-weight: 500; margin-bottom: 3px; }
+  .bq-event-meta { font-size: 10px; color: #52525b; }
+
+  /* Bloco de setor */
+  .bq-sector { margin-bottom: 18px; border: 0.5px solid #e4e4e7; border-radius: 6px; overflow: hidden; }
+
+  /* Cabeçalho do setor — dark */
+  .bq-sector-head {
+    display: flex; justify-content: space-between; align-items: center;
+    background: #18181b; padding: 7px 12px;
+    border-bottom: 1px solid #18181b;
+  }
+  .bq-sector-name  { font-size: 11px; font-weight: 500; color: #fff; text-transform: uppercase; letter-spacing: 0.06em; }
+  .bq-sector-meta  { font-size: 10px; color: rgba(255,255,255,0.55); }
+
+  /* Cabeçalho de colunas */
+  .bq-col-head { background: #fafafa; }
+  .bq-col-head th {
+    padding: 5px 12px; font-size: 9px; font-weight: 500;
+    text-transform: uppercase; letter-spacing: 0.07em;
+    color: #71717a; text-align: left;
+    border-bottom: 0.5px solid #e4e4e7;
+  }
+  .bq-col-head th.c { text-align: center; }
+  .bq-col-head th.r { text-align: right; }
+
+  /* Linha de equipe */
+  .bq-team-row td {
+    padding: 5px 12px; font-size: 10px; font-weight: 600;
+    color: #52525b; background: #f0f0f0;
+    border-top: 0.5px solid #e4e4e7;
+    border-bottom: 0.5px solid #e4e4e7;
+  }
+
+  /* Linhas de função */
+  .bq-fn-row td {
+    padding: 7px 12px; font-size: 11px;
+    color: #3f3f46; border-bottom: 0.5px solid #e4e4e7;
+  }
+  .bq-fn-row td:first-child { padding-left: 20px; }
+  .bq-fn-row td.c { text-align: center; color: #71717a; }
+  .bq-fn-row td.r { text-align: right; font-weight: 500; color: #18181b; }
+  .bq-fn-row:last-of-type td { border-bottom: none; }
+
+  /* Subtotal do setor */
+  .bq-subtotal td {
+    padding: 6px 12px; font-size: 11px; font-weight: 500;
+    background: #f4f4f5; border-top: 1px solid #d4d4d8; color: #52525b;
+  }
+  .bq-subtotal td.r { text-align: right; color: #18181b; }
+  .bq-subtotal td.c { text-align: center; color: #71717a; }
+
+  /* Total geral */
+  .bq-grand-total {
+    display: flex; justify-content: flex-end;
+    border-top: 2px solid #18181b; padding-top: 12px; margin-top: 4px;
+  }
+  .bq-grand-total-label { font-size: 11px; color: #71717a; margin-bottom: 2px; text-align: right; }
+  .bq-grand-total-value { font-size: 18px; font-weight: 500; text-align: right; }
+
+  /* Rodapé fixo */
+  .bq-footer {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    background: #f4f4f5; border-top: 1px solid #e4e4e7;
+    padding: 5px 26px;
+    display: flex; justify-content: space-between; align-items: center;
+    font-size: 9px; color: #71717a;
+  }
+  .bq-footer-name { font-weight: 500; color: #18181b; }
+
+  table { width: 100%; border-collapse: collapse; }
 </style>
 
-<div class="bq-page">
+<div class="bq">
 
-  <%# ── Cabeçalho ──────────────────────────────────────────── %>
+  <%# Cabeçalho %>
   <div class="bq-header">
-    <div class="bq-logo-area">
+    <div>
       <div class="bq-company-name"><%= @company&.name || "Backstage" %></div>
       <div class="bq-company-meta">
-        <% if @company&.cnpj.present? %>CNPJ: <%= @company.cnpj %><br><% end %>
-        <% if @company&.phone.present? %><%= @company.phone %><br><% end %>
-        <% if @company&.email.present? %><%= @company.email %><br><% end %>
-        <% if @company&.city.present? %><%= [@company.city, @company.state].compact.join(" / ") %><% end %>
+        <% if @company&.cnpj.present?  %>CNPJ: <%= @company.cnpj %> &bull; <% end %>
+        <% if @company&.phone.present? %><%= @company.phone %> &bull; <% end %>
+        <% if @company&.email.present? %><%= @company.email %><% end %>
       </div>
     </div>
-    <div class="bq-doc-info">
-      <div class="bq-doc-title">Proposta de Orçamento</div>
-      <div class="bq-doc-number">Emitido em <%= l(Date.today, format: :long) %></div>
+    <div>
+      <div class="bq-doc-title">Proposta de Or&ccedil;amento</div>
+      <div class="bq-doc-date">Emitido em <%= l(Date.today, format: :long) %></div>
     </div>
   </div>
 
-  <%# ── Info do evento ─────────────────────────────────────── %>
-  <div class="bq-event-box">
+  <%# Info do evento %>
+  <div class="bq-event">
     <div class="bq-event-name"><%= @event.name %></div>
     <div class="bq-event-meta">
-      <% if @event.location.present? %>
-        <span>📍 <%= @event.location %></span>
-      <% end %>
-      <span>📅 <%= l(@event.start_date, format: :long) %>
-        <% if @event.end_date != @event.start_date %>→ <%= l(@event.end_date, format: :long) %><% end %>
-      </span>
-      <span>⏱ <%= @total_hours.to_i %>h de operação</span>
+      <% if @event.location.present? %><%= @event.location %> &bull; <% end %>
+      <%= l(@event.start_date, format: :long) %>
+      <% if @event.end_date != @event.start_date %> &rarr; <%= l(@event.end_date, format: :long) %><% end %>
+      &bull; <%= @total_hours.to_i %>h de opera&ccedil;&atilde;o
     </div>
   </div>
 
-  <%# ── Tabela de funções ───────────────────────────────────── %>
-  <div class="bq-section-title">Composição da equipe e custos estimados</div>
+  <%# Setores %>
+  <% @sector_breakdown.each do |sb| %>
+    <div class="bq-sector">
 
-  <% if @lines.any? %>
-    <table class="bq-table">
-      <thead>
-        <tr>
-          <th>Função</th>
-          <th>Colaboradores</th>
-          <th>Horas</th>
-          <th>Valor/hora</th>
-          <th>Subtotal</th>
-        </tr>
-      </thead>
-      <tbody>
-        <% @lines.each do |line| %>
-          <tr>
-            <td class="bq-fn-name"><%= line[:function].name %></td>
-            <td><%= line[:count] %></td>
-            <td><%= line[:hours].to_i %>h</td>
-            <td>R$ <%= format("%.2f", line[:rate]) %></td>
-            <td><strong>R$ <%= number_with_delimiter(format("%.2f", line[:subtotal]), delimiter: ".", separator: ",") %></strong></td>
+      <div class="bq-sector-head">
+        <span class="bq-sector-name"><%= sb[:sector].name %></span>
+      </div>
+
+      <table>
+        <thead>
+          <tr class="bq-col-head">
+            <th>Fun&ccedil;&atilde;o</th>
+            <th class="c">Qtd</th>
+            <th class="c">Valor/h</th>
+            <th class="c">Horas</th>
+            <th class="r">Subtotal</th>
           </tr>
-        <% end %>
-      </tbody>
-      <tfoot>
-        <tr class="bq-total-row">
-          <td colspan="4">Total geral</td>
-          <td>R$ <%= number_with_delimiter(format("%.2f", @grand_total), delimiter: ".", separator: ",") %></td>
-        </tr>
-      </tfoot>
-    </table>
-  <% else %>
-    <div class="bq-empty">Nenhuma função com valor configurada para este evento.</div>
+        </thead>
+        <tbody>
+          <% sb[:teams].each do |td| %>
+            <tr class="bq-team-row">
+              <td colspan="5"><%= td[:team].name %></td>
+            </tr>
+            <% td[:lines].each do |line| %>
+              <tr class="bq-fn-row">
+                <td><%= line[:function].name %></td>
+                <td class="c"><%= line[:count] %></td>
+                <td class="c">R$ <%= number_with_delimiter(format("%.2f", line[:function].hourly_rate), delimiter: ".", separator: ",") %></td>
+                <td class="c"><%= @total_hours.to_i %>h</td>
+                <td class="r">R$ <%= number_with_delimiter(format("%.2f", line[:subtotal]), delimiter: ".", separator: ",") %></td>
+              </tr>
+            <% end %>
+          <% end %>
+          <% total_person_hours = sb[:headcount] * @total_hours
+             avg_rate = (sb[:headcount] > 0 && @total_hours > 0) ? sb[:total] / (sb[:headcount] * @total_hours) : 0 %>
+          <tr class="bq-subtotal">
+            <td>Subtotal &mdash; <%= sb[:sector].name %></td>
+            <td class="c"><%= sb[:headcount] %></td>
+            <td class="c">R$ <%= number_with_delimiter(format("%.2f", avg_rate), delimiter: ".", separator: ",") %></td>
+            <td class="c"><%= total_person_hours.to_i %>h</td>
+            <td class="r">R$ <%= number_with_delimiter(format("%.2f", sb[:total]), delimiter: ".", separator: ",") %></td>
+          </tr>
+        </tbody>
+      </table>
+
+    </div>
   <% end %>
 
-  <%# ── Observações ─────────────────────────────────────────── %>
-  <div style="margin-bottom: 32px;">
-    <div class="bq-section-title">Observações</div>
-    <div style="border: 1px solid #e4e4e7; border-radius: 6px; padding: 12px 14px; min-height: 60px; color: #a1a1aa; font-size: 0.78rem; font-style: italic;">
-      Os valores acima são estimados com base nas funções e horas de operação planejadas.
-      Custos adicionais como transporte, alimentação e equipamentos podem ser acordados separadamente.
+  <%# Total geral %>
+  <div class="bq-grand-total">
+    <div>
+      <div class="bq-grand-total-label">Total geral</div>
+      <div class="bq-grand-total-value">R$ <%= number_with_delimiter(format("%.2f", @grand_total), delimiter: ".", separator: ",") %></div>
     </div>
   </div>
 
-  <%# ── Rodapé / Assinatura ────────────────────────────────── %>
-  <div class="bq-footer">
-    <div class="bq-validity">
-      Este orçamento tem validade de <strong>30 dias</strong> a partir da data de emissão.
-    </div>
-    <div class="bq-signature">
-      <div class="bq-signature-line"></div>
-      <div class="bq-signature-label"><%= @company&.name || "Responsável" %></div>
-    </div>
-  </div>
+</div>
 
+<%# Rodapé fixo %>
+<div class="bq-footer">
+  <span class="bq-footer-name"><%= @company&.name || "Backstage" %></span>
+  <% if @company&.cnpj.present?  %><span>CNPJ: <%= @company.cnpj %></span><% end %>
+  <% if @company&.phone.present? %><span><%= @company.phone %></span><% end %>
+  <% if @company&.email.present? %><span><%= @company.email %></span><% end %>
+  <% if @company&.city.present?  %><span><%= [@company.city, @company.state].compact.join(", ") %></span><% end %>
+  <span>Validade: 30 dias</span>
 </div>
