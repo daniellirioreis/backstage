@@ -254,7 +254,7 @@ class EventsController < ApplicationController
           @company_logo_b64 = "data:#{blob.content_type};base64,#{Base64.strict_encode64(blob.download)}"
         end
 
-        @sectors_data    = build_folha_data
+        @dates_data      = build_folha_data
         @selected_date   = @date_filter ? Date.parse(@date_filter) : nil
         @selected_sector = @sector_id ? @sectors.find { |s| s.id.to_s == @sector_id } : nil
 
@@ -564,33 +564,44 @@ class EventsController < ApplicationController
   private
 
   def build_folha_data
-    sectors_scope = @event.sectors
-      .includes(teams: { team_memberships: [:user, :event_function] })
-      .order(:name)
-    sectors_scope = sectors_scope.where(id: @sector_id) if @sector_id
+    # Datas disponíveis com shifts para este evento
+    dates = Shift.joins(team: :sector)
+      .where(sectors: { event_id: @event.id })
+      .then { |q| @sector_id ? q.where(sectors: { id: @sector_id }) : q }
+      .then { |q| @team_id   ? q.where(shifts: { team_id: @team_id }) : q }
+      .then { |q| @date_filter ? q.where(shifts: { date: @date_filter }) : q }
+      .distinct.pluck(:date).sort
 
-    sectors_scope.map do |sector|
-      teams_scope = sector.teams.order(:name)
-      teams_scope = teams_scope.where(id: @team_id) if @team_id
+    dates.map do |date|
+      sectors_scope = @event.sectors
+        .includes(teams: { team_memberships: [:user, :event_function] })
+        .order(:name)
+      sectors_scope = sectors_scope.where(id: @sector_id) if @sector_id
 
-      teams_data = teams_scope.map do |team|
-        shifts_scope = Shift.where(team: team).order(:date, :start_time)
-        shifts_scope = shifts_scope.where(date: @date_filter) if @date_filter
-        shifts_by_user = shifts_scope.group_by(&:user_id)
+      sectors_data = sectors_scope.map do |sector|
+        teams_scope = sector.teams.order(:name)
+        teams_scope = teams_scope.where(id: @team_id) if @team_id
 
-        members = team.team_memberships
-          .includes(:user, :event_function)
-          .select { |tm| tm.user.present? && shifts_by_user[tm.user_id].present? }
-          .sort_by { |tm| tm.user.name }
-          .map do |tm|
-            { user: tm.user, function: tm.event_function, shifts: shifts_by_user[tm.user_id] }
-          end
+        teams_data = teams_scope.map do |team|
+          shifts_on_date = Shift.where(team: team, date: date).order(:start_time)
+          shifts_by_user = shifts_on_date.group_by(&:user_id)
 
-        { team: team, members: members }
-      end.reject { |t| t[:members].empty? }
+          members = team.team_memberships
+            .includes(:user, :event_function)
+            .select { |tm| tm.user.present? && shifts_by_user[tm.user_id].present? }
+            .sort_by { |tm| tm.user.name }
+            .map do |tm|
+              { user: tm.user, function: tm.event_function, shifts: shifts_by_user[tm.user_id] }
+            end
 
-      { sector: sector, teams: teams_data }
-    end.reject { |s| s[:teams].empty? }
+          { team: team, members: members }
+        end.reject { |t| t[:members].empty? }
+
+        { sector: sector, teams: teams_data }
+      end.reject { |s| s[:teams].empty? }
+
+      { date: date, sectors: sectors_data }
+    end.reject { |d| d[:sectors].empty? }
   end
 
   def set_event

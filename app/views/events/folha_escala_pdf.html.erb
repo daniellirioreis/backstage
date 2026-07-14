@@ -1,0 +1,194 @@
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    font-size: 12px; color: #18181b; background: #fff;
+    -webkit-print-color-adjust: exact; print-color-adjust: exact;
+  }
+  .fe { padding: 22px 26px 52px; }
+
+  /* Cabeçalho */
+  .fe-header {
+    display: flex; justify-content: space-between; align-items: flex-start;
+    padding-bottom: 13px; border-bottom: 2px solid #18181b; margin-bottom: 16px;
+  }
+  .fe-company     { display: flex; align-items: center; gap: 10px; }
+  .fe-logo        { height: 48px; width: auto; object-fit: contain; }
+  .fe-name        { font-size: 14px; font-weight: 500; }
+  .fe-meta        { font-size: 10px; color: #71717a; margin-top: 3px; line-height: 1.6; }
+  .fe-doc-title   { font-size: 12px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.04em; text-align: right; }
+  .fe-doc-date    { font-size: 10px; color: #71717a; margin-top: 3px; text-align: right; }
+
+  /* Evento */
+  .fe-event {
+    background: #f4f4f5; border-radius: 6px; padding: 9px 14px;
+    margin-bottom: 18px; display: flex; justify-content: space-between; align-items: center;
+  }
+  .fe-event-name  { font-size: 13px; font-weight: 500; margin-bottom: 3px; }
+  .fe-event-meta  { font-size: 10px; color: #52525b; }
+  .fe-event-stats { font-size: 10px; color: #71717a; text-align: right; line-height: 1.7; }
+
+  /* Cabeçalho de data */
+  .fe-date-header {
+    margin: 20px 0 10px;
+    padding: 6px 14px;
+    background: #3f3f46;
+    border-radius: 6px;
+    color: #fff;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+  }
+  .fe-date-header:first-child { margin-top: 0; }
+
+  /* Bloco de setor */
+  .fe-sector      { margin-bottom: 14px; border: 0.5px solid #e4e4e7; border-radius: 6px; overflow: hidden; }
+  .fe-sector-head { background: #18181b; padding: 7px 12px; }
+  .fe-sector-name { font-size: 11px; font-weight: 500; color: #fff; text-transform: uppercase; letter-spacing: 0.06em; }
+  .fe-team-row td {
+    padding: 5px 10px; font-size: 10px; font-weight: 600; color: #52525b;
+    background: #f0f0f0; border-top: 0.5px solid #e4e4e7; border-bottom: 0.5px solid #e4e4e7;
+  }
+
+  /* Tabela */
+  table           { width: 100%; border-collapse: collapse; }
+  .fe-col-head    { background: #fafafa; }
+  .fe-col-head th {
+    padding: 5px 10px; font-size: 9px; font-weight: 500; color: #71717a;
+    text-transform: uppercase; letter-spacing: 0.06em;
+    border-bottom: 0.5px solid #e4e4e7; text-align: left;
+  }
+  .fe-col-head th.c { text-align: center; }
+
+  /* Linhas de turno */
+  .fe-row td      { padding: 7px 10px; font-size: 11px; color: #3f3f46; border-bottom: 0.5px solid #e4e4e7; }
+  .fe-row td.c    { text-align: center; color: #52525b; }
+  .fe-row td.blank {
+    background: #fafafa; border-left: 0.5px solid #e4e4e7;
+    border-right: 0.5px solid #e4e4e7; min-width: 60px;
+  }
+  .fe-row td.sig  { min-width: 100px; }
+  .fe-fn          { font-size: 10px; color: #71717a; }
+
+  /* Rodapé fixo */
+  .fe-footer {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    background: #f4f4f5; border-top: 1px solid #e4e4e7;
+    padding: 5px 26px;
+    display: flex; justify-content: space-between; align-items: center;
+    font-size: 9px; color: #71717a;
+  }
+  .fe-footer-note { font-style: italic; }
+  .fe-footer-name { font-weight: 500; color: #18181b; }
+</style>
+
+<div class="fe">
+
+  <%# Cabeçalho %>
+  <div class="fe-header">
+    <div class="fe-company">
+      <% if @company_logo_b64 %>
+        <img src="<%= @company_logo_b64 %>" alt="Logo" class="fe-logo">
+      <% end %>
+      <div>
+        <div class="fe-name"><%= @company&.name || "Backstage" %></div>
+        <div class="fe-meta">
+          <% if @company&.cnpj.present?  %>CNPJ: <%= @company.cnpj %> &bull; <% end %>
+          <% if @company&.phone.present? %><%= @company.phone %> &bull; <% end %>
+          <% if @company&.email.present? %><%= @company.email %><% end %>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div class="fe-doc-title"><%= t("folha_escala.title") %></div>
+      <div class="fe-doc-date">Emitido em <%= l(Date.today, format: :long) %></div>
+    </div>
+  </div>
+
+  <%# Info do evento %>
+  <div class="fe-event">
+    <div>
+      <div class="fe-event-name"><%= @event.name %></div>
+      <div class="fe-event-meta">
+        <% if @event.location.present? %><%= @event.location %> &bull; <% end %>
+        <%= l(@event.start_date, format: :long) %>
+        <% if @event.end_date != @event.start_date %> &rarr; <%= l(@event.end_date, format: :long) %><% end %>
+      </div>
+    </div>
+    <div class="fe-event-stats">
+      <%= ((@event.end_date - @event.start_date).to_i + 1) %> dias de evento
+    </div>
+  </div>
+
+  <%# Agrupado por data %>
+  <% @dates_data.each do |dd| %>
+
+    <div class="fe-date-header">
+      <%= l(dd[:date], format: :long) %>
+    </div>
+
+    <% dd[:sectors].each do |sd| %>
+      <div class="fe-sector">
+
+        <div class="fe-sector-head">
+          <span class="fe-sector-name"><%= sd[:sector].name %></span>
+        </div>
+
+        <table>
+          <thead>
+            <tr class="fe-col-head">
+              <th><%= t("folha_escala.pdf.collaborator") %></th>
+              <th><%= t("folha_escala.pdf.function") %></th>
+              <th class="c"><%= t("folha_escala.pdf.scheduled_entry") %></th>
+              <th class="c"><%= t("folha_escala.pdf.scheduled_exit") %></th>
+              <th class="c" style="background:#f5f5f5;"><%= t("folha_escala.pdf.actual_entry") %></th>
+              <th class="c" style="background:#f5f5f5;"><%= t("folha_escala.pdf.actual_exit") %></th>
+              <th class="c"><%= t("folha_escala.pdf.signature") %></th>
+            </tr>
+          </thead>
+          <tbody>
+            <% sd[:teams].each do |td| %>
+              <tr class="fe-team-row">
+                <td colspan="7"><%= td[:team].name %></td>
+              </tr>
+              <% td[:members].each do |member| %>
+                <% member[:shifts].each_with_index do |shift, idx| %>
+                  <tr class="fe-row">
+                    <% if idx == 0 %>
+                      <td rowspan="<%= member[:shifts].size %>" style="font-weight:500;vertical-align:middle;">
+                        <%= member[:user].name %>
+                      </td>
+                      <td rowspan="<%= member[:shifts].size %>" style="vertical-align:middle;" class="fe-fn">
+                        <%= member[:function]&.name || "—" %>
+                      </td>
+                    <% end %>
+                    <td class="c"><%= shift.start_time.strftime("%H:%M") %></td>
+                    <td class="c"><%= shift.end_time.strftime("%H:%M") %></td>
+                    <td class="blank"></td>
+                    <td class="blank"></td>
+                    <% if idx == 0 %>
+                      <td class="sig" rowspan="<%= member[:shifts].size %>" style="vertical-align:bottom;padding-bottom:6px;">
+                        <div style="border-bottom:0.5px solid #a1a1aa;margin:0 4px;height:28px;"></div>
+                      </td>
+                    <% end %>
+                  </tr>
+                <% end %>
+              <% end %>
+            <% end %>
+          </tbody>
+        </table>
+
+      </div>
+    <% end %>
+
+  <% end %>
+
+</div>
+
+<%# Rodapé fixo %>
+<div class="fe-footer">
+  <span class="fe-footer-name"><%= @company&.name || "Backstage" %></span>
+  <% if @company&.cnpj.present? %><span>CNPJ: <%= @company.cnpj %></span><% end %>
+  <% if @company&.email.present? %><span><%= @company.email %></span><% end %>
+  <span class="fe-footer-note"><%= t("folha_escala.pdf.footer_note") %></span>
+</div>
