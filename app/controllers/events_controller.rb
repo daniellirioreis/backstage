@@ -1,5 +1,5 @@
 class EventsController < ApplicationController
-  before_action :set_event, only: %i[show edit update destroy print credentials transition revert]
+  before_action :set_event, only: %i[show edit update destroy print budget credentials transition revert]
 
   TRANSITIONS = { "draft" => "active", "active" => "closed" }.freeze
 
