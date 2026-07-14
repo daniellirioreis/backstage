@@ -21,7 +21,8 @@ class Sector < ApplicationRecord
 
   enum :sector_type, TYPES.index_by { |t| t.to_sym }
 
-  validates :name, presence: true
+  validates :name,        presence: true
+  validates :sector_type, presence: true
 
   def planned_headcount
     sector_functions.sum(:quantity)

@@ -528,6 +528,81 @@
   window.checkAllFnWarnings     = checkAllRows;
   window.updateSectorPlanPreview = updateSectorPlanPreview;
 
+  // ── Validação no submit ───────────────────────────────────────────────────
+  if (FN_LIST.length > 0) {
+    var theForm = document.querySelector("form");
+    if (theForm) {
+      theForm.addEventListener("submit", function(e) {
+        var invalidRows = [];
+        document.querySelectorAll(".membership-row").forEach(function(row) {
+          var destroyCb = row.querySelector(".destroy-cb");
+          if (destroyCb && destroyCb.checked) return; // marcado para remoção
+
+          // Obtém user_id: pode vir de hidden padrão (persisted) ou novo input
+          var userId = row.querySelector(".member-user-id-input");
+          if (!userId) {
+            var allHidden = row.querySelectorAll("input[type='hidden']");
+            for (var i = 0; i < allHidden.length; i++) {
+              if (allHidden[i].name && allHidden[i].name.indexOf("[user_id]") !== -1) {
+                userId = allHidden[i];
+                break;
+              }
+            }
+          }
+
+          var fnHidden = row.querySelector(".fn-ac-hidden");
+          var hasUser  = userId && userId.value;
+          var hasFn    = fnHidden && fnHidden.value;
+
+          if (hasUser && !hasFn) {
+            invalidRows.push(row);
+          }
+        });
+
+        if (invalidRows.length > 0) {
+          e.preventDefault();
+          invalidRows.forEach(function(row) {
+            var fnWrapper = row.querySelector(".fn-ac-wrapper");
+            if (fnWrapper) {
+              var input = fnWrapper.querySelector(".fn-ac-input");
+              if (input) {
+                input.style.border = "1.5px solid #dc2626";
+                input.style.background = "#fff1f2";
+                input.focus();
+              }
+            }
+          });
+
+          // Mostra mensagem de erro no topo do form
+          var existing = document.getElementById("fn-required-error");
+          if (!existing) {
+            var errDiv = document.createElement("div");
+            errDiv.id = "fn-required-error";
+            errDiv.style.cssText = "background:#fff1f2;border:1px solid #fca5a5;border-radius:8px;padding:0.65rem 1rem;margin-bottom:1rem;font-size:0.82rem;color:#dc2626;display:flex;align-items:center;gap:0.5rem;";
+            errDiv.innerHTML = '<i class="bi bi-exclamation-circle-fill"></i> <span>Todos os colaboradores precisam ter uma <strong>função</strong> informada.</span>';
+            var membershipsLabel = document.querySelector("#memberships-fields");
+            if (membershipsLabel) membershipsLabel.before(errDiv);
+          }
+        } else {
+          var existing = document.getElementById("fn-required-error");
+          if (existing) existing.remove();
+        }
+      });
+
+      // Remove borda vermelha ao selecionar função
+      theForm.addEventListener("change", function(e) {
+        var fnHidden = e.target.closest && e.target.closest(".fn-ac-wrapper");
+        if (fnHidden) {
+          var input = fnHidden.querySelector(".fn-ac-input");
+          if (input) {
+            input.style.border = "";
+            input.style.background = "";
+          }
+        }
+      });
+    }
+  }
+
   // Verifica ao carregar
   checkAllRows();
   updateSectorPlanPreview();

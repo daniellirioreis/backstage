@@ -258,7 +258,7 @@
     var endVal = calcEnd(el.value, dayHours());
     var be = document.getElementById('bulk_end_' + tUid);
     if (be) be.value = endVal;
-    frame.querySelectorAll('.col-end').forEach(function(i) { i.value = endVal; });
+    frame.querySelectorAll('.col-end').forEach(function(i) { i.value = endVal; updateDurSpan(i); });
     // Notifica o save button
     frame.dispatchEvent(new Event('bulk-filled', { bubbles: true }));
   };

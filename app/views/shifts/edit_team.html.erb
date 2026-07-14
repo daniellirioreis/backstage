@@ -249,8 +249,10 @@
     });
 
     // Bulk fill define valores programaticamente (não dispara input em col-end),
-    // então ouvimos o evento customizado para habilitar o botão
-    form.addEventListener('bulk-filled', function () {
+    // então ouvimos o evento customizado para habilitar o botão.
+    // O evento é disparado no frame (pai do form), não no form — por isso ouvimos no frame.
+    var eventFrame = document.getElementById('shift-frame-' + uid) || document;
+    eventFrame.addEventListener('bulk-filled', function () {
       if (hasAnyTime()) markDirty();
     });
 

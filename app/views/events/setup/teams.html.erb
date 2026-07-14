@@ -235,6 +235,15 @@
               </div>
             <% end %>
 
+            <%# Placeholder quando o setor não tem equipes ainda %>
+            <% if sector.teams.empty? %>
+              <div class="no-teams-placeholder" style="padding:2.25rem 1.5rem;text-align:center;">
+                <i class="bi bi-people" style="font-size:2rem;color:#d4d4d8;display:block;margin-bottom:0.75rem;"></i>
+                <p style="font-size:0.88rem;font-weight:600;color:#18181b;margin:0 0 0.3rem;">Nenhuma equipe cadastrada neste setor</p>
+                <p style="font-size:0.78rem;color:#71717a;margin:0;">Clique em <strong>Nova equipe</strong> para adicionar a primeira equipe.</p>
+              </div>
+            <% end %>
+
             <%# Container para novos painéis de equipe (via JS) %>
             <div class="new-team-panels"></div>
 
@@ -324,7 +333,7 @@
       <%= link_to event_path(@event), style: "font-size:0.82rem;color:#71717a;text-decoration:none;" do %>
         Pular <i class="bi bi-arrow-right"></i>
       <% end %>
-      <%= f.submit "Concluir e ver evento →", class: "btn-primary" %>
+      <%= f.submit "Próximo: Escalas →", class: "btn-primary" %>
     </div>
   </div>
 
@@ -580,6 +589,9 @@
     panel.style.display = "none";
     panel.appendChild(content);
     panelsContainer.appendChild(panel);
+
+    var placeholder = sectorCard.querySelector(".no-teams-placeholder");
+    if (placeholder) placeholder.style.display = "none";
     var tabBtn = document.createElement("button");
     tabBtn.type = "button";
     tabBtn.className = "team-tab-btn new-tab";
@@ -675,6 +687,107 @@
   document.querySelectorAll(".existing-team").forEach(function (panel) {
     initTeamCard(panel);
   });
+
+  // ── Validação no submit ───────────────────────────────────────────────────
+  var teamsForm = document.getElementById("teams-form");
+  if (teamsForm) {
+    teamsForm.addEventListener("submit", function (e) {
+      var errors          = [];
+      var firstErrPanel   = null;
+      var firstErrSector  = null;
+
+      // Limpa highlights anteriores
+      document.querySelectorAll(".fn-ac-input.fn-required-err").forEach(function (el) {
+        el.classList.remove("fn-required-err");
+        el.style.border = ""; el.style.background = "";
+      });
+      document.querySelectorAll(".team-name-input.name-required-err").forEach(function (el) {
+        el.classList.remove("name-required-err");
+        el.style.border = ""; el.style.background = "";
+      });
+
+      document.querySelectorAll(".team-tab-panel, .existing-team").forEach(function (panel) {
+        var destroyFlag = panel.querySelector(".destroy-flag");
+        if (destroyFlag && destroyFlag.value === "1") return;
+
+        var nameInput = panel.querySelector(".team-name-input");
+        var teamName  = nameInput && nameInput.value.trim();
+
+        // 1. Nome obrigatório
+        if (!teamName) {
+          errors.push("Uma equipe está sem nome.");
+          if (nameInput) {
+            nameInput.classList.add("name-required-err");
+            nameInput.style.border     = "1.5px solid #dc2626";
+            nameInput.style.background = "#fff1f2";
+          }
+          if (!firstErrPanel) { firstErrPanel = panel; firstErrSector = panel.closest(".sector-team-panel"); }
+        } else {
+          if (nameInput) { nameInput.style.border = ""; nameInput.style.background = ""; }
+        }
+
+        var label = teamName || "Equipe sem nome";
+
+        // 2. Mínimo de 1 colaborador
+        var memberCount = 0;
+        panel.querySelectorAll(".member-row").forEach(function (row) {
+          var uh = row.querySelector(".user-ac-hidden");
+          if (uh && uh.value) memberCount++;
+        });
+        if (memberCount === 0) {
+          errors.push('"' + label + '": adicione pelo menos um colaborador.');
+          if (!firstErrPanel) { firstErrPanel = panel; firstErrSector = panel.closest(".sector-team-panel"); }
+        }
+
+        // 3. Função obrigatória por colaborador (se evento tem funções)
+        if (FN_LIST.length > 0) {
+          panel.querySelectorAll(".member-row").forEach(function (row) {
+            var uh = row.querySelector(".user-ac-hidden");
+            var fh = row.querySelector(".fn-ac-hidden");
+            if (uh && uh.value && fh && !fh.value) {
+              var inp = row.querySelector(".fn-ac-input");
+              if (inp) {
+                inp.classList.add("fn-required-err");
+                inp.style.border     = "1.5px solid #dc2626";
+                inp.style.background = "#fff1f2";
+              }
+              var msg = '"' + label + '": todos os colaboradores precisam ter uma função.';
+              if (!errors.includes(msg)) errors.push(msg);
+              if (!firstErrPanel) { firstErrPanel = panel; firstErrSector = panel.closest(".sector-team-panel"); }
+            }
+          });
+        }
+      });
+
+      if (errors.length > 0) {
+        e.preventDefault();
+
+        // Navega para o primeiro painel com erro
+        if (firstErrSector) {
+          var sb = document.querySelector('.sector-team-tab[data-panel="' + firstErrSector.id + '"]');
+          if (sb) switchSectorTeamTab(sb);
+        }
+        if (firstErrPanel) {
+          var tb = document.querySelector('.team-tab-btn[data-panel="' + firstErrPanel.id + '"]');
+          if (tb) switchTeamTab(tb);
+        }
+
+        // Remove erro anterior e mostra novo
+        var prev = document.getElementById("teams-form-error");
+        if (prev) prev.remove();
+        var errDiv = document.createElement("div");
+        errDiv.id = "teams-form-error";
+        errDiv.style.cssText = "background:#fff1f2;border:1px solid #fca5a5;border-radius:8px;padding:0.65rem 1rem;margin-bottom:1rem;font-size:0.82rem;color:#dc2626;";
+        errDiv.innerHTML = '<i class="bi bi-exclamation-circle-fill"></i> ' + errors.join('<br>');
+
+        var activeCard = (firstErrSector || document.querySelector(".sector-team-panel"));
+        if (activeCard) {
+          var cc = activeCard.querySelector(".content-card");
+          if (cc) cc.insertBefore(errDiv, cc.firstChild);
+        }
+      }
+    });
+  }
 })();
 </script>
 

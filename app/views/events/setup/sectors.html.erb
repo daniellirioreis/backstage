@@ -362,6 +362,93 @@
     sfRows.appendChild(row);
   };
 
+  // ── Validação no submit ───────────────────────────────────────────────────
+  var hasFunctions = <%= @event_functions.any? ? 'true' : 'false' %>;
+
+  document.getElementById('sectors-form').addEventListener('submit', function (e) {
+    var errors = [];
+
+    document.querySelectorAll('#sector-panels > div').forEach(function (panelDiv) {
+      var sectorRow  = panelDiv.querySelector('.sector-row');
+      if (!sectorRow) return;
+
+      // Ignora setores marcados para remoção
+      var destroyFlag = sectorRow.querySelector('.sector-destroy-flag');
+      if (destroyFlag && destroyFlag.value === '1') return;
+
+      var typeSelect = sectorRow.querySelector('select[name*="[sector_type]"]');
+      var nameInput  = sectorRow.querySelector('.sector-name-input');
+      var label      = (nameInput && nameInput.value.trim()) || 'Setor sem nome';
+
+      // Valida tipo
+      if (!typeSelect || !typeSelect.value) {
+        errors.push({ el: typeSelect, msg: '"' + label + '": selecione o tipo de setor.' });
+        if (typeSelect) {
+          typeSelect.style.border     = '1.5px solid #dc2626';
+          typeSelect.style.background = '#fff1f2';
+        }
+        // Navega para o painel com erro
+        var tabBtn = document.querySelector('.sector-tab-btn[data-panel="' + panelDiv.id + '"]');
+        if (tabBtn && errors.length === 1) switchSectorTab(tabBtn);
+      } else {
+        if (typeSelect) {
+          typeSelect.style.border     = '';
+          typeSelect.style.background = '';
+        }
+      }
+
+      // Valida mínimo de funções (só se o evento tem funções cadastradas)
+      if (hasFunctions) {
+        var sfRows = sectorRow.querySelectorAll('.sf-rows .sf-row');
+        var hasValidFn = false;
+        sfRows.forEach(function (r) {
+          var sel = r.querySelector('.sf-fn-select');
+          var qty = r.querySelector('.sf-qty-input');
+          if (sel && sel.value && qty && parseInt(qty.value) > 0) hasValidFn = true;
+        });
+        if (!hasValidFn) {
+          errors.push({ el: null, msg: '"' + label + '": adicione pelo menos uma função planejada.' });
+          var sfBlock = sectorRow.querySelector('.sf-rows');
+          if (sfBlock) {
+            sfBlock.style.outline       = '1.5px solid #dc2626';
+            sfBlock.style.borderRadius  = '4px';
+          }
+          var tabBtn = document.querySelector('.sector-tab-btn[data-panel="' + panelDiv.id + '"]');
+          if (tabBtn && errors.length === 1) switchSectorTab(tabBtn);
+        } else {
+          var sfBlock = sectorRow.querySelector('.sf-rows');
+          if (sfBlock) { sfBlock.style.outline = ''; sfBlock.style.borderRadius = ''; }
+        }
+      }
+    });
+
+    if (errors.length > 0) {
+      e.preventDefault();
+
+      var prev = document.getElementById('sector-form-error');
+      if (prev) prev.remove();
+
+      var div = document.createElement('div');
+      div.id = 'sector-form-error';
+      div.style.cssText = 'background:#fff1f2;border:1px solid #fca5a5;border-radius:8px;padding:0.65rem 1rem;margin-bottom:1rem;font-size:0.82rem;color:#dc2626;';
+      div.innerHTML = '<i class="bi bi-exclamation-circle-fill"></i> '
+        + errors.map(function (e) { return e.msg; }).join('<br>');
+
+      var form = document.getElementById('sectors-form');
+      form.insertBefore(div, form.firstChild);
+    }
+
+    // Limpa erros ao mudar o select
+    document.querySelectorAll('select[name*="[sector_type]"]').forEach(function (sel) {
+      sel.addEventListener('change', function () {
+        this.style.border     = '';
+        this.style.background = '';
+        var prev = document.getElementById('sector-form-error');
+        if (prev) prev.remove();
+      }, { once: true });
+    });
+  });
+
   // ── Atualiza label das abas quando o nome do setor muda ──────────────────
   document.querySelectorAll('.sector-name-input').forEach(function (input) {
     var panelDiv = input.closest('[id^="spanel-"]');

@@ -39,6 +39,11 @@ class Events::SetupController < ApplicationController
           sector.sector_functions.create!(event_function_id: fn[:event_function_id], quantity: qty)
         end
 
+        if @event.event_functions.any? && sector.sector_functions.reload.empty?
+          sector.errors.add(:base, "O setor \"#{sector.name}\" precisa ter pelo menos uma função planejada.")
+          raise ActiveRecord::RecordInvalid.new(sector)
+        end
+
       else
         # ── Setor novo: criar ──────────────────────────────────────────────
         next if s[:name].blank?
@@ -48,6 +53,11 @@ class Events::SetupController < ApplicationController
           qty = fn[:quantity].to_i
           next if qty <= 0 || fn[:event_function_id].blank?
           sector.sector_functions.create!(event_function_id: fn[:event_function_id], quantity: qty)
+        end
+
+        if @event.event_functions.any? && sector.sector_functions.reload.empty?
+          sector.errors.add(:base, "O setor \"#{sector.name}\" precisa ter pelo menos uma função planejada.")
+          raise ActiveRecord::RecordInvalid.new(sector)
         end
       end
     end
@@ -225,6 +235,28 @@ class Events::SetupController < ApplicationController
     @event_days = @event.event_days.ordered
   end
 
+  def finish
+    authorize @event, :edit?
+
+    team_ids = @event.sectors.includes(:teams).flat_map { |s| s.teams.map(&:id) }
+
+    if team_ids.empty?
+      redirect_to teams_event_setup_path(@event),
+        alert: "Adicione equipes antes de finalizar."
+      return
+    end
+
+    teams_with_shifts = Shift.where(team_id: team_ids).distinct.pluck(:team_id)
+    teams_without     = Team.where(id: team_ids - teams_with_shifts).pluck(:name)
+
+    if teams_without.any?
+      redirect_to schedules_event_setup_path(@event),
+        alert: "Configure as escalas de todas as equipes antes de finalizar: #{teams_without.to_sentence(locale: :pt)}."
+    else
+      redirect_to event_path(@event), notice: "Configuração concluída!"
+    end
+  end
+
   def save_teams
     authorize @event, :edit?
 
@@ -296,9 +328,23 @@ class Events::SetupController < ApplicationController
     end
 
     # ── Validação final com membros no estado correto ──────────────────────
+    has_functions = @event.event_functions.any?
+
     saved_teams.each do |team|
       team.reload
       raise ActiveRecord::RecordInvalid.new(team) unless team.valid?
+
+      members = team.team_memberships.reject(&:coordinator?)
+
+      if members.empty?
+        team.errors.add(:base, "A equipe \"#{team.name}\" precisa ter pelo menos um colaborador.")
+        raise ActiveRecord::RecordInvalid.new(team)
+      end
+
+      if has_functions && members.any? { |tm| tm.event_function_id.blank? }
+        team.errors.add(:base, "Todos os colaboradores da equipe \"#{team.name}\" precisam ter uma função informada.")
+        raise ActiveRecord::RecordInvalid.new(team)
+      end
     end
 
     if params[:commit] == "save_and_stay"
@@ -343,11 +389,25 @@ class Events::SetupController < ApplicationController
   end
 
   def teams_step_incomplete(event)
-    all_teams = event.sectors.includes(:teams).flat_map(&:teams)
+    all_teams = event.sectors
+                     .includes(teams: :team_memberships)
+                     .flat_map(&:teams)
     return ["pelo menos uma equipe"] if all_teams.empty?
 
-    all_teams.select { |t| t.name.blank? }
-             .map { |t| t.name.presence || "(sem nome)" }
+    has_functions = event.event_functions.any?
+    issues = []
+
+    all_teams.each do |team|
+      label = team.name.presence || "(sem nome)"
+      issues << "#{label} (sem nome)"        if team.name.blank?
+      members = team.team_memberships.reject(&:coordinator?)
+      issues << "#{label} (sem colaboradores)" if members.empty?
+      if has_functions && members.any? { |tm| tm.event_function_id.blank? }
+        issues << "#{label} (colaborador sem função)"
+      end
+    end
+
+    issues
   end
 
   def sectors_step_incomplete(event)
@@ -358,9 +418,12 @@ class Events::SetupController < ApplicationController
 
   def step1_missing(event)
     missing = []
-    missing << "local"              if event.location.blank?
-    missing << "tipo de evento"     if event.event_type.blank?
-    missing << "pelo menos um dia"  if event.event_days.none?
+    missing << "nome do evento"        if event.name.blank?
+    missing << "data de início"        if event.start_date.blank?
+    missing << "data de término"       if event.end_date.blank?
+    missing << "local"                 if event.location.blank?
+    missing << "tipo de evento"        if event.event_type.blank?
+    missing << "pelo menos um dia"     if event.event_days.none?
     missing << "pelo menos uma função" if event.event_functions.none?
     missing
   end

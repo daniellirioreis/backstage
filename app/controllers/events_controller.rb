@@ -395,6 +395,7 @@ class EventsController < ApplicationController
 
     @event.require_step1_complete = true
     if @event.save
+      session[:current_event_id] = @event.id
       redirect_to sectors_event_setup_path(@event), notice: "Evento criado! Agora configure os setores."
     else
       render :new, status: :unprocessable_entity
@@ -412,6 +413,7 @@ class EventsController < ApplicationController
     @event.require_step1_complete = true if advancing
     if @event.update(event_params)
       if advancing
+        session[:current_event_id] = @event.id
         redirect_to sectors_event_setup_path(@event), notice: "Dados salvos. Configure os setores."
       else
         redirect_to event_path(@event), notice: t("notices.updated", model: Event.model_name.human)

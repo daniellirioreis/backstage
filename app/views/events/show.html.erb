@@ -134,12 +134,17 @@
 <%# ══════════════════════════════════════════════════════════════════════════ %>
 <div id="tab-geral">
 
-  <%# ── Coordenadores ── %>
-  <% coordinators = @sectors.flat_map(&:teams).select(&:coordinator).map { |t|
-       coord_tm = t.team_memberships.find(&:coordinator?)
-       { team: t, user: t.coordinator, credential: coord_tm&.credential_code }
-     } %>
-  <% if coordinators.any? %>
+  <%# ── Coordenadores (agrupados por pessoa) ── %>
+  <%
+    coordinators_grouped = {}
+    @sectors.flat_map(&:teams).select(&:coordinator).each do |t|
+      coord_tm = t.team_memberships.find(&:coordinator?)
+      uid = t.coordinator.id
+      coordinators_grouped[uid] ||= { user: t.coordinator, teams: [] }
+      coordinators_grouped[uid][:teams] << { team: t, credential: coord_tm&.credential_code }
+    end
+  %>
+  <% if coordinators_grouped.any? %>
     <div class="content-card" style="margin-bottom: 2rem;">
       <h2 style="font-size: 0.9rem; font-weight: 600; color: #18181b; margin: 0 0 0.75rem;">
         <i class="bi bi-star-fill" style="color: #f59e0b;"></i> Coordenadores
@@ -148,13 +153,13 @@
         <thead>
           <tr>
             <th>Nome</th>
-            <th>Equipe</th>
+            <th>Equipes</th>
             <th>Canal Rádio</th>
             <th>Cód. Credencial</th>
           </tr>
         </thead>
         <tbody>
-          <% coordinators.each do |c| %>
+          <% coordinators_grouped.each_value do |c| %>
             <tr>
               <td>
                 <div style="display: flex; align-items: center; gap: 0.6rem;">
@@ -168,18 +173,32 @@
                   <span style="font-weight: 500; color: #18181b;"><%= c[:user].name %></span>
                 </div>
               </td>
-              <td style="color: #71717a; font-size: 0.82rem;"><%= c[:team].name %></td>
               <td>
-                <% if c[:team].radio_channel.present? %>
-                  <span style="display: inline-flex; align-items: center; gap: 0.25rem; background: #fef3c7; border: 1px solid #fcd34d; border-radius: 5px; padding: 1px 7px; font-size: 0.7rem; font-weight: 600; color: #92400e;">
-                    <i class="bi bi-broadcast"></i> <%= c[:team].radio_channel %>
-                  </span>
-                <% else %>
-                  <span style="color: #a1a1aa;">—</span>
-                <% end %>
+                <div style="display: flex; flex-direction: column; gap: 0.3rem;">
+                  <% c[:teams].each do |entry| %>
+                    <span style="font-size: 0.82rem; color: #3f3f46;"><%= entry[:team].name %></span>
+                  <% end %>
+                </div>
               </td>
-              <td style="font-family: monospace; font-size: 0.78rem; color: #71717a;">
-                <%= c[:credential] || "—" %>
+              <td>
+                <div style="display: flex; flex-direction: column; gap: 0.3rem;">
+                  <% c[:teams].each do |entry| %>
+                    <% if entry[:team].radio_channel.present? %>
+                      <span style="display: inline-flex; align-items: center; gap: 0.25rem; background: #fef3c7; border: 1px solid #fcd34d; border-radius: 5px; padding: 1px 7px; font-size: 0.7rem; font-weight: 600; color: #92400e; width: fit-content;">
+                        <i class="bi bi-broadcast"></i> <%= entry[:team].radio_channel %>
+                      </span>
+                    <% else %>
+                      <span style="color: #a1a1aa; font-size: 0.82rem;">—</span>
+                    <% end %>
+                  <% end %>
+                </div>
+              </td>
+              <td>
+                <div style="display: flex; flex-direction: column; gap: 0.3rem;">
+                  <% c[:teams].each do |entry| %>
+                    <span style="font-family: monospace; font-size: 0.78rem; color: #71717a;"><%= entry[:credential] || "—" %></span>
+                  <% end %>
+                </div>
               </td>
             </tr>
           <% end %>
@@ -467,19 +486,25 @@
                 <i class="bi bi-person-badge"></i> <%= members.size %> colaborador<%= members.size == 1 ? '' : 'es' %>
               </div>
               <% if members.any? %>
-                <div style="display:flex; flex-wrap:wrap; gap:0.3rem;">
-                  <% members.first(8).each do |user| %>
-                    <div title="<%= user.name %>" style="width:28px; height:28px; border-radius:50%; overflow:hidden; background:#e4e4e7; border:2px solid #fff; box-shadow:0 0 0 1px #d4d4d8; display:flex; align-items:center; justify-content:center; font-size:0.52rem; font-weight:700; color:#71717a; flex-shrink:0;">
-                      <% if user.avatar.attached? %>
-                        <%= image_tag user.avatar, style:"width:100%;height:100%;object-fit:cover;" %>
-                      <% else %>
-                        <%= user.name.split.map(&:first).first(2).join.upcase %>
-                      <% end %>
-                    </div>
-                  <% end %>
-                  <% if members.size > 8 %>
-                    <div style="width:28px; height:28px; border-radius:50%; background:#f4f4f5; border:2px solid #fff; box-shadow:0 0 0 1px #d4d4d8; display:flex; align-items:center; justify-content:center; font-size:0.6rem; font-weight:700; color:#71717a;">
-                      +<%= members.size - 8 %>
+                <div style="display:flex; flex-direction:column; gap:0.25rem;">
+                  <% members.each do |user| %>
+                    <%
+                      tm = team.team_memberships.find { |m| m.user_id == user.id }
+                    %>
+                    <div style="display:flex; align-items:center; gap:0.5rem;">
+                      <div style="width:24px; height:24px; border-radius:50%; overflow:hidden; background:#e4e4e7; border:1px solid #d4d4d8; display:flex; align-items:center; justify-content:center; font-size:0.48rem; font-weight:700; color:#71717a; flex-shrink:0;">
+                        <% if user.avatar.attached? %>
+                          <%= image_tag user.avatar, style:"width:100%;height:100%;object-fit:cover;" %>
+                        <% else %>
+                          <%= user.name.split.map(&:first).first(2).join.upcase %>
+                        <% end %>
+                      </div>
+                      <div style="min-width:0;">
+                        <div style="font-size:0.8rem; color:#18181b; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;"><%= user.name %></div>
+                        <% if tm&.event_function.present? %>
+                          <span style="font-size:0.65rem; color:#7c3aed; font-weight:600;"><%= tm.event_function.name %></span>
+                        <% end %>
+                      </div>
                     </div>
                   <% end %>
                 </div>

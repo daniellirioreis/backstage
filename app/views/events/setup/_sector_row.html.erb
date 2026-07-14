@@ -17,7 +17,7 @@
       <label class="form-label" style="font-size:0.78rem;">Tipo de setor</label>
       <select name="sectors[<%= idx %>][sector_type]" class="form-control"
               onchange="sectorTypeChanged(this)">
-        <option value="">— Tipo (opcional) —</option>
+        <option value="">— Selecione o tipo —</option>
         <% Sector::TYPES.map { |t| [I18n.t("sector_types.#{t}"), t] }.sort_by(&:first).each do |label, val| %>
           <option value="<%= val %>"<%= ' selected' if existing&.sector_type == val %>><%= label %></option>
         <% end %>

@@ -92,7 +92,7 @@
     <%= link_to teams_event_setup_path(@event), class: "btn-secondary" do %>
       <i class="bi bi-arrow-left"></i> Voltar para Equipes
     <% end %>
-    <%= link_to event_path(@event), class: "btn-primary" do %>
+    <%= button_to finish_event_setup_path(@event), method: :post, class: "btn-primary", form: { style: "display:inline;" } do %>
       <i class="bi bi-check2-circle"></i> Finalizar configuração
     <% end %>
   </div>

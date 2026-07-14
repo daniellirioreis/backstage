@@ -64,6 +64,7 @@ Rails.application.routes.draw do
       get  :teams
       post :teams,          action: :save_teams
       get  :schedules
+      post :finish
       get  :import_source_events
       get  :import_source_sector_teams
       post :import_teams
