@@ -1,5 +1,5 @@
 class EventsController < ApplicationController
-  before_action :set_event, only: %i[show edit update destroy print budget credentials transition revert]
+  before_action :set_event, only: %i[show edit update destroy print budget folha_escala credentials transition revert]
 
   TRANSITIONS = { "draft" => "active", "active" => "closed" }.freeze
 
@@ -230,6 +230,42 @@ class EventsController < ApplicationController
                orientation: "Landscape",
                margin: { top: 14, bottom: 20, left: 14, right: 14 },
                disposition: "attachment"
+      end
+    end
+  end
+
+  def folha_escala
+    authorize @event, :folha_escala?
+    @company = @event.company
+    @sectors = @event.sectors.includes(:teams).order(:name)
+    @available_dates = Shift.joins(team: :sector)
+      .where(sectors: { event_id: @event.id })
+      .distinct.pluck(:date).sort
+
+    respond_to do |format|
+      format.html # tela de filtro
+      format.pdf do
+        @sector_id   = params[:sector_id].presence
+        @date_filter = params[:date].presence
+        @team_id     = params[:team_id].presence
+
+        if @company&.logo&.attached?
+          blob = @company.logo.blob
+          @company_logo_b64 = "data:#{blob.content_type};base64,#{Base64.strict_encode64(blob.download)}"
+        end
+
+        @sectors_data    = build_folha_data
+        @selected_date   = @date_filter ? Date.parse(@date_filter) : nil
+        @selected_sector = @sector_id ? @sectors.find { |s| s.id.to_s == @sector_id } : nil
+
+        render pdf:         "folha-escala-#{@event.name.parameterize}",
+               template:    "events/folha_escala_pdf",
+               layout:      "pdf",
+               formats:     [:html],
+               page_size:   "A4",
+               orientation: "Landscape",
+               margin:      { top: 14, bottom: 20, left: 14, right: 14 },
+               disposition: "inline"
       end
     end
   end
@@ -526,6 +562,36 @@ class EventsController < ApplicationController
   end
 
   private
+
+  def build_folha_data
+    sectors_scope = @event.sectors
+      .includes(teams: { team_memberships: [:user, :event_function] })
+      .order(:name)
+    sectors_scope = sectors_scope.where(id: @sector_id) if @sector_id
+
+    sectors_scope.map do |sector|
+      teams_scope = sector.teams.order(:name)
+      teams_scope = teams_scope.where(id: @team_id) if @team_id
+
+      teams_data = teams_scope.map do |team|
+        shifts_scope = Shift.where(team: team).order(:date, :start_time)
+        shifts_scope = shifts_scope.where(date: @date_filter) if @date_filter
+        shifts_by_user = shifts_scope.group_by(&:user_id)
+
+        members = team.team_memberships
+          .includes(:user, :event_function)
+          .select { |tm| tm.user.present? && shifts_by_user[tm.user_id].present? }
+          .sort_by { |tm| tm.user.name }
+          .map do |tm|
+            { user: tm.user, function: tm.event_function, shifts: shifts_by_user[tm.user_id] }
+          end
+
+        { team: team, members: members }
+      end.reject { |t| t[:members].empty? }
+
+      { sector: sector, teams: teams_data }
+    end.reject { |s| s[:teams].empty? }
+  end
 
   def set_event
     @event = Event.find(params[:id])
