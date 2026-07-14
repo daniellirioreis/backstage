@@ -1,5 +1,5 @@
 <h2 style="font-size:1.2rem; font-weight:700; color:#18181b; margin:0 0 0.3rem;">Convidar colaborador</h2>
-<p style="font-size:0.83rem; color:#71717a; margin:0 0 1.5rem;">Gere um link de convite para a pessoa acessar o Backstage pela primeira vez.</p>
+<p style="font-size:0.83rem; color:#71717a; margin:0 0 1.5rem;">Preencha os dados abaixo. Após gerar, você receberá um link para copiar e enviar manualmente.</p>
 
 <%= form_with url: invitations_path, method: :post, data: { turbo: false } do |f| %>
   <% if @invited_user&.errors&.any? %>
@@ -17,6 +17,7 @@
              value="<%= @invited_user&.name %>"
              style="width:100%; box-sizing:border-box; border:1px solid #d1d5db; border-radius:8px; padding:0.55rem 0.75rem; font-size:0.875rem; color:#18181b; outline:none;"
              placeholder="Nome completo" />
+      <p style="font-size:0.75rem; color:#71717a; margin:0.25rem 0 0;"><i class="bi bi-info-circle"></i> Aparece na credencial e na escala do evento.</p>
     </div>
 
     <div>
@@ -25,6 +26,7 @@
              value="<%= @invited_user&.email %>"
              style="width:100%; box-sizing:border-box; border:1px solid #d1d5db; border-radius:8px; padding:0.55rem 0.75rem; font-size:0.875rem; color:#18181b; outline:none;"
              placeholder="email@exemplo.com" />
+      <p style="font-size:0.75rem; color:#71717a; margin:0.25rem 0 0;"><i class="bi bi-info-circle"></i> Usado apenas para login — não enviamos e-mails automáticos.</p>
     </div>
 
     <div>
@@ -36,6 +38,12 @@
           <option value="<%= role.id %>"><%= role.name %></option>
         <% end %>
       </select>
+      <div style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:6px; padding:0.5rem 0.75rem; margin-top:0.35rem; font-size:0.75rem; color:#1d4ed8;">
+        <i class="bi bi-shield-check"></i>
+        <strong>Colaborador</strong> — acessa apenas a própria escala. &nbsp;
+        <strong>Coordenador</strong> — visualiza a equipe. &nbsp;
+        <strong>Admin</strong> — acesso total ao sistema.
+      </div>
     </div>
 
     <div>
@@ -55,6 +63,7 @@
         <% end %>
       </select>
 
+      <p style="font-size:0.75rem; color:#71717a; margin:0.25rem 0 0;"><i class="bi bi-info-circle"></i> Deixe em branco para convidar sem vínculo de empresa por agora.</p>
       <div id="plan-info" style="display:none; margin-top:0.5rem; padding:0.5rem 0.75rem; border-radius:7px; font-size:0.78rem;">
       </div>
     </div>

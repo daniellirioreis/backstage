@@ -14,10 +14,29 @@
   </div>
 
   <h2 style="font-size:1.2rem; font-weight:700; color:#18181b; margin:0 0 0.5rem;">Tudo pronto, <%= current_user.name.split.first %>!</h2>
-  <p style="font-size:0.85rem; color:#71717a; margin:0 0 2rem; line-height:1.5;">
-    Sua conta está ativa, sua empresa e evento estão cadastrados.<br>
-    Agora é só começar a gerenciar.
+  <p style="font-size:0.85rem; color:#71717a; margin:0 0 1.5rem; line-height:1.5;">
+    Sua conta está ativa. Agora configure seu evento para começar a gerenciar a equipe.
   </p>
+
+  <div style="background:#f4f4f5; border-radius:10px; padding:0.85rem 1rem; margin-bottom:1.75rem; text-align:left;">
+    <div style="font-size:0.72rem; font-weight:600; text-transform:uppercase; letter-spacing:0.06em; color:#71717a; margin-bottom:0.65rem;">
+      Próximos passos
+    </div>
+    <div style="display:flex; flex-direction:column; gap:0;">
+      <div style="display:flex; align-items:center; gap:0.65rem; padding:0.55rem 0; border-bottom:1px solid #e4e4e7;">
+        <div style="width:22px; height:22px; border-radius:50%; background:#fff; border:1px solid #e4e4e7; display:flex; align-items:center; justify-content:center; font-size:0.7rem; font-weight:700; color:#52525b; flex-shrink:0;">1</div>
+        <span style="font-size:0.83rem; color:#18181b;">Configure os <strong>setores e funções</strong> do evento</span>
+      </div>
+      <div style="display:flex; align-items:center; gap:0.65rem; padding:0.55rem 0; border-bottom:1px solid #e4e4e7;">
+        <div style="width:22px; height:22px; border-radius:50%; background:#fff; border:1px solid #e4e4e7; display:flex; align-items:center; justify-content:center; font-size:0.7rem; font-weight:700; color:#52525b; flex-shrink:0;">2</div>
+        <span style="font-size:0.83rem; color:#18181b;">Crie as <strong>equipes</strong> e convide colaboradores</span>
+      </div>
+      <div style="display:flex; align-items:center; gap:0.65rem; padding:0.55rem 0;">
+        <div style="width:22px; height:22px; border-radius:50%; background:#fff; border:1px solid #e4e4e7; display:flex; align-items:center; justify-content:center; font-size:0.7rem; font-weight:700; color:#52525b; flex-shrink:0;">3</div>
+        <span style="font-size:0.83rem; color:#18181b;">Monte as <strong>escalas</strong> de horários</span>
+      </div>
+    </div>
+  </div>
 
   <%= link_to root_path,
         style: "display:inline-block; background:#18181b; color:#fff; border-radius:8px; padding:0.7rem 2rem; font-size:0.9rem; font-weight:600; text-decoration:none;" do %>

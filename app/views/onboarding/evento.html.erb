@@ -48,7 +48,7 @@
     </div>
     <h2 style="font-size:1.1rem; font-weight:700; color:#18181b; margin:0 0 0.5rem;">Deseja criar um evento agora?</h2>
     <p style="font-size:0.83rem; color:#71717a; margin:0 0 1.75rem; line-height:1.5;">
-      Você pode cadastrar seu primeiro evento agora<br>ou fazer isso depois pelo painel.
+      Você pode cadastrar seu primeiro evento agora ou fazer isso depois — nada muda no acesso ao sistema.
     </p>
 
     <div style="display:flex; flex-direction:column; gap:0.65rem;">
@@ -69,7 +69,7 @@
 <%# Formulário de criação do evento (oculto inicialmente) %>
 <div id="panel-formulario" style="display:none;">
   <h2 style="font-size:1.1rem; font-weight:700; color:#18181b; margin:0 0 0.25rem;">Primeiro evento</h2>
-  <p style="font-size:0.83rem; color:#71717a; margin:0 0 1.25rem;">Cadastre o evento que você vai gerenciar.</p>
+  <p style="font-size:0.83rem; color:#71717a; margin:0 0 1.25rem;">Pode editar todas as informações depois, na aba <strong>Dados do evento</strong>.</p>
 
   <%= form_with model: @event, url: url_for(action: :save_evento), method: :post do |f| %>
     <div style="display:flex; flex-direction:column; gap:1rem;">
@@ -81,6 +81,8 @@
               placeholder: "Ex: Festival Boombay 2026" %>
         <% if @event.errors[:name].any? %>
           <p style="font-size:0.75rem; color:#dc2626; margin:0.25rem 0 0;"><%= @event.errors[:name].first %></p>
+        <% else %>
+          <p style="font-size:0.75rem; color:#71717a; margin:0.25rem 0 0;"><i class="bi bi-info-circle"></i> Use um nome que a equipe reconheça facilmente.</p>
         <% end %>
       </div>
 
@@ -103,6 +105,7 @@
                 style: "width:100%; box-sizing:border-box; border:1px solid #d1d5db; border-radius:8px; padding:0.55rem 0.75rem; font-size:0.875rem; color:#18181b; outline:none;" %>
         </div>
       </div>
+      <p style="font-size:0.75rem; color:#71717a; margin:0.25rem 0 0;"><i class="bi bi-info-circle"></i> As datas geram os dias disponíveis para configurar as escalas.</p>
 
       <% if @event.errors.any? %>
         <div style="background:#fef2f2; border:1px solid #fca5a5; border-radius:8px; padding:0.65rem 1rem; font-size:0.82rem; color:#dc2626;">

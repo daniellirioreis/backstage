@@ -15,7 +15,7 @@
 <% end %>
 
 <h2 style="font-size:1.2rem; font-weight:700; color:#18181b; margin:0 0 0.25rem;">Bem-vindo ao Backstage!</h2>
-<p style="font-size:0.83rem; color:#71717a; margin:0 0 1.5rem;">Preencha seus dados para ativar sua conta.</p>
+<p style="font-size:0.83rem; color:#71717a; margin:0 0 1.5rem;">Preencha seus dados para ativar sua conta e acessar sua escala.</p>
 
 <%= form_with url: confirm_invitation_path(token: params[:token]), method: :post do |f| %>
   <div style="display:flex; flex-direction:column; gap:1rem;">
@@ -25,6 +25,7 @@
       <input type="text" name="user[name]" required
              value="<%= @invited_user.name %>"
              style="width:100%; box-sizing:border-box; border:1px solid #d1d5db; border-radius:8px; padding:0.55rem 0.75rem; font-size:0.875rem; color:#18181b; outline:none;" />
+      <p style="font-size:0.75rem; color:#71717a; margin:0.25rem 0 0;"><i class="bi bi-info-circle"></i> Verifique se está correto — é como você aparecerá na credencial e na escala.</p>
     </div>
 
     <div>
@@ -33,6 +34,7 @@
              data-mask="cpf"
              style="width:100%; box-sizing:border-box; border:1px solid #d1d5db; border-radius:8px; padding:0.55rem 0.75rem; font-size:0.875rem; color:#18181b; outline:none;"
              placeholder="000.000.000-00" />
+      <p style="font-size:0.75rem; color:#71717a; margin:0.25rem 0 0;"><i class="bi bi-id-card"></i> Usado para identificação e emissão de credencial no evento.</p>
     </div>
 
     <div>
@@ -41,12 +43,14 @@
              data-mask="phone"
              style="width:100%; box-sizing:border-box; border:1px solid #d1d5db; border-radius:8px; padding:0.55rem 0.75rem; font-size:0.875rem; color:#18181b; outline:none;"
              placeholder="(00) 00000-0000" />
+      <p style="font-size:0.75rem; color:#71717a; margin:0.25rem 0 0;"><i class="bi bi-phone"></i> Para contato pela coordenação durante o evento.</p>
     </div>
 
     <div style="border-top:1px solid #f4f4f5; padding-top:1rem;">
       <label style="display:block; font-size:0.8rem; font-weight:500; color:#374151; margin-bottom:0.3rem;">Senha</label>
       <input type="password" name="user[password]" required minlength="8"
              style="width:100%; box-sizing:border-box; border:1px solid #d1d5db; border-radius:8px; padding:0.55rem 0.75rem; font-size:0.875rem; color:#18181b; outline:none;" />
+      <p style="font-size:0.75rem; color:#71717a; margin:0.25rem 0 0;"><i class="bi bi-lock"></i> Mínimo de 8 caracteres.</p>
     </div>
 
     <div>
