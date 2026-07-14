@@ -103,6 +103,6 @@ class OnboardingController < ApplicationController
   end
 
   def event_params
-    params.require(:event).permit(:name, :location, :start_date, :end_date)
+    params.require(:event).permit(:name, :location, :event_type, :start_date, :end_date)
   end
 end

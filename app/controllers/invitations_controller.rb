@@ -45,7 +45,8 @@ class InvitationsController < ApplicationController
 
     if @invited_user.save
       token = @invited_user.generate_invitation_token!
-      company&.company_users&.create(user: @invited_user, role: "manager")
+      company_role = company_role_from(role)
+      company&.company_users&.create(user: @invited_user, role: company_role)
       @invite_url = accept_invitation_url(token: token)
     else
       @roles     = Role.order(:name)
@@ -85,6 +86,15 @@ class InvitationsController < ApplicationController
 
   def find_invited_user
     @invited_user = User.find_by(invitation_token: params[:token])
+  end
+
+  # Mapeia o Role do sistema para o papel hierárquico na empresa
+  def company_role_from(role)
+    case role&.name
+    when "admin", "gerente" then "manager"
+    when "coordenador"      then "operator"
+    else                         "collaborator"
+    end
   end
 
   def invitation_layout

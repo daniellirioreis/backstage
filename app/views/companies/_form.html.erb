@@ -18,7 +18,7 @@
 
       <div>
         <%= f.label :cnpj, "CNPJ", style:"display:block;font-size:0.8rem;font-weight:600;color:#3f3f46;margin-bottom:4px;" %>
-        <%= f.text_field :cnpj, style:"width:100%;box-sizing:border-box;padding:0.5rem 0.75rem;border:1px solid #e4e4e7;border-radius:7px;font-size:0.88rem;font-family:monospace;", placeholder:"XX.XXX.XXX/XXXX-XX" %>
+        <%= f.text_field :cnpj, style:"width:100%;box-sizing:border-box;padding:0.5rem 0.75rem;border:1px solid #e4e4e7;border-radius:7px;font-size:0.88rem;font-family:monospace;", placeholder:"XX.XXX.XXX/XXXX-XX", data: { mask: "cnpj" } %>
       </div>
 
       <div>
