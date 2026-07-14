@@ -80,9 +80,14 @@
 </div>
 
 <% if @teams.empty? %>
-  <div class="content-card" style="text-align: center; padding: 3rem; color: #a1a1aa;">
-    <i class="bi bi-people" style="font-size: 2.5rem; display: block; margin-bottom: 0.75rem;"></i>
-    <p style="margin: 0; font-size: 0.9rem;">Nenhuma equipe cadastrada para este evento.</p>
+  <div class="content-card">
+    <%= render "shared/empty_state",
+          icon: "bi-people",
+          title: "Nenhuma equipe cadastrada",
+          description: "Crie as equipes do evento e adicione colaboradores a cada uma.",
+          action_label: "Nova equipe",
+          action_path: new_team_path,
+          action_policy: policy(Team).new? %>
   </div>
 <% else %>
   <div style="max-height: calc(100vh - 280px); overflow-y: auto; padding-right: 2px;">

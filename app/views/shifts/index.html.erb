@@ -20,9 +20,14 @@
 </div>
 
 <% if @shifts_by_team.empty? %>
-  <div class="content-card" style="text-align: center; padding: 2.5rem; color: #a1a1aa;">
-    <i class="bi bi-calendar3" style="font-size: 2rem; display: block; margin-bottom: 0.5rem;"></i>
-    <p style="margin: 0; font-size: 0.88rem;">Nenhuma escala cadastrada.</p>
+  <div class="content-card">
+    <%= render "shared/empty_state",
+          icon: "bi-calendar3",
+          title: "Nenhuma escala cadastrada",
+          description: "Configure os horários de cada equipe para organizar os turnos do evento.",
+          action_label: "Ir para equipes",
+          action_path: teams_path,
+          action_policy: policy(Shift).new? %>
   </div>
 <% else %>
   <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 1.25rem;">

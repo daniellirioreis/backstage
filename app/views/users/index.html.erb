@@ -61,6 +61,17 @@
   </div>
 <% end %>
 
+<% if @users.empty? %>
+  <div class="content-card">
+    <%= render "shared/empty_state",
+          icon: "bi-person-badge",
+          title: "Nenhum colaborador encontrado",
+          description: "Convide colaboradores pelo link de convite para que apareçam aqui.",
+          action_label: "Convidar colaborador",
+          action_path: new_invitation_path,
+          action_policy: policy(:invitation).create? %>
+  </div>
+<% else %>
 <table class="data-table">
   <thead>
     <tr>
@@ -130,6 +141,7 @@
     <% end %>
   </tbody>
 </table>
+<% end %>
 
 <%# Paginação %>
 <% if @users.total_pages > 1 %>

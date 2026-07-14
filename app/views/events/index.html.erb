@@ -207,9 +207,14 @@
 <% end %>
 
 <% if @events.empty? %>
-  <div class="content-card" style="text-align: center; padding: 3rem; color: #a1a1aa;">
-    <i class="bi bi-calendar-event" style="font-size: 2.5rem; display: block; margin-bottom: 0.75rem;"></i>
-    <p style="margin: 0; font-size: 0.9rem;">Nenhum evento cadastrado ainda.</p>
+  <div class="content-card">
+    <%= render "shared/empty_state",
+          icon: "bi-calendar-event",
+          title: "Nenhum evento cadastrado",
+          description: "Crie seu primeiro evento para começar a gerenciar equipes e escalas.",
+          action_label: "Novo evento",
+          action_path: new_event_path,
+          action_policy: policy(Event).new? %>
   </div>
 <% else %>
   <div class="content-card" style="padding: 0; overflow: hidden;">

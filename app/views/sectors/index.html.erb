@@ -21,6 +21,17 @@
   </div>
 <% end %>
 
+<% if @sectors.empty? %>
+  <div class="content-card">
+    <%= render "shared/empty_state",
+          icon: "bi-diagram-3",
+          title: "Nenhum setor cadastrado",
+          description: "Crie os setores do evento (palco, segurança, portaria…) para organizar as equipes.",
+          action_label: "Novo setor",
+          action_path: new_sector_path,
+          action_policy: policy(Sector).new? %>
+  </div>
+<% else %>
 <table class="data-table">
   <thead>
     <tr>
@@ -82,6 +93,7 @@
     <% end %>
   </tbody>
 </table>
+<% end %>
 
 <% if @sectors.total_pages > 1 %>
   <div style="display:flex; justify-content:center; align-items:center; gap:0.4rem; margin-top:1.5rem;">

@@ -1,0 +1,41 @@
+<%#
+  Partial: shared/empty_state
+  Parâmetros:
+    icon:        (string) classe Bootstrap Icons, ex: "bi-people"
+    title:       (string) título principal
+    description: (string, opcional) texto explicativo
+    action_label:(string, opcional) texto do botão de ação
+    action_path: (string, opcional) path para o botão
+    action_policy:(boolean, opcional) se false, oculta o botão (use policy(...).new?)
+%>
+<div style="
+  text-align: center;
+  padding: 3.5rem 1.5rem;
+  color: #a1a1aa;
+">
+  <div style="
+    width: 64px; height: 64px;
+    background: #f4f4f5;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 1.25rem;
+  ">
+    <i class="bi <%= icon %>" style="font-size: 1.6rem; color: #71717a;"></i>
+  </div>
+
+  <p style="font-size: 0.95rem; font-weight: 600; color: #3f3f46; margin: 0 0 0.4rem;">
+    <%= title %>
+  </p>
+
+  <% if local_assigns[:description].present? %>
+    <p style="font-size: 0.82rem; color: #a1a1aa; margin: 0 0 1.5rem; max-width: 320px; display: inline-block; line-height: 1.5;">
+      <%= description %>
+    </p>
+  <% end %>
+
+  <% if local_assigns[:action_label].present? && local_assigns[:action_path].present? && local_assigns.fetch(:action_policy, true) %>
+    <%= link_to action_path, class: "btn-primary", style: "display:inline-flex;" do %>
+      <i class="bi bi-plus-lg"></i>&nbsp;<%= action_label %>
+    <% end %>
+  <% end %>
+</div>

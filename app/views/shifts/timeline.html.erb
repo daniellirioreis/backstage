@@ -49,9 +49,14 @@
 </div>
 
 <% if @sectors_data.empty? %>
-  <div class="content-card" style="text-align:center; padding:3rem; color:#a1a1aa;">
-    <i class="bi bi-calendar-x" style="font-size:2rem; display:block; margin-bottom:0.5rem;"></i>
-    <p style="margin:0; font-size:0.88rem;">Nenhuma escala cadastrada para <%= l(@date, format: :long) %>.</p>
+  <div class="content-card">
+    <%= render "shared/empty_state",
+          icon: "bi-calendar-x",
+          title: "Sem escalas para #{l(@date, format: :long)}",
+          description: "Nenhum turno foi configurado para esta data.",
+          action_label: "Ir para escalas",
+          action_path: shifts_path,
+          action_policy: policy(Shift).new? %>
   </div>
 <% elsif @view_mode == "collaborators" %>
 
