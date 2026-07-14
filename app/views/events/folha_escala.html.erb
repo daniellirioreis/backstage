@@ -1,0 +1,64 @@
+<div class="page-header">
+  <h1><%= t("folha_escala.title") %> &mdash; <%= @event.name %></h1>
+</div>
+
+<div class="content-card" style="max-width: 560px;">
+
+  <div class="mb-3">
+    <label class="form-label"><%= t("folha_escala.filter.sector") %></label>
+    <%= select_tag :sector_id,
+          options_for_select(
+            [[t("folha_escala.filter.all_sectors"), ""]] +
+            @sectors.map { |s| [s.name, s.id] }
+          ),
+          class: "form-select", id: "fe_sector_id" %>
+  </div>
+
+  <div class="mb-3">
+    <label class="form-label"><%= t("folha_escala.filter.date") %></label>
+    <%= select_tag :date,
+          options_for_select(
+            [[t("folha_escala.filter.all_dates"), ""]] +
+            @available_dates.map { |d| [l(d, format: :long), d.to_s] }
+          ),
+          class: "form-select", id: "fe_date" %>
+  </div>
+
+  <div class="mb-4">
+    <label class="form-label"><%= t("folha_escala.filter.team") %></label>
+    <%= select_tag :team_id,
+          options_for_select(
+            [[t("folha_escala.filter.all_teams"), ""]] +
+            @sectors.flat_map { |s|
+              s.teams.order(:name).map { |t| ["#{s.name} — #{t.name}", t.id] }
+            }
+          ),
+          class: "form-select", id: "fe_team_id" %>
+  </div>
+
+  <div class="d-flex gap-2">
+    <button type="button" class="btn-primary" onclick="gerarFolha()">
+      <i class="bi bi-file-earmark-pdf"></i>
+      <%= t("folha_escala.filter.generate") %>
+    </button>
+    <%= link_to event_path(@event), class: "btn-secondary" do %>
+      <%= t("actions.cancel") %>
+    <% end %>
+  </div>
+
+</div>
+
+<script>
+  function gerarFolha() {
+    var base  = "<%= folha_escala_event_path(@event, format: :pdf) %>";
+    var params = new URLSearchParams();
+    var sector = document.getElementById("fe_sector_id").value;
+    var date   = document.getElementById("fe_date").value;
+    var team   = document.getElementById("fe_team_id").value;
+    if (sector) params.append("sector_id", sector);
+    if (date)   params.append("date", date);
+    if (team)   params.append("team_id", team);
+    var query = params.toString();
+    window.open(base + (query ? "?" + query : ""), "_blank");
+  }
+</script>
