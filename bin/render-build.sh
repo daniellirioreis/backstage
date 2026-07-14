@@ -16,3 +16,4 @@ fi
 bundle exec rails runner db/seeds/00_plans.rb
 bundle exec rails runner db/seeds/01_roles.rb
 bundle exec rails runner db/seeds/02_admin_user.rb
+bundle exec rails runner db/seeds/09_catalog_functions.rb
