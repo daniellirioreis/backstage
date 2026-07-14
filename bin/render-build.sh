@@ -7,7 +7,7 @@ bundle exec rails assets:clean
 
 if [ "$RESET_DB" = "true" ]; then
   echo "⚠️  RESET_DB=true detectado — zerando banco de dados..."
-  bundle exec rails db:schema:load
+  bundle exec rails db:schema:load DISABLE_DATABASE_ENVIRONMENT_CHECK=1
   echo "✅ Banco zerado com sucesso."
 else
   bundle exec rails db:migrate
