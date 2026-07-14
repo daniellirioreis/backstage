@@ -10,7 +10,6 @@ Permission::RESOURCES.each do |resource|
 end
 
 colab = Role.find_or_create_by!(name: "colaborador")
-colab.update!(collaborator: true) unless colab.collaborator?
 
 # Perfil coordenador: acesso operacional focado na equipe
 coord = Role.find_or_create_by!(name: "coordenador")
