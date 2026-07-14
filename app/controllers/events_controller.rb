@@ -1,5 +1,5 @@
 class EventsController < ApplicationController
-  before_action :set_event, only: %i[show edit update destroy print budget folha_escala credentials transition revert]
+  before_action :set_event, only: %i[show edit update destroy print budget folha_escala manual_entry save_manual_entry credentials transition revert]
 
   TRANSITIONS = { "draft" => "active", "active" => "closed" }.freeze
 
@@ -268,6 +268,83 @@ class EventsController < ApplicationController
                disposition: "attachment"
       end
     end
+  end
+
+  def manual_entry
+    authorize @event, :manual_entry?
+    @company         = @event.company
+    @sectors         = @event.sectors.includes(:teams).order(:name)
+    @available_dates = Shift.joins(team: :sector)
+                            .where(sectors: { event_id: @event.id })
+                            .distinct.pluck(:date).sort
+
+    @date_filter = params[:date].presence
+    @sector_id   = params[:sector_id].presence
+    @team_id     = params[:team_id].presence
+
+    if @date_filter
+      @collaborators   = load_manual_entry_collaborators
+      @attendance_map  = Attendance.where(event: @event, checked_in_date: @date_filter)
+                                   .index_by(&:user_id)
+    end
+  end
+
+  def save_manual_entry
+    authorize @event, :manual_entry?
+    date    = params[:date].presence
+    entries = params[:entries] || {}
+
+    unless date
+      redirect_to manual_entry_event_path(@event), alert: "Selecione uma data." and return
+    end
+
+    saved  = 0
+    errors = []
+
+    entries.each do |user_id, times|
+      next if times[:started_at].blank? || times[:ended_at].blank?
+
+      checked_in_at  = Time.zone.parse("#{date} #{times[:started_at]}")
+      checked_out_at = Time.zone.parse("#{date} #{times[:ended_at]}")
+      next unless checked_in_at && checked_out_at
+
+      # Turno overnight → saída no dia seguinte
+      checked_out_at += 1.day if checked_out_at <= checked_in_at
+
+      team_id = TeamMembership.joins(team: :sector)
+                              .where(sectors: { event_id: @event.id }, user_id: user_id)
+                              .joins(:team).pick("teams.id")
+
+      attendance = Attendance.find_or_initialize_by(
+        event:            @event,
+        user_id:          user_id.to_i,
+        checked_in_date:  date
+      )
+
+      if attendance.persisted? && attendance.qr_code?
+        errors << User.find_by(id: user_id)&.name
+        next
+      end
+
+      attendance.assign_attributes(
+        checked_in_at:  checked_in_at,
+        checked_out_at: checked_out_at,
+        team_id:        team_id,
+        source:         :manual
+      )
+
+      if attendance.save
+        saved += 1
+      else
+        errors << User.find_by(id: user_id)&.name
+      end
+    end
+
+    notice = "#{saved} registro(s) lançado(s) com sucesso."
+    alert  = errors.any? ? "Não salvos (já possuem QR ou erro): #{errors.compact.join(', ')}" : nil
+
+    redirect_to manual_entry_event_path(@event, date: date, sector_id: params[:sector_id], team_id: params[:team_id]),
+                notice: notice, alert: alert
   end
 
   def print
@@ -562,6 +639,36 @@ class EventsController < ApplicationController
   end
 
   private
+
+  def load_manual_entry_collaborators
+    sectors_scope = @event.sectors
+      .includes(teams: { team_memberships: [:user, :event_function] })
+      .order(:name)
+    sectors_scope = sectors_scope.where(id: @sector_id) if @sector_id
+
+    sectors_scope.flat_map do |sector|
+      teams_scope = sector.teams.order(:name)
+      teams_scope = teams_scope.where(id: @team_id) if @team_id
+
+      teams_scope.flat_map do |team|
+        shifts_on_date = Shift.where(team: team, date: @date_filter).order(:start_time)
+        shifts_by_user = shifts_on_date.group_by(&:user_id)
+
+        team.team_memberships
+          .select { |tm| tm.user.present? && shifts_by_user[tm.user_id].present? }
+          .sort_by { |tm| tm.user.name }
+          .map do |tm|
+            {
+              user:     tm.user,
+              function: tm.event_function,
+              team:     team,
+              sector:   sector,
+              shifts:   shifts_by_user[tm.user_id]
+            }
+          end
+      end
+    end
+  end
 
   def build_folha_data
     # Datas disponíveis com shifts para este evento

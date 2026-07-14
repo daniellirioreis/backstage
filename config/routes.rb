@@ -76,6 +76,9 @@ Rails.application.routes.draw do
     member do
       get   :print
       get   :budget
+      get   :folha_escala
+      get   :manual_entry
+      post  :save_manual_entry
       get   :credentials
       patch :transition
       patch :revert

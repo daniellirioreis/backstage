@@ -267,6 +267,7 @@ module Reports
           checked_in:      att.checked_in_at.strftime("%H:%M"),
           checked_out:     att.checked_out_at&.strftime("%H:%M"),
           hours:           hours,
+          source:          att.source,
           missing_checkout: att.checked_out_at.nil?
         }
       end

@@ -5,6 +5,8 @@ class Attendance < ApplicationRecord
   belongs_to :checked_in_by,  class_name: "User", optional: true
   belongs_to :checked_out_by, class_name: "User", foreign_key: :checked_out_by_id, optional: true
 
+  enum :source, { qr_code: "qr_code", manual: "manual" }, default: "qr_code"
+
   validates :user_id, uniqueness: { scope: [:event_id, :checked_in_date], message: "já registrou presença neste dia" }
   validates :checked_in_at,   presence: true
   validates :checked_in_date, presence: true

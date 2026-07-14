@@ -58,6 +58,16 @@
         <i class="bi bi-file-earmark-text"></i> Orçamento
       <% end %>
     <% end %>
+    <% if policy(@event).folha_escala? %>
+      <%= link_to folha_escala_event_path(@event), class: "btn-secondary" do %>
+        <i class="bi bi-clipboard-check"></i> Folha de Escala
+      <% end %>
+    <% end %>
+    <% if policy(@event).manual_entry? %>
+      <%= link_to manual_entry_event_path(@event), class: "btn-secondary" do %>
+        <i class="bi bi-pencil-square"></i> <%= t("manual_entry.title") %>
+      <% end %>
+    <% end %>
     <% if policy(@event).print? %>
       <%= link_to print_event_path(@event), class: "btn-secondary" do %>
         <i class="bi bi-printer"></i> Imprimir

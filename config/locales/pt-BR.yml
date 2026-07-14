@@ -29,6 +29,44 @@ pt-BR:
     resource: "Recurso"
     permissions_count: "Permissões"
 
+  manual_entry:
+    title: "Lançamento Manual de Horas"
+    filter_button: "Buscar colaboradores"
+    save_button: "Salvar lançamentos"
+    no_collaborators: "Nenhum colaborador escalado para essa data com os filtros selecionados."
+    source_manual: "Manual"
+    source_qr: "QR"
+    table:
+      collaborator: "Colaborador"
+      function: "Função"
+      scheduled: "Escala"
+      actual_entry: "Entrada real"
+      actual_exit: "Saída real"
+      hours_worked: "Horas"
+      value: "Valor"
+      status: "Origem"
+
+  folha_escala:
+    title: "Folha de Escala"
+    filter:
+      sector: "Setor"
+      date: "Data"
+      team: "Equipe"
+      all_sectors: "Todos os setores"
+      all_dates: "Todas as datas"
+      all_teams: "Todas as equipes"
+      generate: "Gerar PDF"
+    pdf:
+      collaborator: "Colaborador"
+      function: "Função"
+      date: "Data"
+      scheduled_entry: "Entrada escalada"
+      scheduled_exit: "Saída escalada"
+      actual_entry: "Entrada real"
+      actual_exit: "Saída real"
+      signature: "Assinatura"
+      footer_note: "As colunas Entrada/Saída real devem ser preenchidas e assinadas pelo colaborador."
+
   permission_actions:
     index: "Listar"
     show: "Ver"
@@ -36,7 +74,7 @@ pt-BR:
     update: "Editar"
     destroy: "Excluir"
     timeline: "Timeline"
-    print: "Imprimir"
+    print: "Imprimir / Folha de Escala"
     my_schedule: "Minha Escala"
     scan: "Registrar Check-in (QR)"
     checkout: "Registrar Check-out (QR)"

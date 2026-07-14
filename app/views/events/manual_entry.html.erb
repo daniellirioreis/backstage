@@ -1,0 +1,206 @@
+<div class="page-header">
+  <h1><%= t("manual_entry.title") %> &mdash; <%= @event.name %></h1>
+</div>
+
+<%# Filtros %>
+<div class="content-card" style="max-width: 600px; margin-bottom: 1.5rem;">
+  <%= form_tag manual_entry_event_path(@event), method: :get, data: { turbo: false } do %>
+    <div class="mb-3">
+      <label class="form-label"><%= t("folha_escala.filter.date") %> <span style="color:#dc2626;">*</span></label>
+      <%= select_tag :date,
+            options_for_select(
+              [[t("folha_escala.filter.all_dates"), ""]] +
+              @available_dates.map { |d| [l(d, format: :long), d.to_s] },
+              params[:date]
+            ),
+            class: "form-select" %>
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label"><%= t("folha_escala.filter.sector") %></label>
+      <%= select_tag :sector_id,
+            options_for_select(
+              [[t("folha_escala.filter.all_sectors"), ""]] +
+              @sectors.map { |s| [s.name, s.id] },
+              params[:sector_id]
+            ),
+            class: "form-select" %>
+    </div>
+
+    <div class="mb-4">
+      <label class="form-label"><%= t("folha_escala.filter.team") %></label>
+      <%= select_tag :team_id,
+            options_for_select(
+              [[t("folha_escala.filter.all_teams"), ""]] +
+              @sectors.flat_map { |s|
+                s.teams.order(:name).map { |tm| ["#{s.name} — #{tm.name}", tm.id] }
+              },
+              params[:team_id]
+            ),
+            class: "form-select" %>
+    </div>
+
+    <button type="submit" class="btn-primary">
+      <i class="bi bi-search"></i> <%= t("manual_entry.filter_button") %>
+    </button>
+  <% end %>
+</div>
+
+<%# Tabela de lançamento %>
+<% if @date_filter %>
+  <% if @collaborators.blank? %>
+    <div class="content-card" style="color:#71717a; text-align:center; padding: 2rem;">
+      <i class="bi bi-calendar-x" style="font-size:1.5rem;"></i>
+      <p style="margin-top:0.5rem;"><%= t("manual_entry.no_collaborators") %></p>
+    </div>
+  <% else %>
+    <%= form_tag save_manual_entry_event_path(@event), method: :post, data: { turbo: false } do %>
+      <%= hidden_field_tag :date, @date_filter %>
+      <%= hidden_field_tag :sector_id, @sector_id %>
+      <%= hidden_field_tag :team_id, @team_id %>
+
+      <div class="content-card" style="padding: 0; overflow: hidden;">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th><%= t("manual_entry.table.collaborator") %></th>
+              <th><%= t("manual_entry.table.function") %></th>
+              <th><%= t("manual_entry.table.scheduled") %></th>
+              <th style="background:#fef9c3;"><%= t("manual_entry.table.actual_entry") %></th>
+              <th style="background:#fef9c3;"><%= t("manual_entry.table.actual_exit") %></th>
+              <th style="text-align:center;"><%= t("manual_entry.table.hours_worked") %></th>
+              <th style="text-align:right;"><%= t("manual_entry.table.value") %></th>
+              <th style="text-align:center;"><%= t("manual_entry.table.status") %></th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @collaborators.each do |c| %>
+              <% att       = @attendance_map[c[:user].id] %>
+              <% has_qr    = att&.qr_code? %>
+              <% has_manual = att&.manual? %>
+              <% rate      = c[:function]&.hourly_rate.to_f %>
+              <% scheduled = c[:shifts].map { |s|
+                               s_min = s.start_time.hour * 60 + s.start_time.min
+                               e_min = s.end_time.hour   * 60 + s.end_time.min
+                               e_min > s_min ? (e_min - s_min) / 60.0 : (1440 - s_min + e_min) / 60.0
+                             }.sum %>
+              <tr>
+                <td style="font-weight:500;"><%= c[:user].name %></td>
+                <td style="color:#71717a; font-size:0.85rem;"><%= c[:function]&.name || "—" %></td>
+                <td style="font-size:0.85rem; color:#52525b;">
+                  <% c[:shifts].each do |s| %>
+                    <div><%= s.start_time.strftime("%H:%M") %> – <%= s.end_time.strftime("%H:%M") %></div>
+                  <% end %>
+                </td>
+
+                <% if has_qr %>
+                  <%# QR code — não permite edição manual %>
+                  <td style="background:#f0fdf4; text-align:center; font-size:0.85rem; color:#16a34a;">
+                    <%= att.checked_in_at.strftime("%H:%M") %>
+                  </td>
+                  <td style="background:#f0fdf4; text-align:center; font-size:0.85rem; color:#16a34a;">
+                    <%= att.checked_out_at&.strftime("%H:%M") || "—" %>
+                  </td>
+                <% else %>
+                  <%# Campo editável %>
+                  <td style="background:#fef9c3; padding: 4px 8px;">
+                    <input type="time"
+                           name="entries[<%= c[:user].id %>][started_at]"
+                           value="<%= has_manual ? att.checked_in_at.strftime("%H:%M") : "" %>"
+                           class="form-control form-control-sm me-input"
+                           data-user="<%= c[:user].id %>"
+                           data-rate="<%= rate %>"
+                           oninput="calcularLinha(<%= c[:user].id %>, <%= rate %>)"
+                           style="min-width:100px;">
+                  </td>
+                  <td style="background:#fef9c3; padding: 4px 8px;">
+                    <input type="time"
+                           name="entries[<%= c[:user].id %>][ended_at]"
+                           value="<%= has_manual ? att.checked_out_at&.strftime("%H:%M") : "" %>"
+                           class="form-control form-control-sm ms-input"
+                           data-user="<%= c[:user].id %>"
+                           data-rate="<%= rate %>"
+                           oninput="calcularLinha(<%= c[:user].id %>, <%= rate %>)"
+                           style="min-width:100px;">
+                  </td>
+                <% end %>
+
+                <%# Horas trabalhadas %>
+                <td style="text-align:center; font-weight:600;" id="hours-<%= c[:user].id %>">
+                  <% if att&.checked_out_at %>
+                    <% h = (att.checked_out_at - att.checked_in_at) / 3600.0%>
+                    <%= "%.2fh" % h %>
+                  <% else %>
+                    —
+                  <% end %>
+                </td>
+
+                <%# Valor a pagar %>
+                <td style="text-align:right; font-weight:600;" id="value-<%= c[:user].id %>">
+                  <% if att&.checked_out_at && rate > 0 %>
+                    <% h = (att.checked_out_at - att.checked_in_at) / 3600.0 %>
+                    R$ <%= "%.2f" % (h * rate) %>
+                  <% else %>
+                    —
+                  <% end %>
+                </td>
+
+                <%# Status %>
+                <td style="text-align:center;">
+                  <% if has_qr %>
+                    <span class="badge" style="background:#dcfce7;color:#16a34a;font-size:0.7rem;padding:2px 8px;border-radius:99px;">QR</span>
+                  <% elsif has_manual %>
+                    <span class="badge" style="background:#fef9c3;color:#92400e;font-size:0.7rem;padding:2px 8px;border-radius:99px;"><%= t("manual_entry.source_manual") %></span>
+                  <% else %>
+                    <span style="color:#a1a1aa;font-size:0.8rem;">—</span>
+                  <% end %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="d-flex gap-2 mt-3">
+        <button type="submit" class="btn-primary">
+          <i class="bi bi-floppy"></i> <%= t("manual_entry.save_button") %>
+        </button>
+        <%= link_to event_path(@event), class: "btn-secondary" do %>
+          <%= t("actions.cancel") %>
+        <% end %>
+      </div>
+    <% end %>
+  <% end %>
+<% end %>
+
+<script>
+  function calcularLinha(userId, rate) {
+    var entryInput = document.querySelector('.me-input[data-user="' + userId + '"]');
+    var exitInput  = document.querySelector('.ms-input[data-user="' + userId + '"]');
+    var hoursCell  = document.getElementById('hours-' + userId);
+    var valueCell  = document.getElementById('value-' + userId);
+
+    if (!entryInput || !exitInput || !entryInput.value || !exitInput.value) {
+      hoursCell.textContent = '—';
+      valueCell.textContent = '—';
+      return;
+    }
+
+    var entryParts = entryInput.value.split(':').map(Number);
+    var exitParts  = exitInput.value.split(':').map(Number);
+    var entryMin   = entryParts[0] * 60 + entryParts[1];
+    var exitMin    = exitParts[0]  * 60 + exitParts[1];
+
+    // overnight
+    if (exitMin <= entryMin) exitMin += 1440;
+
+    var hours = (exitMin - entryMin) / 60;
+    hoursCell.textContent = hours.toFixed(2) + 'h';
+
+    if (rate > 0) {
+      valueCell.textContent = 'R$ ' + (hours * rate).toFixed(2).replace('.', ',');
+    } else {
+      valueCell.textContent = '—';
+    }
+  }
+</script>
