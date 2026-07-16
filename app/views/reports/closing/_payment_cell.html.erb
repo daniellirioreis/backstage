@@ -1,0 +1,130 @@
+<%# locals: payment, row, uid, rate, basis, finalized, date %>
+<% has_hours = (basis == "manual" && row[:shifts].present?) || row[:total_value].to_f > 0 %>
+
+<% if payment %>
+  <div style="display:flex;flex-direction:column;gap:4px;align-items:center;">
+    <% if payment.waived? %>
+      <span style="display:inline-flex;align-items:center;gap:0.3rem;background:#f4f4f5;border:1px solid #e4e4e7;border-radius:6px;padding:3px 10px;font-size:0.75rem;font-weight:700;color:#71717a;">
+        <i class="bi bi-slash-circle"></i> Dispensado
+      </span>
+      <span style="font-size:0.68rem;color:#a1a1aa;"><%= payment.waived_reason_label %></span>
+    <% else %>
+      <span style="display:inline-flex;align-items:center;gap:0.3rem;background:#dcfce7;border:1px solid #86efac;border-radius:6px;padding:3px 10px;font-size:0.75rem;font-weight:700;color:#15803d;">
+        <i class="bi bi-check-circle-fill"></i> Pago
+      </span>
+      <span style="font-size:0.68rem;color:#71717a;"><%= payment.method_label %> &middot; <%= l(payment.paid_at.to_date, format: :short) %></span>
+      <div style="display:flex;gap:6px;margin-top:2px;align-items:center;">
+        <%= link_to receipt_reports_payment_path(payment), target: "_blank",
+            style: "font-size:0.7rem;color:#3b82f6;text-decoration:none;display:inline-flex;align-items:center;gap:3px;font-weight:600;" do %>
+          <i class="bi bi-file-earmark-text"></i> Comprovante
+        <% end %>
+      </div>
+    <% end %>
+    <% unless finalized %>
+      <%= button_to reports_payment_path(payment), method: :delete,
+          style: "font-size:0.68rem;color:#ef4444;background:none;border:none;cursor:pointer;padding:0;display:inline-flex;align-items:center;gap:3px;font-weight:600;",
+          data: { turbo: false, turbo_confirm: "Remover registro de #{row[:user].name}?" } do %>
+        <i class="bi bi-x-circle"></i> Desfazer
+      <% end %>
+    <% end %>
+  </div>
+<% elsif !has_hours %>
+  <span style="font-size:0.72rem;color:#a1a1aa;">—</span>
+<% elsif date.blank? %>
+  <span style="font-size:0.72rem;color:#a1a1aa;">Selecione uma data para pagar</span>
+<% elsif finalized %>
+  <span style="display:inline-flex;align-items:center;gap:0.3rem;background:#f4f4f5;border:1px solid #e4e4e7;border-radius:6px;padding:3px 10px;font-size:0.72rem;font-weight:600;color:#a1a1aa;">
+    <i class="bi bi-lock"></i> Fechamento concluído
+  </span>
+<% else %>
+  <div style="display:flex;flex-direction:column;gap:6px;align-items:stretch;">
+    <%# Badge pendente + botões de ação %>
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;">
+      <span style="display:inline-flex;align-items:center;gap:0.3rem;background:#fff7ed;border:1px solid #fed7aa;border-radius:6px;padding:3px 8px;font-size:0.72rem;font-weight:700;color:#b45309;white-space:nowrap;">
+        <i class="bi bi-hourglass-split"></i> Pendente
+      </span>
+      <div style="display:flex;gap:4px;">
+        <button type="button"
+          onclick="pcToggle('<%= uid %>', 'pay')"
+          style="font-size:0.7rem;font-weight:700;color:#fff;background:#18181b;border:none;border-radius:5px;padding:4px 10px;cursor:pointer;display:inline-flex;align-items:center;gap:3px;white-space:nowrap;">
+          <i class="bi bi-check2"></i> Pagar
+        </button>
+        <button type="button"
+          onclick="pcToggle('<%= uid %>', 'waive')"
+          style="font-size:0.7rem;font-weight:600;color:#71717a;background:#fff;border:1px solid #e4e4e7;border-radius:5px;padding:4px 10px;cursor:pointer;display:inline-flex;align-items:center;gap:3px;white-space:nowrap;">
+          <i class="bi bi-slash-circle"></i> Dispensar
+        </button>
+      </div>
+    </div>
+
+    <%# Painel de pagamento (oculto por padrão) %>
+    <div id="pc-pay-<%= uid %>" style="display:none;background:#f9fafb;border:1px solid #e4e4e7;border-radius:7px;padding:8px;">
+      <%= form_with url: reports_payments_path, method: :post, scope: :payment, data: { turbo: false } do |f| %>
+        <%= f.hidden_field :user_id,       value: row[:user].id %>
+        <%= f.hidden_field :date,          value: date %>
+        <%= f.hidden_field :amount,        value: "%.2f" % row[:total_value], id: "pay_amount_#{uid}" %>
+        <%= f.hidden_field :hours,         value: "%.2f" % row[:total_value], id: "pay_hours_#{uid}" %>
+        <%= f.hidden_field :hourly_rate,   value: "%.2f" % rate %>
+        <%= f.hidden_field :function_name, value: row[:function_name] %>
+        <%= f.hidden_field :basis,         value: basis %>
+        <div style="display:flex;flex-direction:column;gap:5px;">
+          <%= f.select :payment_method,
+              [["PIX", "pix"], ["Dinheiro", "cash"], ["Transferência Bancária", "bank_transfer"]],
+              {},
+              style: "font-size:0.72rem;border:1px solid #e4e4e7;border-radius:5px;padding:4px 6px;color:#18181b;width:100%;background:#fff;" %>
+          <%= f.text_field :notes, placeholder: "Observação (opcional)",
+              style: "font-size:0.72rem;border:1px solid #e4e4e7;border-radius:5px;padding:4px 6px;color:#18181b;width:100%;box-sizing:border-box;background:#fff;" %>
+          <div style="display:flex;gap:4px;">
+            <%= f.submit "Confirmar pagamento",
+                style: "flex:1;font-size:0.72rem;background:#18181b;color:#fff;border:none;border-radius:5px;padding:5px 0;cursor:pointer;font-weight:700;" %>
+            <button type="button" onclick="pcToggle('<%= uid %>', 'pay')"
+              style="font-size:0.72rem;color:#a1a1aa;background:#fff;border:1px solid #e4e4e7;border-radius:5px;padding:5px 8px;cursor:pointer;">
+              ✕
+            </button>
+          </div>
+        </div>
+      <% end %>
+    </div>
+
+    <%# Painel de dispensa (oculto por padrão) %>
+    <div id="pc-waive-<%= uid %>" style="display:none;background:#fafafa;border:1px solid #e4e4e7;border-radius:7px;padding:8px;">
+      <%= form_with url: reports_payments_path, method: :post, scope: :payment, data: { turbo: false } do |f| %>
+        <%= f.hidden_field :user_id,       value: row[:user].id %>
+        <%= f.hidden_field :date,          value: date %>
+        <%= f.hidden_field :amount,        value: "0.00" %>
+        <%= f.hidden_field :basis,         value: basis %>
+        <%= f.hidden_field :function_name, value: row[:function_name] %>
+        <%= f.hidden_field :waived,        value: "1" %>
+        <div style="display:flex;flex-direction:column;gap:5px;">
+          <%= f.select :waived_reason,
+              [["Ausência", "absence"], ["Desistência", "resignation"], ["Outro motivo", "other"]],
+              { prompt: "Selecione o motivo..." },
+              style: "font-size:0.72rem;border:1px solid #e4e4e7;border-radius:5px;padding:4px 6px;color:#18181b;width:100%;background:#fff;" %>
+          <div style="display:flex;gap:4px;">
+            <%= f.submit "Confirmar dispensa",
+                style: "flex:1;font-size:0.72rem;background:#fff;color:#71717a;border:1px solid #d4d4d8;border-radius:5px;padding:5px 0;cursor:pointer;font-weight:700;" %>
+            <button type="button" onclick="pcToggle('<%= uid %>', 'waive')"
+              style="font-size:0.72rem;color:#a1a1aa;background:#fff;border:1px solid #e4e4e7;border-radius:5px;padding:5px 8px;cursor:pointer;">
+              ✕
+            </button>
+          </div>
+        </div>
+      <% end %>
+    </div>
+  </div>
+
+  <script>
+    function pcToggle(uid, panel) {
+      var pay   = document.getElementById('pc-pay-'   + uid);
+      var waive = document.getElementById('pc-waive-' + uid);
+      if (!pay || !waive) return;
+      if (panel === 'pay') {
+        pay.style.display   = pay.style.display   === 'none' ? 'block' : 'none';
+        waive.style.display = 'none';
+      } else {
+        waive.style.display = waive.style.display === 'none' ? 'block' : 'none';
+        pay.style.display   = 'none';
+      }
+    }
+  </script>
+<% end %>

@@ -63,11 +63,7 @@
         <i class="bi bi-clipboard-check"></i> Folha de Escala
       <% end %>
     <% end %>
-    <% if policy(@event).manual_entry? %>
-      <%= link_to manual_entry_event_path(@event), class: "btn-secondary" do %>
-        <i class="bi bi-pencil-square"></i> <%= t("manual_entry.title") %>
-      <% end %>
-    <% end %>
+
     <% if policy(@event).print? %>
       <%= link_to print_event_path(@event), class: "btn-secondary" do %>
         <i class="bi bi-printer"></i> Imprimir
@@ -550,7 +546,7 @@
       delta_total        = total_shift_cost - @plan_total_cost
       covered_pct        = total_planned > 0 ? [(total_shift_people.to_f / total_planned * 100).round, 100].min : 0
       sorted_functions   = all_functions.sort_by { |ef| -(@cost_by_function[ef].to_f + @plan_cost_by_function[ef].to_f) }
-      payable_cost       = @estimated_cost - @absent_cost.to_f
+      payable_cost       = @total_paid + @pending_amount.to_f
       paid_pct           = payable_cost > 0 ? [(@total_paid / payable_cost * 100).round, 100].min : 0
     %>
 
@@ -671,42 +667,195 @@
         <span style="display:flex; align-items:center; gap:5px; font-size:0.68rem; color:#71717a;"><span style="width:10px;height:10px;border-radius:3px;background:#eab308;display:inline-block;"></span> Abaixo do planejado</span>
       </div>
 
-      <%# Pagamentos (mantém a seção existente se houver) %>
-      <% if @total_paid > 0 %>
+      <%# Pagamentos %>
+      <% if @total_paid > 0 || @pending_amount.to_f > 0 || @waived_amount.to_f > 0 || @absent_amount.to_f > 0 %>
         <%
-          absent_pct        = @estimated_cost > 0 ? [(@absent_cost.to_f / @estimated_cost * 100).round, 100].min : 0
-          truly_pending     = @estimated_cost - @total_paid - @absent_cost.to_f
-          truly_pending_pct = [100 - paid_pct - absent_pct, 0].max
+          total_ref       = @total_paid + @pending_amount.to_f + @waived_amount.to_f + @absent_amount.to_f
+          paid_pct_bar    = total_ref > 0 ? [(@total_paid          / total_ref * 100).round, 100].min : 0
+          pending_pct_bar = total_ref > 0 ? [(@pending_amount.to_f / total_ref * 100).round, 100].min : 0
+          waived_pct_bar  = total_ref > 0 ? [(@waived_amount.to_f  / total_ref * 100).round, 100].min : 0
+          absent_pct_bar  = [100 - paid_pct_bar - pending_pct_bar - waived_pct_bar, 0].max
         %>
         <div style="padding:14px 20px; border-top:1px solid #e4e4e7;">
-          <div style="display:flex; gap:1.5rem; flex-wrap:wrap; align-items:flex-end; justify-content:space-between;">
+
+          <%# Status de pagamentos %>
+          <div style="display:flex; gap:1.5rem; flex-wrap:wrap; align-items:flex-end; justify-content:space-between; margin-bottom:8px;">
             <div style="display:flex; gap:1.5rem; flex-wrap:wrap;">
-              <div>
-                <div style="font-size:0.65rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:#a1a1aa; margin-bottom:2px;">Pago</div>
-                <div style="font-size:0.88rem; font-weight:700; color:#15803d;"><%= number_to_currency(@total_paid, unit: "R$", separator: ",", delimiter: ".", precision: 2) %></div>
+              <% if @total_paid > 0 %>
+                <div>
+                  <div style="font-size:0.65rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:#a1a1aa; margin-bottom:2px; display:flex; align-items:center; gap:4px;">
+                    <span style="width:8px;height:8px;border-radius:50%;background:#16a34a;display:inline-block;"></span> Pago
+                  </div>
+                  <div style="font-size:0.88rem; font-weight:700; color:#15803d;"><%= number_to_currency(@total_paid, unit: "R$", separator: ",", delimiter: ".", precision: 2) %></div>
+                </div>
+              <% end %>
+              <% if @pending_amount.to_f > 0.01 %>
+                <div>
+                  <div style="font-size:0.65rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:#a1a1aa; margin-bottom:2px; display:flex; align-items:center; gap:4px;">
+                    <span style="width:8px;height:8px;border-radius:50%;background:#fbbf24;display:inline-block;"></span> A pagar
+                  </div>
+                  <div style="font-size:0.88rem; font-weight:700; color:#d97706;"><%= number_to_currency(@pending_amount, unit: "R$", separator: ",", delimiter: ".", precision: 2) %></div>
+                  <div style="font-size:0.7rem; color:#a1a1aa; margin-top:2px;"><%= @pending_count %> colaborador<%= @pending_count == 1 ? '' : 'es' %> sem pagamento</div>
+                </div>
+              <% end %>
+              <% if @waived_amount.to_f > 0.01 %>
+                <div>
+                  <div style="font-size:0.65rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:#a1a1aa; margin-bottom:2px; display:flex; align-items:center; gap:4px;">
+                    <span style="width:8px;height:8px;border-radius:50%;background:#a1a1aa;display:inline-block;"></span> Dispensados
+                  </div>
+                  <div style="font-size:0.88rem; font-weight:700; color:#71717a;"><%= number_to_currency(@waived_amount, unit: "R$", separator: ",", delimiter: ".", precision: 2) %></div>
+                  <div style="font-size:0.7rem; color:#a1a1aa; margin-top:2px;"><%= @waived_count %> colaborador<%= @waived_count == 1 ? '' : 'es' %> dispensado<%= @waived_count == 1 ? '' : 's' %></div>
+                </div>
+              <% end %>
+              <% if @absent_amount.to_f > 0.01 %>
+                <div>
+                  <div style="font-size:0.65rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:#a1a1aa; margin-bottom:2px; display:flex; align-items:center; gap:4px;">
+                    <span style="width:8px;height:8px;border-radius:50%;background:#ef4444;display:inline-block;"></span> Ausentes
+                  </div>
+                  <div style="font-size:0.88rem; font-weight:700; color:#ef4444;"><%= number_to_currency(@absent_amount, unit: "R$", separator: ",", delimiter: ".", precision: 2) %></div>
+                  <div style="font-size:0.7rem; color:#a1a1aa; margin-top:2px;"><%= @absent_count %> colaborador<%= @absent_count == 1 ? '' : 'es' %> sem check-in</div>
+                </div>
+              <% end %>
+            </div>
+            <span style="font-size:0.75rem; font-weight:700; color:<%= paid_pct_bar >= 100 ? '#15803d' : '#92400e' %>;"><%= paid_pct_bar %>% pago</span>
+          </div>
+          <div style="height:6px; background:#e4e4e7; border-radius:4px; overflow:hidden; display:flex;">
+            <div style="height:100%; width:<%= paid_pct_bar %>%;    background:#16a34a;"></div>
+            <div style="height:100%; width:<%= pending_pct_bar %>%; background:#fbbf24;"></div>
+            <div style="height:100%; width:<%= waived_pct_bar %>%;  background:#a1a1aa;"></div>
+            <div style="height:100%; width:<%= absent_pct_bar %>%;  background:#ef4444;"></div>
+          </div>
+
+          <% if @paid_users_data&.any? %>
+            <div style="margin-top:14px; border-top:1px solid #f4f4f5; padding-top:12px;">
+              <div style="font-size:0.68rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:#a1a1aa; margin-bottom:8px;">
+                Pagamentos realizados
               </div>
-              <% if @absent_cost.to_f > 0 %>
-                <div>
-                  <div style="font-size:0.65rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:#a1a1aa; margin-bottom:2px;">Ausências</div>
-                  <div style="font-size:0.88rem; font-weight:700; color:#6b7280;"><%= number_to_currency(@absent_cost, unit: "R$", separator: ",", delimiter: ".", precision: 2) %></div>
+              <%
+                total_estimado = @paid_users_data.sum { |d| d[:estimated] }
+                total_pago     = @paid_users_data.sum { |d| d[:paid] }
+                total_diff     = total_pago - total_estimado
+              %>
+              <div style="display:flex; flex-direction:column; gap:4px;">
+                <% @paid_users_data.each do |d| %>
+                  <% diff = d[:paid] - d[:estimated] %>
+                  <div style="background:#f0fdf4; border:1px solid #86efac; border-radius:7px; overflow:hidden;">
+                    <%# Linha do colaborador %>
+                    <div style="display:flex; align-items:center; justify-content:space-between; padding:6px 10px;">
+                      <div style="display:flex; align-items:center; gap:8px;">
+                        <div style="width:28px; height:28px; border-radius:50%; background:#16a34a; display:flex; align-items:center; justify-content:center; font-size:0.7rem; font-weight:700; color:#fff; flex-shrink:0;">
+                          <%= d[:user].name.split.map(&:first).first(2).join.upcase %>
+                        </div>
+                        <div>
+                          <div style="font-size:0.8rem; font-weight:600; color:#18181b;"><%= d[:user].name %></div>
+                          <div style="font-size:0.68rem; color:#a1a1aa;"><%= d[:user].formatted_cpf %></div>
+                        </div>
+                      </div>
+                      <div style="display:flex; align-items:center; gap:16px;">
+                        <div style="text-align:right; min-width:80px;">
+                          <div style="font-size:0.72rem; color:#a1a1aa;">Estimado</div>
+                          <div style="font-size:0.78rem; color:#71717a;">R$ <%= "%.2f" % d[:estimated] %></div>
+                        </div>
+                        <div style="text-align:right; min-width:80px;">
+                          <div style="font-size:0.72rem; color:#a1a1aa;">Total pago</div>
+                          <div style="font-size:0.82rem; font-weight:700; color:#15803d;">R$ <%= "%.2f" % d[:paid] %></div>
+                        </div>
+                        <div style="text-align:right; min-width:70px;">
+                          <div style="font-size:0.72rem; color:#a1a1aa;">Diferença</div>
+                          <% if diff.abs > 0.01 %>
+                            <div style="font-size:0.75rem; font-weight:700; color:<%= diff > 0 ? '#dc2626' : '#16a34a' %>;">
+                              <%= diff > 0 ? "+" : "" %>R$ <%= "%.2f" % diff %>
+                            </div>
+                            <%
+                              basis_labels = { "shifts" => "Escala", "attendance" => "Check-in/out", "cross" => "Cruzamento", "manual" => "Manual" }
+                              diff_bases = d[:payments].select { |p| (p[:amount] - p[:estimated]).abs > 0.01 }.map { |p| basis_labels[p[:basis]] || p[:basis] }.uniq
+                            %>
+                            <% if diff_bases.any? %>
+                              <div style="font-size:0.62rem; color:#a1a1aa;">via <%= diff_bases.join(", ") %></div>
+                            <% end %>
+                          <% else %>
+                            <div style="font-size:0.75rem; color:#a1a1aa;">—</div>
+                          <% end %>
+                        </div>
+                      </div>
+                    </div>
+                    <%# Parcelas por dia %>
+                    <% if d[:payments].size > 0 %>
+                      <div style="border-top:1px solid #bbf7d0; padding:4px 10px 6px; display:flex; flex-direction:column; gap:3px;">
+                        <% d[:payments].each do |p| %>
+                          <% day_diff = p[:amount] - p[:estimated] %>
+                          <%
+                            basis_label = { "shifts" => "Escala", "attendance" => "Check-in/out", "cross" => "Cruzamento", "manual" => "Manual" }[p[:basis]] || p[:basis]
+                          %>
+                          <div style="display:flex; align-items:center; justify-content:space-between;">
+                            <div style="display:flex; align-items:center; gap:5px; flex:1;">
+                              <span style="font-size:0.68rem; color:#52525b; white-space:nowrap;">
+                                <%= p[:date] ? l(p[:date], format: :short) : "—" %>
+                              </span>
+                              <span style="font-size:0.65rem; font-weight:600; color:#7c3aed; background:#f5f3ff; border:1px solid #ddd6fe; border-radius:99px; padding:1px 6px; white-space:nowrap;">
+                                <%= basis_label %>
+                              </span>
+                              <% if p[:notes].present? %>
+                                <span style="font-size:0.65rem; color:#a1a1aa;"><%= p[:notes] %></span>
+                              <% end %>
+                            </div>
+                            <div style="display:flex; align-items:center; gap:16px;">
+                              <div style="text-align:right; min-width:80px;">
+                                <% if p[:estimated] > 0 %>
+                                  <span style="font-size:0.72rem; color:#71717a;">R$ <%= "%.2f" % p[:estimated] %></span>
+                                <% else %>
+                                  <span style="font-size:0.72rem; color:#d4d4d8;">—</span>
+                                <% end %>
+                              </div>
+                              <div style="text-align:right; min-width:80px;">
+                                <span style="font-size:0.72rem; font-weight:700; color:#15803d;">R$ <%= "%.2f" % p[:amount] %></span>
+                              </div>
+                              <div style="text-align:right; min-width:70px;">
+                                <% if day_diff.abs > 0.01 %>
+                                  <div>
+                                    <span style="font-size:0.72rem; font-weight:700; color:<%= day_diff > 0 ? '#dc2626' : '#16a34a' %>;">
+                                      <%= day_diff > 0 ? "+" : "" %>R$ <%= "%.2f" % day_diff %>
+                                    </span>
+                                  </div>
+                                  <div style="font-size:0.62rem; color:#a1a1aa; white-space:nowrap;">
+                                    via <%= basis_label %>
+                                  </div>
+                                <% else %>
+                                  <span style="font-size:0.72rem; color:#a1a1aa;">—</span>
+                                <% end %>
+                              </div>
+                            </div>
+                          </div>
+                        <% end %>
+                      </div>
+                    <% end %>
+                  </div>
+                <% end %>
+
+                <%# Linha de totais %>
+                <div style="display:flex; align-items:center; justify-content:space-between; padding:7px 10px; background:#f4f4f5; border-radius:7px; margin-top:2px;">
+                  <div style="font-size:0.72rem; font-weight:700; color:#52525b; text-transform:uppercase; letter-spacing:0.04em;">Total</div>
+                  <div style="display:flex; align-items:center; gap:16px;">
+                    <div style="text-align:right; min-width:80px;">
+                      <div style="font-size:0.82rem; font-weight:700; color:#52525b;">R$ <%= "%.2f" % total_estimado %></div>
+                    </div>
+                    <div style="text-align:right; min-width:80px;">
+                      <div style="font-size:0.88rem; font-weight:800; color:#15803d;">R$ <%= "%.2f" % total_pago %></div>
+                    </div>
+                    <div style="text-align:right; min-width:70px;">
+                      <% if total_diff.abs > 0.01 %>
+                        <div style="font-size:0.82rem; font-weight:800; color:<%= total_diff > 0 ? '#dc2626' : '#16a34a' %>;">
+                          <%= total_diff > 0 ? "+" : "" %>R$ <%= "%.2f" % total_diff %>
+                        </div>
+                      <% else %>
+                        <div style="font-size:0.82rem; color:#a1a1aa;">—</div>
+                      <% end %>
+                    </div>
+                  </div>
                 </div>
-              <% end %>
-              <% if truly_pending > 0.01 %>
-                <div>
-                  <div style="font-size:0.65rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:#a1a1aa; margin-bottom:2px;">A pagar</div>
-                  <div style="font-size:0.88rem; font-weight:700; color:#d97706;"><%= number_to_currency(truly_pending, unit: "R$", separator: ",", delimiter: ".", precision: 2) %></div>
-                </div>
-              <% end %>
+              </div>
             </div>
-            <span style="font-size:0.75rem; font-weight:700; color:<%= paid_pct >= 100 ? '#15803d' : '#92400e' %>;"><%= paid_pct %>% pago</span>
-          </div>
-          <div style="margin-top:0.6rem;">
-            <div style="height:6px; background:#e4e4e7; border-radius:4px; overflow:hidden; display:flex;">
-              <div style="height:100%; width:<%= paid_pct %>%; background:#16a34a;"></div>
-              <div style="height:100%; width:<%= absent_pct %>%; background:#d1d5db;"></div>
-              <div style="height:100%; width:<%= truly_pending_pct %>%; background:#fbbf24;"></div>
-            </div>
-          </div>
+          <% end %>
         </div>
       <% end %>
 

@@ -162,6 +162,11 @@ class ApplicationController < ActionController::Base
     end
   end
 
+  def referer_with_anchor(anchor, fallback:)
+    base = request.referer.presence || fallback
+    "#{base.split('#').first}##{anchor}"
+  end
+
   def not_authorized_message(exception)
     query  = exception&.query&.to_s&.delete_suffix("?")
     record = exception&.record

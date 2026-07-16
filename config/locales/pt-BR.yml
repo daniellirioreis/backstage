@@ -99,9 +99,15 @@ pt-BR:
     bank_transfer: "Transferência Bancária"
 
   payment_bases:
-    shifts: "Por Escalas"
-    attendance: "Por Check-in/Check-out"
-    cross: "Cruzamento Escalas + Presença"
+    shifts: "Escalas"
+    attendance: "Check-in/out"
+    cross: "Cruzamento"
+    manual: "Manual"
+
+  waived_reasons:
+    absence: "Ausência"
+    resignation: "Desistência"
+    other: "Outro motivo"
 
   badge_config:
     configure: "Configurar Credencial"
@@ -371,3 +377,10 @@ pt-BR:
         events_limit: "Limite de eventos"
         members_limit: "Limite de colaboradores"
         description: "Descrição"
+      payment:
+        amount: "Valor"
+        payment_method: "Método de pagamento"
+        basis: "Base de cálculo"
+        paid_at: "Pago em"
+        waived_reason: "Motivo da dispensa"
+        notes: "Observação"

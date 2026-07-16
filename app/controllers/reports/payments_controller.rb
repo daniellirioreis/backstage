@@ -6,17 +6,25 @@ module Reports
       authorize :report, :manage_payments?
 
       @payment = Payment.new(payment_params)
-      @payment.event    = current_event
-      @payment.paid_by  = current_user
-      @payment.paid_at  = Time.current
+      @payment.event   = current_event
+      @payment.paid_by = current_user
+      @payment.paid_at = Time.current
+      @payment.date    = params.dig(:payment, :date).presence
+
+      if @payment.waived?
+        @payment.payment_method = nil
+        @payment.amount         = 0
+      end
 
       user_id = @payment.user_id
+      anchor = "payment-row-#{user_id}"
       if @payment.save
-        redirect_to reports_closing_path(basis: @payment.basis, anchor: "payment-row-#{user_id}"),
-                    notice: "Pagamento de #{@payment.user.name} registrado com sucesso."
+        msg = @payment.waived? ? "#{@payment.user.name} marcado como dispensado." : "Pagamento de #{@payment.user.name} registrado com sucesso."
+        redirect_to referer_with_anchor(anchor, fallback: reports_closing_path(basis: @payment.basis)),
+                    notice: msg
       else
-        redirect_to reports_closing_path(basis: @payment.basis, anchor: "payment-row-#{user_id}"),
-                    alert: "Erro ao registrar pagamento: #{@payment.errors.full_messages.to_sentence}"
+        redirect_to referer_with_anchor(anchor, fallback: reports_closing_path(basis: @payment.basis)),
+                    alert: "Erro: #{@payment.errors.full_messages.to_sentence}"
       end
     end
 
@@ -24,8 +32,9 @@ module Reports
       authorize :report, :manage_payments?
       user_id = @payment.user_id
       basis   = @payment.basis
+      anchor = "payment-row-#{user_id}"
       @payment.destroy
-      redirect_to reports_closing_path(basis: basis, anchor: "payment-row-#{user_id}"),
+      redirect_to referer_with_anchor(anchor, fallback: reports_closing_path(basis: basis)),
                   notice: "Pagamento removido."
     end
 
@@ -56,8 +65,9 @@ module Reports
     end
 
     def payment_params
-      params.require(:payment).permit(:user_id, :amount, :hours, :hourly_rate,
-                                      :function_name, :payment_method, :basis, :notes)
+      params.require(:payment).permit(:user_id, :date, :amount, :hours, :hourly_rate,
+                                      :function_name, :payment_method, :basis, :notes,
+                                      :waived, :waived_reason)
     end
   end
 end

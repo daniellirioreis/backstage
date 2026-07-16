@@ -1,0 +1,135 @@
+<%# locals: rows, form_id, date_str, finalized, payment_by_user_date, sector_id %>
+
+<% if date_str.present? %>
+  <form id="<%= form_id %>" action="<%= reports_closing_save_manual_path %>" method="post" data-turbo="false">
+    <%= hidden_field_tag :authenticity_token, form_authenticity_token %>
+    <%= hidden_field_tag :date, date_str %>
+    <%= hidden_field_tag :sector_id, sector_id %>
+  </form>
+<% end %>
+
+<div class="content-card" style="padding:0;overflow:hidden;margin-bottom:0.5rem;">
+  <table class="data-table" style="width:100%;">
+    <thead>
+      <tr>
+        <th>Colaborador</th>
+        <th>Função</th>
+        <th>Escala</th>
+        <th style="text-align:center;">Entrada</th>
+        <th style="text-align:center;">Saída</th>
+        <th style="text-align:right;">Horas</th>
+        <th style="text-align:right;">Valor (R$)</th>
+        <th style="text-align:center;">Origem</th>
+        <th style="text-align:center;">Base</th>
+        <th style="text-align:center;min-width:180px;">Pagamento</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% rows.each do |row| %>
+        <% uid     = date_str.present? ? "#{row[:user].id}d#{date_str.gsub('-','')}" : row[:user].id.to_s %>
+        <% rate    = row[:hourly_rate] %>
+        <% att     = row[:attendance] %>
+        <% is_qr   = row[:has_qr] %>
+        <% payment = payment_by_user_date[[row[:user].id, date_str]] %>
+        <tr id="payment-row-<%= row[:user].id %>" data-name="<%= row[:user].name.downcase %>" style="<%= is_qr ? 'background:#f0fdf4;' : '' %>">
+          <td>
+            <div style="font-size:0.85rem;font-weight:600;color:#18181b;"><%= row[:user].name %></div>
+            <div style="font-size:0.72rem;color:#a1a1aa;"><%= row[:user].formatted_cpf %></div>
+          </td>
+          <td>
+            <span style="font-size:0.75rem;font-weight:600;color:#7c3aed;background:#f5f3ff;border:1px solid #ddd6fe;border-radius:4px;padding:2px 7px;">
+              <%= row[:function_name] %>
+            </span>
+          </td>
+          <td>
+            <div style="display:flex;flex-direction:column;gap:2px;">
+              <% row[:shifts].each do |sh| %>
+                <span style="font-size:0.72rem;color:#52525b;white-space:nowrap;">
+                  <%= sh.start_time.strftime("%H:%M") %>–<%= sh.end_time.strftime("%H:%M") %>
+                </span>
+              <% end %>
+            </div>
+          </td>
+          <% if payment %>
+            <td style="text-align:center;">
+              <span style="font-size:0.82rem;color:#52525b;"><%= att&.checked_in_at&.strftime("%H:%M") || "—" %></span>
+            </td>
+            <td style="text-align:center;">
+              <span style="font-size:0.82rem;color:#52525b;"><%= att&.checked_out_at&.strftime("%H:%M") || "—" %></span>
+            </td>
+          <% elsif date_str.present? %>
+            <td style="text-align:center;">
+              <input type="time" id="entry_<%= uid %>_start"
+                     name="entries[<%= row[:user].id %>][started_at]"
+                     value="<%= att&.checked_in_at&.strftime('%H:%M') %>"
+                     form="<%= form_id %>"
+                     oninput="calcManualHoras('<%= uid %>', <%= rate %>)"
+                     style="border:1px solid #e4e4e7;border-radius:6px;padding:0.3rem 0.5rem;font-size:0.82rem;color:#18181b;width:108px;">
+            </td>
+            <td style="text-align:center;">
+              <input type="time" id="entry_<%= uid %>_end"
+                     name="entries[<%= row[:user].id %>][ended_at]"
+                     value="<%= att&.checked_out_at&.strftime('%H:%M') %>"
+                     form="<%= form_id %>"
+                     oninput="calcManualHoras('<%= uid %>', <%= rate %>)"
+                     style="border:1px solid #e4e4e7;border-radius:6px;padding:0.3rem 0.5rem;font-size:0.82rem;color:#18181b;width:108px;">
+            </td>
+          <% else %>
+            <td style="text-align:center;"><span style="font-size:0.82rem;color:#a1a1aa;"><%= att&.checked_in_at&.strftime("%H:%M") || "—" %></span></td>
+            <td style="text-align:center;"><span style="font-size:0.82rem;color:#a1a1aa;"><%= att&.checked_out_at&.strftime("%H:%M") || "—" %></span></td>
+          <% end %>
+          <td style="text-align:right;">
+            <span id="hours_<%= uid %>" style="font-size:0.82rem;font-weight:600;color:#18181b;">
+              <%= row[:actual_hours] ? "%.2fh" % row[:actual_hours] : "—" %>
+            </span>
+          </td>
+          <td style="text-align:right;">
+            <span id="value_<%= uid %>" style="font-size:0.85rem;font-weight:700;color:#15803d;">
+              <%= row[:total_value] > 0 ? "R$ #{"%.2f" % row[:total_value]}" : "—" %>
+            </span>
+          </td>
+          <td style="text-align:center;">
+            <% if is_qr %>
+              <span style="display:inline-flex;align-items:center;gap:4px;background:#dcfce7;border:1px solid #86efac;border-radius:99px;padding:2px 8px;font-size:0.7rem;font-weight:700;color:#15803d;">
+                <i class="bi bi-qr-code-scan"></i> QR
+              </span>
+            <% elsif row[:has_manual] %>
+              <span style="display:inline-flex;align-items:center;gap:4px;background:#fef9c3;border:1px solid #fde68a;border-radius:99px;padding:2px 8px;font-size:0.7rem;font-weight:700;color:#92400e;">
+                <i class="bi bi-pencil"></i> Manual
+              </span>
+            <% else %>
+              <span style="font-size:0.7rem;color:#a1a1aa;">—</span>
+            <% end %>
+          </td>
+          <td style="text-align:center;">
+            <% mp = payment_by_user_date[[row[:user].id, date_str]] %>
+            <% if mp %>
+              <div style="display:flex;flex-direction:column;align-items:center;gap:2px;">
+                <span style="font-size:0.72rem;font-weight:700;color:#7c3aed;background:#f5f3ff;border:1px solid #ddd6fe;border-radius:99px;padding:2px 9px;">
+                  <%= mp.basis_label %>
+                </span>
+                <span style="font-size:0.78rem;font-weight:700;color:#15803d;">R$ <%= "%.2f" % mp.amount %></span>
+              </div>
+            <% else %>
+              <span style="color:#d4d4d8;font-size:0.8rem;">—</span>
+            <% end %>
+          </td>
+          <td style="text-align:center;padding:0.5rem 0.75rem;">
+            <%= render partial: "reports/closing/payment_cell",
+                       locals: { payment: payment, row: row, uid: uid, rate: rate,
+                                 basis: "manual", finalized: finalized, date: date_str } %>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>
+
+<% if date_str.present? %>
+  <div style="display:flex;justify-content:flex-end;margin-bottom:1rem;">
+    <button type="submit" form="<%= form_id %>"
+            style="background:#18181b;color:#fff;border:none;border-radius:7px;padding:0.55rem 1.25rem;font-size:0.85rem;font-weight:700;cursor:pointer;">
+      Salvar lançamentos de <%= l(Date.parse(date_str), format: :short) %>
+    </button>
+  </div>
+<% end %>

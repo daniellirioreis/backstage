@@ -161,16 +161,13 @@
           <span style="display:inline-flex;align-items:center;gap:0.4rem;background:#dcfce7;border:1px solid #86efac;color:#15803d;font-size:0.78rem;font-weight:700;border-radius:7px;padding:0.4rem 0.9rem;">
             <i class="bi bi-check-circle-fill"></i> Fechamento concluído
           </span>
+          <%= link_to reports_closing_path, style: "display:inline-flex;align-items:center;gap:0.4rem;background:#1f1f1f;color:#71717a;font-size:0.78rem;font-weight:600;border-radius:7px;padding:0.4rem 0.9rem;text-decoration:none;" do %>
+            <i class="bi bi-receipt"></i> Ver fechamento
+          <% end %>
         <% elsif policy(:report).closing? %>
           <%= link_to reports_closing_path, style: "display:inline-flex;align-items:center;gap:0.4rem;background:#f59e0b;color:#1c1004;font-size:0.78rem;font-weight:700;border-radius:7px;padding:0.4rem 0.9rem;text-decoration:none;" do %>
             <i class="bi bi-receipt"></i> Relatório de fechamento
           <% end %>
-        <% end %>
-        <%= link_to reports_closing_path, style: "display:inline-flex;align-items:center;gap:0.4rem;background:#1f1f1f;color:#71717a;font-size:0.78rem;font-weight:600;border-radius:7px;padding:0.4rem 0.9rem;text-decoration:none;" do %>
-          <i class="bi bi-receipt"></i> <%= current_event.closing_finalized_at? ? "Ver fechamento" : "Relatório de fechamento" %>
-        <% end %>
-        <%= link_to reports_closing_export_path(basis: "cross"), style: "display:inline-flex;align-items:center;gap:0.4rem;background:#1f1f1f;color:#71717a;font-size:0.78rem;font-weight:600;border-radius:7px;padding:0.4rem 0.9rem;text-decoration:none;" do %>
-          <i class="bi bi-file-earmark-spreadsheet"></i> Exportar CSV
         <% end %>
       <% end %>
     </div>

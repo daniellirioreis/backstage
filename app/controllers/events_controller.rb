@@ -151,27 +151,82 @@ class EventsController < ApplicationController
     @estimated_cost = @cost_by_function.values.sum
 
     # ── Total pago (payments registrados para este evento) ────────────────────
-    @total_paid = Payment.where(event: @event).sum(:amount)
+    @total_paid = Payment.where(event: @event).where(waived: false).sum(:amount)
 
-    # ── Economia: colaboradores escalados que não compareceram ────────────────
+    # ── Resumo de pagamentos (evento encerrado) ───────────────────────────────
     if @event.closed?
-      attended_user_ids = Attendance.where(event: @event).where.not(checked_out_at: nil).pluck(:user_id).uniq
+      payments          = Payment.where(event: @event)
+      resolved_user_ids = payments.pluck(:user_id).to_set
+      waived_user_ids   = payments.where(waived: true).pluck(:user_id).to_set
+      attended_user_ids = Attendance.where(event: @event).pluck(:user_id).to_set
 
-      absent_cost = 0.0
-      shifts.each do |shift|
-        next if attended_user_ids.include?(shift.user_id)
-        next unless shift.team_id
-        membership = memberships_map[[shift.user_id, shift.team_id]]
-        next unless membership&.event_function
-        rate  = membership.event_function.hourly_rate.to_f
-        next if rate.zero?
-        s_min = shift.start_time.hour * 60 + shift.start_time.min
-        e_min = shift.end_time.hour   * 60 + shift.end_time.min
-        hours = e_min > s_min ? (e_min - s_min) / 60.0 : (1440 - s_min + e_min) / 60.0
-        days  = shift.end_date.present? ? (shift.end_date - shift.date).to_i + 1 : 1
-        absent_cost += hours * days * rate
+      pending_amount        = 0.0
+      waived_amount         = 0.0
+      absent_amount         = 0.0
+      absent_uids           = Set.new
+      pending_uids          = Set.new
+      pending_value_by_user = Hash.new(0.0)
+      shift_value_by_user      = Hash.new(0.0)
+      shift_value_by_user_date = Hash.new { |h, k| h[k] = Hash.new(0.0) }
+
+      shifts.group_by(&:user_id).each do |user_id, user_shifts|
+        shift_value = user_shifts.sum do |shift|
+          next 0 unless shift.team_id
+          membership = memberships_map[[user_id, shift.team_id]]
+          next 0 unless membership&.event_function
+          rate = membership.event_function.hourly_rate.to_f
+          next 0 if rate.zero?
+          s_min = shift.start_time.hour * 60 + shift.start_time.min
+          e_min = shift.end_time.hour   * 60 + shift.end_time.min
+          daily_hours = e_min > s_min ? (e_min - s_min) / 60.0 : (1440 - s_min + e_min) / 60.0
+          daily_value = daily_hours * rate
+          start_d = shift.date
+          end_d   = shift.end_date.present? ? shift.end_date : shift.date
+          (start_d..end_d).each { |d| shift_value_by_user_date[user_id][d] += daily_value }
+          daily_value * ((end_d - start_d).to_i + 1)
+        end
+
+        shift_value_by_user[user_id] += shift_value
+
+        if waived_user_ids.include?(user_id)
+          waived_amount += shift_value
+        elsif resolved_user_ids.include?(user_id)
+          # já pago — não conta em nenhuma pendência
+        elsif !attended_user_ids.include?(user_id)
+          absent_amount += shift_value
+          absent_uids << user_id
+        else
+          pending_amount += shift_value
+          pending_uids << user_id
+          pending_value_by_user[user_id] += shift_value
+        end
       end
-      @absent_cost = absent_cost
+
+      @pending_amount        = pending_amount
+      @pending_count         = pending_uids.size
+      @pending_users         = User.where(id: pending_uids.to_a).order(:name)
+      @pending_value_by_user = pending_value_by_user
+
+      # Pagos: agrupados por colaborador (pode haver múltiplos pagamentos por dia)
+      paid_payments     = payments.where(waived: false).includes(:user)
+      paid_by_user      = paid_payments.group_by(&:user_id)
+      paid_users_lookup = paid_payments.map(&:user).index_by(&:id)
+      @paid_users_data  = paid_by_user.map do |uid, user_pmts|
+        sorted = user_pmts.sort_by { |p| p.date || Date.new(0) }
+        {
+          user:      paid_users_lookup[uid],
+          estimated: sorted.sum { |p| p.date ? shift_value_by_user_date[uid][p.date] : 0.0 },
+          paid:      sorted.sum(&:amount).to_f,
+          payments:  sorted.map { |p|
+                       est = p.date ? shift_value_by_user_date[uid][p.date] : 0.0
+                       { date: p.date, amount: p.amount.to_f, estimated: est, basis: p.basis, notes: p.notes }
+                     }
+        }
+      end.sort_by { |d| d[:user].name }
+      @waived_amount  = waived_amount
+      @waived_count   = waived_user_ids.size
+      @absent_amount  = absent_amount
+      @absent_count   = absent_uids.size
     end
   end
 

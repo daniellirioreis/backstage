@@ -455,6 +455,17 @@
     // Fecha ao navegar (Turbo)
     document.addEventListener("turbo:before-visit", closeSidebar);
 
+    // ── Sidebar collapse (desktop) ────────────────────────────────────────────
+    function toggleSidebarCollapse() {
+      var collapsed = document.body.classList.toggle("sidebar-collapsed");
+      localStorage.setItem("sidebarCollapsed", collapsed ? "1" : "0");
+    }
+    (function() {
+      if (localStorage.getItem("sidebarCollapsed") === "1") {
+        document.body.classList.add("sidebar-collapsed");
+      }
+    })();
+
     // ── Tabelas responsivas (mobile) ──────────────────────────────────────────
     function wrapTablesForMobile() {
       if (window.innerWidth > 768) return;
@@ -512,8 +523,9 @@
       to   { opacity:1; transform:scale(1)    translateY(0);    }
     }
   </style>
-  <script type="module">
-    import * as Turbo from "https://cdn.skypack.dev/@hotwired/turbo";
+  <script>
+    document.addEventListener("turbo:load", function() {
+    const Turbo = window.Turbo;
     const modal   = document.getElementById("confirm-modal");
     const message = document.getElementById("confirm-modal-message");
     const btnOk   = document.getElementById("confirm-modal-ok");
@@ -540,6 +552,13 @@
         }, { once: true });
       });
     };
+    }); // turbo:load
   </script>
+
+  <% if user_signed_in? %>
+    <button class="sidebar-toggle-btn" onclick="toggleSidebarCollapse()" title="Expandir/recolher menu" type="button">
+      <i class="bi bi-layout-sidebar"></i>
+    </button>
+  <% end %>
   </body>
 </html>
