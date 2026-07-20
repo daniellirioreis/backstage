@@ -124,6 +124,9 @@
     <div style="text-align:right;">
       <div class="label">Emitido em</div>
       <div class="date" style="font-size:12px;font-weight:700;color:#18181b;"><%= l(@payment.paid_at.to_date, format: :long) %></div>
+      <% if @payment.date.present? %>
+        <div class="date">Referente a: <strong><%= l(@payment.date, format: :long) %></strong></div>
+      <% end %>
       <div class="date">Registrado por: <%= paid_by.name %></div>
     </div>
     <div>
@@ -146,7 +149,7 @@
         <div class="detail-line">R$ <%= "%.2f" % @payment.hourly_rate %>/hora</div>
       <% end %>
       <div class="detail-line" style="margin-top:6px;font-size:9px;color:#71717a;">
-        Base: <%= @payment.basis == "shifts" ? "Escalas cadastradas" : "Check-in / Check-out" %>
+        Base: <%= { "shifts" => "Escalas cadastradas", "attendance" => "Check-in / Check-out", "cross" => "Cruzamento escala × presença", "manual" => "Lançamento manual" }[@payment.basis] || @payment.basis %>
       </div>
     </div>
   </div>

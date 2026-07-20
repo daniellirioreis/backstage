@@ -37,11 +37,11 @@
     </div>
   </div>
   <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
-    <%= link_to reports_closing_export_path(basis: @basis, sector_id: @sector_id), class: "btn-secondary" do %>
-      <i class="bi bi-file-earmark-spreadsheet"></i> Exportar CSV
+    <%= link_to reports_closing_export_path(basis: @basis, sector_id: @sector_id, date: @selected_date), class: "btn-secondary" do %>
+      <i class="bi bi-file-earmark-excel"></i> Exportar Excel
     <% end %>
     <% unless current_event.closing_finalized_at? %>
-      <%= link_to reports_closing_print_path(basis: @basis, sector_id: @sector_id), class: "btn-secondary" do %>
+      <%= link_to reports_closing_print_path(basis: @basis, sector_id: @sector_id, date: @selected_date), class: "btn-secondary" do %>
         <i class="bi bi-printer"></i> Imprimir PDF
       <% end %>
       <% if policy(:report).finalize_closing? %>

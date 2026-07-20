@@ -24,6 +24,10 @@ gem "resend"
 gem "wicked_pdf"
 gem "wkhtmltopdf-binary"
 
+# Excel
+gem "caxlsx"
+gem "caxlsx_rails"
+
 # QR Code
 gem "rqrcode"
 

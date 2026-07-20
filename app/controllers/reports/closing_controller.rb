@@ -44,10 +44,12 @@ module Reports
         redirect_to event_path(current_event), alert: "O Fechamento só está disponível após o evento ser encerrado."
         return
       end
-      @basis     = params[:basis].presence_in(%w[shifts attendance cross]) || "cross"
-      @sector_id = params[:sector_id].presence
+      @basis         = params[:basis].presence_in(%w[shifts attendance cross]) || "cross"
+      @sector_id     = params[:sector_id].presence
+      @selected_date = params[:date].presence
       load_report_data
-      render pdf:         "fechamento-#{@event.name.parameterize}-#{@basis}",
+      load_payments
+      render pdf:         "fechamento-#{@event.name.parameterize}-#{@basis}-#{@selected_date || Date.today.strftime('%Y%m%d')}",
              template:    "reports/closing/print",
              layout:      "pdf",
              formats:     [:html],
@@ -64,56 +66,268 @@ module Reports
         redirect_to event_path(current_event), alert: "O Fechamento só está disponível após o evento ser encerrado."
         return
       end
-      @basis     = params[:basis].presence_in(%w[shifts attendance cross]) || "cross"
-      @sector_id = params[:sector_id].presence
+      @basis         = params[:basis].presence_in(%w[shifts attendance cross]) || "cross"
+      @sector_id     = params[:sector_id].presence
+      @selected_date = params[:date].presence
       load_report_data
+      load_payments
 
-      is_cross = @basis == "cross"
-      headers = ["Nome", "CPF", "Função", "Valor/hora (R$)"]
-      headers += ["Hs. Escaladas", "Hs. Reais", "Hs. a Pagar", "Status Presença"] if is_cross
-      headers += ["Total Horas", "Total a Pagar (R$)"] unless is_cross
-      headers += ["Total a Pagar (R$)"] if is_cross
-      headers += ["Status Pagamento", "Forma Pagamento", "Data Pagamento"]
+      basis_label = { "cross" => "Cruzamento", "attendance" => "Check-in/out", "shifts" => "Escalas" }[@basis]
+      filename    = "fechamento-#{@event.name.parameterize}-#{@basis}-#{Date.today.strftime('%Y%m%d')}.xlsx"
 
-      csv_data = CSV.generate(col_sep: ";", encoding: "UTF-8") do |csv|
-        csv << headers
+      package = Axlsx::Package.new
+      wb      = package.workbook
+
+      # Estilos
+      styles = wb.styles
+      header_style  = styles.add_style bg_color: "18181b", fg_color: "FFFFFF", b: true, sz: 10,
+                                        alignment: { horizontal: :center, vertical: :center, wrap_text: true },
+                                        border: { style: :thin, color: "CCCCCC" }
+      title_style   = styles.add_style b: true, sz: 14, alignment: { horizontal: :left }
+      subtitle_style= styles.add_style sz: 10, fg_color: "71717A"
+      currency_style= styles.add_style num_fmt: 4, alignment: { horizontal: :right }   # #,##0.00
+      hours_style   = styles.add_style num_fmt: 2, alignment: { horizontal: :right }   # 0.00
+      center_style  = styles.add_style alignment: { horizontal: :center }
+      paid_style    = styles.add_style bg_color: "DCFCE7", fg_color: "166534", b: true,
+                                        alignment: { horizontal: :center }
+      pending_style = styles.add_style bg_color: "FFF7ED", fg_color: "B45309", b: true,
+                                        alignment: { horizontal: :center }
+      absent_style  = styles.add_style bg_color: "FEE2E2", fg_color: "DC2626", b: true,
+                                        alignment: { horizontal: :center }
+      total_style   = styles.add_style bg_color: "F4F4F5", b: true, sz: 10,
+                                        alignment: { horizontal: :right },
+                                        border: { style: :thin, color: "CCCCCC" }
+      total_cur_style = styles.add_style bg_color: "F4F4F5", b: true, sz: 10,
+                                          num_fmt: 4, alignment: { horizontal: :right },
+                                          border: { style: :thin, color: "CCCCCC" }
+      label_total_style = styles.add_style bg_color: "F4F4F5", b: true, sz: 10,
+                                            border: { style: :thin, color: "CCCCCC" }
+      normal_style  = styles.add_style sz: 10
+
+      # ── Aba principal: todos os colaboradores ───────────────────────
+      wb.add_worksheet(name: "Fechamento #{basis_label}") do |sheet|
+        # Cabeçalho do relatório
+        sheet.add_row ["Fechamento de Pagamentos — #{@event.name}"], style: title_style
+        sheet.add_row ["Base de cálculo: #{basis_label}  |  Exportado em: #{l(Date.today, format: :long)}"], style: subtitle_style
+        sheet.add_row []
+
+        # Headers das colunas
+        if @basis == "cross"
+          cols = ["Nome", "CPF", "Função", "Status", "Hs. Escaladas", "Hs. Trabalhadas", "Hs. a Pagar", "Valor/h (R$)", "Valor Orçado (R$)", "Valor a Pagar (R$)", "Status Pagamento", "Data Ref.", "Forma Pagamento", "Valor Pago (R$)", "Diferença (R$)"]
+        elsif @basis == "attendance"
+          cols = ["Nome", "CPF", "Função", "Hs. Escaladas", "Valor Orçado (R$)", "Check-in", "Check-out", "Hs. Trabalhadas", "Valor/h (R$)", "Valor a Pagar (R$)", "Status Pagamento", "Data Ref.", "Forma Pagamento", "Valor Pago (R$)", "Diferença (R$)"]
+        else
+          cols = ["Nome", "CPF", "Função", "Hs. Escaladas", "Valor/h (R$)", "Valor a Pagar (R$)", "Status Pagamento", "Data Ref.", "Forma Pagamento", "Valor Pago (R$)", "Diferença (R$)"]
+        end
+        sheet.add_row cols, style: header_style
+        sheet.rows.last.height = 28
+
+        status_labels = { present: "Presente", absent: "Ausente", unscheduled: "Não escalado" }
+        method_labels = { "pix" => "PIX", "cash" => "Dinheiro", "bank_transfer" => "Transferência" }
+
         @rows.each do |row|
-          payment = @payment_by_user[row[:user].id]
-          hourly_rate = row[:hourly_rate].to_f
-          line = [
-            row[:user].name,
-            row[:user].cpf.to_s.gsub(/(\d{3})(\d{3})(\d{3})(\d{2})/, '\1.\2.\3-\4'),
-            row[:function_name],
-            format("%.2f", hourly_rate)
-          ]
-          if is_cross
-            status_label = { present: "Presente", absent: "Ausente", unscheduled: "Não escalado" }[row[:status]] || ""
-            line += [
-              format("%.2f", row[:scheduled_hours].to_f),
-              format("%.2f", row[:actual_hours].to_f),
-              format("%.2f", row[:payable_hours].to_f),
-              status_label,
-              format("%.2f", row[:total_value].to_f)
-            ]
+          payment    = @payment_by_user_date[[row[:user].id, @selected_date]]
+          paid_amt   = payment&.amount.to_f
+          value      = row[:total_value].to_f
+          diff       = paid_amt - value
+
+          pay_status = if payment&.waived?
+                         "Dispensado"
+                       elsif payment
+                         "Pago"
+                       else
+                         row[:status] == :absent ? "Ausente" : "Pendente"
+                       end
+
+          pay_style = case pay_status
+                      when "Pago"       then paid_style
+                      when "Pendente"   then pending_style
+                      when "Ausente"    then absent_style
+                      else center_style
+                      end
+
+          if @basis == "cross"
+            sheet.add_row [
+              row[:user].name,
+              row[:user].cpf.to_s.gsub(/(\d{3})(\d{3})(\d{3})(\d{2})/, '\1.\2.\3-\4'),
+              row[:function_name],
+              status_labels[row[:status]] || "",
+              row[:scheduled_hours].to_f,
+              row[:actual_hours].to_f,
+              row[:payable_hours].to_f,
+              row[:hourly_rate].to_f,
+              row[:scheduled_value].to_f,
+              value,
+              pay_status,
+              payment&.date ? l(payment.date, format: :short) : "",
+              method_labels[payment&.payment_method] || "",
+              payment && !payment.waived? ? paid_amt : nil,
+              payment && !payment.waived? ? diff : nil
+            ], style: [normal_style, normal_style, normal_style, center_style,
+                       hours_style, hours_style, hours_style, currency_style,
+                       currency_style, currency_style, pay_style, center_style,
+                       center_style, currency_style, currency_style]
+          elsif @basis == "attendance"
+            first_entry = row[:entries]&.first
+            sheet.add_row [
+              row[:user].name,
+              row[:user].cpf.to_s.gsub(/(\d{3})(\d{3})(\d{3})(\d{2})/, '\1.\2.\3-\4'),
+              row[:function_name],
+              row[:scheduled_hours].to_f,
+              row[:scheduled_value].to_f,
+              first_entry&.dig(:checked_in) || "",
+              first_entry&.dig(:checked_out) || "",
+              row[:actual_hours].to_f,
+              row[:hourly_rate].to_f,
+              value,
+              pay_status,
+              payment&.date ? l(payment.date, format: :short) : "",
+              method_labels[payment&.payment_method] || "",
+              payment && !payment.waived? ? paid_amt : nil,
+              payment && !payment.waived? ? diff : nil
+            ], style: [normal_style, normal_style, normal_style, hours_style,
+                       currency_style, center_style, center_style, hours_style,
+                       currency_style, currency_style, pay_style, center_style,
+                       center_style, currency_style, currency_style]
           else
-            line += [
-              format("%.2f", row[:total_hours].to_f),
-              format("%.2f", row[:total_value].to_f)
-            ]
+            sheet.add_row [
+              row[:user].name,
+              row[:user].cpf.to_s.gsub(/(\d{3})(\d{3})(\d{3})(\d{2})/, '\1.\2.\3-\4'),
+              row[:function_name],
+              row[:total_hours].to_f,
+              row[:hourly_rate].to_f,
+              value,
+              pay_status,
+              payment&.date ? l(payment.date, format: :short) : "",
+              method_labels[payment&.payment_method] || "",
+              payment && !payment.waived? ? paid_amt : nil,
+              payment && !payment.waived? ? diff : nil
+            ], style: [normal_style, normal_style, normal_style, hours_style,
+                       currency_style, currency_style, pay_style, center_style,
+                       center_style, currency_style, currency_style]
           end
-          line += [
-            payment ? "Pago" : "Pendente",
-            payment&.method_label || "",
-            payment ? l(payment.paid_at.to_date, format: :short) : ""
-          ]
-          csv << line
+        end
+
+        # Linha de totais
+        data_start = 5
+        data_end   = 4 + @rows.size
+        ncols      = cols.size
+
+        if @basis == "cross"
+          sheet.add_row [
+            "TOTAL (#{@rows.size} colaboradores)", "", "", "",
+            "=SUM(E#{data_start}:E#{data_end})",
+            "=SUM(F#{data_start}:F#{data_end})",
+            "=SUM(G#{data_start}:G#{data_end})",
+            "",
+            "=SUM(I#{data_start}:I#{data_end})",
+            "=SUM(J#{data_start}:J#{data_end})",
+            "", "", "",
+            "=SUM(N#{data_start}:N#{data_end})",
+            "=SUM(O#{data_start}:O#{data_end})"
+          ], style: [label_total_style, total_style, total_style, total_style,
+                     total_style, total_style, total_style, total_style,
+                     total_cur_style, total_cur_style,
+                     total_style, total_style, total_style,
+                     total_cur_style, total_cur_style]
+        elsif @basis == "attendance"
+          sheet.add_row [
+            "TOTAL (#{@rows.size} colaboradores)", "", "",
+            "=SUM(D#{data_start}:D#{data_end})",
+            "=SUM(E#{data_start}:E#{data_end})",
+            "", "",
+            "=SUM(H#{data_start}:H#{data_end})",
+            "",
+            "=SUM(J#{data_start}:J#{data_end})",
+            "", "", "",
+            "=SUM(N#{data_start}:N#{data_end})",
+            "=SUM(O#{data_start}:O#{data_end})"
+          ], style: [label_total_style, total_style, total_style,
+                     total_style, total_cur_style,
+                     total_style, total_style, total_style, total_style,
+                     total_cur_style,
+                     total_style, total_style, total_style,
+                     total_cur_style, total_cur_style]
+        else
+          sheet.add_row [
+            "TOTAL (#{@rows.size} colaboradores)", "", "",
+            "=SUM(D#{data_start}:D#{data_end})",
+            "",
+            "=SUM(F#{data_start}:F#{data_end})",
+            "", "", "",
+            "=SUM(J#{data_start}:J#{data_end})",
+            "=SUM(K#{data_start}:K#{data_end})"
+          ], style: [label_total_style, total_style, total_style,
+                     total_style, total_style, total_cur_style,
+                     total_style, total_style, total_style,
+                     total_cur_style, total_cur_style]
+        end
+
+        # Larguras das colunas
+        col_widths = if @basis == "cross"
+          [30, 16, 18, 14, 13, 14, 13, 12, 16, 16, 13, 11, 16, 14, 13]
+        elsif @basis == "attendance"
+          [30, 16, 18, 13, 16, 10, 10, 14, 12, 16, 13, 11, 16, 14, 13]
+        else
+          [30, 16, 18, 13, 12, 16, 13, 11, 16, 14, 13]
+        end
+        col_widths.each_with_index { |w, i| sheet.column_info[i].width = w }
+
+        # Freeze header
+        sheet.sheet_view.pane do |p|
+          p.top_left_cell = "A5"
+          p.state         = :frozen
+          p.y_split       = 4
         end
       end
 
-      filename = "pagamentos-#{@event.name.parameterize}-#{@basis}-#{Date.today.strftime('%Y%m%d')}.csv"
-      send_data "\xEF\xBB\xBF" + csv_data,
-                filename: filename,
-                type: "text/csv; charset=utf-8",
+      # ── Aba de pagamentos realizados ─────────────────────────────────
+      payments_all = Payment.where(event: @event).includes(:user, :paid_by).order(:date, "users.name")
+      wb.add_worksheet(name: "Pagamentos Realizados") do |sheet|
+        sheet.add_row ["Pagamentos Realizados — #{@event.name}"], style: title_style
+        sheet.add_row ["Exportado em: #{l(Date.today, format: :long)}"], style: subtitle_style
+        sheet.add_row []
+        sheet.add_row ["Data", "Colaborador", "CPF", "Função", "Base", "Forma Pgto", "Valor (R$)", "Dispensado", "Registrado por", "Data Registro"],
+                       style: header_style
+        sheet.rows.last.height = 28
+
+        payments_all.each do |p|
+          sheet.add_row [
+            p.date ? l(p.date, format: :short) : "—",
+            p.user.name,
+            p.user.cpf.to_s.gsub(/(\d{3})(\d{3})(\d{3})(\d{2})/, '\1.\2.\3-\4'),
+            p.function_name || "—",
+            { "cross" => "Cruzamento", "attendance" => "Check-in/out", "shifts" => "Escalas", "manual" => "Manual" }[p.basis] || p.basis,
+            p.waived? ? "—" : (p.payment_method == "pix" ? "PIX" : p.payment_method == "cash" ? "Dinheiro" : "Transferência"),
+            p.waived? ? nil : p.amount.to_f,
+            p.waived? ? "Sim (#{p.waived_reason})" : "Não",
+            p.paid_by&.name || "—",
+            l(p.paid_at.to_date, format: :short)
+          ], style: [center_style, normal_style, normal_style, normal_style,
+                     center_style, center_style, currency_style, center_style,
+                     normal_style, center_style]
+        end
+
+        data_start = 5
+        data_end   = 4 + payments_all.size
+        sheet.add_row ["TOTAL", "", "", "", "", "",
+                        "=SUM(G#{data_start}:G#{data_end})", "", "", ""],
+                       style: [label_total_style, total_style, total_style, total_style,
+                               total_style, total_style, total_cur_style, total_style,
+                               total_style, total_style]
+
+        [10, 28, 16, 18, 14, 14, 14, 10, 24, 14].each_with_index { |w, i| sheet.column_info[i].width = w }
+
+        sheet.sheet_view.pane do |p|
+          p.top_left_cell = "A5"
+          p.state         = :frozen
+          p.y_split       = 4
+        end
+      end
+
+      send_data package.to_stream.read,
+                filename:    filename,
+                type:        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                 disposition: "attachment"
     end
 
