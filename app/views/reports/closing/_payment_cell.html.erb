@@ -1,5 +1,5 @@
 <%# locals: payment, row, uid, rate, basis, finalized, date %>
-<% has_hours = (basis == "manual" && row[:shifts].present?) || row[:total_value].to_f > 0 %>
+<% has_hours = row[:total_value].to_f > 0 %>
 
 <% if payment %>
   <div style="display:flex;flex-direction:column;gap:4px;align-items:center;">

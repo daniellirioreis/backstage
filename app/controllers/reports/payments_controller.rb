@@ -17,7 +17,15 @@ module Reports
       end
 
       user_id = @payment.user_id
-      anchor = "payment-row-#{user_id}"
+      anchor  = "payment-row-#{user_id}"
+
+      # Guard: bloqueia se já existe pagamento para esse colaborador nesta data
+      if @payment.date.present? && Payment.exists?(event: current_event, user_id: user_id, date: @payment.date)
+        existing_user = User.find_by(id: user_id)
+        return redirect_to referer_with_anchor(anchor, fallback: reports_closing_path(basis: @payment.basis)),
+                           alert: "#{existing_user&.name || 'Colaborador'} já possui um pagamento registrado para esta data."
+      end
+
       if @payment.save
         msg = @payment.waived? ? "#{@payment.user.name} marcado como dispensado." : "Pagamento de #{@payment.user.name} registrado com sucesso."
         redirect_to referer_with_anchor(anchor, fallback: reports_closing_path(basis: @payment.basis)),
