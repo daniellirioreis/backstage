@@ -1,23 +1,33 @@
-puts "→ Criando planos padrão..."
+puts "→ Criando/atualizando planos..."
 
 plans = [
   {
     name:          "Gratuito",
-    events_limit:  3,
-    members_limit: 30,
-    description:   "Ideal para começar. Até 3 eventos simultâneos e 30 colaboradores."
+    price:         0,
+    events_limit:  1,
+    members_limit: 20,
+    description:   "Para experimentar o sistema"
+  },
+  {
+    name:          "Básico",
+    price:         89.00,
+    events_limit:  5,
+    members_limit: 100,
+    description:   "Para pequenas produtoras"
   },
   {
     name:          "Pro",
-    events_limit:  nil,
+    price:         199.00,
+    events_limit:  20,
     members_limit: 500,
-    description:   "Eventos ilimitados, até 500 colaboradores, dashboard financeiro completo e suporte prioritário."
+    description:   "Para produtoras com eventos frequentes"
   },
   {
     name:          "Enterprise",
+    price:         499.00,
     events_limit:  nil,
     members_limit: nil,
-    description:   "Colaboradores e eventos ilimitados. Integrações customizadas, SLA garantido e CSM dedicado."
+    description:   "Eventos e colaboradores ilimitados"
   }
 ]
 
@@ -25,7 +35,8 @@ plans.each do |attrs|
   plan = Plan.find_or_initialize_by(name: attrs[:name])
   plan.assign_attributes(attrs)
   plan.save!
-  puts "   #{plan.name} — eventos: #{plan.events_limit_label} | colaboradores: #{plan.members_limit_label}"
+  price_label = plan.price.to_f > 0 ? "R$ #{"%.2f" % plan.price}/mês" : "Gratuito"
+  puts "   #{plan.name} — #{price_label} | eventos: #{plan.events_limit_label} | colaboradores: #{plan.members_limit_label}"
 end
 
 puts "   Total: #{Plan.count} planos"
