@@ -37,6 +37,11 @@ Rails.application.routes.draw do
       patch :set_plan
     end
   end
+  # Importação de eventos via Excel
+  get  "event_imports/new",      to: "event_imports#new",      as: :new_event_import
+  get  "event_imports/template", to: "event_imports#template", as: :event_import_template
+  post "event_imports",          to: "event_imports#create",   as: :event_imports
+
   resources :plans
   resources :roles
   resources :users do

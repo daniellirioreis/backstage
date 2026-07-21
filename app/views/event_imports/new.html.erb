@@ -1,0 +1,128 @@
+<div class="page-header">
+  <div>
+    <h1>Importar Evento via Excel</h1>
+    <p style="color:#71717a;font-size:0.9rem;margin-top:0.25rem;">
+      Crie um novo evento completo a partir de uma planilha Excel.
+    </p>
+  </div>
+  <%= link_to events_path,
+        style: "display:inline-flex;align-items:center;gap:6px;font-size:0.85rem;color:#52525b;text-decoration:none;font-weight:600;" do %>
+    <i class="bi bi-arrow-left"></i> Voltar
+  <% end %>
+</div>
+
+<div style="max-width:680px;margin:0 auto;">
+
+  <%# Passo 1: Download do modelo ──────────────────────────────────────────%>
+  <div class="content-card" style="margin-bottom:1.25rem;">
+    <div style="display:flex;align-items:flex-start;gap:1rem;">
+      <div style="flex-shrink:0;width:36px;height:36px;border-radius:50%;background:#f0fdf4;border:1px solid #86efac;display:flex;align-items:center;justify-content:center;">
+        <span style="font-weight:800;color:#15803d;font-size:1rem;">1</span>
+      </div>
+      <div style="flex:1;">
+        <h2 style="font-size:1rem;font-weight:700;color:#18181b;margin:0 0 0.3rem;">Baixe o modelo de planilha</h2>
+        <p style="font-size:0.85rem;color:#52525b;margin:0 0 0.9rem;">
+          O arquivo Excel contém três abas: <strong>Evento</strong> (dados gerais),
+          <strong>Colaboradores</strong> (equipe completa) e
+          <strong>Referência - Tipos</strong> (valores válidos para tipo de evento e setor).
+        </p>
+        <%= link_to event_import_template_path,
+              style: "display:inline-flex;align-items:center;gap:6px;background:#18181b;color:#fff;border:none;border-radius:7px;padding:9px 18px;font-size:0.85rem;font-weight:700;text-decoration:none;cursor:pointer;" do %>
+          <i class="bi bi-file-earmark-excel"></i> Baixar modelo (.xlsx)
+        <% end %>
+      </div>
+    </div>
+  </div>
+
+  <%# Instruções de preenchimento ──────────────────────────────────────────%>
+  <div style="background:#fafafa;border:1px solid #e4e4e7;border-radius:8px;padding:1rem 1.25rem;margin-bottom:1.25rem;font-size:0.82rem;color:#52525b;">
+    <div style="font-weight:700;color:#18181b;margin-bottom:0.5rem;"><i class="bi bi-info-circle"></i> Como preencher</div>
+    <ul style="margin:0;padding-left:1.2rem;display:flex;flex-direction:column;gap:4px;">
+      <li>Na aba <strong>Evento</strong>, preencha apenas a linha 2 (linha 1 é o cabeçalho).</li>
+      <li>Datas devem estar no formato <code>AAAA-MM-DD</code> (ex: 2026-08-01).</li>
+      <li>O campo <code>tipo_evento</code> deve ser um dos valores da aba <strong>Referência - Tipos</strong>.</li>
+      <li>Na aba <strong>Colaboradores</strong>, adicione uma linha por colaborador a partir da linha 2.</li>
+      <li>O CPF deve conter apenas números (11 dígitos). Colaboradores com CPF já cadastrado serão reutilizados.</li>
+      <li>Setores e equipes com o mesmo nome serão agrupados automaticamente.</li>
+    </ul>
+  </div>
+
+  <%# Passo 2: Upload ──────────────────────────────────────────────────────%>
+  <div class="content-card">
+    <div style="display:flex;align-items:flex-start;gap:1rem;">
+      <div style="flex-shrink:0;width:36px;height:36px;border-radius:50%;background:#eff6ff;border:1px solid #93c5fd;display:flex;align-items:center;justify-content:center;">
+        <span style="font-weight:800;color:#1d4ed8;font-size:1rem;">2</span>
+      </div>
+      <div style="flex:1;">
+        <h2 style="font-size:1rem;font-weight:700;color:#18181b;margin:0 0 0.3rem;">Envie a planilha preenchida</h2>
+        <p style="font-size:0.85rem;color:#52525b;margin:0 0 1rem;">
+          Somente arquivos <strong>.xlsx</strong> são aceitos. O sistema criará o evento e todos os colaboradores automaticamente.
+        </p>
+
+        <%= form_with url: event_imports_path, method: :post,
+              html: { enctype: "multipart/form-data", id: "import-form" },
+              data: { turbo: false } do |f| %>
+
+          <div id="drop-zone"
+               style="border:2px dashed #d4d4d8;border-radius:8px;padding:2rem;text-align:center;cursor:pointer;transition:border-color 0.2s;margin-bottom:1rem;"
+               onclick="document.getElementById('file-input').click()"
+               ondragover="event.preventDefault();this.style.borderColor='#7c3aed';"
+               ondragleave="this.style.borderColor='#d4d4d8';"
+               ondrop="handleDrop(event)">
+            <i class="bi bi-cloud-upload" style="font-size:2rem;color:#a1a1aa;display:block;margin-bottom:0.5rem;"></i>
+            <div style="font-size:0.9rem;font-weight:600;color:#52525b;">Clique ou arraste o arquivo aqui</div>
+            <div id="file-name" style="font-size:0.8rem;color:#a1a1aa;margin-top:0.3rem;">Nenhum arquivo selecionado</div>
+          </div>
+
+          <%= f.file_field :file, id: "file-input", accept: ".xlsx",
+                style: "display:none;",
+                onchange: "updateFileName(this)" %>
+
+          <div style="display:flex;gap:0.75rem;">
+            <%= f.submit "Importar evento",
+                  id: "submit-btn",
+                  class: "btn-primary",
+                  style: "flex:1;font-size:0.9rem;padding:10px 0;cursor:pointer;" %>
+            <%= link_to "Cancelar", events_path,
+                  class: "btn-secondary",
+                  style: "flex:1;text-align:center;font-size:0.9rem;padding:10px 0;text-decoration:none;" %>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  function updateFileName(input) {
+    var label = document.getElementById('file-name');
+    var zone  = document.getElementById('drop-zone');
+    if (input.files && input.files[0]) {
+      label.textContent = input.files[0].name;
+      label.style.color = '#18181b';
+      zone.style.borderColor = '#7c3aed';
+    }
+  }
+
+  function handleDrop(e) {
+    e.preventDefault();
+    var zone  = document.getElementById('drop-zone');
+    var input = document.getElementById('file-input');
+    zone.style.borderColor = '#d4d4d8';
+    var dt = e.dataTransfer;
+    if (dt.files && dt.files[0]) {
+      // Atribui via DataTransfer
+      var dataTransfer = new DataTransfer();
+      dataTransfer.items.add(dt.files[0]);
+      input.files = dataTransfer.files;
+      updateFileName(input);
+    }
+  }
+
+  document.getElementById('import-form').addEventListener('submit', function() {
+    var btn = document.getElementById('submit-btn');
+    btn.value = 'Importando...';
+    btn.disabled = true;
+  });
+</script>

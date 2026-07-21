@@ -27,6 +27,7 @@ gem "wkhtmltopdf-binary"
 # Excel
 gem "caxlsx"
 gem "caxlsx_rails"
+gem "roo"
 
 # QR Code
 gem "rqrcode"

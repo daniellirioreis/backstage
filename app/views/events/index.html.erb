@@ -1,10 +1,16 @@
 <div class="page-header">
   <h1><%= Event.model_name.human(count: 2) %></h1>
-  <% if policy(Event).new? %>
-    <%= link_to new_event_path, class: "btn-primary" do %>
-      <i class="bi bi-plus"></i> <%= t("actions.new", model: Event.model_name.human) %>
+  <div style="display:flex;gap:0.5rem;">
+    <% if policy(Event).new? %>
+      <%= link_to new_event_import_path,
+            style: "display:inline-flex;align-items:center;gap:6px;background:#fff;color:#18181b;border:1px solid #d4d4d8;border-radius:7px;padding:8px 16px;font-size:0.85rem;font-weight:700;text-decoration:none;" do %>
+        <i class="bi bi-file-earmark-arrow-up"></i> Importar Excel
+      <% end %>
+      <%= link_to new_event_path, class: "btn-primary" do %>
+        <i class="bi bi-plus"></i> <%= t("actions.new", model: Event.model_name.human) %>
+      <% end %>
     <% end %>
-  <% end %>
+  </div>
 </div>
 
 <%# ── Filtro por status ───────────────────────────────────────────────────── %>

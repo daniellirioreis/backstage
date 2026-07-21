@@ -251,7 +251,7 @@ class Events::SetupController < ApplicationController
 
     if teams_without.any?
       redirect_to schedules_event_setup_path(@event),
-        alert: "Configure as escalas de todas as equipes antes de finalizar: #{teams_without.to_sentence(locale: :pt)}."
+        alert: "Configure as escalas de todas as equipes antes de finalizar: #{teams_without.to_sentence(locale: :"pt-BR")}."
     else
       redirect_to event_path(@event), notice: "Configuração concluída!"
     end
