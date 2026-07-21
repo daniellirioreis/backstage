@@ -433,6 +433,52 @@ module Reports
       end
     end
 
+    def auto_save_manual_row
+      return render json: { error: "Evento não selecionado" }, status: 422 unless current_event
+      authorize :report, :closing?
+
+      user_id    = params[:user_id].to_i
+      date       = params[:date].presence
+      started_at = params[:started_at].presence
+      ended_at   = params[:ended_at].presence
+
+      return render json: { error: "Campos incompletos" }, status: 422 unless user_id > 0 && date && started_at && ended_at
+
+      checked_in_at  = Time.zone.parse("#{date} #{started_at}")
+      checked_out_at = Time.zone.parse("#{date} #{ended_at}")
+      return render json: { error: "Horários inválidos" }, status: 422 unless checked_in_at && checked_out_at
+
+      checked_out_at += 1.day if checked_out_at <= checked_in_at
+
+      team_id = TeamMembership.joins(team: :sector)
+                              .where(sectors: { event_id: current_event.id }, user_id: user_id)
+                              .joins(:team).pick("teams.id")
+
+      attendance = Attendance.find_or_initialize_by(
+        event:           current_event,
+        user_id:         user_id,
+        checked_in_date: date
+      )
+
+      attendance.assign_attributes(
+        checked_in_at:  checked_in_at,
+        checked_out_at: checked_out_at,
+        team_id:        team_id,
+        source:         :manual
+      )
+
+      if attendance.save
+        hours = (checked_out_at - checked_in_at) / 3600.0
+        tm    = TeamMembership.joins(team: :sector)
+                              .where(sectors: { event_id: current_event.id }, user_id: user_id)
+                              .includes(:event_function).first
+        rate  = tm&.event_function&.hourly_rate.to_f
+        render json: { ok: true, hours: hours.round(2), value: (hours * rate).round(2) }
+      else
+        render json: { error: attendance.errors.full_messages.to_sentence }, status: 422
+      end
+    end
+
     def finalize
       return redirect_to(select_event_path, alert: "Selecione um evento.") unless current_event
       authorize :report, :finalize_closing?

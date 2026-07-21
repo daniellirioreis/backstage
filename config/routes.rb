@@ -134,7 +134,8 @@ Rails.application.routes.draw do
   get  "reports/closing",                 to: "reports/closing#index",            as: :reports_closing
   get  "reports/closing/print",           to: "reports/closing#print",            as: :reports_closing_print
   get  "reports/closing/export",          to: "reports/closing#export",           as: :reports_closing_export
-  post "reports/closing/save_manual",     to: "reports/closing#save_manual",      as: :reports_closing_save_manual
+  post "reports/closing/save_manual",          to: "reports/closing#save_manual",           as: :reports_closing_save_manual
+  post "reports/closing/auto_save_manual_row", to: "reports/closing#auto_save_manual_row", as: :reports_closing_auto_save_manual_row
   post "reports/closing/batch_pay",       to: "reports/closing#batch_pay",        as: :reports_closing_batch_pay
   post "reports/closing/finalize",        to: "reports/closing#finalize",         as: :reports_closing_finalize
   post "reports/closing/reopen",          to: "reports/closing#reopen",           as: :reports_closing_reopen

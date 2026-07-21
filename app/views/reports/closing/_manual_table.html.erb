@@ -1,13 +1,5 @@
 <%# locals: rows, form_id, date_str, finalized, payment_by_user_date, sector_id %>
 
-<% if date_str.present? %>
-  <form id="<%= form_id %>" action="<%= reports_closing_save_manual_path %>" method="post" data-turbo="false">
-    <%= hidden_field_tag :authenticity_token, form_authenticity_token %>
-    <%= hidden_field_tag :date, date_str %>
-    <%= hidden_field_tag :sector_id, sector_id %>
-  </form>
-<% end %>
-
 <div class="content-card" style="padding:0;overflow:hidden;margin-bottom:0.5rem;">
   <table class="data-table" style="width:100%;">
     <thead>
@@ -60,18 +52,16 @@
           <% elsif date_str.present? %>
             <td style="text-align:center;">
               <input type="time" id="entry_<%= uid %>_start"
-                     name="entries[<%= row[:user].id %>][started_at]"
                      value="<%= att&.checked_in_at&.strftime('%H:%M') %>"
-                     form="<%= form_id %>"
                      oninput="calcManualHoras('<%= uid %>', <%= rate %>)"
+                     onchange="autoSaveManualRow('<%= row[:user].id %>', '<%= date_str %>', '<%= uid %>', <%= rate %>)"
                      style="border:1px solid #e4e4e7;border-radius:6px;padding:0.3rem 0.5rem;font-size:0.82rem;color:#18181b;width:108px;">
             </td>
             <td style="text-align:center;">
               <input type="time" id="entry_<%= uid %>_end"
-                     name="entries[<%= row[:user].id %>][ended_at]"
                      value="<%= att&.checked_out_at&.strftime('%H:%M') %>"
-                     form="<%= form_id %>"
                      oninput="calcManualHoras('<%= uid %>', <%= rate %>)"
+                     onchange="autoSaveManualRow('<%= row[:user].id %>', '<%= date_str %>', '<%= uid %>', <%= rate %>)"
                      style="border:1px solid #e4e4e7;border-radius:6px;padding:0.3rem 0.5rem;font-size:0.82rem;color:#18181b;width:108px;">
             </td>
           <% else %>
@@ -82,13 +72,14 @@
             <span id="hours_<%= uid %>" style="font-size:0.82rem;font-weight:600;color:#18181b;">
               <%= row[:actual_hours] ? "%.2fh" % row[:actual_hours] : "—" %>
             </span>
+            <span id="save_status_<%= uid %>" style="display:block;font-size:0.65rem;min-height:0.9em;"></span>
           </td>
           <td style="text-align:right;">
             <span id="value_<%= uid %>" style="font-size:0.85rem;font-weight:700;color:#15803d;">
               <%= row[:total_value] > 0 ? "R$ #{"%.2f" % row[:total_value]}" : "—" %>
             </span>
           </td>
-          <td style="text-align:center;">
+          <td style="text-align:center;" id="origem_<%= uid %>">
             <% if is_qr %>
               <span style="display:inline-flex;align-items:center;gap:4px;background:#dcfce7;border:1px solid #86efac;border-radius:99px;padding:2px 8px;font-size:0.7rem;font-weight:700;color:#15803d;">
                 <i class="bi bi-qr-code-scan"></i> QR
@@ -124,12 +115,3 @@
     </tbody>
   </table>
 </div>
-
-<% if date_str.present? %>
-  <div style="display:flex;justify-content:flex-end;margin-bottom:1rem;">
-    <button type="submit" form="<%= form_id %>"
-            style="background:#18181b;color:#fff;border:none;border-radius:7px;padding:0.55rem 1.25rem;font-size:0.85rem;font-weight:700;cursor:pointer;">
-      Salvar lançamentos de <%= l(Date.parse(date_str), format: :short) %>
-    </button>
-  </div>
-<% end %>
