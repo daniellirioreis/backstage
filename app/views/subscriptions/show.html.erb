@@ -98,6 +98,56 @@
   <% end %>
 </div>
 
+<%# ── Uso do plano ─────────────────────────────────────────────────────────── %>
+<% if @company.plan.present? && status == "active" %>
+  <div class="content-card" style="margin-bottom:1.25rem;">
+    <div style="font-size:0.85rem;font-weight:700;color:#18181b;margin-bottom:1rem;">Uso do plano</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+
+      <%# Eventos %>
+      <% events_used  = @company.current_events_count %>
+      <% events_limit = @company.events_limit %>
+      <% events_pct   = events_limit ? [[events_used * 100 / events_limit, 100].min, 0].max : 0 %>
+      <% events_color = events_limit && events_pct >= 90 ? "#dc2626" : events_limit && events_pct >= 70 ? "#b45309" : "#7c3aed" %>
+      <div>
+        <div style="display:flex;justify-content:space-between;font-size:0.78rem;color:#52525b;margin-bottom:0.35rem;">
+          <span><i class="bi bi-calendar-event"></i> Eventos</span>
+          <span style="font-weight:700;color:<%= events_color %>;">
+            <%= events_used %><%= events_limit ? " / #{events_limit}" : " / ∞" %>
+          </span>
+        </div>
+        <div style="height:6px;background:#f4f4f5;border-radius:99px;overflow:hidden;">
+          <div style="height:100%;width:<%= events_limit ? "#{events_pct}%" : "0%" %>;background:<%= events_color %>;border-radius:99px;transition:width 0.3s;"></div>
+        </div>
+        <% if events_limit && events_pct >= 100 %>
+          <div style="font-size:0.7rem;color:#dc2626;margin-top:0.25rem;font-weight:600;">Limite atingido</div>
+        <% end %>
+      </div>
+
+      <%# Colaboradores %>
+      <% members_used  = @company.current_members_count %>
+      <% members_limit = @company.members_limit %>
+      <% members_pct   = members_limit ? [[members_used * 100 / members_limit, 100].min, 0].max : 0 %>
+      <% members_color = members_limit && members_pct >= 90 ? "#dc2626" : members_limit && members_pct >= 70 ? "#b45309" : "#7c3aed" %>
+      <div>
+        <div style="display:flex;justify-content:space-between;font-size:0.78rem;color:#52525b;margin-bottom:0.35rem;">
+          <span><i class="bi bi-people"></i> Colaboradores</span>
+          <span style="font-weight:700;color:<%= members_color %>;">
+            <%= members_used %><%= members_limit ? " / #{members_limit}" : " / ∞" %>
+          </span>
+        </div>
+        <div style="height:6px;background:#f4f4f5;border-radius:99px;overflow:hidden;">
+          <div style="height:100%;width:<%= members_limit ? "#{members_pct}%" : "0%" %>;background:<%= members_color %>;border-radius:99px;transition:width 0.3s;"></div>
+        </div>
+        <% if members_limit && members_pct >= 100 %>
+          <div style="font-size:0.7rem;color:#dc2626;margin-top:0.25rem;font-weight:600;">Limite atingido</div>
+        <% end %>
+      </div>
+
+    </div>
+  </div>
+<% end %>
+
 <%# ── Escolha de plano ────────────────────────────────────────────────────── %>
 <h2 style="font-size:1rem;font-weight:700;color:#18181b;margin-bottom:0.75rem;">
   <%= status == "inactive" || status == "cancelled" ? "Escolha um plano" : "Trocar de plano" %>
