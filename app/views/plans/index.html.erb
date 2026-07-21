@@ -19,6 +19,13 @@
         <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:0.5rem; margin-bottom:1rem;">
           <div>
             <div style="font-size:1rem; font-weight:700; color:#18181b;"><%= plan.name %></div>
+            <% if plan.price.to_f > 0 %>
+              <div style="font-size:1.1rem; font-weight:800; color:#7c3aed; margin-top:0.15rem; line-height:1;">
+                R$ <%= "%.2f" % plan.price %><span style="font-size:0.7rem; font-weight:400; color:#71717a;">/mês</span>
+              </div>
+            <% else %>
+              <div style="font-size:0.78rem; font-weight:600; color:#16a34a; margin-top:0.15rem;">Gratuito</div>
+            <% end %>
             <% if plan.description.present? %>
               <div style="font-size:0.75rem; color:#71717a; margin-top:0.2rem;"><%= plan.description %></div>
             <% end %>
