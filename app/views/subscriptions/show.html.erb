@@ -44,22 +44,18 @@
     <% end %>
   </div>
 
-  <%# QR Code / link PIX pendente %>
-  <% if status == "pending" && @pending_payment.present? %>
+  <%# Link de pagamento pendente %>
+  <% if %w[pending overdue].include?(status) && @pending_payment.present? && @pending_payment["invoiceUrl"].present? %>
     <div style="margin-top:1rem;padding:1rem;background:#fffbeb;border:1px solid #fde68a;border-radius:8px;">
       <div style="font-size:0.85rem;font-weight:700;color:#b45309;margin-bottom:0.5rem;">
-        <i class="bi bi-qr-code"></i> Pague via PIX para ativar seu plano
+        <i class="bi bi-credit-card"></i> Efetue o pagamento para ativar seu plano
       </div>
-      <% if @pending_payment["pixQrCode"].present? %>
-        <div style="font-size:0.75rem;color:#52525b;word-break:break-all;background:#fff;border:1px solid #e4e4e7;border-radius:6px;padding:8px;margin-bottom:0.5rem;">
-          <%= @pending_payment["pixQrCode"] %>
-        </div>
-      <% end %>
-      <% if @pending_payment["invoiceUrl"].present? %>
-        <%= link_to @pending_payment["invoiceUrl"], target: "_blank",
-              style: "font-size:0.82rem;font-weight:700;color:#1d4ed8;text-decoration:none;display:inline-flex;align-items:center;gap:4px;" do %>
-          <i class="bi bi-box-arrow-up-right"></i> Abrir fatura no Asaas
-        <% end %>
+      <p style="font-size:0.8rem;color:#78350f;margin:0 0 0.5rem;">
+        Clique no link abaixo para pagar via PIX, boleto ou cartão de crédito.
+      </p>
+      <%= link_to @pending_payment["invoiceUrl"], target: "_blank",
+            style: "font-size:0.85rem;font-weight:700;color:#1d4ed8;text-decoration:none;display:inline-flex;align-items:center;gap:4px;" do %>
+        <i class="bi bi-box-arrow-up-right"></i> Abrir fatura e pagar
       <% end %>
     </div>
   <% end %>

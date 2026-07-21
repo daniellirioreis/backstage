@@ -48,7 +48,7 @@ class AsaasService
   def create_subscription(customer_id:, plan:, company:)
     post("/subscriptions", {
       customer:         customer_id,
-      billingType:      "PIX",
+      billingType:      "UNDEFINED",
       value:            plan.price.to_f,
       nextDueDate:      Date.today.strftime("%Y-%m-%d"),
       cycle:            "MONTHLY",
