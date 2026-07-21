@@ -116,7 +116,11 @@ class ApplicationController < ActionController::Base
     # Plano pago: verifica status da assinatura
     case company.subscription_status
     when "active"
-      # OK
+      # Verifica se o período pago expirou (fallback caso webhook falhe)
+      if company.subscription_expires_at.present? && company.subscription_expires_at < Time.current
+        return redirect_to subscription_path,
+          alert: "Sua assinatura expirou. Efetue o pagamento da mensalidade para continuar."
+      end
     when "pending"
       return redirect_to subscription_path,
         alert: "Pagamento pendente. Efetue o pagamento para continuar usando o sistema."
