@@ -34,13 +34,26 @@
       <% end %>
     </div>
     <% if @company.subscription_expires_at.present? %>
-      <span style="font-size:0.8rem;color:#71717a;">
-        <% if status == "active" %>
+      <% days_left = (@company.subscription_expires_at.to_date - Date.today).to_i %>
+      <% if status == "active" %>
+        <span style="font-size:0.8rem;color:<%= days_left <= 5 ? '#dc2626' : days_left <= 10 ? '#b45309' : '#71717a' %>;">
           Próxima cobrança: <strong><%= l(@company.subscription_expires_at.to_date, format: :long) %></strong>
-        <% else %>
+          <% if days_left >= 0 %>
+            &nbsp;·&nbsp;
+            <% if days_left == 0 %>
+              <strong>vence hoje</strong>
+            <% elsif days_left == 1 %>
+              falta <strong>1 dia</strong>
+            <% else %>
+              faltam <strong><%= days_left %> dias</strong>
+            <% end %>
+          <% end %>
+        </span>
+      <% else %>
+        <span style="font-size:0.8rem;color:#71717a;">
           Válido até: <strong><%= l(@company.subscription_expires_at.to_date, format: :long) %></strong>
-        <% end %>
-      </span>
+        </span>
+      <% end %>
     <% end %>
   </div>
 
