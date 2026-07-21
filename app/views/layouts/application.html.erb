@@ -184,6 +184,17 @@
               <i class="bi bi-box"></i> Planos
             <% end %>
           <% end %>
+          <% if !current_user.admin? && !current_user.role&.collaborator? && !current_user.coordinator? %>
+            <%= link_to subscription_path, class: "sidebar-link #{controller_name == 'subscriptions' ? 'active' : ''}" do %>
+              <i class="bi bi-credit-card"></i> Assinatura
+              <% sub_status = current_user.companies.first&.subscription_status %>
+              <% if sub_status == "overdue" %>
+                <span style="margin-left:auto;background:#fef2f2;border:1px solid #fca5a5;color:#dc2626;font-size:0.65rem;font-weight:800;border-radius:99px;padding:1px 7px;">ATRASO</span>
+              <% elsif sub_status == "pending" %>
+                <span style="margin-left:auto;background:#fff7ed;border:1px solid #fed7aa;color:#b45309;font-size:0.65rem;font-weight:800;border-radius:99px;padding:1px 7px;">PEND.</span>
+              <% end %>
+            <% end %>
+          <% end %>
           <% if policy(Role).index? %>
             <%= link_to roles_path, class: "sidebar-link #{controller_name == 'roles' ? 'active' : ''}" do %>
               <i class="bi bi-shield-check"></i> <%= Role.model_name.human(count: 2) %>

@@ -1,0 +1,64 @@
+<%# Progress %>
+<div style="display:flex; gap:0.5rem; margin-bottom:1.75rem;">
+  <% [["Empresa", false], ["Plano", false], ["Pagamento", true], ["Evento", false], ["Concluído", false]].each_with_index do |(label, active), i| %>
+    <div style="flex:1; text-align:center;">
+      <div style="font-size:0.7rem; font-weight:<%= active ? 700 : 400 %>; color:<%= active ? '#18181b' : '#a1a1aa' %>; margin-bottom:0.35rem;"><%= label %></div>
+      <div style="height:3px; border-radius:2px; background:<%= active ? '#18181b' : (i < 2 ? '#18181b' : '#e4e4e7') %>;"></div>
+    </div>
+  <% end %>
+</div>
+
+<div style="text-align:center; padding:0.5rem 0 1.5rem;">
+  <div style="width:3.5rem; height:3.5rem; background:#fff7ed; border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 1rem;">
+    <i class="bi bi-qr-code" style="font-size:1.5rem; color:#b45309;"></i>
+  </div>
+  <h2 style="font-size:1.1rem; font-weight:700; color:#18181b; margin:0 0 0.4rem;">Efetue o pagamento</h2>
+  <p style="font-size:0.83rem; color:#71717a; margin:0 0 0.75rem; line-height:1.5;">
+    Sua assinatura foi criada. Pague via PIX para ativar o plano
+    <strong><%= @company.plan&.name %></strong>.
+  </p>
+</div>
+
+<div style="background:#fff7ed; border:1px solid #fed7aa; border-radius:10px; padding:1.25rem; margin-bottom:1.25rem;">
+  <div style="font-size:0.85rem; font-weight:700; color:#b45309; margin-bottom:0.75rem;">
+    <i class="bi bi-hourglass-split"></i> Aguardando pagamento
+  </div>
+
+  <% if @pending_payment.present? %>
+    <% if @pending_payment["invoiceUrl"].present? %>
+      <div style="margin-bottom:1rem;">
+        <%= link_to @pending_payment["invoiceUrl"], target: "_blank",
+              style: "display:inline-flex;align-items:center;gap:8px;background:#b45309;color:#fff;border-radius:8px;padding:10px 20px;font-size:0.88rem;font-weight:700;text-decoration:none;width:100%;justify-content:center;box-sizing:border-box;" do %>
+          <i class="bi bi-box-arrow-up-right"></i> Abrir fatura e pagar via PIX
+        <% end %>
+      </div>
+    <% end %>
+
+    <% if @pending_payment["pixQrCode"].present? %>
+      <div style="background:#fff;border:1px solid #e4e4e7;border-radius:8px;padding:0.75rem;font-size:0.72rem;color:#52525b;word-break:break-all;margin-bottom:0.5rem;">
+        <div style="font-size:0.7rem;font-weight:600;color:#71717a;margin-bottom:0.35rem;">Código PIX Copia e Cola:</div>
+        <%= @pending_payment["pixQrCode"] %>
+      </div>
+    <% end %>
+
+    <div style="font-size:0.75rem;color:#71717a;">
+      Valor: <strong>R$ <%= "%.2f" % @pending_payment["value"].to_f %></strong>
+    </div>
+  <% else %>
+    <div style="font-size:0.83rem;color:#71717a;">
+      Sua assinatura foi criada no Asaas. Acesse
+      <a href="https://sandbox.asaas.com" target="_blank" style="color:#b45309;font-weight:600;">sandbox.asaas.com</a>
+      para visualizar a fatura e efetuar o pagamento.
+    </div>
+  <% end %>
+</div>
+
+<div style="background:#fef2f2; border:1px solid #fca5a5; border-radius:8px; padding:0.75rem 1rem; margin-bottom:1.5rem; font-size:0.78rem; color:#dc2626; display:flex; gap:0.5rem; align-items:flex-start;">
+  <i class="bi bi-lock-fill" style="flex-shrink:0; margin-top:1px;"></i>
+  <span>O acesso ao sistema será liberado somente após a confirmação do pagamento.</span>
+</div>
+
+<%= form_with url: onboarding_verificar_pagamento_path, method: :post, data: { turbo: false } do |f| %>
+  <%= f.submit "Já paguei — Verificar confirmação",
+        style: "display:block;width:100%;background:#18181b;color:#fff;border:none;border-radius:8px;padding:0.65rem;font-size:0.875rem;font-weight:600;cursor:pointer;box-sizing:border-box;" %>
+<% end %>

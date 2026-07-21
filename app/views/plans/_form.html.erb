@@ -17,6 +17,12 @@
     <%= f.text_area :description, class: "form-control", rows: 2, placeholder: "Breve descrição do plano" %>
   </div>
 
+  <div class="form-group">
+    <%= f.label :price, "Preço mensal (R$) *" %>
+    <%= f.number_field :price, class: "form-control", placeholder: "0.00", min: 0, step: 0.01, required: true %>
+    <small style="color:#71717a; font-size:0.72rem;">Use 0 para plano gratuito (sem cobrança via Asaas)</small>
+  </div>
+
   <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
     <div class="form-group">
       <%= f.label :events_limit, "Limite de eventos" %>

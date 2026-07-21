@@ -2,6 +2,7 @@ class Plan < ApplicationRecord
   has_many :companies, dependent: :nullify
 
   validates :name, presence: true, uniqueness: { case_sensitive: false }
+  validates :price,         numericality: { greater_than_or_equal_to: 0 }
   validates :events_limit,  numericality: { only_integer: true, greater_than: 0, allow_nil: true }
   validates :members_limit, numericality: { only_integer: true, greater_than: 0, allow_nil: true }
 

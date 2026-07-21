@@ -29,6 +29,8 @@ services:
       DATABASE_URL: postgres://${POSTGRES_USER:-backstage}:${POSTGRES_PASSWORD:-backstage}@db/${POSTGRES_DB:-backstage_development}
       RAILS_ENV: development
       SECRET_KEY_BASE: ${SECRET_KEY_BASE:-desenvolvimento_local_nao_usar_em_producao}
+      ASAAS_API_KEY: ${ASAAS_API_KEY}
+      ASAAS_ENV: ${ASAAS_ENV:-sandbox}
 
 volumes:
   postgres_data:

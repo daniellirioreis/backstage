@@ -104,22 +104,39 @@ class ApplicationController < ActionController::Base
     # Sem empresa ainda → onboarding cuida disso
     return unless company
 
-    return if company.plan.present?
+    # Sem plano configurado
+    unless company.plan.present?
+      return redirect_to subscription_path,
+        alert: "Sua empresa não possui um plano. Escolha um plano para continuar."
+    end
 
-    redirect_to root_path, alert: "Sua empresa não possui um plano ativo. Entre em contato com o administrador para contratar um plano."
+    # Plano gratuito (price == 0) → sem restrição de assinatura
+    return if company.plan.price.to_f <= 0
+
+    # Plano pago: verifica status da assinatura
+    case company.subscription_status
+    when "active"
+      # OK
+    when "pending"
+      return redirect_to subscription_path,
+        alert: "Pagamento pendente. Efetue o pagamento para continuar usando o sistema."
+    when "overdue", "cancelled", "inactive"
+      return redirect_to subscription_path,
+        alert: "Sua assinatura está #{company.subscription_status == 'overdue' ? 'em atraso' : 'inativa'}. Regularize para continuar."
+    end
   end
 
   def skip_plan_check?
     devise_controller? ||
       controller_name.in?(%w[
-        dashboard
         event_session
         onboarding
         companies
         plans
+        subscriptions
+        asaas_webhooks
         invitations
-      ]) ||
-      (controller_name == "users" && action_name == "my_schedule")
+      ])
   end
 
   def check_onboarding!

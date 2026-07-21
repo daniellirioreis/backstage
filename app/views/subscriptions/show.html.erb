@@ -1,0 +1,129 @@
+<div class="page-header">
+  <div>
+    <h1>Assinatura</h1>
+    <p style="color:#71717a;font-size:0.9rem;margin-top:0.25rem;">
+      Gerencie o plano da empresa <strong><%= @company.name %></strong>.
+    </p>
+  </div>
+</div>
+
+<%# ── Status atual ────────────────────────────────────────────────────────── %>
+<% status = @company.subscription_status %>
+<% status_styles = {
+  "active"    => { bg: "#dcfce7", border: "#86efac", color: "#15803d", icon: "bi-check-circle-fill", label: "Ativo" },
+  "pending"   => { bg: "#fff7ed", border: "#fed7aa", color: "#b45309", icon: "bi-hourglass-split",   label: "Aguardando pagamento" },
+  "overdue"   => { bg: "#fef2f2", border: "#fca5a5", color: "#dc2626", icon: "bi-exclamation-circle-fill", label: "Em atraso" },
+  "cancelled" => { bg: "#f4f4f5", border: "#d4d4d8", color: "#71717a", icon: "bi-slash-circle",      label: "Cancelado" },
+  "inactive"  => { bg: "#f4f4f5", border: "#d4d4d8", color: "#71717a", icon: "bi-dash-circle",       label: "Sem assinatura" },
+} %>
+<% st = status_styles[status] || status_styles["inactive"] %>
+
+<div class="content-card" style="margin-bottom:1.25rem;">
+  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;">
+    <div style="display:flex;align-items:center;gap:0.75rem;">
+      <span style="display:inline-flex;align-items:center;gap:6px;background:<%= st[:bg] %>;border:1px solid <%= st[:border] %>;border-radius:99px;padding:5px 14px;font-size:0.85rem;font-weight:700;color:<%= st[:color] %>;">
+        <i class="bi <%= st[:icon] %>"></i> <%= st[:label] %>
+      </span>
+      <% if @company.plan.present? %>
+        <span style="font-size:0.85rem;font-weight:600;color:#18181b;">
+          Plano <strong><%= @company.plan.name %></strong>
+          <% if @company.plan.price.to_f > 0 %>
+            — R$ <%= "%.2f" % @company.plan.price %>/mês
+          <% end %>
+        </span>
+      <% end %>
+    </div>
+    <% if @company.subscription_expires_at.present? %>
+      <span style="font-size:0.8rem;color:#71717a;">
+        <% if status == "active" %>
+          Próxima cobrança: <strong><%= l(@company.subscription_expires_at.to_date, format: :long) %></strong>
+        <% else %>
+          Válido até: <strong><%= l(@company.subscription_expires_at.to_date, format: :long) %></strong>
+        <% end %>
+      </span>
+    <% end %>
+  </div>
+
+  <%# QR Code / link PIX pendente %>
+  <% if status == "pending" && @pending_payment.present? %>
+    <div style="margin-top:1rem;padding:1rem;background:#fffbeb;border:1px solid #fde68a;border-radius:8px;">
+      <div style="font-size:0.85rem;font-weight:700;color:#b45309;margin-bottom:0.5rem;">
+        <i class="bi bi-qr-code"></i> Pague via PIX para ativar seu plano
+      </div>
+      <% if @pending_payment["pixQrCode"].present? %>
+        <div style="font-size:0.75rem;color:#52525b;word-break:break-all;background:#fff;border:1px solid #e4e4e7;border-radius:6px;padding:8px;margin-bottom:0.5rem;">
+          <%= @pending_payment["pixQrCode"] %>
+        </div>
+      <% end %>
+      <% if @pending_payment["invoiceUrl"].present? %>
+        <%= link_to @pending_payment["invoiceUrl"], target: "_blank",
+              style: "font-size:0.82rem;font-weight:700;color:#1d4ed8;text-decoration:none;display:inline-flex;align-items:center;gap:4px;" do %>
+          <i class="bi bi-box-arrow-up-right"></i> Abrir fatura no Asaas
+        <% end %>
+      <% end %>
+    </div>
+  <% end %>
+
+  <%# Botão verificar pagamento %>
+  <% if %w[pending overdue inactive].include?(status) && @company.asaas_subscription_id.present? %>
+    <div style="margin-top:1rem;padding-top:1rem;border-top:1px solid #f4f4f5;">
+      <div style="font-size:0.8rem;color:#71717a;margin-bottom:0.5rem;">
+        Já efetuou o pagamento? Clique abaixo para verificar a confirmação.
+      </div>
+      <%= form_with url: verificar_subscription_path, method: :post, data: { turbo: false } do |f| %>
+        <%= f.submit "Já paguei — Verificar confirmação",
+              style: "width:100%;background:#18181b;color:#fff;border:none;border-radius:7px;padding:9px 0;font-size:0.85rem;font-weight:700;cursor:pointer;" %>
+      <% end %>
+    </div>
+  <% end %>
+
+  <%# Botão cancelar %>
+  <% if @company.asaas_subscription_id.present? && %w[active pending overdue].include?(status) %>
+    <div style="margin-top:1rem;padding-top:1rem;border-top:1px solid #f4f4f5;">
+      <%= button_to subscription_path, method: :delete,
+            style: "font-size:0.78rem;color:#ef4444;background:none;border:none;cursor:pointer;padding:0;display:inline-flex;align-items:center;gap:4px;font-weight:600;",
+            data: { turbo: false, turbo_confirm: "Cancelar a assinatura? O acesso será mantido até o fim do período pago." } do %>
+        <i class="bi bi-x-circle"></i> Cancelar assinatura
+      <% end %>
+    </div>
+  <% end %>
+</div>
+
+<%# ── Escolha de plano ────────────────────────────────────────────────────── %>
+<h2 style="font-size:1rem;font-weight:700;color:#18181b;margin-bottom:0.75rem;">
+  <%= status == "inactive" || status == "cancelled" ? "Escolha um plano" : "Trocar de plano" %>
+</h2>
+
+<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:1rem;margin-bottom:2rem;">
+  <% @plans.each do |plan| %>
+    <% is_current = @company.plan_id == plan.id && %w[active pending].include?(status) %>
+    <div class="content-card" style="<%= is_current ? "border:2px solid #7c3aed;" : "" %>position:relative;">
+      <% if is_current %>
+        <span style="position:absolute;top:12px;right:12px;background:#7c3aed;color:#fff;font-size:0.65rem;font-weight:800;border-radius:99px;padding:2px 8px;">ATUAL</span>
+      <% end %>
+      <div style="font-size:1.05rem;font-weight:800;color:#18181b;margin-bottom:0.2rem;"><%= plan.name %></div>
+      <div style="font-size:1.6rem;font-weight:800;color:#7c3aed;margin-bottom:0.75rem;">
+        R$ <%= "%.2f" % plan.price %>
+        <span style="font-size:0.8rem;font-weight:400;color:#71717a;">/mês</span>
+      </div>
+      <ul style="list-style:none;padding:0;margin:0 0 1rem;display:flex;flex-direction:column;gap:4px;font-size:0.82rem;color:#52525b;">
+        <li><i class="bi bi-calendar-event" style="color:#7c3aed;margin-right:5px;"></i>
+          <strong><%= plan.events_limit_label %></strong> eventos</li>
+        <li><i class="bi bi-people" style="color:#7c3aed;margin-right:5px;"></i>
+          <strong><%= plan.members_limit_label %></strong> membros</li>
+        <% if plan.description.present? %>
+          <li style="margin-top:4px;color:#71717a;"><%= plan.description %></li>
+        <% end %>
+      </ul>
+      <% unless is_current %>
+        <%= form_with url: subscription_path, method: :post, data: { turbo: false } do |f| %>
+          <%= f.hidden_field :plan_id, value: plan.id %>
+          <%= f.submit is_current ? "Plano atual" : "Assinar este plano",
+                disabled: is_current,
+                class: "btn-primary",
+                style: "width:100%;font-size:0.85rem;padding:9px 0;cursor:pointer;" %>
+        <% end %>
+      <% end %>
+    </div>
+  <% end %>
+</div>

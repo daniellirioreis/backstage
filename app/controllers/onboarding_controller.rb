@@ -43,8 +43,93 @@ class OnboardingController < ApplicationController
       render :plano, status: :unprocessable_entity and return
     end
 
-    @company.update!(plan_id: plan_id)
-    redirect_to onboarding_evento_path
+    plan = Plan.find(plan_id)
+    @company.update!(plan: plan)
+
+    if plan.price.to_f > 0
+      begin
+        asaas = AsaasService.new
+        customer = asaas.find_or_create_customer(@company)
+        subscription = asaas.create_subscription(
+          customer_id: customer["id"],
+          plan:        plan,
+          company:     @company
+        )
+        @company.update!(
+          asaas_customer_id:       customer["id"],
+          asaas_subscription_id:   subscription["id"],
+          subscription_status:     "pending",
+          subscription_expires_at: Date.today + 7.days
+        )
+        redirect_to onboarding_pagamento_path
+      rescue AsaasService::AsaasError => e
+        @plans = Plan.order(:name)
+        flash.now[:alert] = "Erro ao criar assinatura: #{e.message}"
+        render :plano, status: :unprocessable_entity
+      end
+    else
+      @company.update!(subscription_status: "active")
+      redirect_to onboarding_evento_path
+    end
+  end
+
+  # GET /onboarding/pagamento
+  def pagamento
+    @company = current_user.companies.where.not(asaas_subscription_id: [nil, ""]).first
+    @company ||= current_user.company_users.includes(:company).first&.company
+    redirect_to onboarding_empresa_path and return unless @company
+    redirect_to onboarding_evento_path and return if @company.subscription_status == "active"
+
+    if @company.asaas_subscription_id.present?
+      begin
+        asaas = AsaasService.new
+        @pending_payment = asaas.pending_payment(@company.asaas_subscription_id)
+      rescue AsaasService::AsaasError
+        # silencioso — mostra página sem link
+      end
+    end
+  end
+
+  # POST /onboarding/verificar_pagamento
+  # Consulta a API do Asaas e atualiza o status antes de liberar o acesso
+  def verificar_pagamento
+    @company = current_user.companies.where.not(asaas_subscription_id: [nil, ""]).first
+    @company ||= current_user.company_users.includes(:company).first&.company
+    redirect_to onboarding_empresa_path and return unless @company
+
+    if @company.asaas_subscription_id.blank?
+      return redirect_to onboarding_pagamento_path, alert: "Nenhuma assinatura encontrada."
+    end
+
+    begin
+      asaas        = AsaasService.new
+      subscription = asaas.get_subscription(@company.asaas_subscription_id)
+
+      # Verifica se a assinatura pertence a esta empresa
+      expected_ref = "company_#{@company.id}_plan_#{@company.plan_id}"
+      if subscription["externalReference"].to_s != expected_ref
+        return redirect_to onboarding_pagamento_path,
+          alert: "Assinatura inválida para esta empresa."
+      end
+
+      all_payments = asaas.get("/payments", subscription: @company.asaas_subscription_id)
+      confirmed = all_payments["data"].to_a.any? do |p|
+        %w[RECEIVED CONFIRMED RECEIVED_IN_CASH].include?(p["status"].to_s.upcase)
+      end
+
+      if confirmed
+        @company.update!(
+          subscription_status:     "active",
+          subscription_expires_at: Date.today + 30.days
+        )
+        redirect_to onboarding_evento_path, notice: "Pagamento confirmado! Bem-vindo ao Backstage."
+      else
+        redirect_to onboarding_pagamento_path,
+          alert: "Pagamento ainda não confirmado. Aguarde alguns instantes e tente novamente."
+      end
+    rescue AsaasService::AsaasError => e
+      redirect_to onboarding_pagamento_path, alert: "Erro ao verificar pagamento: #{e.message}"
+    end
   end
 
   # GET /onboarding/evento

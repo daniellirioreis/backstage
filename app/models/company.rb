@@ -32,4 +32,17 @@ class Company < ApplicationRecord
   def owner
     company_users.find_by(role: "owner")&.user
   end
+
+  # ── Assinatura ───────────────────────────────────────────────────────────────
+  SUBSCRIPTION_STATUSES = %w[inactive pending active overdue cancelled].freeze
+
+  def subscription_active?  = subscription_status == "active"
+  def subscription_pending? = subscription_status == "pending"
+  def subscription_overdue? = subscription_status == "overdue"
+
+  def subscription_status_label
+    { "inactive" => "Sem assinatura", "pending" => "Aguardando pagamento",
+      "active"   => "Ativo",          "overdue"  => "Em atraso",
+      "cancelled" => "Cancelado" }[subscription_status] || subscription_status
+  end
 end

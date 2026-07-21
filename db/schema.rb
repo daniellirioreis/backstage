@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_07_15_000003) do
+ActiveRecord::Schema[7.1].define(version: 2026_07_21_000001) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -95,6 +95,12 @@ ActiveRecord::Schema[7.1].define(version: 2026_07_15_000003) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.bigint "plan_id"
+    t.string "asaas_customer_id"
+    t.string "asaas_subscription_id"
+    t.string "subscription_status", default: "inactive"
+    t.datetime "subscription_expires_at"
+    t.index ["asaas_customer_id"], name: "index_companies_on_asaas_customer_id", unique: true, where: "(asaas_customer_id IS NOT NULL)"
+    t.index ["asaas_subscription_id"], name: "index_companies_on_asaas_subscription_id", unique: true, where: "(asaas_subscription_id IS NOT NULL)"
     t.index ["plan_id"], name: "index_companies_on_plan_id"
   end
 
@@ -187,6 +193,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_07_15_000003) do
     t.text "description"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.decimal "price", precision: 10, scale: 2, default: "0.0", null: false
     t.index ["name"], name: "index_plans_on_name", unique: true
   end
 

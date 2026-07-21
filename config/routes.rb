@@ -23,6 +23,8 @@ Rails.application.routes.draw do
   get  "onboarding/evento",       to: "onboarding#evento",      as: :onboarding_evento
   post "onboarding/evento",       to: "onboarding#save_evento"
   post "onboarding/evento/pular", to: "onboarding#skip_evento", as: :onboarding_skip_evento
+  get  "onboarding/pagamento",    to: "onboarding#pagamento",         as: :onboarding_pagamento
+  post "onboarding/pagamento",    to: "onboarding#verificar_pagamento", as: :onboarding_verificar_pagamento
   get  "onboarding/concluido",    to: "onboarding#done",        as: :onboarding_done
 
   get  "events/select", to: "event_session#select_event", as: :select_event
@@ -37,6 +39,12 @@ Rails.application.routes.draw do
       patch :set_plan
     end
   end
+  # Assinatura / cobrança
+  resource  :subscription, only: [:show, :create, :destroy] do
+    post :verificar, on: :member
+  end
+  post "asaas/webhook", to: "asaas_webhooks#receive", as: :asaas_webhook
+
   # Importação de eventos via Excel
   get  "event_imports/new",      to: "event_imports#new",      as: :new_event_import
   get  "event_imports/template", to: "event_imports#template", as: :event_import_template
