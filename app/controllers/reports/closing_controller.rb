@@ -552,7 +552,25 @@ module Reports
 
     def load_payments
       payments = Payment.where(event: @event).includes(:user)
-      @payment_by_user_date = payments.index_by { |p| [p.user_id, p.date&.to_s] }
+      @payment_by_user_date = {}
+      undated = []
+
+      payments.each do |p|
+        if p.date.present?
+          @payment_by_user_date[[p.user_id, p.date.to_s]] = p
+        else
+          undated << p
+          @payment_by_user_date[[p.user_id, nil]] = p
+        end
+      end
+
+      # Pagamentos sem data (legado): torná-los visíveis em qualquer filtro de data
+      unless undated.empty?
+        all_dates = (@available_dates || []).map(&:to_s)
+        undated.each do |p|
+          all_dates.each { |d| @payment_by_user_date[[p.user_id, d]] ||= p }
+        end
+      end
     end
 
     def load_available_dates
