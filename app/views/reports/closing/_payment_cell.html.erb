@@ -113,18 +113,4 @@
     </div>
   </div>
 
-  <script>
-    function pcToggle(uid, panel) {
-      var pay   = document.getElementById('pc-pay-'   + uid);
-      var waive = document.getElementById('pc-waive-' + uid);
-      if (!pay || !waive) return;
-      if (panel === 'pay') {
-        pay.style.display   = pay.style.display   === 'none' ? 'block' : 'none';
-        waive.style.display = 'none';
-      } else {
-        waive.style.display = waive.style.display === 'none' ? 'block' : 'none';
-        pay.style.display   = 'none';
-      }
-    }
-  </script>
 <% end %>

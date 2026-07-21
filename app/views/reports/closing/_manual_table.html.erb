@@ -105,7 +105,7 @@
               <span style="color:#d4d4d8;font-size:0.8rem;">—</span>
             <% end %>
           </td>
-          <td style="text-align:center;padding:0.5rem 0.75rem;">
+          <td id="payment-cell-<%= uid %>" style="text-align:center;padding:0.5rem 0.75rem;">
             <%= render partial: "reports/closing/payment_cell",
                        locals: { payment: payment, row: row, uid: uid, rate: rate,
                                  basis: "manual", finalized: finalized, date: date_str } %>

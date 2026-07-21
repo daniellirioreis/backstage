@@ -473,7 +473,23 @@ module Reports
                               .where(sectors: { event_id: current_event.id }, user_id: user_id)
                               .includes(:event_function).first
         rate  = tm&.event_function&.hourly_rate.to_f
-        render json: { ok: true, hours: hours.round(2), value: (hours * rate).round(2) }
+        value = hours * rate
+        uid   = "#{user_id}d#{date.gsub('-', '')}"
+
+        row = { user:          User.find(user_id),
+                function_name: tm&.event_function&.name || "—",
+                hourly_rate:   rate,
+                total_value:   value,
+                shifts:        [] }
+
+        payment_html = render_to_string(
+          partial: 'reports/closing/payment_cell',
+          locals:  { payment: nil, row: row, uid: uid, rate: rate,
+                     basis: 'manual', finalized: current_event.closing_finalized_at?, date: date }
+        )
+
+        render json: { ok: true, hours: hours.round(2), value: value.round(2),
+                       uid: uid, payment_html: payment_html }
       else
         render json: { error: attendance.errors.full_messages.to_sentence }, status: 422
       end
