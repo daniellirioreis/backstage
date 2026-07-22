@@ -222,13 +222,18 @@
               <i class="bi bi-map" style="font-size:0.7rem;"></i> Como chegar
             <% end %>
           </div>
-          <iframe
-            src="https://maps.google.com/maps?q=<%= ERB::Util.url_encode(event.location) %>&output=embed&hl=pt-BR&z=16"
-            style="width:100%; height:160px; border:0; border-top:1px solid #f4f4f5; display:block;"
-            loading="lazy"
-            referrerpolicy="no-referrer-when-downgrade"
-            title="Localização: <%= j event.name %>">
-          </iframe>
+          <% if event.respond_to?(:latitude) && event.latitude.present? %>
+            <%
+              delta = 0.003
+              bbox  = "#{event.longitude.to_f - delta},#{event.latitude.to_f - delta},#{event.longitude.to_f + delta},#{event.latitude.to_f + delta}"
+            %>
+            <iframe
+              src="https://www.openstreetmap.org/export/embed.html?bbox=<%= bbox %>&layer=mapnik&marker=<%= event.latitude %>,<%= event.longitude %>"
+              style="width:100%; height:160px; border:0; border-top:1px solid #f4f4f5; display:block;"
+              loading="lazy"
+              title="Localização: <%= j event.name %>">
+            </iframe>
+          <% end %>
         <% end %>
 
         <%# Pagamento %>

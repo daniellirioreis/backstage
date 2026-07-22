@@ -47,8 +47,16 @@ class Event < ApplicationRecord
   validate  :at_least_one_event_day,      if: :require_step1_complete
   validate  :at_least_one_event_function, if: :require_step1_complete
   after_validation :translate_nested_errors
+  after_save :geocode_location, if: :saved_change_to_location?
 
   private
+
+  def geocode_location
+    result = NominatimService.geocode(location)
+    update_columns(latitude: result[:lat], longitude: result[:lon]) if result
+  rescue StandardError
+    nil
+  end
 
   def end_date_after_start_date
     return if start_date.blank? || end_date.blank?
