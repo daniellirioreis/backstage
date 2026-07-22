@@ -18,7 +18,14 @@
       </div>
       <div style="font-size: 0.82rem; color: #71717a; margin-top: 0.2rem; display: flex; gap: 1rem;">
         <% if @event.location.present? %>
-          <span><i class="bi bi-geo-alt"></i> <%= @event.location %></span>
+          <span>
+            <i class="bi bi-geo-alt"></i> <%= @event.location %>
+            <%= link_to "https://maps.google.com/?q=#{ERB::Util.url_encode(@event.location)}",
+                target: "_blank", rel: "noopener",
+                style: "margin-left:6px; font-size:0.75rem; font-weight:600; color:#1d4ed8; background:#eff6ff; border-radius:5px; padding:1px 7px; text-decoration:none;" do %>
+              <i class="bi bi-map" style="font-size:0.68rem;"></i> Como chegar
+            <% end %>
+          </span>
         <% end %>
         <span><i class="bi bi-calendar3"></i> <%= l(@event.start_date, format: :short) %> → <%= l(@event.end_date, format: :short) %></span>
       </div>
@@ -144,6 +151,19 @@
 <%# ABA: GERAL                                                                %>
 <%# ══════════════════════════════════════════════════════════════════════════ %>
 <div id="tab-geral">
+
+  <%# ── Mapa do local ── %>
+  <% if @event.location.present? %>
+    <div class="content-card" style="padding:0; overflow:hidden; margin-bottom:1.25rem;">
+      <iframe
+        src="https://maps.google.com/maps?q=<%= ERB::Util.url_encode(@event.location) %>&output=embed&hl=pt-BR&z=16"
+        style="width:100%; height:220px; border:0; display:block;"
+        loading="lazy"
+        referrerpolicy="no-referrer-when-downgrade"
+        title="Localização: <%= j @event.name %>">
+      </iframe>
+    </div>
+  <% end %>
 
   <%# ── Coordenadores (agrupados por pessoa) ── %>
   <%

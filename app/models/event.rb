@@ -38,7 +38,7 @@ class Event < ApplicationRecord
   attr_accessor :require_step1_complete
 
   validates :name,       presence: true
-  validates :location,   presence: true
+  validates :location,   presence: true, length: { minimum: 5, message: "deve ser um endereço válido" }
   validates :event_type, presence: true, inclusion: { in: EVENT_TYPES }
   validates :code, format: { with: /\A[A-Z0-9]{2,10}\z/i, message: "deve ter 2 a 10 letras/números" }, allow_blank: true
   validates :start_date, presence: true
@@ -47,8 +47,24 @@ class Event < ApplicationRecord
   validate  :at_least_one_event_day,      if: :require_step1_complete
   validate  :at_least_one_event_function, if: :require_step1_complete
   after_validation :translate_nested_errors
+  after_save :geocode_location, if: :saved_change_to_location?
 
   private
+
+  def geocode_location
+    result = NominatimService.geocode(location)
+    if result
+      update_columns(
+        latitude:           result[:lat],
+        longitude:          result[:lon],
+        location_validated: true
+      )
+    else
+      update_columns(location_validated: false)
+    end
+  rescue StandardError
+    # Não bloqueia o save em caso de falha na geocodificação
+  end
 
   def end_date_after_start_date
     return if start_date.blank? || end_date.blank?
