@@ -218,11 +218,6 @@
               <i class="bi bi-map" style="font-size:0.7rem;"></i> Como chegar
             </a>
           </div>
-          <div id="map-<%= event.id %>"
-               data-address="<%= j event.location %>"
-               style="height:150px; border-top:1px solid #f4f4f5; background:#f4f4f5; display:flex; align-items:center; justify-content:center;">
-            <span style="font-size:0.72rem; color:#a1a1aa;">Carregando mapa...</span>
-          </div>
         <% end %>
 
         <%# Pagamento %>
@@ -283,51 +278,4 @@
     <p style="margin:0; font-size:0.8rem;"><%= @user.name.split.first %> ainda não tem turnos cadastrados.</p>
   </div>
 <% end %>
-
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script>
-  document.addEventListener("DOMContentLoaded", function () {
-    document.querySelectorAll("[id^='map-']").forEach(function (el) {
-      var address = el.dataset.address;
-      if (!address) return;
-
-      fetch("https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=br&q=" + encodeURIComponent(address), {
-        headers: { "Accept": "application/json", "User-Agent": "Backstage/1.0" }
-      })
-      .then(function (r) { return r.json(); })
-      .then(function (data) {
-        if (!data || data.length === 0) {
-          el.innerHTML = '<span style="font-size:0.72rem;color:#a1a1aa;">Localização não encontrada</span>';
-          return;
-        }
-        var lat = parseFloat(data[0].lat);
-        var lon = parseFloat(data[0].lon);
-        el.innerHTML = "";
-        el.style.background = "";
-        el.style.display = "block";
-
-        var map = L.map(el, {
-          center: [lat, lon],
-          zoom: 15,
-          zoomControl: false,
-          scrollWheelZoom: false,
-          dragging: false,
-          doubleClickZoom: false,
-          touchZoom: false
-        });
-
-        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-          attribution: '© <a href="https://www.openstreetmap.org/copyright">OSM</a>',
-          maxZoom: 19
-        }).addTo(map);
-
-        L.marker([lat, lon]).addTo(map);
-      })
-      .catch(function () {
-        el.innerHTML = '<span style="font-size:0.72rem;color:#a1a1aa;">Mapa indisponível</span>';
-      });
-    });
-  });
-</script>
 

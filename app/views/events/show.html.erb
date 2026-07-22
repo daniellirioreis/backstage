@@ -154,47 +154,6 @@
 
   <%# ── Mapa do local ── %>
   <% if @event.location.present? %>
-    <% if @event.location.present? %>
-      <div class="content-card" style="padding:0; overflow:hidden; margin-bottom:1.25rem;">
-        <div id="map-show-event"
-             data-address="<%= j @event.location %>"
-             style="height:220px; background:#f4f4f5; display:flex; align-items:center; justify-content:center;">
-          <span style="font-size:0.72rem; color:#a1a1aa;">Carregando mapa...</span>
-        </div>
-      </div>
-      <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-      <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-      <script>
-        document.addEventListener("DOMContentLoaded", function () {
-          var el = document.getElementById("map-show-event");
-          if (!el) return;
-          fetch("https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=br&q=" + encodeURIComponent(el.dataset.address), {
-            headers: { "Accept": "application/json" }
-          })
-          .then(function (r) { return r.json(); })
-          .then(function (data) {
-            if (!data || data.length === 0) {
-              el.innerHTML = '<span style="font-size:0.72rem;color:#a1a1aa;">Localização não encontrada</span>';
-              return;
-            }
-            var lat = parseFloat(data[0].lat);
-            var lon = parseFloat(data[0].lon);
-            el.innerHTML = "";
-            el.style.background = "";
-            el.style.display = "block";
-            var map = L.map(el, { center: [lat, lon], zoom: 15, zoomControl: true, scrollWheelZoom: false });
-            L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-              attribution: '© <a href="https://www.openstreetmap.org/copyright">OSM</a>',
-              maxZoom: 19
-            }).addTo(map);
-            L.marker([lat, lon]).addTo(map);
-          })
-          .catch(function () {
-            el.innerHTML = '<span style="font-size:0.72rem;color:#a1a1aa;">Mapa indisponível</span>';
-          });
-        });
-      </script>
-    <% end %>
   <% end %>
 
   <%# ── Coordenadores (agrupados por pessoa) ── %>
