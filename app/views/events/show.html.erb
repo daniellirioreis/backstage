@@ -31,7 +31,8 @@
       </div>
     </div>
   </div>
-  <div style="display: flex; gap: 0.5rem;">
+  <div style="display: flex; align-items: center; gap: 0.5rem;">
+    <%# ── Ação principal: Ativar / Encerrar ──────────────────────────────── %>
     <% if policy(@event).transition? %>
       <% if @event.draft? %>
         <%= button_to transition_event_path(@event), method: :patch,
@@ -60,41 +61,81 @@
         <% end %>
       <% end %>
     <% end %>
-    <% if policy(@event).budget? %>
-      <%= link_to budget_event_path(@event, format: :pdf), class: "btn-secondary" do %>
-        <i class="bi bi-file-earmark-text"></i> Orçamento
-      <% end %>
-    <% end %>
-    <% if policy(@event).folha_escala? %>
-      <%= link_to folha_escala_event_path(@event), class: "btn-secondary" do %>
-        <i class="bi bi-clipboard-check"></i> Folha de Escala
-      <% end %>
-    <% end %>
 
-    <% if policy(@event).print? %>
-      <%= link_to print_event_path(@event), class: "btn-secondary" do %>
-        <i class="bi bi-printer"></i> Imprimir
-      <% end %>
-    <% end %>
-    <% if policy(@event).credentials? %>
-      <%= link_to credentials_event_path(@event), class: "btn-secondary", target: "_blank" do %>
-        <i class="bi bi-person-badge"></i> Credenciais
-      <% end %>
-    <% end %>
+    <%# ── Editar standalone ───────────────────────────────────────────────── %>
     <% if policy(@event).edit? %>
-      <%= link_to edit_event_badge_config_path(@event), class: "btn-secondary" do %>
-        <i class="bi bi-person-badge"></i> <%= t("badge_config.configure") %>
-      <% end %>
       <%= link_to edit_event_path(@event), class: "btn-secondary" do %>
         <i class="bi bi-pencil"></i> <%= t("actions.edit") %>
       <% end %>
     <% end %>
-    <% if policy(@event).destroy? %>
-      <%= button_to event_path(@event), method: :delete,
-          form: { data: { turbo_confirm: t("confirms.delete") } },
-          class: "btn-danger" do %>
-        <i class="bi bi-trash"></i> <%= t("actions.delete") %>
-      <% end %>
+
+    <%# ── Dropdown "Mais" ─────────────────────────────────────────────────── %>
+    <% has_more_actions = policy(@event).budget? || policy(@event).folha_escala? || policy(@event).print? || policy(@event).credentials? || policy(@event).edit? || policy(@event).destroy? %>
+    <% if has_more_actions %>
+      <div style="position:relative;" data-controller="dropdown">
+        <button type="button"
+                data-action="click->dropdown#toggle"
+                style="display:inline-flex; align-items:center; gap:0.4rem; background:transparent; color:#3f3f46; border:1px solid #e4e4e7; border-radius:7px; padding:0.4rem 0.75rem; font-size:0.82rem; font-weight:500; cursor:pointer;">
+          <i class="bi bi-three-dots"></i> Mais <i class="bi bi-chevron-down" style="font-size:0.65rem;"></i>
+        </button>
+        <div data-dropdown-target="menu"
+             style="display:none; position:absolute; right:0; top:calc(100% + 6px); background:#fff; border:1px solid #e4e4e7; border-radius:10px; box-shadow:0 4px 16px rgba(0,0,0,0.1); min-width:195px; z-index:200; overflow:hidden;">
+
+          <%# Relatórios %>
+          <% if policy(@event).budget? || policy(@event).folha_escala? || policy(@event).print? %>
+            <div style="font-size:0.67rem; font-weight:600; color:#a1a1aa; text-transform:uppercase; letter-spacing:0.05em; padding:0.55rem 1rem 0.2rem;">Relatórios</div>
+            <% if policy(@event).budget? %>
+              <%= link_to budget_event_path(@event, format: :pdf),
+                    style: "display:flex; align-items:center; gap:0.55rem; padding:0.48rem 1rem; font-size:0.82rem; color:#18181b; text-decoration:none;" do %>
+                <i class="bi bi-file-earmark-text" style="color:#71717a; font-size:0.85rem;"></i> Orçamento
+              <% end %>
+            <% end %>
+            <% if policy(@event).folha_escala? %>
+              <%= link_to folha_escala_event_path(@event),
+                    style: "display:flex; align-items:center; gap:0.55rem; padding:0.48rem 1rem; font-size:0.82rem; color:#18181b; text-decoration:none;" do %>
+                <i class="bi bi-clipboard-check" style="color:#71717a; font-size:0.85rem;"></i> Folha de Escala
+              <% end %>
+            <% end %>
+            <% if policy(@event).print? %>
+              <%= link_to print_event_path(@event),
+                    style: "display:flex; align-items:center; gap:0.55rem; padding:0.48rem 1rem; font-size:0.82rem; color:#18181b; text-decoration:none;" do %>
+                <i class="bi bi-printer" style="color:#71717a; font-size:0.85rem;"></i> Imprimir
+              <% end %>
+            <% end %>
+          <% end %>
+
+          <%# Configurações de credencial %>
+          <% if policy(@event).credentials? || policy(@event).edit? %>
+            <% if policy(@event).budget? || policy(@event).folha_escala? || policy(@event).print? %>
+              <div style="height:1px; background:#f4f4f5; margin:0.3rem 0;"></div>
+            <% end %>
+            <div style="font-size:0.67rem; font-weight:600; color:#a1a1aa; text-transform:uppercase; letter-spacing:0.05em; padding:0.55rem 1rem 0.2rem;">Credenciais</div>
+            <% if policy(@event).credentials? %>
+              <%= link_to credentials_event_path(@event), target: "_blank",
+                    style: "display:flex; align-items:center; gap:0.55rem; padding:0.48rem 1rem; font-size:0.82rem; color:#18181b; text-decoration:none;" do %>
+                <i class="bi bi-person-badge" style="color:#71717a; font-size:0.85rem;"></i> Credenciais
+              <% end %>
+            <% end %>
+            <% if policy(@event).edit? %>
+              <%= link_to edit_event_badge_config_path(@event),
+                    style: "display:flex; align-items:center; gap:0.55rem; padding:0.48rem 1rem; font-size:0.82rem; color:#18181b; text-decoration:none;" do %>
+                <i class="bi bi-person-badge" style="color:#71717a; font-size:0.85rem;"></i> <%= t("badge_config.configure") %>
+              <% end %>
+            <% end %>
+          <% end %>
+
+          <%# Excluir %>
+          <% if policy(@event).destroy? %>
+            <div style="height:1px; background:#f4f4f5; margin:0.3rem 0;"></div>
+            <%= button_to event_path(@event), method: :delete,
+                  form: { data: { turbo_confirm: t("confirms.delete") } },
+                  style: "display:flex; align-items:center; gap:0.55rem; padding:0.48rem 1rem; font-size:0.82rem; color:#dc2626; background:transparent; border:none; width:100%; cursor:pointer;" do %>
+              <i class="bi bi-trash" style="font-size:0.85rem;"></i> <%= t("actions.delete") %>
+            <% end %>
+          <% end %>
+
+        </div>
+      </div>
     <% end %>
   </div>
 </div>
