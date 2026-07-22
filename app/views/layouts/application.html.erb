@@ -281,7 +281,7 @@
             </button>
             <span class="event-bar-label">Evento</span>
             <span class="event-bar-sep">·</span>
-            <span class="event-bar-name"><%= current_event.name %></span>
+            <%= link_to current_event.name, event_path(current_event), class: "event-bar-name", style: "text-decoration:none; color:inherit;" %>
             <span class="event-bar-badge badge-<%= current_event.status %>"><%= t("event_statuses.#{current_event.status}") %></span>
             <span class="event-bar-sep">·</span>
             <span class="event-bar-meta">
