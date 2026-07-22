@@ -483,10 +483,18 @@
     /* ── PLANS ───────────────────────────────────────────────── */
     .plans-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      grid-template-columns: repeat(4, 1fr);
       gap: 1.25rem;
       margin-top: 3.5rem;
       align-items: start;
+    }
+
+    @media (max-width: 1024px) {
+      .plans-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    @media (max-width: 600px) {
+      .plans-grid { grid-template-columns: 1fr; }
     }
 
     .plan-card {
@@ -859,23 +867,39 @@
       <div class="plan-billing">para sempre</div>
       <hr class="plan-divider">
       <ul class="plan-features">
-        <li>1 empresa</li>
-        <li>Até 3 eventos simultâneos</li>
-        <li>Até 30 colaboradores</li>
+        <li>1 evento simultâneo</li>
+        <li>Até 20 colaboradores</li>
         <li>Escalas e setores</li>
+        <li>Check-in por QR Code</li>
         <li>Acesso PWA mobile</li>
       </ul>
       <a href="#contact" class="plan-btn plan-btn-ghost">Começar grátis</a>
     </div>
 
+    <div class="plan-card">
+      <div class="plan-name">Básico</div>
+      <div class="plan-price"><sup>R$</sup>89<sub>/mês</sub></div>
+      <div class="plan-billing">para pequenas produtoras</div>
+      <hr class="plan-divider">
+      <ul class="plan-features">
+        <li>Até 5 eventos simultâneos</li>
+        <li>Até 100 colaboradores</li>
+        <li>Escalas e setores</li>
+        <li>Check-in por QR Code</li>
+        <li>Credencial PDF por colaborador</li>
+        <li>Convites por e-mail</li>
+      </ul>
+      <a href="#contact" class="plan-btn plan-btn-ghost">Solicitar demo</a>
+    </div>
+
     <div class="plan-card featured">
       <div class="plan-badge">Mais popular</div>
       <div class="plan-name">Pro</div>
-      <div class="plan-price"><sup>R$</sup>297<sub>/mês</sub></div>
-      <div class="plan-billing">cobrado mensalmente</div>
+      <div class="plan-price"><sup>R$</sup>199<sub>/mês</sub></div>
+      <div class="plan-billing">para produtoras com eventos frequentes</div>
       <hr class="plan-divider">
       <ul class="plan-features">
-        <li>Eventos ilimitados</li>
+        <li>Até 20 eventos simultâneos</li>
         <li>Até 500 colaboradores</li>
         <li>Dashboard financeiro completo</li>
         <li>Mapa de calor e analytics</li>
@@ -888,13 +912,13 @@
 
     <div class="plan-card">
       <div class="plan-name">Enterprise</div>
-      <div class="plan-price" style="font-size:1.75rem;">Sob consulta</div>
-      <div class="plan-billing">por volume e SLA</div>
+      <div class="plan-price"><sup>R$</sup>499<sub>/mês</sub></div>
+      <div class="plan-billing">eventos e colaboradores ilimitados</div>
       <hr class="plan-divider">
       <ul class="plan-features">
-        <li>Multi-empresa / holding</li>
+        <li>Eventos ilimitados</li>
         <li>Colaboradores ilimitados</li>
-        <li>Integrações customizadas</li>
+        <li>Multi-empresa / holding</li>
         <li>Relatórios personalizados</li>
         <li>SLA garantido + CSM dedicado</li>
         <li>Treinamento da equipe</li>
