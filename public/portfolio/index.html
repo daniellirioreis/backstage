@@ -343,39 +343,49 @@
       line-height: 1.7;
     }
 
-    /* ── FEATURES ────────────────────────────────────────────── */
-    .features-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-      gap: 1.25rem;
-      margin-top: 3.5rem;
+    /* ── FEATURES TABLE ──────────────────────────────────────── */
+    .features-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 3rem;
     }
 
-    .feature-card {
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 1.75rem;
-      transition: border-color .2s, transform .2s;
+    .features-table tr {
+      border-bottom: 1px solid var(--border);
     }
 
-    .feature-card:hover { border-color: var(--green-border); transform: translateY(-3px); }
+    .features-table tr:last-child { border-bottom: none; }
 
-    .feature-icon {
-      width: 44px;
-      height: 44px;
-      border-radius: 10px;
-      background: var(--green-bg);
-      border: 1px solid var(--green-border);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 1.2rem;
-      margin-bottom: 1.1rem;
+    .features-table td {
+      padding: 1rem 1.25rem;
+      vertical-align: middle;
     }
 
-    .feature-title { font-size: 1rem; font-weight: 700; margin-bottom: .5rem; color: var(--text); }
-    .feature-desc  { font-size: .875rem; color: var(--muted); line-height: 1.65; }
+    .features-table .feat-icon {
+      width: 2.5rem;
+      font-size: 1.15rem;
+      text-align: center;
+      color: var(--muted2);
+    }
+
+    .features-table .feat-name {
+      width: 220px;
+      font-weight: 600;
+      font-size: .9rem;
+      color: var(--text);
+      white-space: nowrap;
+    }
+
+    .features-table .feat-desc {
+      font-size: .85rem;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    @media (max-width: 640px) {
+      .features-table .feat-name { width: auto; white-space: normal; }
+      .features-table .feat-desc { display: none; }
+    }
 
     /* ── SCREENSHOTS ─────────────────────────────────────────── */
     .screenshots { max-width: 1100px; }
@@ -712,48 +722,50 @@
   <h2 class="section-title">Tudo que você precisa<br>para operar um evento</h2>
   <p class="section-sub">Do cadastro da equipe ao fechamento financeiro, o Backstage cobre cada etapa da operação.</p>
 
-  <div class="features-grid">
-    <div class="feature-card">
-      <div class="feature-icon">📅</div>
-      <div class="feature-title">Escalas Inteligentes</div>
-      <p class="feature-desc">Monte turnos, defina funções e distribua colaboradores por setor com visualização de timeline interativa. Detecta conflitos automaticamente.</p>
-    </div>
-    <div class="feature-card">
-      <div class="feature-icon">💰</div>
-      <div class="feature-title">Dashboard Financeiro</div>
-      <p class="feature-desc">Acompanhe custo médio por evento, evolução mensal dos últimos 12 meses e breakdown por função — tudo em gráficos claros e atualizados.</p>
-    </div>
-    <div class="feature-card">
-      <div class="feature-icon">🗺️</div>
-      <div class="feature-title">Mapa de Calor por Setor</div>
-      <p class="feature-desc">Visualize gastos cruzando tipo de evento × setor (palco, segurança, recepção…) para identificar onde o custo está mais concentrado.</p>
-    </div>
-    <div class="feature-card">
-      <div class="feature-icon">👥</div>
-      <div class="feature-title">Gestão de Equipes</div>
-      <p class="feature-desc">Cadastre setores, crie equipes e defina capacidade planejada. Acompanhe o preenchimento real com barra de progresso em tempo real.</p>
-    </div>
-    <div class="feature-card">
-      <div class="feature-icon">📨</div>
-      <div class="feature-title">Convite por Link</div>
-      <p class="feature-desc">Convide colaboradores diretamente por e-mail com link de acesso. Perfis e permissões são configurados automaticamente no onboarding.</p>
-    </div>
-    <div class="feature-card">
-      <div class="feature-icon">📱</div>
-      <div class="feature-title">PWA Mobile-First</div>
-      <p class="feature-desc">Instala como app no celular. Coordenadores e colaboradores consultam escala, checam setor e reportam ocorrências direto do smartphone — mesmo offline.</p>
-    </div>
-    <div class="feature-card">
-      <div class="feature-icon">🔲</div>
-      <div class="feature-title">Check-in e Check-out por QR Code</div>
-      <p class="feature-desc">Registre a entrada e saída de cada colaborador escaneando o QR Code da credencial. Controle de presença em tempo real, sem papel e sem margem para erro.</p>
-    </div>
-    <div class="feature-card">
-      <div class="feature-icon">📍</div>
-      <div class="feature-title">Mapa Interativo do Evento</div>
-      <p class="feature-desc">Colaboradores veem o local do evento em mapa interativo diretamente em "Minha Escala". Um clique em "Como chegar" abre o app de navegação com o endereço já preenchido.</p>
-    </div>
-  </div>
+  <table class="features-table">
+    <tbody>
+      <tr>
+        <td class="feat-icon">📅</td>
+        <td class="feat-name">Escalas Inteligentes</td>
+        <td class="feat-desc">Monte turnos, defina funções e distribua colaboradores por setor com visualização de timeline interativa. Detecta conflitos automaticamente.</td>
+      </tr>
+      <tr>
+        <td class="feat-icon">💰</td>
+        <td class="feat-name">Dashboard Financeiro</td>
+        <td class="feat-desc">Acompanhe custo médio por evento, evolução mensal dos últimos 12 meses e breakdown por função — tudo em gráficos claros e atualizados.</td>
+      </tr>
+      <tr>
+        <td class="feat-icon">🗺️</td>
+        <td class="feat-name">Mapa de Calor por Setor</td>
+        <td class="feat-desc">Visualize gastos cruzando tipo de evento × setor (palco, segurança, recepção…) para identificar onde o custo está mais concentrado.</td>
+      </tr>
+      <tr>
+        <td class="feat-icon">👥</td>
+        <td class="feat-name">Gestão de Equipes</td>
+        <td class="feat-desc">Cadastre setores, crie equipes e defina capacidade planejada. Acompanhe o preenchimento real com barra de progresso em tempo real.</td>
+      </tr>
+      <tr>
+        <td class="feat-icon">📨</td>
+        <td class="feat-name">Convite por Link</td>
+        <td class="feat-desc">Convide colaboradores diretamente por e-mail com link de acesso. Perfis e permissões são configurados automaticamente no onboarding.</td>
+      </tr>
+      <tr>
+        <td class="feat-icon">📱</td>
+        <td class="feat-name">PWA Mobile-First</td>
+        <td class="feat-desc">Instala como app no celular. Coordenadores e colaboradores consultam escala, checam setor e reportam ocorrências direto do smartphone — mesmo offline.</td>
+      </tr>
+      <tr>
+        <td class="feat-icon">🔲</td>
+        <td class="feat-name">Check-in por QR Code</td>
+        <td class="feat-desc">Registre a entrada e saída de cada colaborador escaneando o QR Code da credencial. Controle de presença em tempo real, sem papel.</td>
+      </tr>
+      <tr>
+        <td class="feat-icon">📍</td>
+        <td class="feat-name">Mapa Interativo do Evento</td>
+        <td class="feat-desc">Colaboradores veem o local do evento em mapa interativo diretamente em "Minha Escala". Um clique em "Como chegar" abre o app de navegação.</td>
+      </tr>
+    </tbody>
+  </table>
 </section>
 
 <!-- ── SCREENSHOTS ────────────────────────────────────────────── -->
