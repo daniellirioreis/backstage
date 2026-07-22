@@ -378,36 +378,78 @@
     .feature-desc  { font-size: .875rem; color: var(--muted); line-height: 1.65; }
 
     /* ── SCREENSHOTS ─────────────────────────────────────────── */
-    .screenshots { max-width: 1200px; }
+    .screenshots { max-width: 1100px; }
     .screenshots-header { margin-bottom: 3rem; }
 
-    .gallery {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 1.25rem;
-    }
-
-    .gallery-item {
+    /* ── SCREENSHOTS CAROUSEL ──────────────────────────────────── */
+    .scr-carousel {
+      position: relative;
       border-radius: var(--radius);
       overflow: hidden;
       border: 1px solid var(--border);
       background: var(--bg-card);
-      transition: border-color .2s, transform .2s, box-shadow .2s;
+      box-shadow: 0 30px 60px rgba(0,0,0,.5);
+    }
+
+    .scr-track { position: relative; width: 100%; }
+
+    .scr-slide {
+      display: none;
+      cursor: zoom-in;
+    }
+    .scr-slide.active { display: block; }
+    .scr-slide img { width: 100%; display: block; }
+
+    .scr-caption {
+      padding: .85rem 1.25rem;
+      border-top: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+    .scr-caption strong { font-size: .85rem; font-weight: 600; color: var(--text); }
+    .scr-caption span   { font-size: .75rem; color: var(--muted2); }
+
+    .scr-arrow {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      background: rgba(0,0,0,.6);
+      border: 1px solid var(--border2);
+      color: var(--text);
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       cursor: pointer;
+      font-size: 1rem;
+      z-index: 10;
+      transition: background .2s;
+      user-select: none;
     }
+    .scr-arrow:hover { background: rgba(0,0,0,.85); }
+    .scr-arrow.prev { left: .85rem; }
+    .scr-arrow.next { right: .85rem; }
 
-    .gallery-item:hover {
-      border-color: var(--green-border);
-      transform: translateY(-4px);
-      box-shadow: 0 20px 40px rgba(0,0,0,.4), 0 0 0 1px var(--green-border);
+    .scr-dots {
+      display: flex;
+      justify-content: center;
+      gap: .45rem;
+      margin-top: 1.1rem;
     }
-
-    .gallery-item.wide { grid-column: span 2; }
-
-    .gallery-caption { padding: .85rem 1.1rem; border-top: 1px solid var(--border); }
-    .gallery-caption strong { display: block; font-size: .82rem; font-weight: 600; color: var(--text); }
-    .gallery-caption span   { font-size: .75rem; color: var(--muted2); }
-    .gallery-item img { width: 100%; display: block; }
+    .scr-dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--border2);
+      border: none;
+      cursor: pointer;
+      padding: 0;
+      transition: background .25s, transform .25s;
+    }
+    .scr-dot.active { background: var(--green); transform: scale(1.5); }
 
     /* ── LIGHTBOX ────────────────────────────────────────────── */
     .lightbox {
@@ -745,79 +787,49 @@
     <p class="section-sub">Design limpo e escuro, pensado para uso intenso em campo — sem distrações, com dados sempre visíveis.</p>
   </div>
 
-  <div class="gallery">
-    <div class="gallery-item wide" onclick="openLightbox(this.querySelector('img').src)">
-      <img src="./screen-financeiro.png" alt="Dashboard financeiro do evento">
-      <div class="gallery-caption">
-        <strong>Dashboard Financeiro</strong>
-        <span>Custo total, evolução mensal e breakdown por função</span>
+  <div class="scr-carousel" id="scrCarousel">
+    <div class="scr-track">
+      <div class="scr-slide active" onclick="openLightbox(this.querySelector('img').src)">
+        <img src="./screen-financeiro.png" alt="Dashboard financeiro">
+        <div class="scr-caption"><strong>Dashboard Financeiro</strong><span>Custo total, evolução mensal e breakdown por função</span></div>
+      </div>
+      <div class="scr-slide" onclick="openLightbox(this.querySelector('img').src)">
+        <img src="./screen-timeline.png" alt="Timeline de escalas">
+        <div class="scr-caption"><strong>Timeline de Escalas</strong><span>Visualização por turno e função de toda a equipe do evento</span></div>
+      </div>
+      <div class="scr-slide" onclick="openLightbox(this.querySelector('img').src)">
+        <img src="./screen-equipes.png" alt="Painel de equipes">
+        <div class="scr-caption"><strong>Gestão de Equipes</strong><span>Preenchimento por setor · Coordenadores · Membros</span></div>
+      </div>
+      <div class="scr-slide" onclick="openLightbox(this.querySelector('img').src)">
+        <img src="./screen-presencas.png" alt="Controle de presenças">
+        <div class="scr-caption"><strong>Controle de Presenças</strong><span>Check-in via QR code · Status em tempo real por colaborador</span></div>
+      </div>
+      <div class="scr-slide" onclick="openLightbox(this.querySelector('img').src)">
+        <img src="./screen-fechamento.png" alt="Fechamento financeiro">
+        <div class="scr-caption"><strong>Fechamento Financeiro</strong><span>Aprovar pagamentos e fechar evento com totais consolidados</span></div>
+      </div>
+      <div class="scr-slide" onclick="openLightbox(this.querySelector('img').src)">
+        <img src="./screen-setor-resumo.png" alt="Resumo por setor">
+        <div class="scr-caption"><strong>Resumo por Setor</strong><span>Mapa de calor · Custo cruzado por tipo de evento e setor</span></div>
+      </div>
+      <div class="scr-slide" onclick="openLightbox(this.querySelector('img').src)">
+        <img src="./screen-events.png" alt="Lista de eventos">
+        <div class="scr-caption"><strong>Lista de Eventos</strong><span>Visão geral de todos os eventos · Status · Datas</span></div>
+      </div>
+      <div class="scr-slide" onclick="openLightbox(this.querySelector('img').src)">
+        <img src="./screen-setup-escalas.png" alt="Setup de escalas">
+        <div class="scr-caption"><strong>Configuração de Escalas</strong><span>Distribua turnos, funções e horários por membro</span></div>
+      </div>
+      <div class="scr-slide" onclick="openLightbox(this.querySelector('img').src)">
+        <img src="./configurar-credencial.png" alt="Credencial do colaborador">
+        <div class="scr-caption"><strong>Credencial do Colaborador</strong><span>Configure layout, campos visíveis e gere crachás em PDF por evento</span></div>
       </div>
     </div>
-
-    <div class="gallery-item" onclick="openLightbox(this.querySelector('img').src)">
-      <img src="./screen-equipes.png" alt="Painel de equipes">
-      <div class="gallery-caption">
-        <strong>Gestão de Equipes</strong>
-        <span>Preenchimento por setor · Coordenadores · Membros</span>
-      </div>
-    </div>
-
-    <div class="gallery-item" onclick="openLightbox(this.querySelector('img').src)">
-      <img src="./screen-setor-resumo.png" alt="Resumo por setor">
-      <div class="gallery-caption">
-        <strong>Resumo por Setor</strong>
-        <span>Mapa de calor · Custo cruzado por tipo de evento e setor</span>
-      </div>
-    </div>
-
-    <div class="gallery-item wide" onclick="openLightbox(this.querySelector('img').src)">
-      <img src="./screen-timeline.png" alt="Timeline de escalas">
-      <div class="gallery-caption">
-        <strong>Timeline de Escalas</strong>
-        <span>Visualização por turno e função de toda a equipe do evento</span>
-      </div>
-    </div>
-
-    <div class="gallery-item" onclick="openLightbox(this.querySelector('img').src)">
-      <img src="./screen-fechamento.png" alt="Fechamento financeiro">
-      <div class="gallery-caption">
-        <strong>Fechamento Financeiro</strong>
-        <span>Aprovar pagamentos e fechar evento com totais consolidados</span>
-      </div>
-    </div>
-
-    <div class="gallery-item" onclick="openLightbox(this.querySelector('img').src)">
-      <img src="./screen-presencas.png" alt="Controle de presenças">
-      <div class="gallery-caption">
-        <strong>Controle de Presenças</strong>
-        <span>Check-in via QR code · Status em tempo real por colaborador</span>
-      </div>
-    </div>
-
-    <div class="gallery-item" onclick="openLightbox(this.querySelector('img').src)">
-      <img src="./screen-events.png" alt="Lista de eventos">
-      <div class="gallery-caption">
-        <strong>Lista de Eventos</strong>
-        <span>Visão geral de todos os eventos · Status · Datas</span>
-      </div>
-    </div>
-
-    <div class="gallery-item" onclick="openLightbox(this.querySelector('img').src)">
-      <img src="./screen-setup-escalas.png" alt="Setup de escalas">
-      <div class="gallery-caption">
-        <strong>Configuração de Escalas</strong>
-        <span>Distribua turnos, funções e horários por membro</span>
-      </div>
-    </div>
-
-    <div class="gallery-item wide" onclick="openLightbox(this.querySelector('img').src)">
-      <img src="./configurar-credencial.png" alt="Configurar credencial">
-      <div class="gallery-caption">
-        <strong>Credencial do Colaborador</strong>
-        <span>Configure layout, campos visíveis e gere crachás em PDF por evento</span>
-      </div>
-    </div>
+    <button class="scr-arrow prev" onclick="scrGo(-1)">&#8592;</button>
+    <button class="scr-arrow next" onclick="scrGo(1)">&#8594;</button>
   </div>
+  <div class="scr-dots" id="scrDots"></div>
 </section>
 
 <!-- ── HOW IT WORKS ───────────────────────────────────────────── -->
@@ -1027,7 +1039,32 @@
     });
   }, { threshold: 0.1 });
 
-  document.querySelectorAll('.feature-card, .gallery-item, .plan-card, .step').forEach(el => {
+  // ── SCREENSHOTS CAROUSEL ───────────────────────────────────
+  (function () {
+    const slides  = document.querySelectorAll('#scrCarousel .scr-slide');
+    const dotsEl  = document.getElementById('scrDots');
+    let current   = 0;
+
+    // build dots
+    slides.forEach((_, i) => {
+      const d = document.createElement('button');
+      d.className = 'scr-dot' + (i === 0 ? ' active' : '');
+      d.addEventListener('click', () => scrGoTo(i));
+      dotsEl.appendChild(d);
+    });
+
+    function scrGoTo(idx) {
+      slides[current].classList.remove('active');
+      dotsEl.children[current].classList.remove('active');
+      current = (idx + slides.length) % slides.length;
+      slides[current].classList.add('active');
+      dotsEl.children[current].classList.add('active');
+    }
+
+    window.scrGo = (dir) => scrGoTo(current + dir);
+  })();
+
+  document.querySelectorAll('.feature-card, .plan-card, .step').forEach(el => {
     el.style.opacity = '0';
     el.style.transform = 'translateY(20px)';
     el.style.transition = 'opacity .5s ease, transform .5s ease';
