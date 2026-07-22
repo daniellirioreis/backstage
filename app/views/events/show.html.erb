@@ -70,7 +70,7 @@
     <% end %>
 
     <%# ── Dropdown "Mais" ─────────────────────────────────────────────────── %>
-    <% has_more_actions = policy(@event).budget? || policy(@event).folha_escala? || policy(@event).print? || policy(@event).credentials? || policy(@event).edit? || policy(@event).destroy? %>
+    <% has_more_actions = policy(@event).budget? || policy(@event).shift_roster? || policy(@event).print? || policy(@event).credentials? || policy(@event).edit? || policy(@event).destroy? %>
     <% if has_more_actions %>
       <div style="position:relative;" data-controller="dropdown">
         <button type="button"
@@ -82,7 +82,7 @@
              style="display:none; position:absolute; right:0; top:calc(100% + 6px); background:#fff; border:1px solid #e4e4e7; border-radius:10px; box-shadow:0 4px 16px rgba(0,0,0,0.1); min-width:195px; z-index:200; overflow:hidden;">
 
           <%# Relatórios %>
-          <% if policy(@event).budget? || policy(@event).folha_escala? || policy(@event).print? %>
+          <% if policy(@event).budget? || policy(@event).shift_roster? || policy(@event).print? %>
             <div style="font-size:0.67rem; font-weight:600; color:#a1a1aa; text-transform:uppercase; letter-spacing:0.05em; padding:0.55rem 1rem 0.2rem;">Relatórios</div>
             <% if policy(@event).budget? %>
               <%= link_to budget_event_path(@event, format: :pdf),
@@ -90,8 +90,8 @@
                 <i class="bi bi-file-earmark-text" style="color:#71717a; font-size:0.85rem;"></i> Orçamento
               <% end %>
             <% end %>
-            <% if policy(@event).folha_escala? %>
-              <%= link_to folha_escala_event_path(@event),
+            <% if policy(@event).shift_roster? %>
+              <%= link_to shift_roster_event_path(@event),
                     style: "display:flex; align-items:center; gap:0.55rem; padding:0.48rem 1rem; font-size:0.82rem; color:#18181b; text-decoration:none;" do %>
                 <i class="bi bi-clipboard-check" style="color:#71717a; font-size:0.85rem;"></i> Folha de Escala
               <% end %>
@@ -106,7 +106,7 @@
 
           <%# Configurações de credencial %>
           <% if policy(@event).credentials? || policy(@event).edit? %>
-            <% if policy(@event).budget? || policy(@event).folha_escala? || policy(@event).print? %>
+            <% if policy(@event).budget? || policy(@event).shift_roster? || policy(@event).print? %>
               <div style="height:1px; background:#f4f4f5; margin:0.3rem 0;"></div>
             <% end %>
             <div style="font-size:0.67rem; font-weight:600; color:#a1a1aa; text-transform:uppercase; letter-spacing:0.05em; padding:0.55rem 1rem 0.2rem;">Credenciais</div>

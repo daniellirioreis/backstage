@@ -1,13 +1,13 @@
 <div class="page-header">
-  <h1><%= t("folha_escala.title") %> &mdash; <%= @event.name %></h1>
+  <h1><%= t("shift_roster.title") %> &mdash; <%= @event.name %></h1>
 </div>
 
 <div class="content-card" style="max-width: 560px;">
 
   <div class="mb-3">
-    <label class="form-label"><%= t("folha_escala.filter.date") %></label>
+    <label class="form-label"><%= t("shift_roster.filter.date") %></label>
     <select id="fe_date" class="form-select" onchange="atualizarLink()">
-      <option value=""><%= t("folha_escala.filter.all_dates") %></option>
+      <option value=""><%= t("shift_roster.filter.all_dates") %></option>
       <% @available_dates.each do |d| %>
         <option value="<%= d %>"><%= l(d, format: :long) %></option>
       <% end %>
@@ -15,9 +15,9 @@
   </div>
 
   <div class="mb-3">
-    <label class="form-label"><%= t("folha_escala.filter.sector") %></label>
+    <label class="form-label"><%= t("shift_roster.filter.sector") %></label>
     <select id="fe_sector_id" class="form-select" onchange="filtrarEquipes(); atualizarLink()">
-      <option value=""><%= t("folha_escala.filter.all_sectors") %></option>
+      <option value=""><%= t("shift_roster.filter.all_sectors") %></option>
       <% @sectors.each do |s| %>
         <option value="<%= s.id %>"><%= s.name %></option>
       <% end %>
@@ -25,9 +25,9 @@
   </div>
 
   <div class="mb-4">
-    <label class="form-label"><%= t("folha_escala.filter.team") %></label>
+    <label class="form-label"><%= t("shift_roster.filter.team") %></label>
     <select id="fe_team_id" class="form-select" onchange="atualizarLink()">
-      <option value=""><%= t("folha_escala.filter.all_teams") %></option>
+      <option value=""><%= t("shift_roster.filter.all_teams") %></option>
       <% @sectors.each do |s| %>
         <% s.teams.order(:name).each do |tm| %>
           <option value="<%= tm.id %>" data-sector="<%= s.id %>"><%= tm.name %></option>
@@ -38,11 +38,11 @@
 
   <div class="d-flex gap-2">
     <a id="fe-pdf-link"
-       href="<%= folha_escala_event_path(@event, format: :pdf) %>"
+       href="<%= shift_roster_event_path(@event, format: :pdf) %>"
        data-turbo="false"
        class="btn-primary">
       <i class="bi bi-file-earmark-pdf"></i>
-      <%= t("folha_escala.filter.generate") %>
+      <%= t("shift_roster.filter.generate") %>
     </a>
     <%= link_to event_path(@event), class: "btn-secondary" do %>
       <%= t("actions.cancel") %>
@@ -52,7 +52,7 @@
 </div>
 
 <script>
-  var feBase = "<%= folha_escala_event_path(@event, format: :pdf) %>";
+  var feBase = "<%= shift_roster_event_path(@event, format: :pdf) %>";
 
   function filtrarEquipes() {
     var sectorId = document.getElementById("fe_sector_id").value;

@@ -22,7 +22,7 @@ class EventPolicy < ApplicationPolicy
 
   def print?        = can?("print")
   def budget?       = can?("print")
-  def folha_escala? = can?("print")
+  def shift_roster? = can?("print")
   def manual_entry? = can?("print")
   def credentials?  = can?("print")
 

@@ -1,5 +1,5 @@
 class EventsController < ApplicationController
-  before_action :set_event, only: %i[show edit update destroy print budget folha_escala manual_entry save_manual_entry credentials transition revert]
+  before_action :set_event, only: %i[show edit update destroy print budget shift_roster manual_entry save_manual_entry credentials transition revert]
 
   TRANSITIONS = { "draft" => "active", "active" => "closed" }.freeze
 
@@ -289,8 +289,8 @@ class EventsController < ApplicationController
     end
   end
 
-  def folha_escala
-    authorize @event, :folha_escala?
+  def shift_roster
+    authorize @event, :shift_roster?
     @company = @event.company
     @sectors = @event.sectors.includes(:teams).order(:name)
     @available_dates = Shift.joins(team: :sector)
@@ -313,8 +313,8 @@ class EventsController < ApplicationController
         @selected_date   = @date_filter ? Date.parse(@date_filter) : nil
         @selected_sector = @sector_id ? @sectors.find { |s| s.id.to_s == @sector_id } : nil
 
-        render pdf:         "folha-escala-#{@event.name.parameterize}",
-               template:    "events/folha_escala_pdf",
+        render pdf:         "shift-roster-#{@event.name.parameterize}",
+               template:    "events/shift_roster_pdf",
                layout:      "pdf",
                formats:     [:html],
                page_size:   "A4",

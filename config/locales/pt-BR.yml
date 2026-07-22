@@ -46,7 +46,7 @@ pt-BR:
       value: "Valor"
       status: "Origem"
 
-  folha_escala:
+  shift_roster:
     title: "Folha de Escala"
     filter:
       sector: "Setor"
