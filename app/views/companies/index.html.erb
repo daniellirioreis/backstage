@@ -1,51 +1,128 @@
 <div class="page-header">
-  <h1><%= Company.model_name.human(count: 2) %></h1>
-  <%= link_to new_company_path, class: "btn-primary" do %>
-    <i class="bi bi-plus"></i> <%= t("actions.new", model: Company.model_name.human) %>
-  <% end %>
+  <div style="display:flex; align-items:center; justify-content:space-between; gap:1rem; flex-wrap:wrap;">
+    <h1 style="margin:0;"><%= Company.model_name.human(count: 2) %></h1>
+    <%= link_to new_company_path, class: "btn-primary" do %>
+      <i class="bi bi-plus"></i> Nova empresa
+    <% end %>
+  </div>
 </div>
+
+<% if current_user.admin? %>
+  <%# ── Métricas ──────────────────────────────────────────────────────────── %>
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:1rem;margin-bottom:1.5rem;">
+    <div class="content-card" style="text-align:center;padding:1rem;">
+      <div style="font-size:1.5rem;font-weight:800;color:#7c3aed;">R$ <%= "%.2f" % @mrr %></div>
+      <div style="font-size:0.72rem;color:#71717a;text-transform:uppercase;letter-spacing:0.05em;margin-top:2px;">MRR</div>
+    </div>
+    <div class="content-card" style="text-align:center;padding:1rem;">
+      <div style="font-size:1.5rem;font-weight:800;color:#18181b;"><%= @total %></div>
+      <div style="font-size:0.72rem;color:#71717a;text-transform:uppercase;letter-spacing:0.05em;margin-top:2px;">Total</div>
+    </div>
+    <div class="content-card" style="text-align:center;padding:1rem;">
+      <div style="font-size:1.5rem;font-weight:800;color:#16a34a;"><%= @total_active %></div>
+      <div style="font-size:0.72rem;color:#71717a;text-transform:uppercase;letter-spacing:0.05em;margin-top:2px;">Ativas</div>
+    </div>
+    <div class="content-card" style="text-align:center;padding:1rem;">
+      <div style="font-size:1.5rem;font-weight:800;color:#dc2626;"><%= @total_overdue %></div>
+      <div style="font-size:0.72rem;color:#71717a;text-transform:uppercase;letter-spacing:0.05em;margin-top:2px;">Inadimplentes</div>
+    </div>
+    <div class="content-card" style="text-align:center;padding:1rem;">
+      <div style="font-size:1.5rem;font-weight:800;color:#71717a;"><%= @total_inactive %></div>
+      <div style="font-size:0.72rem;color:#71717a;text-transform:uppercase;letter-spacing:0.05em;margin-top:2px;">Inativas</div>
+    </div>
+  </div>
+
+  <%# ── Filtros ───────────────────────────────────────────────────────────── %>
+  <div style="display:flex;gap:0.5rem;margin-bottom:1rem;flex-wrap:wrap;">
+    <%= link_to "Todas", companies_path,
+          style: "font-size:0.78rem;font-weight:600;padding:5px 14px;border-radius:99px;text-decoration:none;#{@status_filter.nil? ? 'background:#18181b;color:#fff;' : 'background:#f4f4f5;color:#52525b;'}" %>
+    <%= link_to "Ativas", companies_path(status: "active"),
+          style: "font-size:0.78rem;font-weight:600;padding:5px 14px;border-radius:99px;text-decoration:none;#{@status_filter == 'active' ? 'background:#16a34a;color:#fff;' : 'background:#f4f4f5;color:#52525b;'}" %>
+    <%= link_to "Inadimplentes", companies_path(status: "overdue"),
+          style: "font-size:0.78rem;font-weight:600;padding:5px 14px;border-radius:99px;text-decoration:none;#{@status_filter == 'overdue' ? 'background:#dc2626;color:#fff;' : 'background:#f4f4f5;color:#52525b;'}" %>
+    <%= link_to "Pendentes", companies_path(status: "pending"),
+          style: "font-size:0.78rem;font-weight:600;padding:5px 14px;border-radius:99px;text-decoration:none;#{@status_filter == 'pending' ? 'background:#b45309;color:#fff;' : 'background:#f4f4f5;color:#52525b;'}" %>
+    <%= link_to "Inativas", companies_path(status: "inactive"),
+          style: "font-size:0.78rem;font-weight:600;padding:5px 14px;border-radius:99px;text-decoration:none;#{@status_filter == 'inactive' ? 'background:#71717a;color:#fff;' : 'background:#f4f4f5;color:#52525b;'}" %>
+  </div>
+<% end %>
+
+<% status_styles = {
+  "active"    => { bg: "#dcfce7", color: "#15803d", label: "Ativa" },
+  "pending"   => { bg: "#fff7ed", color: "#b45309", label: "Pendente" },
+  "overdue"   => { bg: "#fef2f2", color: "#dc2626", label: "Inadimplente" },
+  "cancelled" => { bg: "#f4f4f5", color: "#71717a", label: "Cancelada" },
+  "inactive"  => { bg: "#f4f4f5", color: "#71717a", label: "Inativa" },
+} %>
 
 <% if @companies.empty? %>
   <div class="content-card" style="text-align:center; padding:3rem; color:#a1a1aa;">
     <i class="bi bi-building" style="font-size:2rem; display:block; margin-bottom:0.5rem;"></i>
-    <p style="margin:0; font-size:0.88rem;"><%= t("companies.empty") %></p>
+    <p style="margin:0; font-size:0.88rem;">Nenhuma empresa encontrada.</p>
   </div>
 <% else %>
   <div style="display:flex; flex-direction:column; gap:0.75rem;">
     <% @companies.each do |company| %>
-      <div class="content-card" style="padding:1rem 1.25rem; display:flex; align-items:center; gap:1rem;">
-        <%# Logo %>
-        <div style="width:48px; height:48px; border-radius:8px; background:#f4f4f5; border:1px solid #e4e4e7; display:flex; align-items:center; justify-content:center; overflow:hidden; flex-shrink:0;">
-          <% if company.logo.attached? %>
-            <%= image_tag company.logo, style:"width:100%;height:100%;object-fit:contain;" %>
-          <% else %>
-            <i class="bi bi-building" style="color:#a1a1aa; font-size:1.2rem;"></i>
-          <% end %>
-        </div>
-
-        <%# Info %>
-        <div style="flex:1; min-width:0;">
-          <div style="font-size:0.95rem; font-weight:700; color:#18181b;"><%= company.name %></div>
-          <div style="display:flex; gap:1rem; margin-top:3px; flex-wrap:wrap;">
-            <% if company.cnpj.present? %>
-              <span style="font-size:0.72rem; color:#71717a; font-family:monospace;"><%= company.cnpj %></span>
+      <% st = status_styles[company.subscription_status] || status_styles["inactive"] %>
+      <div class="content-card" style="padding:1rem 1.25rem;">
+        <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap;">
+          <%# Logo %>
+          <div style="width:44px;height:44px;border-radius:8px;background:#f4f4f5;border:1px solid #e4e4e7;display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;">
+            <% if company.logo.attached? %>
+              <%= image_tag company.logo, style:"width:100%;height:100%;object-fit:contain;" %>
+            <% else %>
+              <i class="bi bi-building" style="color:#a1a1aa;font-size:1.1rem;"></i>
             <% end %>
-            <% if company.city.present? %>
-              <span style="font-size:0.72rem; color:#71717a;"><i class="bi bi-geo-alt"></i> <%= company.city %><%= company.state.present? ? ", #{company.state}" : "" %></span>
-            <% end %>
-            <span style="font-size:0.72rem; color:#71717a;"><i class="bi bi-calendar3"></i> <%= t("companies.events_count", count: company.events.count) %></span>
-            <span style="font-size:0.72rem; color:#71717a;"><i class="bi bi-people"></i> <%= t("companies.users_count", count: company.users.count) %></span>
           </div>
-        </div>
 
-        <%# Primary color %>
-        <div style="width:20px; height:20px; border-radius:50%; background:<%= company.primary_color %>; border:2px solid #e4e4e7; flex-shrink:0;" title="<%= t("companies.primary_color_title", color: company.primary_color) %>"></div>
+          <%# Info principal %>
+          <div style="flex:1;min-width:180px;">
+            <div style="font-size:0.95rem;font-weight:700;color:#18181b;"><%= company.name %></div>
+            <div style="display:flex;gap:0.75rem;margin-top:3px;flex-wrap:wrap;align-items:center;">
+              <% if company.plan.present? %>
+                <span style="font-size:0.72rem;color:#7c3aed;font-weight:600;">
+                  <%= company.plan.name %>
+                  <% if company.plan.price.to_f > 0 %>
+                    — R$ <%= "%.2f" % company.plan.price %>/mês
+                  <% else %>
+                    — Gratuito
+                  <% end %>
+                </span>
+              <% else %>
+                <span style="font-size:0.72rem;color:#a1a1aa;">Sem plano</span>
+              <% end %>
+              <span style="font-size:0.72rem;color:#71717a;"><i class="bi bi-calendar3"></i> <%= company.events.count %> eventos</span>
+              <span style="font-size:0.72rem;color:#71717a;"><i class="bi bi-people"></i> <%= company.company_users.count %> colaboradores</span>
+              <% if company.subscription_expires_at.present? && company.subscription_status == "active" %>
+                <% days = (company.subscription_expires_at.to_date - Date.today).to_i %>
+                <span style="font-size:0.72rem;color:<%= days <= 5 ? '#dc2626' : '#71717a' %>;">
+                  <i class="bi bi-clock"></i>
+                  <% if days <= 0 %>vencida<% elsif days == 1 %>vence amanhã<% else %>vence em <%= days %> dias<% end %>
+                </span>
+              <% end %>
+            </div>
+          </div>
 
-        <%# Actions %>
-        <div style="display:flex; gap:0.5rem; flex-shrink:0;">
-          <%= link_to company_path(company), class:"btn-secondary", style:"font-size:0.78rem; padding:0.3rem 0.6rem;" do %>
-            <i class="bi bi-gear"></i> <%= t("companies.settings") %>
-          <% end %>
+          <%# Status badge %>
+          <span style="font-size:0.72rem;font-weight:700;padding:3px 10px;border-radius:99px;background:<%= st[:bg] %>;color:<%= st[:color] %>;white-space:nowrap;">
+            <%= st[:label] %>
+          </span>
+
+          <%# Ações %>
+          <div style="display:flex;gap:0.5rem;flex-shrink:0;align-items:center;">
+            <% if current_user.admin? %>
+              <%# Trocar plano inline %>
+              <%= form_with url: set_plan_company_path(company), method: :patch, data: { turbo: false }, style: "display:flex;gap:0.4rem;align-items:center;" do |f| %>
+                <%= f.select :plan_id, @plans.map { |p| [p.price.to_f > 0 ? "#{p.name} (R$ #{"%.2f" % p.price})" : "#{p.name} (Grátis)", p.id] },
+                      { selected: company.plan_id },
+                      style: "font-size:0.75rem;border:1px solid #e4e4e7;border-radius:6px;padding:4px 6px;color:#18181b;background:#fff;", data: { name: "plan_id" } %>
+                <%= f.submit "Aplicar", style: "font-size:0.72rem;font-weight:600;padding:4px 10px;border-radius:6px;background:#7c3aed;color:#fff;border:none;cursor:pointer;" %>
+              <% end %>
+            <% end %>
+            <%= link_to company_path(company), class:"btn-secondary", style:"font-size:0.78rem;padding:0.3rem 0.6rem;" do %>
+              <i class="bi bi-gear"></i>
+            <% end %>
+          </div>
         </div>
       </div>
     <% end %>

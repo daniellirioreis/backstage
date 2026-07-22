@@ -3,7 +3,22 @@ class CompaniesController < ApplicationController
 
   def index
     authorize Company
-    @companies = policy_scope(Company).order(:name)
+    @companies = policy_scope(Company).includes(:plan, :company_users, :events).order(:name)
+
+    if current_user.admin?
+      @status_filter = params[:status].presence
+      @companies = @companies.where(subscription_status: @status_filter) if @status_filter
+
+      # Métricas
+      all = Company.includes(:plan)
+      @total          = all.count
+      @total_active   = all.where(subscription_status: "active").count
+      @total_overdue  = all.where(subscription_status: "overdue").count
+      @total_inactive = all.where(subscription_status: %w[inactive pending cancelled]).count
+      @mrr = all.where(subscription_status: "active")
+                 .joins(:plan).sum("plans.price")
+      @plans = Plan.order(:name)
+    end
   end
 
   def show
