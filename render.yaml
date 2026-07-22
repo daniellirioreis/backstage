@@ -1,7 +1,9 @@
 services:
+  # ── PRODUÇÃO (main) ────────────────────────────────────────────
   - type: web
     name: backstage
     runtime: ruby
+    branch: main
     buildCommand: "./bin/render-build.sh"
     startCommand: "bundle exec puma -C config/puma.rb"
     plan: starter
@@ -24,6 +26,38 @@ services:
           name: backstage-db
           property: connectionString
 
+  # ── HOMOLOGAÇÃO (staging) ──────────────────────────────────────
+  - type: web
+    name: backstage-staging
+    runtime: ruby
+    branch: staging
+    buildCommand: "./bin/render-build.sh"
+    startCommand: "bundle exec puma -C config/puma.rb"
+    plan: free
+    healthCheckPath: /up
+    envVars:
+      - key: RAILS_ENV
+        value: production
+      - key: RAILS_LOG_TO_STDOUT
+        value: "true"
+      - key: RAILS_SERVE_STATIC_FILES
+        value: "true"
+      - key: SECRET_KEY_BASE
+        generateValue: true
+      - key: RAILS_MASTER_KEY
+        sync: false
+      - key: APP_HOST
+        sync: false
+      - key: DATABASE_URL
+        fromDatabase:
+          name: backstage-db-staging
+          property: connectionString
+
 databases:
+  # ── Banco de produção (starter — sem expiração) ────────────────
   - name: backstage-db
     plan: starter
+
+  # ── Banco de homologação (free — expira em 90 dias, renovável) ─
+  - name: backstage-db-staging
+    plan: free
