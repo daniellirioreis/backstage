@@ -35,9 +35,18 @@ class User < ApplicationRecord
     company_users.find_by(company: company)&.role
   end
 
+  belongs_to :invited_by, class_name: "User", optional: true
+
+  INVITATION_EXPIRES_IN = 7.days
+
   # ── Invitation helpers ────────────────────────────────────────────────────
   def pending_invitation?
     invitation_token.present? && invitation_accepted_at.nil?
+  end
+
+  def invitation_expired?
+    return false if invitation_sent_at.nil?
+    invitation_accepted_at.nil? && invitation_sent_at < INVITATION_EXPIRES_IN.ago
   end
 
   def onboarding_complete?
@@ -47,7 +56,7 @@ class User < ApplicationRecord
 
   def generate_invitation_token!
     token = SecureRandom.urlsafe_base64(24)
-    update_column(:invitation_token, token)
+    update_columns(invitation_token: token, invitation_sent_at: Time.current)
     token
   end
 

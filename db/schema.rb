@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_07_21_000001) do
+ActiveRecord::Schema[7.1].define(version: 2026_07_21_000002) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -287,6 +287,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_07_21_000001) do
     t.datetime "invitation_accepted_at"
     t.datetime "onboarding_completed_at"
     t.bigint "invited_by_id"
+    t.datetime "invitation_sent_at"
     t.index ["cpf"], name: "index_users_on_cpf", unique: true
     t.index ["email"], name: "index_users_on_email", unique: true
     t.index ["invitation_token"], name: "index_users_on_invitation_token", unique: true

@@ -3,30 +3,13 @@
     <%= link_to users_path, class:"btn-secondary", style:"padding:0.35rem 0.6rem;" do %>
       <i class="bi bi-arrow-left"></i>
     <% end %>
-    <div>
-      <% if @company_memberships.any? %>
-        <div style="display:flex; align-items:center; gap:0.4rem; margin-bottom:0.25rem; flex-wrap:wrap;">
-          <% @company_memberships.each do |cu| %>
-            <%= link_to company_path(cu.company),
-                style:"display:inline-flex; align-items:center; gap:0.3rem; font-size:0.72rem; font-weight:600; color:#71717a; text-decoration:none; background:#f4f4f5; border-radius:5px; padding:2px 8px; transition:background 0.15s;" do %>
-              <i class="bi bi-building" style="font-size:0.65rem;"></i>
-              <%= cu.company.name %>
-              <% if policy(cu.company).update? %>
-                <i class="bi bi-pencil" style="font-size:0.6rem; opacity:0.6; margin-left:2px;"></i>
-              <% end %>
-            <% end %>
-          <% end %>
-        </div>
-      <% end %>
-      <h1 style="margin:0;"><%= t("permission_actions.my_schedule") %></h1>
-      <div style="font-size:0.78rem; color:#71717a; margin-top:0.1rem;"><%= @user.name %></div>
-    </div>
+    <h1 style="margin:0;"><%= t("permission_actions.my_schedule") %></h1>
   </div>
 </div>
 
-<%# Cabeçalho do colaborador %>
-<div class="content-card" style="margin-bottom:1.5rem; padding:1.25rem; display:flex; align-items:center; gap:1rem; flex-wrap:wrap;">
-  <div style="width:48px; height:48px; border-radius:50%; overflow:hidden; background:#f4f4f5; border:2px solid #e4e4e7; display:flex; align-items:center; justify-content:center; font-size:0.95rem; font-weight:700; color:#52525b; flex-shrink:0;">
+<%# ── Perfil ─────────────────────────────────────────────────────────────── %>
+<div class="content-card" style="padding:1rem 1.25rem; margin-bottom:1rem; display:flex; align-items:center; gap:0.875rem;">
+  <div style="width:44px; height:44px; border-radius:50%; overflow:hidden; background:#f4f4f5; border:2px solid #e4e4e7; display:flex; align-items:center; justify-content:center; font-size:0.88rem; font-weight:700; color:#52525b; flex-shrink:0;">
     <% if @user.avatar.attached? %>
       <%= image_tag @user.avatar, style:"width:100%;height:100%;object-fit:cover;" %>
     <% else %>
@@ -34,186 +17,250 @@
     <% end %>
   </div>
   <div style="flex:1; min-width:0;">
-    <div style="font-size:0.95rem; font-weight:700; color:#18181b;"><%= @user.name %></div>
-    <div style="font-size:0.75rem; color:#71717a; margin-top:0.1rem;">
-      <span style="font-family:monospace;"><%= @user.cpf.gsub(/(\d{3})(\d{3})(\d{3})(\d{2})/, '\1.\2.\3-\4') %></span>
+    <div style="font-size:0.95rem; font-weight:700; color:#18181b; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;"><%= @user.name %></div>
+    <div style="font-size:0.75rem; color:#71717a; margin-top:1px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+      <% cu = @company_memberships.first %>
+      <% if cu %>
+        <%= cu.company.name %>
+        <span style="margin:0 0.3rem; color:#d4d4d8;">·</span>
+        <%= t("company_user.roles.#{cu.role}", default: cu.role.humanize) %>
+      <% end %>
       <% if @user.role %>
-        <span style="margin-left:0.5rem; background:#f4f4f5; border-radius:4px; padding:1px 7px; font-size:0.68rem; font-weight:600; color:#52525b;">
-          <%= @user.role.name %>
-        </span>
+        <span style="margin-left:0.4rem; background:#f4f4f5; border-radius:4px; padding:1px 6px; font-size:0.68rem; font-weight:600; color:#52525b;"><%= @user.role.name %></span>
       <% end %>
     </div>
   </div>
-  <% total = @shifts_by_event.values.flatten.size %>
-  <% if total > 0 %>
-    <div style="text-align:right; flex-shrink:0;">
-      <div style="font-size:1.4rem; font-weight:800; color:#18181b; line-height:1;"><%= total %></div>
-      <div style="font-size:0.68rem; color:#a1a1aa;">turno<%= total == 1 ? "" : "s" %> · <%= @shifts_by_event.size %> evento<%= @shifts_by_event.size == 1 ? "" : "s" %></div>
-    </div>
+  <% if current_user == @user || policy(@user).show? %>
+    <% first_event = @shifts_by_event.keys.first %>
+    <% if first_event %>
+      <%= link_to credential_user_path(@user, format: :pdf, event_id: first_event.id),
+          style:"font-size:0.78rem; color:#18181b; text-decoration:none; display:flex; align-items:center; gap:4px; background:#f4f4f5; border-radius:7px; padding:0.3rem 0.65rem; flex-shrink:0; white-space:nowrap;" do %>
+        <i class="bi bi-person-badge" style="font-size:0.85rem;"></i> Credencial
+      <% end %>
+    <% end %>
   <% end %>
 </div>
 
-<%# Empresas vinculadas %>
-<% if @company_memberships.any? %>
-  <div class="content-card" style="margin-bottom:1.5rem; padding:1rem 1.25rem;">
-    <div style="font-size:0.7rem; font-weight:700; color:#a1a1aa; text-transform:uppercase; letter-spacing:0.07em; margin-bottom:0.75rem;">
-      <i class="bi bi-building"></i> <%= Company.model_name.human(count: 2) %>
+<%# ── Mini-dashboard ─────────────────────────────────────────────────────── %>
+<% if @shifts_by_event.any? %>
+  <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem; margin-bottom:1rem;">
+    <div style="background:#f9f9f9; border-radius:10px; padding:0.875rem 1rem;">
+      <div style="font-size:0.7rem; color:#a1a1aa; margin-bottom:0.2rem;">Próximo turno</div>
+      <div style="font-size:1.2rem; font-weight:700; color:#18181b; line-height:1.2;">
+        <% if @days_until_next.nil? %>
+          —
+        <% elsif @days_until_next == 0 %>
+          Hoje
+        <% elsif @days_until_next == 1 %>
+          Amanhã
+        <% else %>
+          Em <%= @days_until_next %> dias
+        <% end %>
+      </div>
     </div>
-    <div style="display:flex; flex-wrap:wrap; gap:0.75rem;">
-      <% @company_memberships.each do |cu| %>
-        <div style="display:flex; align-items:center; gap:0.6rem; background:#f4f4f5; border-radius:8px; padding:0.5rem 0.85rem;">
-          <% if cu.company.logo.attached? %>
-            <div style="width:28px; height:28px; border-radius:6px; overflow:hidden; flex-shrink:0; background:#e4e4e7;">
-              <%= image_tag cu.company.logo, style:"width:100%;height:100%;object-fit:contain;" %>
-            </div>
-          <% else %>
-            <div style="width:28px; height:28px; border-radius:6px; background:#18181b; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
-              <i class="bi bi-building" style="font-size:0.75rem; color:#fff;"></i>
-            </div>
-          <% end %>
-          <div>
-            <div style="font-size:0.82rem; font-weight:700; color:#18181b; line-height:1.2;"><%= cu.company.name %></div>
-            <div style="font-size:0.65rem; color:#71717a;"><%= t("company_user.roles.#{cu.role}", default: cu.role) %></div>
-          </div>
-        </div>
-      <% end %>
+    <div style="background:#f9f9f9; border-radius:10px; padding:0.875rem 1rem;">
+      <div style="font-size:0.7rem; color:#a1a1aa; margin-bottom:0.2rem;">Total de horas</div>
+      <div style="font-size:1.2rem; font-weight:700; color:#18181b; line-height:1.2;">
+        <% h = @total_hours.to_i; m = ((@total_hours - h) * 60).round %>
+        <%= h > 0 ? "#{h}h" : "" %><%= m > 0 ? "#{m}min" : "" %><%= @total_hours == 0 ? "—" : "" %>
+      </div>
     </div>
   </div>
-<% end %>
 
-<% if @shifts_by_event.empty? %>
-  <div class="content-card" style="text-align:center; padding:3rem; color:#a1a1aa;">
-    <i class="bi bi-calendar-x" style="font-size:2rem; display:block; margin-bottom:0.5rem;"></i>
-    <p style="margin:0; font-size:0.88rem;">Nenhuma escala cadastrada para <%= @user.name.split.first %>.</p>
-  </div>
-<% else %>
-  <% @shifts_by_event.each do |event, shifts| %>
+  <%# ── Card de destaque: próximo turno ──────────────────────────────────── %>
+  <% if @next_shift %>
+    <% next_event = @next_shift.sector.event %>
     <%
-      event_team   = shifts.map(&:team).compact.first
-      is_coord     = event_team&.coordinator_id == @user.id
-      total_hours  = shifts.sum { |s| s.overnight? ? (1440 - (s.start_time.hour*60+s.start_time.min) + (s.end_time.hour*60+s.end_time.min)) : ((s.end_time.hour*60+s.end_time.min) - (s.start_time.hour*60+s.start_time.min)) } / 60.0
+      dur_min = @next_shift.overnight? \
+        ? (1440 - (@next_shift.start_time.hour*60+@next_shift.start_time.min) + (@next_shift.end_time.hour*60+@next_shift.end_time.min)) \
+        : ((@next_shift.end_time.hour*60+@next_shift.end_time.min) - (@next_shift.start_time.hour*60+@next_shift.start_time.min))
     %>
-
-    <div class="content-card" style="margin-bottom:1.5rem; padding:0; overflow:hidden;">
-
-      <%# Topo do cartão — evento %>
-      <div style="background:#18181b; padding:1rem 1.25rem; display:flex; align-items:center; justify-content:space-between; gap:1rem; flex-wrap:wrap;">
-        <div>
-          <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
-            <div style="font-size:0.95rem; font-weight:700; color:#fff;">
-              <i class="bi bi-calendar-event" style="font-size:0.8rem; opacity:0.7;"></i>
-              <%= event.name %>
-            </div>
-            <%
-              status_styles = {
-                "draft"  => "background:rgba(255,255,255,0.12); color:#d4d4d8; border:1px solid rgba(255,255,255,0.18);",
-                "active" => "background:#dcfce7; color:#166534; border:1px solid #86efac;",
-                "closed" => "background:rgba(255,255,255,0.08); color:#a1a1aa; border:1px solid rgba(255,255,255,0.12);"
-              }
-              status_labels = {
-                "draft"  => "Rascunho",
-                "active" => "Em andamento",
-                "closed" => "Encerrado"
-              }
-            %>
-            <span style="font-size:0.62rem; font-weight:700; border-radius:4px; padding:2px 8px; letter-spacing:0.04em; <%= status_styles[event.status] %>">
-              <%= status_labels[event.status] || event.status %>
-            </span>
-          </div>
-          <div style="font-size:0.72rem; color:#a1a1aa; margin-top:0.2rem;">
-            <%= l(event.start_date, format: :short) %> → <%= l(event.end_date, format: :short) %>
-            <% if event.location.present? %>
-              <span style="margin:0 0.35rem; opacity:0.5;">·</span>
-              <i class="bi bi-geo-alt" style="font-size:0.6rem;"></i> <%= event.location %>
-            <% end %>
-          </div>
-        </div>
-        <% if current_user == @user || policy(@user).show? %>
-          <%= link_to credential_user_path(@user, format: :pdf, event_id: event.id),
-              class:"btn-secondary",
-              style:"padding:0.3rem 0.75rem; font-size:0.75rem; white-space:nowrap; background:#fff; color:#18181b; border-color:#fff;" do %>
-            <i class="bi bi-person-badge"></i> Credencial
-          <% end %>
-        <% end %>
+    <div style="background:#18181b; border-radius:12px; padding:1rem 1.25rem; margin-bottom:1.25rem;">
+      <div style="font-size:0.65rem; font-weight:700; color:#a1a1aa; text-transform:uppercase; letter-spacing:0.08em; margin-bottom:0.6rem;">
+        <i class="bi bi-clock"></i>
+        <% if @days_until_next == 0 %>Turno hoje<% elsif @days_until_next == 1 %>Turno amanhã<% else %>Próximo turno<% end %>
       </div>
-
-      <%# Info da equipe %>
-      <% if event_team %>
-        <div style="background:#f4f4f5; border-bottom:1px solid #e4e4e7; padding:0.6rem 1.25rem; display:flex; align-items:center; gap:0.5rem; font-size:0.78rem; color:#52525b;">
-          <i class="bi bi-people" style="font-size:0.75rem; color:#71717a;"></i>
-          <span style="font-weight:600;"><%= event_team.name %></span>
-          <% if event_team.sector %>
-            <span style="color:#d4d4d8;">·</span>
-            <span style="color:#71717a;"><%= event_team.sector.name %></span>
+      <div style="font-size:1rem; font-weight:700; color:#f4f4f5; margin-bottom:2px;"><%= next_event.name %></div>
+      <% if @next_shift.team %>
+        <div style="font-size:0.75rem; color:#71717a; margin-bottom:0.75rem;">
+          <%= @next_shift.team.name %>
+          <% if @next_shift.team.sector %>
+            <span style="margin:0 0.25rem; color:#3f3f46;">·</span><%= @next_shift.team.sector.name %>
           <% end %>
-          <% if is_coord %>
-            <span style="background:#fef3c7; color:#92400e; border:1px solid #fcd34d; border-radius:4px; padding:0px 6px; font-size:0.62rem; font-weight:700; margin-left:0.25rem;">
-              <i class="bi bi-star-fill" style="font-size:0.5rem;"></i> Coordenador
-            </span>
-          <% end %>
-          <span style="margin-left:auto; color:#71717a; font-size:0.72rem;">
-            <%= shifts.size %> turno<%= shifts.size == 1 ? "" : "s" %>
-            · <%= total_hours.round(1) %> h total
-          </span>
         </div>
       <% end %>
-
-      <%# Lista de turnos %>
-      <div style="padding:0.5rem 0;">
-        <% shifts.sort_by { |s| [s.date, s.start_time] }.each_with_index do |shift, idx| %>
-          <%
-            duration_min = shift.overnight? \
-              ? (1440 - (shift.start_time.hour*60+shift.start_time.min) + (shift.end_time.hour*60+shift.end_time.min)) \
-              : ((shift.end_time.hour*60+shift.end_time.min) - (shift.start_time.hour*60+shift.start_time.min))
-            duration_h   = duration_min / 60
-            duration_m   = duration_min % 60
-          %>
-          <div style="display:flex; align-items:center; gap:1rem; padding:0.65rem 1.25rem; border-bottom:<%= idx < shifts.size - 1 ? '1px solid #f4f4f5' : 'none' %>;">
-
-            <%# Data %>
-            <div style="text-align:center; flex-shrink:0; width:36px;">
-              <div style="font-size:1rem; font-weight:800; color:#18181b; line-height:1;">
-                <%= shift.date.day %>
-              </div>
-              <div style="font-size:0.62rem; color:#71717a; text-transform:uppercase; letter-spacing:0.04em;">
-                <%= I18n.l(shift.date, format: "%b") %>
-              </div>
-              <div style="font-size:0.6rem; color:#a1a1aa;">
-                <%= I18n.l(shift.date, format: "%a") %>
-              </div>
-            </div>
-
-            <div style="width:1px; height:36px; background:#e4e4e7; flex-shrink:0;"></div>
-
-            <%# Horário %>
-            <div style="flex:1; min-width:0;">
-              <div style="font-size:0.88rem; font-weight:600; color:#18181b;">
-                <%= shift.start_time.strftime("%H:%M") %> → <%= shift.end_time.strftime("%H:%M") %>
-                <% if shift.overnight? %>
-                  <span style="font-size:0.65rem; color:#a1a1aa; font-weight:400;">+1 dia</span>
-                <% end %>
-                <% if shift.end_date.present? && shift.end_date != shift.date %>
-                  <span style="font-size:0.65rem; color:#a1a1aa; font-weight:400;">até <%= l(shift.end_date, format: :short) %></span>
-                <% end %>
-              </div>
-              <% if shift.team && shift.team != event_team %>
-                <div style="font-size:0.7rem; color:#71717a; margin-top:0.1rem;">
-                  <i class="bi bi-people" style="font-size:0.6rem;"></i> <%= shift.team.name %>
-                </div>
-              <% end %>
-            </div>
-
-            <%# Duração %>
-            <div style="text-align:right; flex-shrink:0;">
-              <span style="font-size:0.78rem; font-weight:600; color:#52525b; background:#f4f4f5; border-radius:6px; padding:2px 8px;">
-                <%= duration_h > 0 ? "#{duration_h}h" : "" %><%= duration_m > 0 ? "#{duration_m}min" : "" %>
-              </span>
-            </div>
-
-          </div>
-        <% end %>
+      <div style="display:flex; align-items:center; gap:0.75rem; flex-wrap:wrap;">
+        <span style="font-size:0.82rem; color:#d4d4d8; display:flex; align-items:center; gap:4px;">
+          <i class="bi bi-calendar3" style="font-size:0.72rem; color:#71717a;"></i>
+          <%= I18n.l(@next_shift.date, format: "%d %b, %a") %>
+        </span>
+        <span style="font-size:0.82rem; color:#d4d4d8; display:flex; align-items:center; gap:4px;">
+          <i class="bi bi-clock" style="font-size:0.72rem; color:#71717a;"></i>
+          <%= @next_shift.start_time.strftime("%H:%M") %> → <%= @next_shift.end_time.strftime("%H:%M") %>
+          <% if @next_shift.overnight? %>
+            <span style="font-size:0.65rem; color:#71717a;">+1 dia</span>
+          <% end %>
+        </span>
+        <span style="background:#27272a; border:1px solid #3f3f46; border-radius:6px; padding:2px 10px; font-size:0.75rem; font-weight:600; color:#a1a1aa; margin-left:auto;">
+          <%= dur_min / 60 > 0 ? "#{dur_min / 60}h" : "" %><%= dur_min % 60 > 0 ? "#{dur_min % 60}min" : "" %>
+        </span>
       </div>
-
     </div>
   <% end %>
+
+  <%# ── Lista de eventos ──────────────────────────────────────────────────── %>
+  <% status_labels = { "draft" => "Rascunho", "active" => "Em andamento", "closed" => "Encerrado" } %>
+  <% status_styles = {
+    "draft"  => "background:#f4f4f5; color:#71717a;",
+    "active" => "background:#dcfce7; color:#15803d;",
+    "closed" => "background:#f4f4f5; color:#a1a1aa;"
+  } %>
+
+  <div style="display:flex; flex-direction:column; gap:1rem;">
+    <% @shifts_by_event.each do |event, shifts| %>
+      <%
+        event_team  = shifts.map(&:team).compact.first
+        is_coord    = event_team&.coordinator_id == @user.id
+        total_h_min = shifts.sum { |s| s.overnight? ? (1440 - (s.start_time.hour*60+s.start_time.min) + (s.end_time.hour*60+s.end_time.min)) : ((s.end_time.hour*60+s.end_time.min) - (s.start_time.hour*60+s.start_time.min)) }
+        total_h     = total_h_min / 60.0
+      %>
+      <div class="content-card" style="padding:0; overflow:hidden;">
+
+        <%# Header do evento %>
+        <div style="padding:0.875rem 1.25rem; border-bottom:1px solid #f4f4f5; display:flex; align-items:center; gap:0.75rem; flex-wrap:wrap;">
+          <div style="flex:1; min-width:0;">
+            <div style="font-size:0.92rem; font-weight:700; color:#18181b; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;"><%= event.name %></div>
+            <div style="font-size:0.72rem; color:#a1a1aa; margin-top:1px;">
+              <%= l(event.start_date, format: :short) %> → <%= l(event.end_date, format: :short) %>
+              <% if event.location.present? %>
+                <span style="margin:0 0.3rem; opacity:0.5;">·</span>
+                <i class="bi bi-geo-alt" style="font-size:0.6rem;"></i> <%= event.location %>
+              <% end %>
+            </div>
+          </div>
+          <span style="font-size:0.68rem; font-weight:700; border-radius:99px; padding:2px 9px; flex-shrink:0; <%= status_styles[event.status] %>">
+            <%= status_labels[event.status] || event.status %>
+          </span>
+        </div>
+
+        <%# Sub-header: equipe %>
+        <% if event_team %>
+          <div style="background:#fafafa; border-bottom:1px solid #f4f4f5; padding:0.5rem 1.25rem; display:flex; align-items:center; gap:0.5rem; font-size:0.75rem; color:#52525b;">
+            <i class="bi bi-people" style="font-size:0.72rem; color:#71717a;"></i>
+            <span style="font-weight:600;"><%= event_team.name %></span>
+            <% if event_team.sector %>
+              <span style="color:#e4e4e7;">·</span>
+              <span style="color:#71717a;"><%= event_team.sector.name %></span>
+            <% end %>
+            <% if is_coord %>
+              <span style="background:#fef3c7; color:#92400e; border:1px solid #fcd34d; border-radius:4px; padding:0 6px; font-size:0.62rem; font-weight:700;">
+                <i class="bi bi-star-fill" style="font-size:0.5rem;"></i> Coordenador
+              </span>
+            <% end %>
+            <span style="margin-left:auto; color:#a1a1aa; font-size:0.7rem;">
+              <%= shifts.size %> turno<%= shifts.size == 1 ? "" : "s" %>
+              · <%= total_h % 1 == 0 ? total_h.to_i : total_h.round(1) %>h
+            </span>
+          </div>
+        <% end %>
+
+        <%# Turnos %>
+        <div style="padding:0.25rem 0;">
+          <% shifts.sort_by { |s| [s.date, s.start_time] }.each_with_index do |shift, idx| %>
+            <%
+              dur_min = shift.overnight? \
+                ? (1440 - (shift.start_time.hour*60+shift.start_time.min) + (shift.end_time.hour*60+shift.end_time.min)) \
+                : ((shift.end_time.hour*60+shift.end_time.min) - (shift.start_time.hour*60+shift.start_time.min))
+            %>
+            <div style="display:flex; align-items:center; gap:0.875rem; padding:0.6rem 1.25rem; border-bottom:<%= idx < shifts.size - 1 ? '1px solid #f9f9f9' : 'none' %>;">
+
+              <div style="text-align:center; flex-shrink:0; width:32px;">
+                <div style="font-size:1.05rem; font-weight:700; color:#18181b; line-height:1;"><%= shift.date.day %></div>
+                <div style="font-size:0.6rem; color:#a1a1aa; text-transform:uppercase; letter-spacing:0.03em;"><%= I18n.l(shift.date, format: "%b") %></div>
+                <div style="font-size:0.58rem; color:#c4c4c4;"><%= I18n.l(shift.date, format: "%a") %></div>
+              </div>
+
+              <div style="width:1px; height:30px; background:#f0f0f0; flex-shrink:0;"></div>
+
+              <div style="flex:1; min-width:0;">
+                <div style="font-size:0.85rem; font-weight:600; color:#18181b;">
+                  <%= shift.start_time.strftime("%H:%M") %> → <%= shift.end_time.strftime("%H:%M") %>
+                  <% if shift.overnight? %>
+                    <span style="font-size:0.62rem; color:#a1a1aa; font-weight:400;">+1 dia</span>
+                  <% end %>
+                  <% if shift.end_date.present? && shift.end_date != shift.date %>
+                    <span style="font-size:0.62rem; color:#a1a1aa; font-weight:400;">até <%= l(shift.end_date, format: :short) %></span>
+                  <% end %>
+                </div>
+                <% if shift.team && shift.team != event_team %>
+                  <div style="font-size:0.68rem; color:#71717a; margin-top:1px;">
+                    <i class="bi bi-people" style="font-size:0.6rem;"></i> <%= shift.team.name %>
+                  </div>
+                <% end %>
+              </div>
+
+              <span style="font-size:0.72rem; font-weight:600; color:#71717a; background:#f4f4f5; border-radius:6px; padding:2px 8px; flex-shrink:0;">
+                <%= dur_min / 60 > 0 ? "#{dur_min / 60}h" : "" %><%= dur_min % 60 > 0 ? "#{dur_min % 60}min" : "" %>
+              </span>
+            </div>
+          <% end %>
+        </div>
+
+        <%# Pagamento %>
+        <% payment = @payments_by_event[event.id] %>
+        <div style="border-top:1px solid #f4f4f5; padding:0.65rem 1.25rem; display:flex; align-items:center; gap:0.75rem; flex-wrap:wrap;">
+          <% if payment %>
+            <% if payment.waived? %>
+              <span style="display:inline-flex; align-items:center; gap:5px; font-size:0.75rem; font-weight:600; color:#71717a; background:#f4f4f5; border-radius:6px; padding:3px 10px;">
+                <i class="bi bi-dash-circle" style="font-size:0.72rem;"></i>
+                <%= payment.waived_reason_label %>
+              </span>
+            <% else %>
+              <span style="display:inline-flex; align-items:center; gap:5px; font-size:0.75rem; font-weight:700; color:#15803d; background:#dcfce7; border-radius:6px; padding:3px 10px;">
+                <i class="bi bi-check-circle-fill" style="font-size:0.72rem;"></i>
+                Pago · <%= number_to_currency(payment.amount, unit: "R$ ", separator: ",", delimiter: ".") %>
+              </span>
+              <span style="display:inline-flex; align-items:center; gap:4px; font-size:0.72rem; font-weight:500; color:#52525b; background:#f4f4f5; border-radius:6px; padding:3px 8px;">
+                <i class="bi bi-<%= payment.payment_method == 'pix' ? 'qr-code' : payment.payment_method == 'cash' ? 'cash-coin' : 'bank2' %>" style="font-size:0.68rem;"></i>
+                <%= I18n.t("payment_methods.#{payment.payment_method}", default: payment.payment_method.humanize) %>
+              </span>
+              <span style="display:inline-flex; align-items:center; gap:4px; font-size:0.72rem; font-weight:500; color:#52525b; background:#f4f4f5; border-radius:6px; padding:3px 8px;">
+                <i class="bi bi-calendar3" style="font-size:0.68rem;"></i>
+                <%= I18n.l(payment.paid_at.to_date, format: "%d %b") %>
+              </span>
+              <span style="display:inline-flex; align-items:center; gap:4px; font-size:0.72rem; font-weight:500; color:#52525b; background:#f4f4f5; border-radius:6px; padding:3px 8px;">
+                <i class="bi bi-person" style="font-size:0.68rem;"></i>
+                <%= payment.paid_by.name.split.first %>
+              </span>
+              <%= link_to receipt_reports_payment_path(payment),
+                  target: "_blank",
+                  style: "display:inline-flex; align-items:center; gap:4px; font-size:0.72rem; font-weight:600; color:#1d4ed8; background:#eff6ff; border-radius:6px; padding:3px 10px; text-decoration:none;" do %>
+                <i class="bi bi-file-earmark-text" style="font-size:0.7rem;"></i> Comprovante
+              <% end %>
+            <% end %>
+          <% else %>
+            <span style="display:inline-flex; align-items:center; gap:5px; font-size:0.75rem; font-weight:700; color:#92400e; background:#fef3c7; border-radius:6px; padding:3px 10px;">
+              <i class="bi bi-hourglass-split" style="font-size:0.72rem;"></i>
+              Pagamento pendente
+            </span>
+          <% end %>
+
+          <% if current_user == @user || policy(@user).show? %>
+            <%= link_to credential_user_path(@user, format: :pdf, event_id: event.id),
+                style:"font-size:0.75rem; color:#52525b; text-decoration:none; display:inline-flex; align-items:center; gap:4px; margin-left:auto;" do %>
+              <i class="bi bi-person-badge" style="font-size:0.82rem;"></i> Credencial
+            <% end %>
+          <% end %>
+        </div>
+
+      </div>
+    <% end %>
+  </div>
+
+<% else %>
+  <div class="content-card" style="text-align:center; padding:3rem; color:#a1a1aa;">
+    <i class="bi bi-calendar-x" style="font-size:2rem; display:block; margin-bottom:0.5rem;"></i>
+    <p style="margin:0 0 0.25rem; font-size:0.88rem; color:#52525b; font-weight:600;">Nenhuma escala ainda</p>
+    <p style="margin:0; font-size:0.8rem;"><%= @user.name.split.first %> ainda não tem turnos cadastrados.</p>
+  </div>
 <% end %>

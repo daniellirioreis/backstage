@@ -116,6 +116,28 @@ class UsersController < ApplicationController
     @shifts_by_event = shifts.group_by { |s| s.sector.event }
                              .sort_by { |ev, _| [{ "active" => 0, "draft" => 1, "closed" => 2 }[ev.status] || 3, -ev.start_date.to_time.to_i] }
                              .to_h
+
+    event_ids = @shifts_by_event.keys.map(&:id)
+    payments  = Payment.where(user_id: @user.id, event_id: event_ids)
+                       .includes(:paid_by)
+    @payments_by_event = payments.index_by(&:event_id)
+
+    today = Date.today
+    all_shifts = shifts.to_a
+
+    @next_shift = all_shifts.select { |s| s.date >= today }
+                            .min_by { |s| [s.date, s.start_time] }
+
+    @total_hours = all_shifts.sum do |s|
+      min = if s.overnight?
+        1440 - (s.start_time.hour * 60 + s.start_time.min) + (s.end_time.hour * 60 + s.end_time.min)
+      else
+        (s.end_time.hour * 60 + s.end_time.min) - (s.start_time.hour * 60 + s.start_time.min)
+      end
+      min / 60.0
+    end
+
+    @days_until_next = @next_shift ? (@next_shift.date - today).to_i : nil
   end
 
   def new

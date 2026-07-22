@@ -1,5 +1,6 @@
 module Reports
   class PaymentsController < ApplicationController
+    skip_before_action :require_current_event!, only: [:receipt, :receipt_pdf]
     before_action :set_payment, only: [:destroy, :receipt, :receipt_pdf]
 
     def create
@@ -47,12 +48,13 @@ module Reports
     end
 
     def receipt
-      authorize :report, :view_receipt?
+      # Colaborador pode ver o próprio comprovante; gestor/admin usa a policy normal
+      authorize(:report, :view_receipt?) unless @payment.user_id == current_user.id
       render layout: false
     end
 
     def receipt_pdf
-      authorize :report, :view_receipt?
+      authorize(:report, :view_receipt?) unless @payment.user_id == current_user.id
       render pdf:              "comprovante-#{@payment.user.name.parameterize}-#{@payment.event.name.parameterize}",
              template:         "reports/payments/receipt",
              layout:           false,

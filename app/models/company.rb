@@ -8,8 +8,9 @@ class Company < ApplicationRecord
   has_many :events, dependent: :nullify
 
   validates :name, presence: true
-  validates :cnpj, uniqueness: { allow_blank: true },
+  validates :cnpj, uniqueness: { allow_blank: true, message: "já está cadastrado" },
                    format: { with: /\A\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}\z/, message: "formato inválido (XX.XXX.XXX/XXXX-XX)", allow_blank: true }
+  validate :cnpj_digits_valid, if: -> { cnpj.present? }
 
   # ── Uso atual ────────────────────────────────────────────────────────────────
   def current_events_count  = events.count
@@ -39,6 +40,24 @@ class Company < ApplicationRecord
   def subscription_active?  = subscription_status == "active"
   def subscription_pending? = subscription_status == "pending"
   def subscription_overdue? = subscription_status == "overdue"
+
+  def cnpj_digits_valid
+    digits = cnpj.to_s.gsub(/\D/, "")
+    return if digits.length != 14
+    return errors.add(:cnpj, "inválido") if digits.chars.uniq.length == 1
+
+    calc = ->(d, start_weight) {
+      sum, w = 0, start_weight
+      d.each_char { |c| sum += c.to_i * w; w = w == 2 ? 9 : w - 1 }
+      r = sum % 11
+      r < 2 ? 0 : 11 - r
+    }
+
+    d1 = calc.call(digits[0..11], 5)
+    d2 = calc.call(digits[0..12], 6)
+
+    errors.add(:cnpj, "inválido") unless d1 == digits[12].to_i && d2 == digits[13].to_i
+  end
 
   def subscription_status_label
     { "inactive" => "Sem assinatura", "pending" => "Aguardando pagamento",

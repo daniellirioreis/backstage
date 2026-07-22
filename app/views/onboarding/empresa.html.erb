@@ -26,17 +26,19 @@
       <% end %>
     </div>
 
-    <div>
+    <div data-controller="cnpj">
       <label style="display:block; font-size:0.8rem; font-weight:500; color:#374151; margin-bottom:0.3rem;">CNPJ <span style="color:#a1a1aa; font-weight:400;">(opcional)</span></label>
       <input type="text" name="company[cnpj]"
              value="<%= @company&.cnpj %>"
-             data-mask="cnpj"
+             data-cnpj-target="field"
+             data-action="input->cnpj#mask blur->cnpj#validate"
              style="width:100%; box-sizing:border-box; border:1px solid #d1d5db; border-radius:8px; padding:0.55rem 0.75rem; font-size:0.875rem; color:#18181b; outline:none;"
              placeholder="00.000.000/0000-00" />
       <% if @company&.errors&.[](:cnpj)&.any? %>
         <p style="font-size:0.75rem; color:#dc2626; margin:0.25rem 0 0;"><%= @company.errors[:cnpj].first %></p>
       <% else %>
-        <p style="font-size:0.75rem; color:#71717a; margin:0.25rem 0 0;"><i class="bi bi-info-circle"></i> Usado só para identificação fiscal — pode preencher depois.</p>
+        <p data-cnpj-target="error" style="font-size:0.75rem; color:#dc2626; margin:0.25rem 0 0;"></p>
+        <p style="font-size:0.75rem; color:#71717a; margin:0.1rem 0 0;"><i class="bi bi-info-circle"></i> Usado só para identificação fiscal — pode preencher depois.</p>
       <% end %>
     </div>
 

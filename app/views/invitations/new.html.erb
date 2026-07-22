@@ -38,34 +38,52 @@
           <option value="<%= role.id %>"><%= role.name %></option>
         <% end %>
       </select>
-      <div style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:6px; padding:0.5rem 0.75rem; margin-top:0.35rem; font-size:0.75rem; color:#1d4ed8;">
-        <i class="bi bi-shield-check"></i>
-        <strong>Colaborador</strong> — acessa apenas a própria escala. &nbsp;
-        <strong>Coordenador</strong> — visualiza a equipe. &nbsp;
-        <strong>Admin</strong> — acesso total ao sistema.
+      <div style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:6px; padding:0.5rem 0.75rem; margin-top:0.35rem; font-size:0.75rem; color:#1d4ed8; display:flex; flex-direction:column; gap:0.2rem;">
+        <div><i class="bi bi-person"></i> <strong>Colaborador</strong> — acessa apenas a própria escala e credencial.</div>
+        <div><i class="bi bi-people"></i> <strong>Coordenador</strong> — visualiza e gerencia a equipe no painel da equipe.</div>
+        <div><i class="bi bi-shield-check"></i> <strong>Gerente</strong> — cria eventos, escalas, relatórios e convida colaboradores.</div>
       </div>
     </div>
 
     <div>
-      <label style="display:block; font-size:0.8rem; font-weight:500; color:#374151; margin-bottom:0.3rem;">Empresa <span style="color:#a1a1aa; font-weight:400;">(opcional)</span></label>
-      <select name="company_id" id="invitation_company_id"
-              onchange="updatePlanInfo(this)"
-              style="width:100%; box-sizing:border-box; border:1px solid #d1d5db; border-radius:8px; padding:0.55rem 0.75rem; font-size:0.875rem; color:#18181b; background:#fff; outline:none;">
-        <option value="">Sem empresa por enquanto</option>
-        <% @companies.each do |company| %>
-          <option value="<%= company.id %>"
-                  data-plan="<%= company.plan&.name %>"
-                  data-members="<%= company.current_members_count %>"
-                  data-limit="<%= company.members_limit || '' %>"
-                  data-at-limit="<%= !company.can_add_member? %>">
-            <%= company.name %><%= company.plan ? " (#{company.plan.name})" : "" %>
-          </option>
-        <% end %>
-      </select>
+      <label style="display:block; font-size:0.8rem; font-weight:500; color:#374151; margin-bottom:0.3rem;">
+        Empresa <% unless @user_company %><span style="color:#a1a1aa; font-weight:400;">(opcional)</span><% end %>
+      </label>
 
-      <p style="font-size:0.75rem; color:#71717a; margin:0.25rem 0 0;"><i class="bi bi-info-circle"></i> Deixe em branco para convidar sem vínculo de empresa por agora.</p>
-      <div id="plan-info" style="display:none; margin-top:0.5rem; padding:0.5rem 0.75rem; border-radius:7px; font-size:0.78rem;">
-      </div>
+      <% if @user_company %>
+        <%# Usuário não-admin: empresa fixa, somente leitura %>
+        <input type="text" value="<%= @user_company.name %>" readonly
+               style="width:100%; box-sizing:border-box; border:1px solid #e4e4e7; border-radius:8px; padding:0.55rem 0.75rem; font-size:0.875rem; color:#71717a; background:#f9f9f9; outline:none; cursor:default;" />
+        <input type="hidden" name="company_id" value="<%= @user_company.id %>" />
+
+        <% if !@user_company.can_add_member? %>
+          <div style="background:#fef2f2; border:1px solid #fecaca; border-radius:6px; padding:0.5rem 0.75rem; margin-top:0.35rem; font-size:0.78rem; color:#dc2626;">
+            <i class="bi bi-exclamation-triangle"></i> Limite de colaboradores atingido no plano <%= @user_company.plan&.name %> (<%= @user_company.members_limit %>). Entre em contato para fazer upgrade.
+          </div>
+        <% elsif @user_company.plan.present? %>
+          <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:6px; padding:0.5rem 0.75rem; margin-top:0.35rem; font-size:0.78rem; color:#16a34a;">
+            <i class="bi bi-check-circle"></i> Plano <strong><%= @user_company.plan.name %></strong> · Colaboradores: <%= @user_company.current_members_count %> / <%= @user_company.members_limit || "∞" %>
+          </div>
+        <% end %>
+      <% else %>
+        <%# Admin: dropdown com todas as empresas %>
+        <select name="company_id" id="invitation_company_id"
+                onchange="updatePlanInfo(this)"
+                style="width:100%; box-sizing:border-box; border:1px solid #d1d5db; border-radius:8px; padding:0.55rem 0.75rem; font-size:0.875rem; color:#18181b; background:#fff; outline:none;">
+          <option value="">Sem empresa por enquanto</option>
+          <% @companies.each do |company| %>
+            <option value="<%= company.id %>"
+                    data-plan="<%= company.plan&.name %>"
+                    data-members="<%= company.current_members_count %>"
+                    data-limit="<%= company.members_limit || '' %>"
+                    data-at-limit="<%= !company.can_add_member? %>">
+              <%= company.name %><%= company.plan ? " (#{company.plan.name})" : "" %>
+            </option>
+          <% end %>
+        </select>
+        <p style="font-size:0.75rem; color:#71717a; margin:0.25rem 0 0;"><i class="bi bi-info-circle"></i> Deixe em branco para convidar sem vínculo de empresa por agora.</p>
+        <div id="plan-info" style="display:none; margin-top:0.5rem; padding:0.5rem 0.75rem; border-radius:7px; font-size:0.78rem;"></div>
+      <% end %>
     </div>
 
     <script>

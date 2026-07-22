@@ -1,6 +1,7 @@
 class SubscriptionsController < ApplicationController
   skip_before_action :require_current_event!
   before_action :set_company
+  before_action :require_billing_access!
 
   # GET /subscription
   def show
@@ -116,6 +117,14 @@ class SubscriptionsController < ApplicationController
   end
 
   private
+
+  def require_billing_access!
+    return if current_user.admin?
+    role = current_user.company_role_for(@company)
+    unless %w[owner manager].include?(role)
+      redirect_to root_path, alert: "Você não tem permissão para acessar a assinatura."
+    end
+  end
 
   def set_company
     # Prioriza empresa com assinatura pendente/inativa/em atraso (precisa de ação)
