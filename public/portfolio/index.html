@@ -908,41 +908,6 @@
     if (e.key === 'Escape') closeLightbox();
   });
 
-  // ── HERO CAROUSEL ──────────────────────────────────────────
-  (function () {
-    const slides = document.querySelectorAll('#heroCarousel .carousel-slide');
-    const dots   = document.querySelectorAll('#heroCarousel .carousel-dot');
-    let current  = 0;
-    let timer;
-
-    function goTo(idx) {
-      slides[current].classList.remove('active');
-      dots[current].classList.remove('active');
-      current = (idx + slides.length) % slides.length;
-      slides[current].classList.add('active');
-      dots[current].classList.add('active');
-    }
-
-    function next() { goTo(current + 1); }
-
-    function startAuto() { timer = setInterval(next, 3500); }
-    function stopAuto()  { clearInterval(timer); }
-
-    dots.forEach(dot => {
-      dot.addEventListener('click', () => {
-        stopAuto();
-        goTo(parseInt(dot.dataset.idx));
-        startAuto();
-      });
-    });
-
-    const carousel = document.getElementById('heroCarousel');
-    carousel.addEventListener('mouseenter', stopAuto);
-    carousel.addEventListener('mouseleave', startAuto);
-
-    startAuto();
-  })();
-
   // ── SCROLL FADE-IN ─────────────────────────────────────────
   const observer = new IntersectionObserver((entries) => {
     entries.forEach(entry => {
