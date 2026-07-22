@@ -32,6 +32,9 @@ gem "roo"
 # QR Code
 gem "rqrcode"
 
+# Storage (Cloudflare R2 via S3-compatible API)
+gem "aws-sdk-s3", require: false
+
 # Bootstrap
 gem "bootstrap", "~> 5.3"
 gem "sassc-rails"
