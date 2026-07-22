@@ -1,0 +1,42 @@
+<%# Banner de alertas de assinatura — exibido no topo do conteúdo principal %>
+<% if user_signed_in? && !current_user.admin? && !current_user.role&.collaborator? %>
+  <%
+    company = current_event&.company
+    company ||= current_user.company_users.includes(:company).first&.company
+  %>
+
+  <% if company&.plan.present? && company.plan.price.to_f > 0 %>
+    <% status      = company.subscription_status %>
+    <% expires_at  = company.subscription_expires_at %>
+    <% days_left   = expires_at ? (expires_at.to_date - Date.today).to_i : nil %>
+
+    <%# Pagamento em atraso %>
+    <% if status == "overdue" %>
+      <div style="background:#fef2f2;border:1px solid #fca5a5;border-radius:8px;padding:0.75rem 1rem;margin-bottom:1rem;display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;">
+        <div style="display:flex;align-items:center;gap:0.5rem;font-size:0.83rem;color:#dc2626;font-weight:600;">
+          <i class="bi bi-exclamation-circle-fill"></i>
+          Seu pagamento está em atraso. Regularize para não perder o acesso ao sistema.
+        </div>
+        <%= link_to "Pagar agora", subscription_path,
+              style: "font-size:0.78rem;font-weight:700;color:#fff;background:#dc2626;border-radius:6px;padding:5px 14px;text-decoration:none;white-space:nowrap;" %>
+      </div>
+
+    <%# Vencimento próximo (≤ 5 dias) %>
+    <% elsif status == "active" && days_left && days_left <= 5 && days_left >= 0 %>
+      <div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:8px;padding:0.75rem 1rem;margin-bottom:1rem;display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;">
+        <div style="display:flex;align-items:center;gap:0.5rem;font-size:0.83rem;color:#b45309;font-weight:600;">
+          <i class="bi bi-clock-fill"></i>
+          <% if days_left == 0 %>
+            Sua assinatura vence <strong>hoje</strong>. Efetue o pagamento para continuar.
+          <% elsif days_left == 1 %>
+            Sua assinatura vence <strong>amanhã</strong>. Efetue o pagamento para continuar.
+          <% else %>
+            Sua assinatura vence em <strong><%= days_left %> dias</strong>. Fique em dia para não perder o acesso.
+          <% end %>
+        </div>
+        <%= link_to "Ver assinatura", subscription_path,
+              style: "font-size:0.78rem;font-weight:700;color:#fff;background:#b45309;border-radius:6px;padding:5px 14px;text-decoration:none;white-space:nowrap;" %>
+      </div>
+    <% end %>
+  <% end %>
+<% end %>
