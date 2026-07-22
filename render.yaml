@@ -6,7 +6,7 @@ services:
     branch: main
     buildCommand: "./bin/render-build.sh"
     startCommand: "bundle exec puma -C config/puma.rb"
-    plan: starter
+    plan: free
     healthCheckPath: /up
     envVars:
       - key: RAILS_ENV
@@ -54,9 +54,9 @@ services:
           property: connectionString
 
 databases:
-  # ── Banco de produção (starter — sem expiração) ────────────────
+  # ── Banco de produção ─────────────────────────────────────────
   - name: backstage-db
-    plan: starter
+    plan: free
 
   # ── Banco de homologação (free — expira em 90 dias, renovável) ─
   - name: backstage-db-staging
