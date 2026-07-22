@@ -53,7 +53,11 @@ class Event < ApplicationRecord
 
   def geocode_location
     result = NominatimService.geocode(location)
-    update_columns(latitude: result[:lat], longitude: result[:lon]) if result
+    if result
+      update_columns(latitude: result[:lat], longitude: result[:lon])
+    else
+      update_columns(latitude: nil, longitude: nil)
+    end
   rescue StandardError
     nil
   end

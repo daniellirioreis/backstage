@@ -1,13 +1,22 @@
 class NominatimService
   BASE_URL = "https://nominatim.openstreetmap.org/search"
 
-  # Retorna { lat:, lon: } ou nil se não encontrar
+  # Tenta o endereço completo; se não encontrar, tenta só a parte após a última vírgula
   def self.geocode(address)
     return nil if address.blank?
 
+    result = search(address)
+    return result if result
+
+    # Fallback: tenta a cidade/estado (última parte após vírgula)
+    parts = address.split(",").map(&:strip)
+    parts.length > 1 ? search(parts.last(2).join(", ")) : nil
+  end
+
+  def self.search(query)
     uri = URI(BASE_URL)
     uri.query = URI.encode_www_form(
-      q:            address,
+      q:            query,
       format:       "json",
       limit:        1,
       countrycodes: "br"
@@ -32,4 +41,6 @@ class NominatimService
   rescue StandardError
     nil
   end
+
+  private_class_method :search
 end
