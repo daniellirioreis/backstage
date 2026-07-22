@@ -211,15 +211,11 @@
           <%
             maps_query = ERB::Util.url_encode(event.location)
             maps_url   = "https://maps.google.com/?q=#{maps_query}"
-            validated  = event.respond_to?(:location_validated?) && event.location_validated?
           %>
           <div style="border-top:1px solid #f4f4f5; padding:0.65rem 1.25rem; display:flex; align-items:center; gap:0.5rem;">
             <i class="bi bi-geo-alt" style="font-size:0.8rem; color:#a1a1aa; flex-shrink:0;"></i>
             <span style="font-size:0.75rem; color:#71717a; flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
               <%= event.location %>
-              <% unless validated %>
-                <span style="font-size:0.65rem; color:#f59e0b; margin-left:4px;" title="Endereço não verificado">⚠</span>
-              <% end %>
             </span>
             <%= link_to maps_url, target: "_blank", rel: "noopener",
                 style: "display:inline-flex; align-items:center; gap:4px; font-size:0.72rem; font-weight:600; color:#1d4ed8; background:#eff6ff; border-radius:6px; padding:3px 10px; text-decoration:none; flex-shrink:0;" do %>
