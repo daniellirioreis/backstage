@@ -146,7 +146,7 @@
                 <input type="hidden" name="teams[<%= team.id %>][id]" value="<%= team.id %>">
                 <input type="hidden" name="teams[<%= team.id %>][sector_id]" value="<%= sector.id %>">
 
-                <div style="display:grid;grid-template-columns:1fr 180px;gap:0.75rem;margin-bottom:1rem;">
+                <div class="team-name-radio-grid" style="display:grid;grid-template-columns:1fr 180px;gap:0.75rem;margin-bottom:1rem;">
                   <div>
                     <label class="form-label" style="font-size:0.78rem;">Nome da equipe</label>
                     <input type="text" name="teams[<%= team.id %>][name]" value="<%= team.name %>" class="form-control team-name-input">
@@ -168,8 +168,8 @@
                 </div>
 
                 <div style="font-size:0.78rem;font-weight:600;color:#52525b;margin-bottom:0.5rem;"><i class="bi bi-people"></i> Colaboradores</div>
-                <div style="border:1px solid #e4e4e7;border-radius:8px;margin-bottom:0.6rem;">
-                  <div style="display:grid;grid-template-columns:<%= member_cols %>;gap:0.5rem;padding:0.4rem 0.75rem;background:#f9fafb;border-bottom:1px solid #e4e4e7;border-radius:8px 8px 0 0;">
+                <div class="team-members-table<%= @event_functions.any? ? ' team-members-fn' : '' %>" style="border:1px solid #e4e4e7;border-radius:8px;margin-bottom:0.6rem;">
+                  <div class="member-row" style="display:grid;grid-template-columns:<%= member_cols %>;gap:0.5rem;padding:0.4rem 0.75rem;background:#f9fafb;border-bottom:1px solid #e4e4e7;border-radius:8px 8px 0 0;">
                     <span style="font-size:0.68rem;font-weight:600;color:#71717a;text-transform:uppercase;letter-spacing:0.05em;">Colaborador</span>
                     <% if @event_functions.any? %><span style="font-size:0.68rem;font-weight:600;color:#71717a;text-transform:uppercase;letter-spacing:0.05em;">Função</span><% end %>
                     <span></span>
@@ -251,7 +251,7 @@
             <template class="team-card-tpl" data-sector-id="<%= sector.id %>">
               <div class="team-form-content">
                 <input type="hidden" name="teams[__TEAM_IDX__][sector_id]" value="<%= sector.id %>">
-                <div style="display:grid;grid-template-columns:1fr 180px;gap:0.75rem;margin-bottom:1rem;">
+                <div class="team-name-radio-grid" style="display:grid;grid-template-columns:1fr 180px;gap:0.75rem;margin-bottom:1rem;">
                   <div>
                     <label class="form-label" style="font-size:0.78rem;">Nome da equipe</label>
                     <input type="text" name="teams[__TEAM_IDX__][name]" class="form-control team-name-input" placeholder="Ex: Portão A, Palco Principal">
@@ -270,8 +270,8 @@
                   </div>
                 </div>
                 <div style="font-size:0.78rem;font-weight:600;color:#52525b;margin-bottom:0.5rem;"><i class="bi bi-people"></i> Colaboradores</div>
-                <div style="border:1px solid #e4e4e7;border-radius:8px;margin-bottom:0.6rem;">
-                  <div style="display:grid;grid-template-columns:<%= member_cols %>;gap:0.5rem;padding:0.4rem 0.75rem;background:#f9fafb;border-bottom:1px solid #e4e4e7;border-radius:8px 8px 0 0;">
+                <div class="team-members-table<%= @event_functions.any? ? ' team-members-fn' : '' %>" style="border:1px solid #e4e4e7;border-radius:8px;margin-bottom:0.6rem;">
+                  <div class="member-row" style="display:grid;grid-template-columns:<%= member_cols %>;gap:0.5rem;padding:0.4rem 0.75rem;background:#f9fafb;border-bottom:1px solid #e4e4e7;border-radius:8px 8px 0 0;">
                     <span style="font-size:0.68rem;font-weight:600;color:#71717a;text-transform:uppercase;letter-spacing:0.05em;">Colaborador</span>
                     <% if @event_functions.any? %><span style="font-size:0.68rem;font-weight:600;color:#71717a;text-transform:uppercase;letter-spacing:0.05em;">Função</span><% end %>
                     <span></span>

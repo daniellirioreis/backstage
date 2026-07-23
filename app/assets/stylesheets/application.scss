@@ -1238,6 +1238,20 @@ body.sidebar-collapsed {
     padding: 1rem 0.75rem !important;
   }
 
+  // ── Nome da equipe + Radio: empilha no mobile ────────────────────────────
+  .team-name-radio-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  // ── Tabela de membros das equipes: scroll interno ────────────────────────
+  .team-members-table {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .team-members-fn .member-row {
+    grid-template-columns: 1fr 140px 32px !important;
+  }
+
   // ── Impedir que qualquer elemento cause scroll horizontal ─────────────────
   .main-content,
   .main-inner {
