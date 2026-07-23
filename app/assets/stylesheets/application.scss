@@ -1207,6 +1207,18 @@ body.sidebar-collapsed {
     border-radius: 0;
   }
 
+  // ── Sector row: tipo+nome empilhados ─────────────────────────────────────
+  .sector-type-name-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  // ── Sector fn table: scroll interno sem quebrar a página ─────────────────
+  .sector-fn-table {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+  }
+
   // ── Wizard nav: scroll horizontal sem quebrar a página ───────────────────
   .wizard-nav-bar {
     scrollbar-width: none;
