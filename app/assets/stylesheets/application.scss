@@ -1092,6 +1092,115 @@ body.sidebar-collapsed {
     font-size: 0.78rem;
     padding: 0 0.35rem;
   }
+
+  // ── iOS: evitar zoom automático ao focar inputs ───────────────────────────
+  // iOS faz zoom quando input tem font-size < 16px
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  input[type="search"],
+  input[type="tel"],
+  input[type="date"],
+  input[type="number"],
+  input[type="time"],
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+
+  // ── Toque amigável: targets mínimos de 44px ───────────────────────────────
+  .btn-primary,
+  .btn-secondary,
+  .btn-danger {
+    min-height: 44px;
+    justify-content: center;
+  }
+
+  // ── Dashboard tabs: linha rolável sem quebra ──────────────────────────────
+  #dash-tab-bar {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    flex-wrap: nowrap !important;
+    scrollbar-width: none;
+    &::-webkit-scrollbar { display: none; }
+
+    button {
+      flex-shrink: 0 !important;
+      padding: 0.4rem 0.65rem !important;
+      font-size: 0.75rem !important;
+      gap: 0.25rem !important;
+    }
+  }
+
+  // ── Esconder colunas de tabela não essenciais no mobile ──────────────────
+  .col-mobile-hide { display: none !important; }
+
+  // ── Filtro de eventos: empilhar verticalmente ─────────────────────────────
+  .events-filter-row {
+    flex-direction: column !important;
+    overflow-x: visible !important;
+    flex-wrap: wrap !important;
+    gap: 0.5rem !important;
+    align-items: stretch !important;
+
+    input[type="text"],
+    input[type="date"] {
+      width: 100% !important;
+      min-height: 44px;
+      box-sizing: border-box;
+    }
+
+    button[type="submit"] {
+      width: 100% !important;
+      min-height: 44px;
+      border-radius: 7px;
+      font-weight: 600;
+    }
+
+    .events-filter-clear {
+      width: 100% !important;
+      min-height: 44px;
+      justify-content: center !important;
+      text-align: center;
+    }
+
+    .events-filter-label { display: none !important; }
+  }
+
+  // ── Gráfico de gasto por função: adaptar grid estreito ───────────────────
+  // Override do inline-style grid-template-columns:160px 1fr 90px
+  [style*="grid-template-columns:160px"],
+  [style*="grid-template-columns: 160px"] {
+    grid-template-columns: 1fr 80px !important;
+
+    // Esconde a primeira coluna (label) e mostra como tooltip no hover
+    > div:first-child {
+      display: none !important;
+    }
+  }
+
+  // ── Formulários: inputs full-width e touch-friendly ──────────────────────
+  .form-group input,
+  .form-group select,
+  .form-group textarea {
+    width: 100%;
+  }
+
+  // ── Event bar: garantir botão hambúrguer sempre visível ──────────────────
+  .sidebar-toggle {
+    flex-shrink: 0;
+  }
+
+  // ── Cards de turno no my_schedule: padding menor ─────────────────────────
+  .content-card {
+    // já definido acima, reforçar border-radius menor
+    border-radius: 8px;
+  }
+
+  // ── Tabela de presenças/relatórios: scroll horizontal ────────────────────
+  .table-responsive {
+    border-radius: 0;
+  }
 }
 
 // Telas muito pequenas (< 390px — iPhone SE, etc.)

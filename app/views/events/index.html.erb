@@ -183,18 +183,18 @@
 <%# ── Filtros de pesquisa ─────────────────────────────────────────────────── %>
 <%= form_with url: events_path, method: :get, local: true, style: "margin-bottom:0.75rem;" do |f| %>
   <%= hidden_field_tag :status, @status_filter if @status_filter %>
-  <div style="display:flex;flex-direction:row;gap:0.4rem;align-items:center;flex-wrap:nowrap;overflow-x:auto;">
+  <div class="events-filter-row" style="display:flex;flex-direction:row;gap:0.4rem;align-items:center;flex-wrap:nowrap;overflow-x:auto;">
     <input type="text" name="q" value="<%= @q %>" placeholder="Nome do evento…"
            style="display:inline-block;width:180px;flex-shrink:0;font-size:0.8rem;height:30px;padding:0.2rem 0.6rem;border:1px solid #e4e4e7;border-radius:7px;outline:none;background:#fff;">
 
     <input type="text" name="location" value="<%= @location_filter %>" placeholder="Local…"
            style="display:inline-block;width:140px;flex-shrink:0;font-size:0.8rem;height:30px;padding:0.2rem 0.6rem;border:1px solid #e4e4e7;border-radius:7px;outline:none;background:#fff;">
 
-    <span style="font-size:0.75rem;color:#a1a1aa;white-space:nowrap;flex-shrink:0;">De</span>
+    <span class="events-filter-label" style="font-size:0.75rem;color:#a1a1aa;white-space:nowrap;flex-shrink:0;">De</span>
     <input type="date" name="date_from" value="<%= @date_from %>"
            style="display:inline-block;width:135px;flex-shrink:0;font-size:0.8rem;height:30px;padding:0.2rem 0.5rem;border:1px solid #e4e4e7;border-radius:7px;outline:none;background:#fff;">
 
-    <span style="font-size:0.75rem;color:#a1a1aa;white-space:nowrap;flex-shrink:0;">até</span>
+    <span class="events-filter-label" style="font-size:0.75rem;color:#a1a1aa;white-space:nowrap;flex-shrink:0;">até</span>
     <input type="date" name="date_to" value="<%= @date_to %>"
            style="display:inline-block;width:135px;flex-shrink:0;font-size:0.8rem;height:30px;padding:0.2rem 0.5rem;border:1px solid #e4e4e7;border-radius:7px;outline:none;background:#fff;">
 
@@ -202,6 +202,7 @@
 
     <% if @q.present? || @location_filter.present? || @date_from.present? || @date_to.present? %>
       <%= link_to events_path(status: @status_filter),
+            class: "events-filter-clear",
             style: "display:inline-flex;align-items:center;gap:0.25rem;height:30px;padding:0 0.65rem;border-radius:7px;font-size:0.78rem;font-weight:600;background:#f4f4f5;color:#71717a;text-decoration:none;border:1px solid #e4e4e7;white-space:nowrap;flex-shrink:0;" do %>
         <i class="bi bi-x"></i> Limpar
       <% end %>
@@ -224,10 +225,10 @@
           <tr>
             <th>Nome</th>
             <th style="width: 110px;">Status</th>
-            <th>Empresa</th>
+            <th class="col-mobile-hide">Empresa</th>
             <th style="width: 180px;">Período</th>
-            <th>Local</th>
-            <th style="width: 130px; text-align: center;">Estrutura</th>
+            <th class="col-mobile-hide">Local</th>
+            <th class="col-mobile-hide" style="width: 130px; text-align: center;">Estrutura</th>
             <th style="width: 80px;"></th>
           </tr>
         </thead>
@@ -258,7 +259,7 @@
               </td>
 
               <%# Empresa %>
-              <td style="color: #52525b; font-size: 0.82rem;"><%= event.company&.name %></td>
+              <td class="col-mobile-hide" style="color: #52525b; font-size: 0.82rem;"><%= event.company&.name %></td>
 
               <%# Período %>
               <td style="color: #71717a; font-size: 0.82rem; white-space: nowrap;">
@@ -267,14 +268,14 @@
               </td>
 
               <%# Local %>
-              <td style="color: #71717a; font-size: 0.82rem;">
+              <td class="col-mobile-hide" style="color: #71717a; font-size: 0.82rem;">
                 <% if event.location.present? %>
                   <i class="bi bi-geo-alt" style="opacity: 0.5;"></i> <%= event.location %>
                 <% end %>
               </td>
 
               <%# Estrutura: setores · equipes · colab %>
-              <td style="text-align: center;">
+              <td class="col-mobile-hide" style="text-align: center;">
                 <div style="display: flex; gap: 0.4rem; justify-content: center; flex-wrap: wrap;">
                   <span style="font-size: 0.7rem; color: #2563eb; background: #eff6ff; border-radius: 4px; padding: 2px 6px; white-space: nowrap;" title="Setores">
                     <i class="bi bi-grid-3x3-gap"></i> <%= event.sectors.size %>
