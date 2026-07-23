@@ -13,7 +13,7 @@
   { n: 4, label: "Escalas" }
 ] %>
 
-<div style="display:flex;align-items:center;background:#f9f9fb;border:1px solid #e4e4e7;border-radius:12px;padding:14px 20px;margin-bottom:1.75rem;">
+<div class="wizard-nav-bar" style="display:flex;align-items:center;background:#f9f9fb;border:1px solid #e4e4e7;border-radius:12px;padding:14px 20px;margin-bottom:1.75rem;overflow-x:auto;-webkit-overflow-scrolling:touch;">
   <% steps.each_with_index do |step, i| %>
     <% done      = step[:n] < current_step %>
     <% active    = step[:n] == current_step %>
@@ -111,7 +111,7 @@
       <i class="bi <%= guide[:icon] %>" style="color:#a16207;font-size:1rem;"></i>
       <span style="font-size:0.82rem;font-weight:700;color:#713f12;"><%= guide[:title] %></span>
     </div>
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:0.45rem;">
+    <div class="wizard-guide-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:0.45rem;">
       <% guide[:items].each do |item| %>
         <div style="display:flex;align-items:flex-start;gap:0.5rem;font-size:0.75rem;color:#713f12;line-height:1.5;">
           <i class="bi <%= item[:icon] %>" style="color:#a16207;margin-top:2px;flex-shrink:0;"></i>
