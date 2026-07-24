@@ -1248,6 +1248,11 @@ body.sidebar-collapsed {
     grid-template-columns: 1fr !important;
   }
 
+  // ── events/show: lista de equipes — grid sem coluna coordenador ──────────
+  .team-list-grid {
+    grid-template-columns: 16px 1fr 80px auto !important;
+  }
+
   // ── events/show: 4 cards resumo → 2×2 no mobile ─────────────────────────
   .event-summary-4cols {
     grid-template-columns: repeat(2, 1fr) !important;

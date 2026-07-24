@@ -481,103 +481,131 @@
       <p style="margin:0; font-size:0.88rem;">Nenhuma equipe cadastrada para este evento.</p>
     </div>
   <% else %>
-    <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(300px, 1fr)); gap:1rem;">
-      <% @sectors.each do |sector| %>
-        <% sector.teams.each do |team| %>
-          <%
-            has_sched  = @teams_with_shifts.include?(team.id)
-            members    = team.users
-          %>
-          <div class="content-card" style="padding:1.1rem 1.25rem; display:flex; flex-direction:column; gap:0.85rem;">
+    <div style="display:flex; flex-direction:column; gap:0.75rem;">
+      <% @sectors.select { |s| s.teams.any? }.each do |sector| %>
+        <%
+          sector_members = sector.teams.sum { |t| t.users.size }
+          sector_done    = sector.teams.count { |t| @teams_with_shifts.include?(t.id) }
+          all_done       = sector_done == sector.teams.size
+          none_done      = sector_done == 0
+        %>
+        <div class="content-card" style="padding:0; overflow:hidden;">
 
-            <%# Cabeçalho: nome + setor + escala + ações %>
-            <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:0.5rem;">
-              <div style="min-width:0;">
-                <div style="font-size:0.92rem; font-weight:700; color:#18181b; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
-                  <%= team.name %>
-                </div>
-                <span style="font-size:0.68rem; font-weight:600; background:#f5f3ff; color:#7c3aed; border-radius:4px; padding:1px 7px; margin-top:2px; display:inline-block;">
-                  <i class="bi bi-grid-3x3-gap"></i> <%= sector.name %>
-                </span>
-              </div>
-              <div style="display:flex; align-items:center; gap:0.35rem; flex-shrink:0;">
-                <% if has_sched %>
-                  <span style="display:inline-flex; align-items:center; gap:0.25rem; background:#dcfce7; border:1px solid #86efac; border-radius:5px; padding:2px 8px; font-size:0.65rem; font-weight:700; color:#15803d; white-space:nowrap;">
-                    <i class="bi bi-calendar-check"></i> Escala ok
-                  </span>
-                <% else %>
-                  <span style="display:inline-flex; align-items:center; gap:0.25rem; background:#fef2f2; border:1px solid #fca5a5; border-radius:5px; padding:2px 8px; font-size:0.65rem; font-weight:700; color:#dc2626; white-space:nowrap;">
-                    <i class="bi bi-calendar-x"></i> Sem escala
-                  </span>
-                <% end %>
-                <% if policy(team).credentials? %>
-                  <%= link_to credentials_team_path(team),
-                        target: "_blank",
-                        title: "Imprimir credenciais",
-                        style: "display:inline-flex; align-items:center; justify-content:center; width:28px; height:28px; border-radius:6px; border:1px solid #e4e4e7; background:#fff; color:#71717a; text-decoration:none; font-size:0.8rem; flex-shrink:0;" do %>
-                    <i class="bi bi-printer"></i>
-                  <% end %>
-                <% end %>
-              </div>
+          <%# ── Cabeçalho do setor (clicável) ── %>
+          <div onclick="toggleSectorTeams(this)"
+               style="display:flex; align-items:center; gap:0.75rem; padding:0.85rem 1.25rem; cursor:pointer; user-select:none; transition:background 0.15s;"
+               onmouseover="this.style.background='#fafafa'" onmouseout="this.style.background=''">
+            <i class="bi bi-chevron-down sector-chevron" style="font-size:0.72rem; color:#a1a1aa; transition:transform 0.2s; flex-shrink:0;"></i>
+            <div style="flex:1; min-width:0;">
+              <span style="font-size:0.88rem; font-weight:700; color:#18181b;"><%= sector.name %></span>
+              <span style="font-size:0.7rem; color:#a1a1aa; margin-left:0.5rem;"><%= t("sector_types.#{sector.sector_type}", default: sector.sector_type.humanize) %></span>
             </div>
-
-            <%# Coordenador %>
-            <% if team.coordinator %>
-              <div style="display:flex; align-items:center; gap:0.5rem; background:#fefce8; border:1px solid #fde68a; border-radius:7px; padding:0.45rem 0.65rem;">
-                <div style="width:24px; height:24px; border-radius:50%; overflow:hidden; background:#fef3c7; border:2px solid #fcd34d; display:flex; align-items:center; justify-content:center; font-size:0.5rem; font-weight:700; color:#92400e; flex-shrink:0;">
-                  <% if team.coordinator.avatar.attached? %>
-                    <%= image_tag team.coordinator.avatar, style:"width:100%;height:100%;object-fit:cover;" %>
-                  <% else %>
-                    <%= team.coordinator.name.split.map(&:first).first(2).join.upcase %>
-                  <% end %>
-                </div>
-                <div style="min-width:0;">
-                  <div style="font-size:0.75rem; font-weight:600; color:#92400e; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;"><%= team.coordinator.name %></div>
-                  <div style="font-size:0.65rem; color:#b45309;">Coordenador</div>
-                </div>
-                <% if team.radio_channel.present? %>
-                  <span style="margin-left:auto; flex-shrink:0; display:inline-flex; align-items:center; gap:0.2rem; background:#fef3c7; border:1px solid #fcd34d; border-radius:5px; padding:1px 7px; font-size:0.68rem; font-weight:600; color:#92400e;">
-                    <i class="bi bi-broadcast" style="font-size:0.6rem;"></i> <%= team.radio_channel %>
-                  </span>
-                <% end %>
-              </div>
-            <% end %>
-
-            <%# Membros %>
-            <div>
-              <div style="font-size:0.68rem; font-weight:600; text-transform:uppercase; letter-spacing:0.06em; color:#71717a; margin-bottom:0.4rem;">
-                <i class="bi bi-person-badge"></i> <%= members.size %> colaborador<%= members.size == 1 ? '' : 'es' %>
-              </div>
-              <% if members.any? %>
-                <div style="display:flex; flex-direction:column; gap:0.25rem;">
-                  <% members.each do |user| %>
-                    <%
-                      tm = team.team_memberships.find { |m| m.user_id == user.id }
-                    %>
-                    <div style="display:flex; align-items:center; gap:0.5rem;">
-                      <div style="width:24px; height:24px; border-radius:50%; overflow:hidden; background:#e4e4e7; border:1px solid #d4d4d8; display:flex; align-items:center; justify-content:center; font-size:0.48rem; font-weight:700; color:#71717a; flex-shrink:0;">
-                        <% if user.avatar.attached? %>
-                          <%= image_tag user.avatar, style:"width:100%;height:100%;object-fit:cover;" %>
-                        <% else %>
-                          <%= user.name.split.map(&:first).first(2).join.upcase %>
-                        <% end %>
-                      </div>
-                      <div style="min-width:0;">
-                        <div style="font-size:0.8rem; color:#18181b; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;"><%= user.name %></div>
-                        <% if tm&.event_function.present? %>
-                          <span style="font-size:0.65rem; color:#7c3aed; font-weight:600;"><%= tm.event_function.name %></span>
-                        <% end %>
-                      </div>
-                    </div>
-                  <% end %>
-                </div>
+            <div style="display:flex; gap:0.5rem; align-items:center; flex-shrink:0;">
+              <span style="font-size:0.72rem; color:#71717a;"><%= sector.teams.size %> equipe<%= sector.teams.size == 1 ? '' : 's' %> · <%= sector_members %> col.</span>
+              <% if all_done %>
+                <span style="display:inline-flex;align-items:center;gap:3px;background:#dcfce7;border:1px solid #86efac;border-radius:5px;padding:1px 8px;font-size:0.65rem;font-weight:700;color:#15803d;white-space:nowrap;">
+                  <i class="bi bi-calendar-check"></i> Escalas ok
+                </span>
+              <% elsif none_done %>
+                <span style="display:inline-flex;align-items:center;gap:3px;background:#fef2f2;border:1px solid #fca5a5;border-radius:5px;padding:1px 8px;font-size:0.65rem;font-weight:700;color:#dc2626;white-space:nowrap;">
+                  <i class="bi bi-calendar-x"></i> Sem escala
+                </span>
               <% else %>
-                <span style="font-size:0.78rem; color:#a1a1aa;">Nenhum colaborador</span>
+                <span style="display:inline-flex;align-items:center;gap:3px;background:#fff7ed;border:1px solid #fed7aa;border-radius:5px;padding:1px 8px;font-size:0.65rem;font-weight:700;color:#b45309;white-space:nowrap;">
+                  <i class="bi bi-calendar-minus"></i> Parcial (<%= sector_done %>/<%= sector.teams.size %>)
+                </span>
               <% end %>
             </div>
-
           </div>
-        <% end %>
+
+          <%# ── Lista de equipes ── %>
+          <div class="sector-teams-body" style="border-top:1px solid #f4f4f5;">
+            <%# Cabeçalho das colunas %>
+            <div class="team-list-grid" style="display:grid;grid-template-columns:16px 1fr 180px 80px auto;gap:0.5rem;padding:0.35rem 1.25rem;background:#f9fafb;border-bottom:1px solid #f4f4f5;">
+              <span></span>
+              <span style="font-size:0.62rem;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:#a1a1aa;">Equipe</span>
+              <span class="col-mobile-hide" style="font-size:0.62rem;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:#a1a1aa;">Coordenador</span>
+              <span style="font-size:0.62rem;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:#a1a1aa;">Membros</span>
+              <span></span>
+            </div>
+
+            <% sector.teams.each do |team| %>
+              <%
+                has_sched = @teams_with_shifts.include?(team.id)
+                members   = team.users
+              %>
+              <div class="team-list-grid" style="display:grid;grid-template-columns:16px 1fr 180px 80px auto;gap:0.5rem;align-items:center;padding:0.6rem 1.25rem;border-bottom:1px solid #f4f4f5;">
+
+                <%# Dot de status %>
+                <span style="width:8px;height:8px;border-radius:50%;background:<%= has_sched ? '#16a34a' : '#dc2626' %>;display:block;margin:auto;flex-shrink:0;"></span>
+
+                <%# Nome da equipe + rádio %>
+                <div style="min-width:0;">
+                  <%= link_to team.name, team_path(team), style:"font-size:0.85rem;font-weight:600;color:#18181b;text-decoration:none;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" %>
+                  <% if team.radio_channel.present? %>
+                    <span style="font-size:0.62rem;color:#92400e;background:#fef3c7;border:1px solid #fde68a;border-radius:4px;padding:0 5px;display:inline-flex;align-items:center;gap:2px;">
+                      <i class="bi bi-broadcast" style="font-size:0.6rem;"></i> <%= team.radio_channel %>
+                    </span>
+                  <% end %>
+                </div>
+
+                <%# Coordenador %>
+                <div class="col-mobile-hide" style="min-width:0;">
+                  <% if team.coordinator %>
+                    <div style="display:flex;align-items:center;gap:0.4rem;">
+                      <div style="width:22px;height:22px;border-radius:50%;overflow:hidden;background:#fef3c7;border:1.5px solid #fcd34d;display:flex;align-items:center;justify-content:center;font-size:0.45rem;font-weight:700;color:#92400e;flex-shrink:0;">
+                        <% if team.coordinator.avatar.attached? %>
+                          <%= image_tag team.coordinator.avatar, style:"width:100%;height:100%;object-fit:cover;" %>
+                        <% else %>
+                          <%= team.coordinator.name.split.map(&:first).first(2).join.upcase %>
+                        <% end %>
+                      </div>
+                      <span style="font-size:0.78rem;color:#52525b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"><%= team.coordinator.name.split.first(2).join(" ") %></span>
+                    </div>
+                  <% else %>
+                    <span style="font-size:0.75rem;color:#a1a1aa;">—</span>
+                  <% end %>
+                </div>
+
+                <%# Avatares empilhados %>
+                <div style="display:flex;align-items:center;">
+                  <% members.first(3).each_with_index do |user, idx| %>
+                    <div style="width:22px;height:22px;border-radius:50%;overflow:hidden;background:#e4e4e7;border:1.5px solid #fff;display:flex;align-items:center;justify-content:center;font-size:0.44rem;font-weight:700;color:#71717a;flex-shrink:0;position:relative;margin-left:<%= idx > 0 ? '-6px' : '0' %>;z-index:<%= 10 - idx %>;">
+                      <% if user.avatar.attached? %>
+                        <%= image_tag user.avatar, style:"width:100%;height:100%;object-fit:cover;" %>
+                      <% else %>
+                        <%= user.name.split.map(&:first).first(2).join.upcase %>
+                      <% end %>
+                    </div>
+                  <% end %>
+                  <% if members.size > 3 %>
+                    <div style="width:22px;height:22px;border-radius:50%;background:#f4f4f5;border:1.5px solid #fff;display:flex;align-items:center;justify-content:center;font-size:0.55rem;font-weight:700;color:#71717a;flex-shrink:0;margin-left:-6px;z-index:7;position:relative;">
+                      +<%= members.size - 3 %>
+                    </div>
+                  <% end %>
+                  <% if members.empty? %>
+                    <span style="font-size:0.72rem;color:#a1a1aa;">0</span>
+                  <% end %>
+                </div>
+
+                <%# Ações %>
+                <div style="display:flex;gap:0.3rem;align-items:center;justify-content:flex-end;">
+                  <% if policy(team).credentials? %>
+                    <%= link_to credentials_team_path(team), target:"_blank", title:"Credenciais",
+                          style:"display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:6px;border:1px solid #e4e4e7;background:#fff;color:#71717a;text-decoration:none;font-size:0.8rem;" do %>
+                      <i class="bi bi-printer"></i>
+                    <% end %>
+                  <% end %>
+                  <%= link_to team_path(team), title:"Ver equipe",
+                        style:"display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:6px;border:1px solid #e4e4e7;background:#fff;color:#71717a;text-decoration:none;font-size:0.8rem;" do %>
+                    <i class="bi bi-arrow-right"></i>
+                  <% end %>
+                </div>
+
+              </div>
+            <% end %>
+          </div>
+        </div>
       <% end %>
     </div>
   <% end %>
@@ -926,6 +954,14 @@
 </div><%# /tab-financeiro %>
 
 <script>
+function toggleSectorTeams(header) {
+  var body    = header.nextElementSibling;
+  var chevron = header.querySelector('.sector-chevron');
+  var isOpen  = body.style.display !== 'none';
+  body.style.display   = isOpen ? 'none' : 'block';
+  chevron.style.transform = isOpen ? 'rotate(-90deg)' : '';
+}
+
 function switchEventTab(name) {
   ['geral', 'setores', 'equipes', 'financeiro'].forEach(function(t) {
     var panel = document.getElementById('tab-' + t);
