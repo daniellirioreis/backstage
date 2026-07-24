@@ -69,7 +69,7 @@
     <div style="border:1px solid #e4e4e7; border-top:none; border-radius:0 0 14px 14px; box-shadow:0 1px 3px rgba(0,0,0,0.05);">
       <% all_teams.each do |team| %>
         <% is_active = team.id.to_s == active_id %>
-        <div id="sched-panel-<%= team.id %>"
+        <div id="sched-panel-<%= team.id %>" class="sched-panel-body"
              style="display:<%= is_active ? 'block' : 'none' %>; padding:1.25rem 1.5rem;">
           <turbo-frame
             id="shift-frame-<%= team.id %>"

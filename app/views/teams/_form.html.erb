@@ -4,7 +4,7 @@
                 team_saved_fn_counts:  (@team_saved_fn_counts  || {}).to_json } do |f| %>
     <%= render "shared/error_messages", object: team %>
 
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.25rem;">
+    <div class="team-form-top-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.25rem;">
       <div>
         <%= f.label :sector_id, Sector.model_name.human, class: "form-label" %>
         <%= f.collection_select :sector_id, @sectors, :id, :name,
@@ -61,10 +61,10 @@
       <i class="bi bi-people"></i> Colaboradores
     </div>
 
-    <div id="memberships-fields" style="border:1px solid #e4e4e7;border-radius:8px;margin-bottom:0.75rem;">
+    <div id="memberships-fields" class="team-members-table<%= @event_functions.any? ? ' team-members-fn' : '' %>" style="border:1px solid #e4e4e7;border-radius:8px;margin-bottom:0.75rem;">
 
       <%# Cabeçalho %>
-      <div style="display:grid;grid-template-columns:1fr 180px 36px;gap:0.5rem;padding:0.4rem 0.75rem;background:#f9fafb;border-bottom:1px solid #e4e4e7;border-radius:8px 8px 0 0;">
+      <div class="member-row" style="display:grid;grid-template-columns:1fr 180px 36px;gap:0.5rem;padding:0.4rem 0.75rem;background:#f9fafb;border-bottom:1px solid #e4e4e7;border-radius:8px 8px 0 0;">
         <span style="font-size:0.72rem;font-weight:600;color:#71717a;text-transform:uppercase;letter-spacing:0.05em;">Colaborador</span>
         <span style="font-size:0.72rem;font-weight:600;color:#71717a;text-transform:uppercase;letter-spacing:0.05em;"><%= @event_functions.any? ? "Função" : "" %></span>
         <span></span>
@@ -74,7 +74,7 @@
         <% team.team_memberships.reject(&:coordinator?).each do |tm| %>
           <%= f.fields_for :team_memberships, tm do |ff| %>
             <% current_fn = @event_functions.find { |ef| ef.id == ff.object.event_function_id } %>
-            <div class="membership-row" style="display:grid;grid-template-columns:1fr 180px 36px;gap:0.5rem;align-items:center;padding:0.5rem 0.75rem;border-bottom:1px solid #f4f4f5;flex-wrap:wrap;">
+            <div class="membership-row member-row" style="display:grid;grid-template-columns:1fr 180px 36px;gap:0.5rem;align-items:center;padding:0.5rem 0.75rem;border-bottom:1px solid #f4f4f5;flex-wrap:wrap;">
               <% if tm.persisted? && tm.user %>
                 <div style="display:flex;align-items:center;gap:0.5rem;">
                   <div style="width:26px;height:26px;border-radius:50%;background:#f4f4f5;border:1px solid #e4e4e7;display:flex;align-items:center;justify-content:center;font-size:0.5rem;font-weight:700;color:#52525b;flex-shrink:0;overflow:hidden;">
@@ -152,7 +152,7 @@
 
     <%# Template para nova linha %>
     <template id="membership-template">
-      <div class="membership-row" style="display:grid;grid-template-columns:1fr 180px 36px;gap:0.5rem;align-items:center;padding:0.5rem 0.75rem;border-bottom:1px solid #f4f4f5;flex-wrap:wrap;">
+      <div class="membership-row member-row" style="display:grid;grid-template-columns:1fr 180px 36px;gap:0.5rem;align-items:center;padding:0.5rem 0.75rem;border-bottom:1px solid #f4f4f5;flex-wrap:wrap;">
         <div style="position:relative;">
           <input type="text"
                  class="form-control member-search-input"

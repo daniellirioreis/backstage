@@ -1243,6 +1243,27 @@ body.sidebar-collapsed {
     grid-template-columns: 1fr !important;
   }
 
+  // ── teams/_form: Setor + Nome: empilha no mobile ─────────────────────────
+  .team-form-top-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  // ── events/show: 4 cards resumo → 2×2 no mobile ─────────────────────────
+  .event-summary-4cols {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+
+  // ── events/show: tabela financeira com scroll interno ────────────────────
+  .finance-table-scroll {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  // ── schedules: painel de equipe — padding menor no mobile ────────────────
+  .sched-panel-body {
+    padding: 1rem 0.75rem !important;
+  }
+
   // ── Tabela de membros das equipes: scroll interno ────────────────────────
   .team-members-table {
     overflow-x: auto;

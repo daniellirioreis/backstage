@@ -619,7 +619,7 @@
       </div>
 
       <%# 4 cards de resumo %>
-      <div style="display:grid; grid-template-columns:repeat(4,1fr); border-bottom:1px solid #f4f4f5;">
+      <div class="event-summary-4cols" style="display:grid; grid-template-columns:repeat(4,1fr); border-bottom:1px solid #f4f4f5;">
         <div style="padding:14px 20px; border-right:1px solid #f4f4f5;">
           <div style="font-size:0.65rem; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color:#a1a1aa; margin-bottom:4px;">Orçado</div>
           <div style="font-size:1.1rem; font-weight:800; color:#7c3aed;"><%= number_to_currency(@plan_total_cost, unit: "R$", separator: ",", delimiter: ".", precision: 0) %></div>
@@ -651,6 +651,7 @@
       </div>
 
       <%# Tabela por função %>
+      <div class="finance-table-scroll">
       <table style="width:100%; border-collapse:collapse;">
         <thead>
           <tr>
@@ -710,6 +711,7 @@
           <% end %>
         </tbody>
       </table>
+      </div>
 
       <%# Legenda %>
       <div style="display:flex; gap:1rem; align-items:center; padding:10px 20px; border-top:1px solid #f4f4f5; background:#fafafa;">
