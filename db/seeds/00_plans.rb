@@ -40,3 +40,13 @@ plans.each do |attrs|
 end
 
 puts "   Total: #{Plan.count} planos"
+
+# Atribui plano Gratuito a empresas que ainda não têm plano
+free_plan = Plan.find_by(price: 0)
+if free_plan
+  sem_plano = Company.where(plan_id: nil).count
+  if sem_plano > 0
+    Company.where(plan_id: nil).update_all(plan_id: free_plan.id)
+    puts "→ #{sem_plano} empresa(s) sem plano receberam o plano #{free_plan.name}"
+  end
+end
