@@ -2,9 +2,12 @@
   # selected_days: array de EventDay objects
   # existing_shifts: { [user_id, date_str] => Shift } OU {} (novo)
   # submitted_members: params preservados em caso de erro
-  per_day          = selected_days.any?
-  t_uid            = team.id
+  # error_cells: array de "user_id" ou "user_id:date" com conflitos
+  per_day           = selected_days.any?
+  t_uid             = team.id
   default_day_hours = selected_days.any? ? selected_days.first.hours.to_f : 8.0
+  error_cells       = local_assigns.fetch(:error_cells, [])
+  error_msgs        = local_assigns.fetch(:error_msgs, {})
 %>
 
 <div class="content-card" style="margin-bottom: 1.5rem; overflow-x: auto;">
@@ -75,10 +78,12 @@
       <tbody>
         <% team_members.each do |tm| %>
           <%
-            submitted   = submitted_members&.dig(tm.user_id.to_s)
-            was_checked = submitted_members.nil? || submitted&.dig("selected") == "1" || submitted&.dig(:selected) == "1"
+            submitted    = submitted_members&.dig(tm.user_id.to_s)
+            was_checked  = submitted_members.nil? || submitted&.dig("selected") == "1" || submitted&.dig(:selected) == "1"
+            uid_s        = tm.user_id.to_s
+            row_has_error = error_cells.any? { |c| c.split(":").first == uid_s }
           %>
-          <tr>
+          <tr style="<%= 'background:#fef2f2;' if row_has_error %>">
             <td>
               <input type="checkbox" name="members[<%= tm.user_id %>][selected]" value="1"
                      class="member-check" <%= "checked" if was_checked %>
@@ -107,6 +112,11 @@
                   <% if tm.event_function.present? %>
                     <span style="font-size:0.65rem; color:#7c3aed; font-weight:600; background:#f5f3ff; border:1px solid #ddd6fe; border-radius:3px; padding:0 4px;"><%= tm.event_function.name %></span>
                   <% end %>
+                  <% if (msgs = error_msgs[tm.user_id]).present? %>
+                    <div style="font-size:0.68rem; color:#dc2626; font-weight:500; margin-top:2px;">
+                      <i class="bi bi-exclamation-circle-fill"></i> <%= msgs.join(", ") %>
+                    </div>
+                  <% end %>
                 </div>
               </div>
             </td>
@@ -114,15 +124,16 @@
             <% if per_day %>
               <% selected_days.each do |ed| %>
                 <%
-                  date_str  = ed.date.to_s
-                  existing  = existing_shifts[[tm.user_id, date_str]]
-                  sub_day   = submitted&.dig(date_str)
-                  start_val = sub_day&.dig("start_time") || sub_day&.dig(:start_time) ||
-                              existing&.start_time&.strftime("%H:%M") || ""
-                  end_val   = sub_day&.dig("end_time")   || sub_day&.dig(:end_time)   ||
-                              existing&.end_time&.strftime("%H:%M")   || ""
+                  date_str      = ed.date.to_s
+                  existing      = existing_shifts[[tm.user_id, date_str]]
+                  sub_day       = submitted&.dig(date_str)
+                  start_val     = sub_day&.dig("start_time") || sub_day&.dig(:start_time) ||
+                                  existing&.start_time&.strftime("%H:%M") || ""
+                  end_val       = sub_day&.dig("end_time")   || sub_day&.dig(:end_time)   ||
+                                  existing&.end_time&.strftime("%H:%M")   || ""
+                  cell_has_error = error_cells.include?("#{uid_s}:#{date_str}") || (row_has_error && !error_cells.any? { |c| c.include?(":") && c.split(":").first == uid_s })
                 %>
-                <td style="border-left: 2px solid #ddd6fe; padding: 0.3rem 0.4rem;">
+                <td style="border-left: 2px solid #ddd6fe; padding: 0.3rem 0.4rem; <%= 'background:#fee2e2;' if cell_has_error %>">
                   <input type="time"
                          name="members[<%= tm.user_id %>][<%= date_str %>][start_time]"
                          value="<%= start_val %>"
@@ -130,9 +141,9 @@
                          data-max-hours="<%= ed.hours %>"
                          data-pair-role="start"
                          data-date-label="<%= I18n.l(ed.date, format: '%a %d/%m') %>"
-                         style="padding: 0.25rem 0.4rem; font-size: 0.8rem; min-width: 95px;">
+                         style="padding: 0.25rem 0.4rem; font-size: 0.8rem; min-width: 95px; <%= 'border-color:#ef4444;' if cell_has_error %>">
                 </td>
-                <td style="padding: 0.3rem 0.4rem;">
+                <td style="padding: 0.3rem 0.4rem; <%= 'background:#fee2e2;' if cell_has_error %>">
                   <%
                     dur_label = ""
                     if start_val.present? && end_val.present?
@@ -154,7 +165,7 @@
                            data-max-hours="<%= ed.hours %>"
                            data-pair-role="end"
                            data-date-label="<%= I18n.l(ed.date, format: '%a %d/%m') %>"
-                           style="padding: 0.25rem 0.4rem; font-size: 0.8rem; min-width: 95px;">
+                           style="padding: 0.25rem 0.4rem; font-size: 0.8rem; min-width: 95px; <%= 'border-color:#ef4444;' if cell_has_error %>">
                     <span class="shift-dur" style="font-size:0.72rem;color:#7c3aed;font-weight:700;white-space:nowrap;min-width:2rem;"><%= dur_label %></span>
                   </div>
                 </td>
@@ -188,12 +199,12 @@
                 end_val   = submitted&.dig("end_time")   || submitted&.dig(:end_time)   ||
                             existing&.end_time&.strftime("%H:%M")   || ""
               %>
-              <td>
+              <td style="<%= 'background:#fee2e2;' if row_has_error %>">
                 <input type="time" name="members[<%= tm.user_id %>][start_time]"
                        value="<%= start_val %>" class="col-start form-control"
-                       style="padding: 0.3rem 0.5rem; font-size: 0.82rem;">
+                       style="padding: 0.3rem 0.5rem; font-size: 0.82rem; <%= 'border-color:#ef4444;' if row_has_error %>">
               </td>
-              <td>
+              <td style="<%= 'background:#fee2e2;' if row_has_error %>">
                 <%
                   dur_label = ""
                   if start_val.present? && end_val.present?
@@ -210,7 +221,7 @@
                 <div style="display:flex;align-items:center;gap:0.35rem;white-space:nowrap;">
                   <input type="time" name="members[<%= tm.user_id %>][end_time]"
                          value="<%= end_val %>" class="col-end form-control"
-                         style="padding: 0.3rem 0.5rem; font-size: 0.82rem;">
+                         style="padding: 0.3rem 0.5rem; font-size: 0.82rem; <%= 'border-color:#ef4444;' if row_has_error %>">
                   <span class="shift-dur" style="font-size:0.72rem;color:#7c3aed;font-weight:700;white-space:nowrap;min-width:2rem;"><%= dur_label %></span>
                 </div>
               </td>

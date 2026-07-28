@@ -19,19 +19,6 @@
   </div>
 <% end %>
 
-<%# ── Erros ── %>
-<% if @update_errors&.any? %>
-  <div style="background:#fef2f2; border:1px solid #fca5a5; border-radius:8px; padding:1rem 1.25rem; margin-bottom:1rem;">
-    <div style="font-weight:700; color:#dc2626; font-size:0.88rem; margin-bottom:0.5rem;">
-      <i class="bi bi-exclamation-circle-fill"></i> <%= @update_errors.size %> turno(s) com erro:
-    </div>
-    <% @update_errors.each do |err| %>
-      <div style="font-size:0.82rem; color:#991b1b; padding:2px 0;">
-        <strong><%= err[:name] %>:</strong> <%= err[:messages].join(', ') %>
-      </div>
-    <% end %>
-  </div>
-<% end %>
 
 <%# ── PASSO 1: Seleção de dias ── %>
 <% if @event_days.any? %>
@@ -104,9 +91,9 @@
 <% show_table = @selected_days.any? || @event_days.empty? %>
 
 <% if show_table %>
-  <%= form_with url: update_team_shifts_path, method: :patch, local: true,
+  <%= form_with url: update_team_shifts_path, method: :patch,
                 id: "save-form-#{uid}",
-                data: { turbo: false } do |f| %>
+                data: { turbo_frame: "_top" } do |f| %>
     <input type="hidden" name="team_id" value="<%= uid %>">
     <%= hidden_field_tag :modal,  params[:modal]  if params[:modal].present? %>
     <%= hidden_field_tag :wizard, params[:wizard] if params[:wizard].present? %>
@@ -162,12 +149,23 @@
       </div>
     <% end %>
 
+    <%
+      error_cells_local = (@update_errors || []).map do |f|
+        f[:date].present? ? "#{f[:user_id]}:#{f[:date]}" : f[:user_id].to_s
+      end
+      error_msgs_local = (@update_errors || []).each_with_object({}) do |f, h|
+        h[f[:user_id].to_i] ||= []
+        h[f[:user_id].to_i] |= f[:messages]
+      end
+    %>
     <%= render "shifts/members_table",
           team: @selected_team,
           team_members: @team_members,
           selected_days: @selected_days,
           existing_shifts: @existing_shifts,
-          submitted_members: @submitted_members %>
+          submitted_members: @submitted_members,
+          error_cells: error_cells_local,
+          error_msgs: error_msgs_local %>
 
     <%# Apenas salvar + badge aqui — botão excluir fica fora (forms não podem ser aninhados) %>
     <div style="display:flex; align-items:center; gap:0.75rem; margin-top:0.75rem; flex-wrap:wrap;">
@@ -334,6 +332,17 @@
   updateUI();
 })();
 </script>
+<% end %>
+
+<% if params[:wizard] == "1" && !@in_frame && @update_errors&.any? %>
+  <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.75rem; margin-top:1.25rem;">
+    <%= link_to teams_event_setup_path(@event), class: "btn-secondary" do %>
+      <i class="bi bi-arrow-left"></i> Voltar para Equipes
+    <% end %>
+    <%= button_to finish_event_setup_path(@event), method: :post, class: "btn-primary", form: { style: "display:inline;" } do %>
+      <i class="bi bi-check2-circle"></i> Finalizar configuração
+    <% end %>
+  </div>
 <% end %>
 
 <% end %><%# /turbo_frame_tag %>

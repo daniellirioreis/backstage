@@ -663,6 +663,10 @@ class EventsController < ApplicationController
       redirect_to @event, alert: "Este evento não pode mais mudar de status."
       return
     end
+    if next_status == "active" && @event.start_date.present? && Date.today < @event.start_date
+      redirect_to @event, alert: "O evento só pode ser ativado a partir de #{l(@event.start_date, format: :long)}."
+      return
+    end
     if @event.update(status: next_status)
       label = next_status == "active" ? "ativado" : "encerrado"
       redirect_to @event, notice: "Evento #{label} com sucesso."

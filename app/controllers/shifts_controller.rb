@@ -170,6 +170,7 @@ class ShiftsController < ApplicationController
     authorize Shift, :edit?
     @event = current_event
     @selected_team = Team.includes(sector: :event).find(params[:team_id])
+    @error_cells = params[:error_cells]&.split(",") || []
     @event_days = @event ? @event.event_days.ordered : []
     @in_frame = request.headers["Turbo-Frame"].present?
 
@@ -256,6 +257,7 @@ class ShiftsController < ApplicationController
     end
 
     if failures.any?
+      error_msg = failures.map { |e| "#{e[:name]}: #{e[:messages].join(', ')}" }.join(" | ")
       @team_members = TeamMembership.where(team_id: @selected_team.id).includes(:event_function, user: { avatar_attachment: :blob }).joins(:user).order("users.name")
       existing = Shift.where(team_id: @selected_team.id).order(:date)
       @existing_shifts = {}
@@ -263,9 +265,8 @@ class ShiftsController < ApplicationController
         dates = s.end_date.present? ? (s.date..s.end_date).to_a : [s.date]
         dates.each { |d| @existing_shifts[[s.user_id, d.to_s]] = s }
       end
-      first = existing.first
-      @ref_date  = first&.date
-      @selected_days = resolve_selected_days(@event_days, @ref_date&.to_s, nil)
+      # Restaura os dias que o usuário havia selecionado antes de salvar
+      @selected_days = resolve_selected_days(@event_days, params[:date], params[:end_date])
       @submitted_members = members
       @update_errors = failures
       render :edit_team, status: :unprocessable_entity
@@ -310,6 +311,8 @@ class ShiftsController < ApplicationController
 
   def set_shift
     @shift = Shift.find(params[:id])
+  rescue ActiveRecord::RecordNotFound
+    redirect_to shifts_path, alert: "Turno não encontrado."
   end
 
   def load_form_data
@@ -368,7 +371,7 @@ class ShiftsController < ApplicationController
           created += 1
         else
           Rails.logger.warn "[create_per_day] Falha ao salvar turno #{user_name} #{date_str}: #{shift.errors.full_messages.inspect}"
-          failures << { name: "#{user_name} (#{date_str})", messages: shift.errors.full_messages }
+          failures << { name: "#{user_name} (#{date_str})", user_id: user_id.to_i, date: date_str, messages: shift.errors.full_messages }
         end
       end
     end
@@ -389,7 +392,7 @@ class ShiftsController < ApplicationController
       shift = Shift.new(user_id: user_id, sector_id: team.sector_id, team_id: team.id,
                         date: date, end_date: end_date,
                         start_time: data["start_time"], end_time: data["end_time"])
-      shift.save ? (created += 1) : failures << { name: User.find_by(id: user_id)&.name, messages: shift.errors.full_messages }
+      shift.save ? (created += 1) : failures << { name: User.find_by(id: user_id)&.name, user_id: user_id.to_i, messages: shift.errors.full_messages }
     end
     [created, failures, skipped]
   end
@@ -406,13 +409,13 @@ class ShiftsController < ApplicationController
       attrs = { date: date, end_date: end_date, start_time: data["start_time"], end_time: data["end_time"] }
       existing = Shift.find_by(team_id: team.id, user_id: user_id)
       if existing
-        existing.update(attrs) ? (updated += 1) : failures << { name: User.find_by(id: user_id)&.name, messages: existing.errors.full_messages }
+        existing.update(attrs) ? (updated += 1) : failures << { name: User.find_by(id: user_id)&.name, user_id: user_id.to_i, messages: existing.errors.full_messages }
       else
         # Pula se já existe turno idêntico em outra equipe do mesmo evento
         next if duplicate_shift_in_event?(event_id, user_id, date, data["start_time"], data["end_time"])
 
         s = Shift.new(attrs.merge(user_id: user_id, sector_id: team.sector_id, team_id: team.id))
-        s.save ? (created += 1) : failures << { name: User.find_by(id: user_id)&.name, messages: s.errors.full_messages }
+        s.save ? (created += 1) : failures << { name: User.find_by(id: user_id)&.name, user_id: user_id.to_i, messages: s.errors.full_messages }
       end
     end
     [updated, created, failures, skipped]

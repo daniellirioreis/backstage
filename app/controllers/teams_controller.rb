@@ -39,7 +39,21 @@ class TeamsController < ApplicationController
 
   def coordinator
     authorize :team, :coordinator?
-    return redirect_to(select_event_path, alert: "Selecione um evento para continuar.") unless current_event
+
+    # Auto-detecta evento a partir das equipes do coordenador quando não há evento na sessão
+    unless current_event
+      candidate = Team.where(coordinator_id: current_user.id)
+                      .joins(sector: :event)
+                      .order("events.start_date DESC")
+                      .first
+                      &.sector&.event
+      if candidate
+        session[:current_event_id] = candidate.id
+        @current_event = candidate
+      else
+        return redirect_to(select_event_path, alert: "Selecione um evento para continuar.")
+      end
+    end
 
     @teams = Team.where(coordinator_id: current_user.id)
                  .joins(:sector)
@@ -108,6 +122,7 @@ class TeamsController < ApplicationController
     authorize @team, :panel?
 
     @event = @team.sector.event
+    session[:current_event_id] = @event.id
 
     all_memberships = TeamMembership
       .where(team_id: @team.id)

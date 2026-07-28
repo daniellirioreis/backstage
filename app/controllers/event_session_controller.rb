@@ -4,6 +4,12 @@ class EventSessionController < ApplicationController
   def select_event
     @events = if current_user.admin?
       Event.includes(:company)
+    elsif current_user.coordinator?
+      event_ids = Team.where(coordinator_id: current_user.id)
+                      .joins(:sector)
+                      .pluck("sectors.event_id")
+                      .uniq
+      Event.includes(:company).where(id: event_ids)
     else
       company_ids = current_user.company_users.pluck(:company_id)
       Event.includes(:company).where(company_id: company_ids)
