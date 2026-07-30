@@ -11,7 +11,6 @@ class DashboardController < ApplicationController
     if current_user.coordinator?
       team = Team.find_by(coordinator_id: current_user.id)
       redirect_to(panel_team_path(team)) and return if team
-      # sem equipe atribuída: continua para o dashboard normal
     end
 
     company_ids = if current_user.admin?
@@ -22,15 +21,10 @@ class DashboardController < ApplicationController
 
     event_ids = Event.where(company_id: company_ids).pluck(:id)
 
-    @total_events   = event_ids.size
-    @active_events  = Event.where(id: event_ids, status: :active).count
-    @total_sectors  = Sector.where(event_id: event_ids).count
-    @total_teams    = Team.joins(:sector).where(sectors: { event_id: event_ids }).count
-    @total_members  = TeamMembership.joins(team: :sector)
-                                    .where(sectors: { event_id: event_ids })
-                                    .select(:user_id).distinct.count
-    @total_vehicles = Vehicle.count
-    @total_users    = company_ids.any? ? User.joins(:company_users)
+    # ── Métricas simples ─────────────────────────────────────────────────────
+    @total_events  = event_ids.size
+    @active_events = Event.where(id: event_ids, status: :active).count
+    @total_users   = company_ids.any? ? User.joins(:company_users)
                                              .where(company_users: { company_id: company_ids })
                                              .distinct.count : 0
 
@@ -44,72 +38,84 @@ class DashboardController < ApplicationController
                             .limit(5)
 
     # Média de colaboradores por evento
-    if @total_events > 0
+    if @total_events > 0 && event_ids.any?
       pairs = TeamMembership.joins(team: :sector)
                             .where(sectors: { event_id: event_ids })
                             .distinct
                             .pluck("sectors.event_id", :user_id)
-      counts_per_event = pairs.group_by(&:first).transform_values(&:size)
+      counts_per_event       = pairs.group_by(&:first).transform_values(&:size)
       @avg_members_per_event = (counts_per_event.values.sum.to_f / @total_events).round(1)
     else
       @avg_members_per_event = 0
     end
 
-    @events = Event.where(id: event_ids)
-                   .includes(sectors: { teams: :team_memberships })
-                   .order(start_date: :desc)
-
-    # ── Custo por evento (turnos × taxa/hora da função) ───────────────────────
-    all_shifts = Shift.joins(:sector)
-                      .where(sectors: { event_id: event_ids })
-                      .includes(:sector)
-
-    memberships_map = TeamMembership.includes(:event_function)
-                                    .where(team_id: all_shifts.map(&:team_id).compact.uniq)
-                                    .each_with_object({}) { |m, h| h[[m.user_id, m.team_id]] = m }
-
+    # ── Custo por evento via SQL (sem carregar todos os turnos em memória) ────
+    # Substituiu: all_shifts (N objetos Shift) + memberships_map + loop Ruby
+    # Agora: uma única query SQL com GROUP BY que agrega no banco
     @event_costs         = Hash.new(0.0)
     @cost_by_sector_type = Hash.new(0.0)
     @cost_by_event_type  = Hash.new(0.0)
     @cost_matrix         = Hash.new { |h, k| h[k] = Hash.new(0.0) }
     @cost_by_month       = Hash.new(0.0)
-    # { fn_name => { total: Float, event_ids: Set } }
     cost_by_function_raw = Hash.new { |h, k| h[k] = { total: 0.0, event_ids: Set.new } }
 
-    # Mapa event_id → event_type para acumular custo por tipo de evento
-    event_type_map = Event.where(id: event_ids).pluck(:id, :event_type).to_h
+    if event_ids.any?
+      cost_rows = ActiveRecord::Base.connection.execute(<<~SQL)
+        SELECT
+          sectors.event_id,
+          sectors.sector_type,
+          events.event_type,
+          event_functions.name            AS function_name,
+          TO_CHAR(shifts.date, 'YYYY-MM') AS year_month,
+          SUM(
+            CASE WHEN shifts.end_time > shifts.start_time
+              THEN EXTRACT(EPOCH FROM (shifts.end_time - shifts.start_time)) / 3600.0
+              ELSE 24.0 + EXTRACT(EPOCH FROM (shifts.end_time - shifts.start_time)) / 3600.0
+            END
+            * (COALESCE(shifts.end_date, shifts.date) - shifts.date + 1)
+            * event_functions.hourly_rate
+          ) AS total_cost
+        FROM shifts
+        INNER JOIN sectors ON sectors.id = shifts.sector_id
+        INNER JOIN events  ON events.id  = sectors.event_id
+        INNER JOIN team_memberships
+          ON  team_memberships.user_id = shifts.user_id
+          AND team_memberships.team_id = shifts.team_id
+        INNER JOIN event_functions
+          ON event_functions.id = team_memberships.event_function_id
+        WHERE sectors.event_id IN (#{event_ids.map(&:to_i).join(',')})
+          AND shifts.team_id IS NOT NULL
+          AND event_functions.hourly_rate > 0
+        GROUP BY
+          sectors.event_id,
+          sectors.sector_type,
+          events.event_type,
+          event_functions.name,
+          TO_CHAR(shifts.date, 'YYYY-MM')
+      SQL
 
-    all_shifts.each do |shift|
-      next unless shift.team_id
-      membership = memberships_map[[shift.user_id, shift.team_id]]
-      rate       = membership&.event_function&.hourly_rate.to_f
-      next unless rate > 0
+      cost_rows.each do |row|
+        cost        = row["total_cost"].to_f
+        event_id    = row["event_id"].to_i
+        sector_type = row["sector_type"]
+        event_type  = row["event_type"]
+        fn_name     = row["function_name"]
+        ym          = row["year_month"]
 
-      s = shift.start_time.hour * 60 + shift.start_time.min
-      e = shift.end_time.hour   * 60 + shift.end_time.min
-      hours_per_day = (e > s ? e - s : 1440 - s + e) / 60.0
-      days = shift.end_date.present? ? (shift.end_date - shift.date).to_i + 1 : 1
-      cost = hours_per_day * days * rate
+        @event_costs[event_id]                += cost
+        @cost_by_sector_type[sector_type]     += cost if sector_type.present?
+        @cost_by_event_type[event_type]       += cost if event_type.present?
+        @cost_matrix[event_type][sector_type] += cost if event_type.present? && sector_type.present?
+        @cost_by_month[ym]                    += cost if ym.present?
 
-      @event_costs[shift.sector.event_id] += cost
-      @cost_by_sector_type[shift.sector.sector_type] += cost if shift.sector.sector_type.present?
-
-      ev_type     = event_type_map[shift.sector.event_id]
-      sector_type = shift.sector.sector_type
-
-      @cost_by_event_type[ev_type] += cost if ev_type.present?
-      @cost_matrix[ev_type][sector_type] += cost if ev_type.present? && sector_type.present?
-
-      fn_name = membership&.event_function&.name
-      if fn_name.present?
-        cost_by_function_raw[fn_name][:total]     += cost
-        cost_by_function_raw[fn_name][:event_ids] << shift.sector.event_id
+        if fn_name.present?
+          cost_by_function_raw[fn_name][:total]     += cost
+          cost_by_function_raw[fn_name][:event_ids] << event_id
+        end
       end
-
-      @cost_by_month[shift.date.strftime("%Y-%m")] += cost
     end
 
-    # Média de gasto por função por evento (total acumulado / nº eventos que usaram a função)
+    # Média de gasto por função por evento
     @avg_cost_by_function = cost_by_function_raw
       .transform_values { |v| (v[:total] / v[:event_ids].size).round(2) }
       .sort_by { |_, avg| -avg }
@@ -117,18 +123,21 @@ class DashboardController < ApplicationController
 
     # Últimos 12 meses para o gráfico de evolução
     @last_12_months = (11.downto(0)).map { |n| (Date.today << n).strftime("%Y-%m") }
+    @total_cost     = @event_costs.values.sum
 
     # Top 5 colaboradores por número de turnos
-    top_shifts = Shift.joins(:sector)
-                      .where(sectors: { event_id: event_ids })
-                      .group(:user_id)
-                      .count
-                      .sort_by { |_, c| -c }
-                      .first(5)
-    user_map = User.where(id: top_shifts.map(&:first)).index_by(&:id)
-    @top_collaborators = top_shifts.map { |uid, count| [user_map[uid], count] }.compact
-
-    @total_cost = @event_costs.values.sum
+    if event_ids.any?
+      top_shifts = Shift.joins(:sector)
+                        .where(sectors: { event_id: event_ids })
+                        .group(:user_id)
+                        .count
+                        .sort_by { |_, c| -c }
+                        .first(5)
+      user_map           = User.where(id: top_shifts.map(&:first)).index_by(&:id)
+      @top_collaborators = top_shifts.map { |uid, count| [user_map[uid], count] }.compact
+    else
+      @top_collaborators = []
+    end
 
     # Contagem de eventos por tipo (para calcular média)
     @events_by_type = Event.where(id: event_ids)
@@ -151,12 +160,10 @@ class DashboardController < ApplicationController
                      .distinct
                      .pluck("events.event_type", "sectors.event_id", "team_memberships.user_id")
 
-      # Conta colaboradores distintos por evento: { [event_type, event_id] => count }
       per_event = raw_collab.each_with_object(Hash.new(0)) do |(et, eid, _uid), h|
         h[[et, eid]] += 1
       end
 
-      # Agrupa por event_type e calcula média, min, max
       @collab_ref_by_event_type = per_event
         .group_by { |(et, _eid), _| et }
         .transform_values do |entries|
@@ -173,6 +180,5 @@ class DashboardController < ApplicationController
     else
       @collab_ref_by_event_type = {}
     end
-
   end
 end
