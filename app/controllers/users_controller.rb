@@ -138,6 +138,43 @@ class UsersController < ApplicationController
     end
 
     @days_until_next = @next_shift ? (@next_shift.date - today).to_i : nil
+
+    # ── Calendário — serialização JSON ──────────────────────────────────────
+    @cal_shifts_json = all_shifts.map do |s|
+      dm = if s.overnight?
+        1440 - (s.start_time.hour * 60 + s.start_time.min) + (s.end_time.hour * 60 + s.end_time.min)
+      else
+        (s.end_time.hour * 60 + s.end_time.min) - (s.start_time.hour * 60 + s.start_time.min)
+      end
+      {
+        d:  s.date.day,
+        m:  s.date.month - 1,
+        y:  s.date.year,
+        st: s.start_time.strftime("%H:%M"),
+        et: s.end_time.strftime("%H:%M"),
+        ov: s.overnight?,
+        dm: dm,
+        ei: s.sector.event.id,
+        tn: s.team&.name.to_s
+      }
+    end.to_json
+
+    @cal_events_json = @shifts_by_event.keys.each_with_index.map do |event, idx|
+      payment = @payments_by_event[event.id]
+      paid_at_fmt = (payment && !payment.waived? && payment.paid_at) \
+        ? I18n.l(payment.paid_at.to_date, format: "%d/%m") : ""
+      {
+        id:  event.id,
+        nm:  event.name,
+        loc: event.location.to_s,
+        ci:  idx % 5,
+        pa:  payment.nil? ? 0 : (payment.waived? ? 2 : 1),
+        am:  payment&.amount&.to_f,
+        mt:  payment&.payment_method.to_s,
+        pb:  payment&.paid_by&.name&.split&.first.to_s,
+        pat: paid_at_fmt
+      }
+    end.to_json
   end
 
   def new

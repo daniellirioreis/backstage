@@ -5,6 +5,12 @@
     <% end %>
     <h1 style="margin:0;"><%= t("permission_actions.my_schedule") %></h1>
   </div>
+  <% if @shifts_by_event.any? %>
+    <div id="sched-tab-toggle" style="display:inline-flex;border:0.5px solid #e4e4e7;border-radius:8px;overflow:hidden;">
+      <button class="sched-tab-btn active" onclick="schedTab('lista',this)" style="border:none;background:transparent;padding:5px 12px;font-size:0.82rem;cursor:pointer;color:#71717a;font-family:inherit;transition:all .1s;"><i class="bi bi-list-ul"></i> Lista</button>
+      <button class="sched-tab-btn" onclick="schedTab('cal',this)" style="border:none;background:transparent;padding:5px 12px;font-size:0.82rem;cursor:pointer;color:#71717a;font-family:inherit;transition:all .1s;"><i class="bi bi-calendar3"></i> Calendário</button>
+    </div>
+  <% end %>
 </div>
 
 <%# ── Perfil ─────────────────────────────────────────────────────────────── %>
@@ -40,6 +46,8 @@
     <% end %>
   <% end %>
 </div>
+
+<div id="view-lista">
 
 <%# ── Mini-dashboard ─────────────────────────────────────────────────────── %>
 <% if @shifts_by_event.any? %>
@@ -277,5 +285,287 @@
     <p style="margin:0 0 0.25rem; font-size:0.88rem; color:#52525b; font-weight:600;">Nenhuma escala ainda</p>
     <p style="margin:0; font-size:0.8rem;"><%= @user.name.split.first %> ainda não tem turnos cadastrados.</p>
   </div>
+<% end %>
+
+</div><%# /view-lista %>
+
+<%# ══════════════════════════════════════════════════════════════════════════
+    CALENDÁRIO
+══════════════════════════════════════════════════════════════════════════ %>
+<% if @shifts_by_event.any? %>
+<div id="view-cal" style="display:none;">
+
+  <%# CSS do calendário %>
+  <style>
+    .cal-day{background:#fff;border:0.5px solid #f0f0f0;border-radius:7px;min-height:72px;padding:6px;cursor:pointer;transition:border-color .1s,background .1s;}
+    .cal-day:hover{border-color:#d4d4d8;}
+    .cal-day.other-month{background:transparent;border-color:transparent;cursor:default;}
+    .cal-day.weekend-col{background:#fafafa;}
+    .cal-day.today{border:1.5px solid #18181b !important;}
+    .cal-day.selected{border:1.5px solid #6366f1 !important;background:#eef2ff;}
+    .day-num{font-size:11.5px;font-weight:500;color:#18181b;width:20px;height:20px;display:flex;align-items:center;justify-content:center;border-radius:5px;margin-bottom:4px;}
+    .cal-day.today .day-num{background:#18181b;color:#fff;}
+    .cal-day.selected .day-num{background:#6366f1;color:#fff;}
+    .cal-day.other-month .day-num{color:#d4d4d8;}
+    .shift-pill{border-radius:4px;padding:2px 5px 3px;font-size:9.5px;font-weight:500;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border-left:2.5px solid;line-height:1.3;}
+    .pill-time{font-size:8.5px;font-weight:400;opacity:.7;}
+    .sched-tab-btn.active{background:#f4f4f5 !important;color:#18181b !important;font-weight:500 !important;}
+  </style>
+
+  <%# Dados para o JS %>
+  <script>
+    const CAL_SHIFTS = <%= raw @cal_shifts_json %>;
+    const CAL_EVENTS = <%= raw @cal_events_json %>;
+    const CRED_URLS  = { <%= @shifts_by_event.keys.map { |ev| "#{ev.id}:'#{credential_user_path(@user, format: :pdf, event_id: ev.id)}'" }.join(",") %> };
+    const TODAY_D = <%= Date.today.day %>, TODAY_M = <%= Date.today.month - 1 %>, TODAY_Y = <%= Date.today.year %>;
+
+    const EV_COLORS = [
+      { bg:"#eef2ff", brd:"#6366f1", txt:"#4338ca" },
+      { bg:"#f0fdf4", brd:"#22c55e", txt:"#15803d" },
+      { bg:"#fff7ed", brd:"#f97316", txt:"#c2410c" },
+      { bg:"#fdf4ff", brd:"#a855f7", txt:"#7e22ce" },
+      { bg:"#eff6ff", brd:"#3b82f6", txt:"#1d4ed8" },
+    ];
+    const MONTHS_PT = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
+    const MONTHS_ABR = ["jan","fev","mar","abr","mai","jun","jul","ago","set","out","nov","dez"];
+    const DAYS_LONG  = ["domingo","segunda-feira","terça-feira","quarta-feira","quinta-feira","sexta-feira","sábado"];
+
+    let calYear = TODAY_Y, calMonth = TODAY_M;
+
+    function ec(ci) { return EV_COLORS[(ci||0) % EV_COLORS.length]; }
+    function evById(id) { return CAL_EVENTS.find(e => e.id === id) || {}; }
+    function fmtBRL(a) { return "R$ " + (a||0).toFixed(2).replace(".", ",").replace(/\B(?=(\d{3})+(?!\d))/g, "."); }
+    function fmtDur(dm) { const h=Math.floor(dm/60),m=dm%60; return (h>0?h+"h":"")+(m>0?" "+m+"min":""); }
+
+    function renderStats() {
+      const ms = CAL_SHIFTS.filter(s => s.m===calMonth && s.y===calYear);
+      const mhMin = ms.reduce((a,s) => a+s.dm, 0);
+      const h = Math.floor(mhMin/60), m = mhMin%60;
+
+      const now = new Date(TODAY_Y, TODAY_M, TODAY_D);
+      const upcoming = CAL_SHIFTS
+        .filter(s => new Date(s.y,s.m,s.d) >= now)
+        .sort((a,b) => new Date(a.y,a.m,a.d)-new Date(b.y,b.m,b.d) || a.st.localeCompare(b.st));
+
+      let nextLabel="—", nextSub="";
+      if(upcoming.length) {
+        const ns = upcoming[0];
+        const diff = Math.round((new Date(ns.y,ns.m,ns.d)-now)/(864e5));
+        nextLabel = diff===0?"Hoje":diff===1?"Amanhã":"Em "+diff+" dias";
+        nextSub = (evById(ns.ei).nm||"") + (ns.tn?" · "+ns.tn:"");
+      }
+
+      const paidN = CAL_EVENTS.filter(e=>e.pa===1).length;
+      const pendN = CAL_EVENTS.filter(e=>e.pa===0).length;
+
+      document.getElementById("stat-next").textContent = nextLabel;
+      document.getElementById("stat-next-sub").textContent = nextSub;
+      document.getElementById("stat-hours").textContent = (h>0?h+"h":"")+(m>0?" "+m+"min":"") || "0h";
+      document.getElementById("stat-hours-sub").textContent = ms.length+" turno"+(ms.length!==1?"s":"")+" neste mês";
+      document.getElementById("stat-pay").textContent = paidN+" / "+CAL_EVENTS.length;
+      document.getElementById("stat-pay-sub").textContent = pendN+" pendente"+(pendN!==1?"s":"");
+    }
+
+    function renderCal() {
+      document.getElementById("cal-month-label").textContent = MONTHS_PT[calMonth]+" "+calYear;
+      renderStats();
+
+      const grid = document.getElementById("cal-grid");
+      grid.innerHTML = "";
+
+      const firstDay    = new Date(calYear, calMonth, 1).getDay();
+      const daysInMonth = new Date(calYear, calMonth+1, 0).getDate();
+      const daysInPrev  = new Date(calYear, calMonth, 0).getDate();
+      const totalCells  = Math.ceil((firstDay+daysInMonth)/7)*7;
+
+      for(let i=0; i<totalCells; i++) {
+        const cell = document.createElement("div");
+        const offset = i - firstDay + 1;
+        let day, isOther=false, cy=calYear, cm=calMonth;
+
+        if(i < firstDay) {
+          day=daysInPrev-firstDay+1+i; isOther=true;
+          cm=calMonth-1; if(cm<0){cm=11;cy--;}
+        } else if(offset > daysInMonth) {
+          day=offset-daysInMonth; isOther=true;
+          cm=calMonth+1; if(cm>11){cm=0;cy++;}
+        } else { day=offset; }
+
+        const col=i%7, isWeekend=col===0||col===6;
+        const isToday=!isOther&&cy===TODAY_Y&&cm===TODAY_M&&day===TODAY_D;
+
+        cell.className = "cal-day"+(isOther?" other-month":"")+(isWeekend&&!isOther?" weekend-col":"")+(isToday?" today":"");
+        cell.dataset.day = day;
+
+        const dn = document.createElement("div");
+        dn.className = "day-num"; dn.textContent = day;
+        cell.appendChild(dn);
+
+        if(!isOther) {
+          const ds = CAL_SHIFTS.filter(s=>s.d===day&&s.m===calMonth&&s.y===calYear);
+          ds.slice(0,2).forEach(s => {
+            const ev=evById(s.ei), c=ec(ev.ci);
+            const p=document.createElement("div");
+            p.className="shift-pill";
+            p.style.cssText=`background:${c.bg};border-left-color:${c.brd};color:${c.txt};`;
+            p.innerHTML=`${(ev.nm||"").split(" ")[0]} <span class="pill-time">${s.st}</span>`;
+            cell.appendChild(p);
+          });
+          if(ds.length>2) {
+            const ov=document.createElement("div");
+            ov.style.cssText="font-size:9px;color:#a1a1aa;padding-left:2px;margin-top:1px;";
+            ov.textContent="+"+(ds.length-2)+" turno"+(ds.length-2>1?"s":"");
+            cell.appendChild(ov);
+          }
+          cell.addEventListener("click", () => selectDay(day, ds));
+        }
+        grid.appendChild(cell);
+      }
+      document.getElementById("cal-detail").innerHTML = `<div style="padding:2rem 1rem;text-align:center;color:#a1a1aa;font-size:12px;"><i class="bi bi-hand-index" style="display:block;font-size:1.4rem;margin-bottom:6px;"></i>Clique em um dia<br>para ver os detalhes</div>`;
+    }
+
+    function selectDay(day, shifts) {
+      document.querySelectorAll(".cal-day:not(.other-month)").forEach(c => {
+        c.classList.remove("selected");
+        if(parseInt(c.dataset.day)===day) c.classList.add("selected");
+      });
+
+      const dp = document.getElementById("cal-detail");
+      const dow = new Date(calYear, calMonth, day).getDay();
+
+      if(!shifts.length) {
+        dp.innerHTML=`<div style="padding:1.5rem 1rem;text-align:center;color:#a1a1aa;font-size:12px;"><i class="bi bi-calendar-x" style="display:block;font-size:1.3rem;margin-bottom:6px;"></i>Sem turnos em ${day} de ${MONTHS_ABR[calMonth]}</div>`;
+        return;
+      }
+
+      let html = `<div style="padding:10px 14px;border-bottom:0.5px solid #f4f4f5;">
+        <div style="font-size:9.5px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:#a1a1aa;margin-bottom:2px;">${DAYS_LONG[dow]}, ${day} de ${MONTHS_PT[calMonth].toLowerCase()} ${calYear}</div>
+        <div style="font-size:13.5px;font-weight:600;color:#18181b;">${shifts.length} turno${shifts.length>1?"s":""} agendado${shifts.length>1?"s":""}</div>
+      </div>`;
+
+      shifts.forEach(s => {
+        const ev=evById(s.ei), c=ec(ev.ci);
+        html+=`<div style="padding:10px 14px;border-bottom:0.5px solid #f9f9f9;">
+          <div style="display:inline-flex;align-items:center;gap:4px;font-size:10.5px;font-weight:500;border-radius:4px;padding:2px 8px;border-left:2.5px solid ${c.brd};background:${c.bg};color:${c.txt};margin-bottom:7px;">${ev.nm||""}</div>
+          <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:#71717a;margin-bottom:4px;">
+            <i class="bi bi-clock" style="font-size:12px;color:#a1a1aa;"></i>
+            <strong style="color:#18181b;">${s.st} → ${s.et}</strong>${s.ov?'<span style="font-size:10px;color:#a1a1aa;margin-left:2px;">+1 dia</span>':""}
+            <span style="margin-left:auto;background:#f4f4f5;border-radius:5px;padding:1px 7px;font-size:11px;">${fmtDur(s.dm)}</span>
+          </div>
+          ${s.tn?`<div style="display:flex;align-items:center;gap:6px;font-size:12px;color:#71717a;"><i class="bi bi-people" style="font-size:12px;color:#a1a1aa;"></i>${s.tn}</div>`:""}
+        </div>`;
+      });
+
+      const ev0=evById(shifts[0].ei);
+      let payHtml;
+      if(ev0.pa===1) {
+        payHtml=`<span style="display:inline-flex;align-items:center;gap:5px;background:#f0fdf4;border:0.5px solid #86efac;color:#15803d;border-radius:6px;padding:3px 9px;font-size:11.5px;font-weight:500;"><i class="bi bi-check-circle-fill" style="font-size:11px;"></i>Pago · ${fmtBRL(ev0.am)}</span>`;
+        if(ev0.mt||ev0.pat||ev0.pb) payHtml+=`<div style="font-size:10.5px;color:#a1a1aa;margin-top:5px;">${[ev0.mt,ev0.pat,ev0.pb?"por "+ev0.pb:""].filter(Boolean).join(" · ")}</div>`;
+      } else if(ev0.pa===2) {
+        payHtml=`<span style="display:inline-flex;align-items:center;gap:5px;background:#f4f4f5;border:0.5px solid #e4e4e7;color:#71717a;border-radius:6px;padding:3px 9px;font-size:11.5px;font-weight:500;"><i class="bi bi-dash-circle" style="font-size:11px;"></i>Dispensado</span>`;
+      } else {
+        payHtml=`<span style="display:inline-flex;align-items:center;gap:5px;background:#fef3c7;border:0.5px solid #fcd34d;color:#92400e;border-radius:6px;padding:3px 9px;font-size:11.5px;font-weight:500;"><i class="bi bi-hourglass-split" style="font-size:11px;"></i>Pendente</span>`;
+      }
+      html+=`<div style="padding:10px 14px;border-bottom:0.5px solid #f9f9f9;">
+        <div style="font-size:9.5px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:#a1a1aa;margin-bottom:6px;">Pagamento</div>${payHtml}
+      </div>`;
+
+      if(ev0.loc) html+=`<div style="padding:10px 14px;border-bottom:0.5px solid #f9f9f9;">
+        <div style="font-size:9.5px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:#a1a1aa;margin-bottom:6px;">Local</div>
+        <div style="display:flex;align-items:center;gap:6px;"><i class="bi bi-geo-alt" style="font-size:12px;color:#a1a1aa;flex-shrink:0;"></i><span style="font-size:11.5px;color:#71717a;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${ev0.loc}</span></div>
+      </div>`;
+
+      const credUrl = CRED_URLS[ev0.id]||"";
+      const mapUrl  = ev0.loc ? "https://maps.google.com/?q="+encodeURIComponent(ev0.loc) : "";
+      html+=`<div style="padding:10px 14px;display:flex;gap:7px;flex-wrap:wrap;">
+        ${credUrl?`<a href="${credUrl}" target="_blank" style="display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:500;color:#18181b;background:#f4f4f5;border:0.5px solid #e4e4e7;border-radius:7px;padding:6px 12px;text-decoration:none;flex:1;justify-content:center;"><i class="bi bi-person-badge" style="font-size:13px;"></i>Credencial PDF</a>`:""}
+        ${mapUrl?`<a href="${mapUrl}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:500;color:#1d4ed8;background:#eff6ff;border:0.5px solid #bfdbfe;border-radius:7px;padding:6px 12px;text-decoration:none;flex:1;justify-content:center;"><i class="bi bi-map" style="font-size:13px;"></i>Como chegar</a>`:""}
+      </div>`;
+
+      dp.innerHTML = html;
+    }
+
+    function calPrev() { calMonth--; if(calMonth<0){calMonth=11;calYear--;} renderCal(); }
+    function calNext() { calMonth++; if(calMonth>11){calMonth=0;calYear++;} renderCal(); }
+
+    function schedTab(tab, btn) {
+      document.querySelectorAll(".sched-tab-btn").forEach(b => {
+        b.style.background="transparent"; b.style.color="#71717a"; b.style.fontWeight="normal";
+      });
+      btn.style.background="#f4f4f5"; btn.style.color="#18181b"; btn.style.fontWeight="500";
+      document.getElementById("view-lista").style.display = tab==="lista" ? "" : "none";
+      document.getElementById("view-cal").style.display   = tab==="cal"   ? "" : "none";
+    }
+
+    document.addEventListener("DOMContentLoaded", function() {
+      if(document.getElementById("cal-grid")) renderCal();
+    });
+  </script>
+
+  <%# ── Stats cards ─────────────────────────────────────────────────────── %>
+  <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0.75rem;margin-bottom:1rem;">
+    <div style="background:#f9f9f9;border-radius:10px;padding:0.875rem 1rem;border-top:2.5px solid #6366f1;">
+      <div style="font-size:0.7rem;color:#a1a1aa;margin-bottom:0.2rem;"><i class="bi bi-clock"></i> Próximo turno</div>
+      <div style="font-size:1.15rem;font-weight:700;color:#18181b;line-height:1.2;" id="stat-next">—</div>
+      <div style="font-size:0.72rem;color:#71717a;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" id="stat-next-sub"></div>
+    </div>
+    <div style="background:#f9f9f9;border-radius:10px;padding:0.875rem 1rem;border-top:2.5px solid #22c55e;">
+      <div style="font-size:0.7rem;color:#a1a1aa;margin-bottom:0.2rem;"><i class="bi bi-hourglass-split"></i> Horas neste mês</div>
+      <div style="font-size:1.15rem;font-weight:700;color:#22c55e;line-height:1.2;" id="stat-hours">—</div>
+      <div style="font-size:0.72rem;color:#71717a;margin-top:2px;" id="stat-hours-sub"></div>
+    </div>
+    <div style="background:#f9f9f9;border-radius:10px;padding:0.875rem 1rem;border-top:2.5px solid #f59e0b;">
+      <div style="font-size:0.7rem;color:#a1a1aa;margin-bottom:0.2rem;"><i class="bi bi-cash"></i> Pagamentos</div>
+      <div style="font-size:1.15rem;font-weight:700;color:#f59e0b;line-height:1.2;" id="stat-pay">—</div>
+      <div style="font-size:0.72rem;color:#71717a;margin-top:2px;" id="stat-pay-sub"></div>
+    </div>
+  </div>
+
+  <%# ── Calendário + Painel de detalhes ────────────────────────────────── %>
+  <div style="display:grid;grid-template-columns:1fr 220px;gap:12px;align-items:start;">
+    <div>
+      <%# Navegação do mês %>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+        <button onclick="calPrev()" style="border:0.5px solid #e4e4e7;background:#fff;border-radius:7px;width:30px;height:30px;cursor:pointer;font-size:15px;color:#18181b;line-height:1;">‹</button>
+        <span id="cal-month-label" style="font-size:14px;font-weight:600;color:#18181b;"></span>
+        <button onclick="calNext()" style="border:0.5px solid #e4e4e7;background:#fff;border-radius:7px;width:30px;height:30px;cursor:pointer;font-size:15px;color:#18181b;line-height:1;">›</button>
+      </div>
+      <%# Cabeçalho dos dias %>
+      <div style="display:grid;grid-template-columns:repeat(7,minmax(0,1fr));margin-bottom:3px;">
+        <% %w[Dom Seg Ter Qua Qui Sex Sáb].each do |d| %>
+          <div style="text-align:center;font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.05em;color:#a1a1aa;padding-bottom:5px;"><%= d %></div>
+        <% end %>
+      </div>
+      <%# Grid %>
+      <div id="cal-grid" style="display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:2px;"></div>
+      <%# Legenda %>
+      <% ev_colors = [
+        { bg:"#eef2ff", brd:"#6366f1" },
+        { bg:"#f0fdf4", brd:"#22c55e" },
+        { bg:"#fff7ed", brd:"#f97316" },
+        { bg:"#fdf4ff", brd:"#a855f7" },
+        { bg:"#eff6ff", brd:"#3b82f6" },
+      ] %>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px;padding-top:8px;border-top:0.5px solid #f4f4f5;">
+        <% @shifts_by_event.keys.each_with_index do |event, idx| %>
+          <% c = ev_colors[idx % ev_colors.size] %>
+          <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:#71717a;">
+            <div style="width:11px;height:11px;border-radius:3px;background:<%= c[:bg] %>;border-left:2.5px solid <%= c[:brd] %>;flex-shrink:0;"></div>
+            <%= event.name %>
+          </div>
+        <% end %>
+      </div>
+    </div>
+
+    <%# Painel de detalhes %>
+    <div id="cal-detail" style="background:#fff;border:0.5px solid #e4e4e7;border-radius:12px;overflow:hidden;min-height:180px;">
+      <div style="padding:2rem 1rem;text-align:center;color:#a1a1aa;font-size:12px;">
+        <i class="bi bi-hand-index" style="display:block;font-size:1.4rem;margin-bottom:6px;"></i>
+        Clique em um dia<br>para ver os detalhes
+      </div>
+    </div>
+  </div>
+
+</div><%# /view-cal %>
 <% end %>
 
