@@ -35,3 +35,10 @@
 /config/master.key
 *.DS_Store
 portfolio-backstage.html
+
+# Arquivos soltos na raiz
+stress_test.py
+*.png
+*.pdf
+index.html
+logo.svg
