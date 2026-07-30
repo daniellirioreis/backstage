@@ -291,7 +291,9 @@
           <% c = ev_colors[idx % ev_colors.size] %>
           <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:#71717a;">
             <div style="width:11px;height:11px;border-radius:3px;background:<%= c[:bg] %>;border-left:2.5px solid <%= c[:brd] %>;flex-shrink:0;"></div>
-            <%= event.name %>
+            <span style="font-weight:500;color:#18181b;"><%= event.name %></span>
+            <span style="color:#a1a1aa;">·</span>
+            <span><%= l(event.start_date, format: :short) %> → <%= l(event.end_date, format: :short) %></span>
           </div>
         <% end %>
       </div>
