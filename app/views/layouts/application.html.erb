@@ -111,9 +111,32 @@
             <% show_execucao  = event_status.in?(%w[active closed]) %>
             <% show_fechamento = event_status == "closed" %>
 
+            <%# Badge helpers: done = etapa passada, current = etapa atual, pending = etapa futura %>
+            <% step_class = ->(step) {
+                 case step
+                 when :done    then "sidebar-step sidebar-step--done"
+                 when :current then "sidebar-step sidebar-step--current"
+                 else               "sidebar-step"
+                 end
+               }
+               step_icon = ->(step) {
+                 case step
+                 when :done    then '<i class="bi bi-check" style="font-size:0.55rem;"></i>'.html_safe
+                 when :current then "2"
+                 else               "3"
+                 end
+               }
+            %>
+
             <%# ── Planejamento ────────────────────────────────────────────────── %>
             <% if policy(Event).index? %>
-              <div class="sidebar-section">Planejamento</div>
+              <% plan_step = event_status.nil? ? :current : :done %>
+              <div class="sidebar-section">
+                <span class="<%= step_class.(plan_step) %>">
+                  <%= plan_step == :done ? '<i class="bi bi-check" style="font-size:0.55rem;"></i>'.html_safe : "1" %>
+                </span>
+                Planejamento
+              </div>
               <%= link_to events_path, class: "sidebar-link #{controller_name == 'events' && controller_path != 'events/setup' ? 'active' : ''}" do %>
                 <i class="bi bi-calendar-event"></i> <%= Event.model_name.human(count: 2) %>
               <% end %>
@@ -133,7 +156,13 @@
             <%# ── Execução ────────────────────────────────────────────────────── %>
             <% show_exec_links = policy(Shift).index? || policy(:attendance).scan? || policy(:attendance).index? || policy(Vehicle).index? %>
             <% if show_execucao && show_exec_links %>
-              <div class="sidebar-section">Execução</div>
+              <% exec_step = event_status == "closed" ? :done : :current %>
+              <div class="sidebar-section">
+                <span class="<%= step_class.(exec_step) %>">
+                  <%= exec_step == :done ? '<i class="bi bi-check" style="font-size:0.55rem;"></i>'.html_safe : "2" %>
+                </span>
+                Execução
+              </div>
               <% if policy(Shift).index? %>
                 <%= link_to timeline_shifts_path, class: "sidebar-link #{controller_name == 'shifts' && action_name == 'timeline' ? 'active' : ''}" do %>
                   <i class="bi bi-calendar-range"></i> Timeline
@@ -163,7 +192,10 @@
                show_sec = policy(:report).sector_summary_report?
                show_closing = policy(:report).closing? %>
             <% if show_fechamento && (show_closing || show_att || show_abs || show_hrs || show_sec) %>
-              <div class="sidebar-section">Fechamento</div>
+              <div class="sidebar-section">
+                <span class="sidebar-step sidebar-step--current">3</span>
+                Fechamento
+              </div>
               <% if show_closing %>
                 <%= link_to reports_closing_path,
                       class: "sidebar-link #{controller_path == 'reports/closing' ? 'active' : ''}" do %>

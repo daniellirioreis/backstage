@@ -56,6 +56,35 @@ body {
   text-transform: uppercase;
   color: #3f3f46;
   margin-top: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.sidebar-step {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  font-size: 0.6rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  letter-spacing: 0;
+  text-transform: none;
+  background: #27272a;
+  color: #52525b;
+
+  &--done {
+    background: rgba(74, 222, 128, 0.15);
+    color: #4ade80;
+  }
+
+  &--current {
+    background: #4ade80;
+    color: #18181b;
+  }
 }
 
 .sidebar-link {
