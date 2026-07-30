@@ -83,7 +83,7 @@
             <% end %>
           <% else %>
             <%# ── Geral ──────────────────────────────────────────────────────── %>
-            <% if show_home || show_my_schedule || Team.exists?(coordinator_id: current_user.id) %>
+            <% if show_home || show_my_schedule || Team.exists?(coordinator_id: current_user.id) || policy(Event).index? %>
               <div class="sidebar-section">Geral</div>
               <% if show_home %>
                 <%= link_to root_path, class: "sidebar-link #{current_page?(root_path) ? 'active' : ''}" do %>
@@ -98,6 +98,11 @@
               <% if Team.exists?(coordinator_id: current_user.id) %>
                 <%= link_to coordinator_teams_path, class: "sidebar-link #{controller_name == 'teams' && action_name == 'coordinator' ? 'active' : ''}" do %>
                   <i class="bi bi-grid-1x2"></i> Minhas Equipes
+                <% end %>
+              <% end %>
+              <% if policy(Event).index? %>
+                <%= link_to events_path, class: "sidebar-link #{controller_name == 'events' && controller_path != 'events/setup' ? 'active' : ''}" do %>
+                  <i class="bi bi-calendar-event"></i> <%= Event.model_name.human(count: 2) %>
                 <% end %>
               <% end %>
             <% end %>
@@ -140,9 +145,6 @@
                 </span>
                 Planejamento
               </div>
-              <%= link_to events_path, class: "sidebar-link #{controller_name == 'events' && controller_path != 'events/setup' ? 'active' : ''}" do %>
-                <i class="bi bi-calendar-event"></i> <%= Event.model_name.human(count: 2) %>
-              <% end %>
               <% if current_event && policy(current_event).update? %>
                 <%= link_to sectors_event_setup_path(current_event),
                       class: "sidebar-link #{controller_path == 'events/setup' ? 'active' : ''}" do %>
