@@ -30,15 +30,6 @@
       <% end %>
     </div>
   </div>
-  <% if current_user == @user || policy(@user).show? %>
-    <% first_event = @shifts_by_event.keys.first %>
-    <% if first_event %>
-      <%= link_to credential_user_path(@user, format: :pdf, event_id: first_event.id),
-          style:"font-size:0.78rem; color:#18181b; text-decoration:none; display:flex; align-items:center; gap:4px; background:#f4f4f5; border-radius:7px; padding:0.3rem 0.65rem; flex-shrink:0; white-space:nowrap;" do %>
-        <i class="bi bi-person-badge" style="font-size:0.85rem;"></i> Credencial
-      <% end %>
-    <% end %>
-  <% end %>
 </div>
 
 
