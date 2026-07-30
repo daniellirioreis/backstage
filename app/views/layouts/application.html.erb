@@ -102,6 +102,15 @@
               <% end %>
             <% end %>
 
+            <%# Status do evento determina quais seções aparecem (cumulativo)
+                draft   → Planejamento
+                active  → Planejamento + Execução
+                closed  → Planejamento + Execução + Fechamento
+                sem evento → Planejamento apenas %>
+            <% event_status = current_event&.status %>
+            <% show_execucao  = event_status.in?(%w[active closed]) %>
+            <% show_fechamento = event_status == "closed" %>
+
             <%# ── Planejamento ────────────────────────────────────────────────── %>
             <% if policy(Event).index? %>
               <div class="sidebar-section">Planejamento</div>
@@ -122,8 +131,8 @@
             <% end %>
 
             <%# ── Execução ────────────────────────────────────────────────────── %>
-            <% show_exec = policy(Shift).index? || policy(:attendance).scan? || policy(:attendance).index? || policy(Vehicle).index? %>
-            <% if show_exec %>
+            <% show_exec_links = policy(Shift).index? || policy(:attendance).scan? || policy(:attendance).index? || policy(Vehicle).index? %>
+            <% if show_execucao && show_exec_links %>
               <div class="sidebar-section">Execução</div>
               <% if policy(Shift).index? %>
                 <%= link_to timeline_shifts_path, class: "sidebar-link #{controller_name == 'shifts' && action_name == 'timeline' ? 'active' : ''}" do %>
@@ -153,17 +162,12 @@
                show_hrs = policy(:report).hours_worked_report?
                show_sec = policy(:report).sector_summary_report?
                show_closing = policy(:report).closing? %>
-            <% if show_closing || show_att || show_abs || show_hrs || show_sec %>
+            <% if show_fechamento && (show_closing || show_att || show_abs || show_hrs || show_sec) %>
               <div class="sidebar-section">Fechamento</div>
               <% if show_closing %>
-                <% event_closed = current_event&.closed? %>
                 <%= link_to reports_closing_path,
-                      class: "sidebar-link #{controller_path == 'reports/closing' ? 'active' : ''} #{event_closed ? '' : 'sidebar-link--locked'}",
-                      title: event_closed ? nil : "Disponível apenas após encerrar o evento" do %>
+                      class: "sidebar-link #{controller_path == 'reports/closing' ? 'active' : ''}" do %>
                   <i class="bi bi-receipt"></i> <%= t("nav.closing") %>
-                  <% unless event_closed %>
-                    <i class="bi bi-lock-fill" style="font-size:0.65rem; margin-left:auto; opacity:0.45;"></i>
-                  <% end %>
                 <% end %>
               <% end %>
               <% if show_att %>
