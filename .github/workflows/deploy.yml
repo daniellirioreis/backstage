@@ -1,0 +1,49 @@
+name: Deploy Backstage
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Ambiente de deploy'
+        required: true
+        type: choice
+        options:
+          - staging
+          - production
+          - all
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Configurar Git
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+
+      - name: Deploy Homologação
+        if: ${{ inputs.environment == 'staging' || inputs.environment == 'all' }}
+        run: |
+          git checkout staging 2>/dev/null || git checkout -b staging
+          git merge main --no-edit
+          git push origin staging
+          echo "✅ Homologação enviada — https://backstage-staging.onrender.com"
+
+      - name: Deploy Produção
+        if: ${{ inputs.environment == 'production' || inputs.environment == 'all' }}
+        run: |
+          git checkout staging 2>/dev/null || git checkout -b staging
+          git merge main --no-edit
+          git push origin staging
+          git checkout main
+          git merge staging --no-edit
+          git push origin main
+          echo "✅ Produção enviada — https://backstage.onrender.com"
