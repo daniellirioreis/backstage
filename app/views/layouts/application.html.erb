@@ -119,6 +119,9 @@
                  else               "sidebar-step"
                  end
                }
+               section_class = ->(step) {
+                 step == :current ? "sidebar-section sidebar-section--current" : "sidebar-section"
+               }
                step_icon = ->(step) {
                  case step
                  when :done    then '<i class="bi bi-check" style="font-size:0.55rem;"></i>'.html_safe
@@ -131,7 +134,7 @@
             <%# ── Planejamento ────────────────────────────────────────────────── %>
             <% if policy(Event).index? %>
               <% plan_step = event_status.nil? ? :current : :done %>
-              <div class="sidebar-section">
+              <div class="<%= section_class.(plan_step) %>">
                 <span class="<%= step_class.(plan_step) %>">
                   <%= plan_step == :done ? '<i class="bi bi-check" style="font-size:0.55rem;"></i>'.html_safe : "1" %>
                 </span>
@@ -157,7 +160,7 @@
             <% show_exec_links = policy(Shift).index? || policy(:attendance).scan? || policy(:attendance).index? || policy(Vehicle).index? %>
             <% if show_execucao && show_exec_links %>
               <% exec_step = event_status == "closed" ? :done : :current %>
-              <div class="sidebar-section">
+              <div class="<%= section_class.(exec_step) %>">
                 <span class="<%= step_class.(exec_step) %>">
                   <%= exec_step == :done ? '<i class="bi bi-check" style="font-size:0.55rem;"></i>'.html_safe : "2" %>
                 </span>
@@ -192,7 +195,7 @@
                show_sec = policy(:report).sector_summary_report?
                show_closing = policy(:report).closing? %>
             <% if show_fechamento && (show_closing || show_att || show_abs || show_hrs || show_sec) %>
-              <div class="sidebar-section">
+              <div class="sidebar-section sidebar-section--current">
                 <span class="sidebar-step sidebar-step--current">3</span>
                 Fechamento
               </div>

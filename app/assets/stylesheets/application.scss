@@ -59,6 +59,10 @@ body {
   display: flex;
   align-items: center;
   gap: 0.45rem;
+
+  &--current {
+    color: #4ade80;
+  }
 }
 
 .sidebar-step {
