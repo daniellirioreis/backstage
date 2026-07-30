@@ -14,6 +14,7 @@ cloudflare_r2:
   bucket: <%= ENV["CF_R2_BUCKET"] %>
   endpoint: <%= ENV["CF_R2_ENDPOINT"] %>
   force_path_style: true
+  upload_checksum_algorithm: false
 
 # Use bin/rails credentials:edit to set the AWS secrets (as aws:access_key_id|secret_access_key)
 # amazon:
