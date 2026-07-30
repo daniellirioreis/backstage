@@ -595,6 +595,7 @@ module Reports
       end
 
       @grand_total = @rows.sum { |r| r[:total_value] }
+      load_substitute_info
       load_payments
     end
 
@@ -604,6 +605,7 @@ module Reports
       @sectors  = Sector.where(event: @event).order(:name)
       @sector   = @sectors.find_by(id: @sector_id)
       load_available_dates
+      load_substitute_info
       case @basis
       when "attendance" then load_by_attendance
       when "cross"      then load_by_cross
@@ -859,6 +861,20 @@ module Reports
         total_hours:   0.0,
         total_value:   0.0
       }
+    end
+
+    def load_substitute_info
+      rows = TeamMembership
+        .joins(team: :sector)
+        .where(sectors: { event_id: @event.id }, substitute: true)
+        .pluck(:user_id, :replaced_user_id)
+
+      replaced_ids   = rows.filter_map { |_, rid| rid }.uniq
+      replaced_names = replaced_ids.any? ? User.where(id: replaced_ids).pluck(:id, :name).to_h : {}
+
+      @substitute_map = rows.each_with_object({}) do |(uid, rid), h|
+        h[uid] = { substitute: true, replaced_user_name: replaced_names[rid] }
+      end
     end
 
     def event_memberships

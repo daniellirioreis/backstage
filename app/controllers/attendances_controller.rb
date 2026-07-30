@@ -214,14 +214,21 @@ class AttendancesController < ApplicationController
 
     @attendances = scope.order(checked_in_at: :desc)
 
-    # Credential codes e substitutos — carrega de uma vez para todos os membros do evento
+    # Credential codes, substitutos e substituídos — carrega de uma vez para todos os membros do evento
     all_memberships = TeamMembership
       .joins(team: :sector)
       .where(sectors: { event_id: @event.id })
-      .pluck(:user_id, :credential_code, :substitute)
+      .pluck(:user_id, :credential_code, :substitute, :replaced_user_id)
 
-    @credential_codes    = all_memberships.to_h { |uid, code, _| [uid, code] }
-    @substitute_user_ids = all_memberships.select { |_, _, sub| sub }.map(&:first).to_set
+    @credential_codes    = all_memberships.to_h { |uid, code, _, _| [uid, code] }
+    @substitute_user_ids = all_memberships.select { |_, _, sub, _| sub }.map(&:first).to_set
+
+    # Mapa user_id → nome do substituído (quem o substituto está cobrindo)
+    replaced_ids = all_memberships.filter_map { |_, _, _, rid| rid }.uniq
+    replaced_names = replaced_ids.any? ? User.where(id: replaced_ids).pluck(:id, :name).to_h : {}
+    @replaced_user_name = all_memberships.each_with_object({}) do |(uid, _, _, rid), h|
+      h[uid] = replaced_names[rid] if rid.present?
+    end
 
     # Totais para estatísticas (respeitam filtro de setor)
     membership_scope = TeamMembership.joins(team: :sector).where(sectors: { event_id: @event.id })

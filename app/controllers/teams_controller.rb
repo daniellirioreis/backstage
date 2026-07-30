@@ -122,7 +122,7 @@ class TeamsController < ApplicationController
     authorize @team, :panel?
 
     @event = @team.sector.event
-    session[:current_event_id] = @event.id
+    session[:current_event_id] ||= @event.id
 
     all_memberships = TeamMembership
       .where(team_id: @team.id)
@@ -356,9 +356,9 @@ class TeamsController < ApplicationController
 
   # GET AJAX: usuários da empresa disponíveis para adicionar à equipe
   def search_available
-    authorize Team, :index?
     q            = params[:q].to_s.strip
     team         = Team.find(params[:team_id])
+    authorize team, :manage_members?
     existing_ids = team.team_memberships.pluck(:user_id)
     company      = current_event&.company
 
@@ -378,6 +378,10 @@ class TeamsController < ApplicationController
     authorize @team, :manage_members?
 
     event_function_id = params[:event_function_id].presence
+    replaced_user_id  = params[:replaced_user_id].presence
+    shift_date        = params[:shift_date].presence
+    shift_start_time  = params[:shift_start_time].presence
+    shift_end_time    = params[:shift_end_time].presence
 
     if params[:user_id].present?
       user = User.find(params[:user_id])
@@ -404,19 +408,43 @@ class TeamsController < ApplicationController
       CompanyUser.find_or_create_by!(user: user, company: company) if company
     end
 
-    if @team.team_memberships.exists?(user_id: user.id)
-      return render json: { status: :error, errors: ["#{user.name} já está na equipe"] }, status: :unprocessable_entity
-    end
-
-    membership = @team.team_memberships.create!(
+    membership = @team.team_memberships.build(
       user_id:           user.id,
       event_function_id: event_function_id,
-      substitute:        true
+      substitute:        true,
+      replaced_user_id:  replaced_user_id
     )
 
+    unless membership.save
+      return render json: { status: :error, errors: membership.errors.full_messages }, status: :unprocessable_entity
+    end
+
+    # Cria turno do substituto se os campos de escala foram informados
+    shift_warnings = []
+    if shift_date.present? && shift_start_time.present? && shift_end_time.present?
+      shift = Shift.new(
+        user:       user,
+        sector:     @team.sector,
+        team:       @team,
+        date:       shift_date,
+        start_time: shift_start_time,
+        end_time:   shift_end_time
+      )
+      if shift.save
+        # Marca o substituído como ausente (adiciona flag ao turno original, se existir)
+        if replaced_user_id.present?
+          original = Shift.find_by(user_id: replaced_user_id, sector: @team.sector, date: shift_date)
+          original&.update_columns(substitute_user_id: user.id) if original&.respond_to?(:substitute_user_id)
+        end
+      else
+        shift_warnings << "Turno não criado: #{shift.errors.full_messages.join(', ')}"
+      end
+    end
+
     render json: {
-      status:       :ok,
-      message:      "#{user.name} adicionado(a) à equipe com sucesso.",
+      status:   :ok,
+      warning:  shift_warnings.first,
+      message:  shift_warnings.any? ? "#{user.name} adicionado(a), mas #{shift_warnings.first.downcase}." : "#{user.name} adicionado(a) à equipe com sucesso.",
       membership: {
         user_id:         user.id,
         name:            user.name,
@@ -479,7 +507,7 @@ class TeamsController < ApplicationController
     @team = Team.includes(:users, sector: :event).find(params[:id])
   end
 
-  # Contagem de funções já salvas desta equipe: { "fn_id" => count }
+# Contagem de funções já salvas desta equipe: { "fn_id" => count }
   def team_fn_counts(team)
     team.team_memberships
         .where.not(event_function_id: nil)

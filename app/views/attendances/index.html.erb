@@ -180,6 +180,11 @@
                 <span style="font-size:0.65rem; font-weight:700; background:#fdf4ff; border:1px solid #e9d5ff; color:#7c3aed; border-radius:4px; padding:1px 6px; letter-spacing:0.04em;">Substituto</span>
               <% end %>
             </div>
+            <% if r[:substitute] && (replaced_name = @replaced_user_name[r[:user].id]) %>
+              <div style="font-size:0.7rem; color:#7c3aed; margin-top:2px;">
+                <i class="bi bi-arrow-left-right" style="font-size:0.62rem;"></i> substituindo <strong><%= replaced_name %></strong>
+              </div>
+            <% end %>
             <div style="display:flex; align-items:center; gap:0.4rem; flex-wrap:wrap; margin-top:2px;">
               <% if r[:team] %>
                 <span style="font-size:0.7rem; color:#71717a;"><i class="bi bi-grid-3x3-gap" style="font-size:0.6rem;"></i> <%= r[:team].sector&.name %></span>
@@ -266,6 +271,11 @@
                 <span style="font-size:0.65rem; font-weight:700; background:#fdf4ff; border:1px solid #e9d5ff; color:#7c3aed; border-radius:4px; padding:1px 6px; letter-spacing:0.04em;">Substituto</span>
               <% end %>
             </div>
+            <% if @substitute_user_ids&.include?(att.user_id) && (replaced_name = @replaced_user_name[att.user_id]) %>
+              <div style="font-size:0.7rem; color:#7c3aed; margin-top:2px;">
+                <i class="bi bi-arrow-left-right" style="font-size:0.62rem;"></i> substituindo <strong><%= replaced_name %></strong>
+              </div>
+            <% end %>
             <div style="display:flex; align-items:center; gap:0.4rem; flex-wrap:wrap; margin-top:2px;">
               <% if att.team %>
                 <span style="font-size:0.7rem; color:#71717a;">

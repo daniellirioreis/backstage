@@ -7,9 +7,13 @@ class DashboardController < ApplicationController
       redirect_to my_schedule_user_path(current_user) and return
     end
 
-    # Coordenadores → painel da equipe onde são responsáveis
+    # Coordenadores → painel da equipe onde são responsáveis (filtrado pelo evento corrente)
     if current_user.coordinator?
-      team = Team.find_by(coordinator_id: current_user.id)
+      team = if current_event
+        Team.joins(:sector).find_by(coordinator_id: current_user.id, sectors: { event_id: current_event.id })
+      else
+        Team.find_by(coordinator_id: current_user.id)
+      end
       redirect_to(panel_team_path(team)) and return if team
     end
 

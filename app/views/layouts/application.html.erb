@@ -51,12 +51,12 @@
           <% if current_user.coordinator? %>
             <%# Sidebar focada para coordenadores — só o essencial %>
             <div class="sidebar-section">Minha equipe</div>
-            <% coord_teams = Team.where(coordinator_id: current_user.id) %>
+            <% coord_teams = current_event ? Team.joins(:sector).where(coordinator_id: current_user.id, sectors: { event_id: current_event.id }) : Team.none %>
             <% if coord_teams.any? %>
               <% if coord_teams.count == 1 %>
                 <% coord_team = coord_teams.first %>
                 <%= link_to panel_team_path(coord_team), class: "sidebar-link #{controller_name == 'teams' && action_name == 'panel' ? 'active' : ''}" do %>
-                  <i class="bi bi-grid-1x2"></i> Painel da equipe
+                  <i class="bi bi-grid-1x2"></i> <%= coord_team.name %>
                 <% end %>
                 <% if policy(:attendance).scan? %>
                   <%= link_to scan_attendances_path, class: "sidebar-link #{controller_name == 'attendances' && action_name == 'scan' ? 'active' : ''}" do %>
@@ -95,7 +95,7 @@
                   <i class="bi bi-calendar-week"></i> <%= t("permission_actions.my_schedule") %>
                 <% end %>
               <% end %>
-              <% if Team.exists?(coordinator_id: current_user.id) %>
+              <% if current_event && Team.joins(:sector).exists?(coordinator_id: current_user.id, sectors: { event_id: current_event.id }) %>
                 <%= link_to coordinator_teams_path, class: "sidebar-link #{controller_name == 'teams' && action_name == 'coordinator' ? 'active' : ''}" do %>
                   <i class="bi bi-grid-1x2"></i> Minhas Equipes
                 <% end %>
@@ -395,7 +395,7 @@
             <% end %>
           </nav>
         <% elsif current_user.coordinator? %>
-          <% coord_teams_mobile = Team.where(coordinator_id: current_user.id) %>
+          <% coord_teams_mobile = current_event ? Team.joins(:sector).where(coordinator_id: current_user.id, sectors: { event_id: current_event.id }) : Team.none %>
           <nav class="mobile-bottom-nav" aria-label="Navegação rápida">
             <% if coord_teams_mobile.any? %>
               <% if coord_teams_mobile.count == 1 %>

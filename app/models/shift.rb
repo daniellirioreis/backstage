@@ -84,21 +84,15 @@ class Shift < ApplicationRecord
     end
   end
 
-  # Detecta conflito de horário para o mesmo colaborador
-  # Permite múltiplas escalas no mesmo evento (coordenadores em várias equipes),
-  # mas bloqueia conflito entre eventos diferentes.
+  # Detecta conflito de horário para o mesmo colaborador em qualquer evento.
   def no_schedule_conflict
     return if user_id.blank? || date.blank? || start_time.blank? || end_time.blank?
 
     my_end_date = end_date.presence || date
-    current_event = sector&.event
 
     candidates = Shift.joins(sector: :event)
                       .where(user_id: user_id)
                       .where.not(id: id)
-                      .then { |q| team_id.present? ? q.where.not(team_id: team_id) : q }
-                      # Permite sobreposição dentro do mesmo evento (coordenador em múltiplas equipes)
-                      .then { |q| current_event ? q.where.not("events.id = ?", current_event.id) : q }
                       .where(
                         "shifts.date <= ? AND COALESCE(shifts.end_date, shifts.date) >= ?",
                         my_end_date, date

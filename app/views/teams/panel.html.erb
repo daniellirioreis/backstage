@@ -185,6 +185,14 @@
                 <i class="bi bi-whatsapp" style="font-size:0.7rem;"></i> WhatsApp
               </a>
             <% end %>
+            <% if status == :absent && @event.active? && policy(@team).manage_members? %>
+              <% sh = @shifts_today[tm.user_id] %>
+              <button onclick="abrirModalSubstituto(<%= @team.id %>, '<%= j @team.name %>', <%= tm.user_id %>, '<%= j tm.user.name %>', '<%= sh&.date&.iso8601.to_s %>', '<%= sh&.start_time&.strftime('%H:%M').to_s %>', '<%= sh&.end_time&.strftime('%H:%M').to_s %>')"
+                      style="margin-top:4px; font-size:0.65rem; font-weight:600; padding:3px 8px; border-radius:6px; background:#fdf4ff; color:#7c3aed; border:1px solid #e9d5ff; cursor:pointer; display:flex; align-items:center; gap:3px; white-space:nowrap;"
+                      title="Adicionar Substituto">
+                <i class="bi bi-person-plus" style="font-size:0.65rem;"></i> Substituto
+              </button>
+            <% end %>
           </div>
         </div>
       <% end %>
@@ -221,3 +229,326 @@
 <style>
   @keyframes pulse-dot { 0%,100%{opacity:1} 50%{opacity:.35} }
 </style>
+
+<%# ─── Modal: Adicionar Substituto ──────────────────────────────────────── %>
+<%
+  @event_functions  = @event.event_functions.order(:name)
+  absent_members_modal = @memberships.select { |tm| @member_status[tm.user_id] == :absent }
+  event_dates_modal = if @event.event_days.any?
+    @event.event_days.ordered.map { |ed| [ed.date.iso8601, l(ed.date, format: :short)] }
+  else
+    (@event.start_date..@event.end_date).map { |d| [d.iso8601, l(d, format: :short)] }
+  end
+%>
+<% if @event.active? && policy(@team).manage_members? %>
+<div id="substituto-modal"
+     style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.45); z-index:1050; align-items:center; justify-content:center;"
+     onclick="if(event.target===this) fecharModalSubstituto()">
+  <div style="background:#fff; border-radius:12px; box-shadow:0 16px 48px rgba(0,0,0,0.18); width:100%; max-width:480px; max-height:92vh; display:flex; flex-direction:column; overflow:hidden;">
+
+    <%# Header %>
+    <div style="display:flex; align-items:center; justify-content:space-between; padding:1rem 1.5rem; border-bottom:1px solid #f4f4f5;">
+      <div>
+        <h3 style="margin:0; font-size:1rem; font-weight:700; color:#18181b;">
+          <i class="bi bi-person-plus"></i> Adicionar Substituto
+        </h3>
+        <div id="sub-team-name" style="font-size:0.78rem; color:#71717a; margin-top:2px;"></div>
+      </div>
+      <button onclick="fecharModalSubstituto()" style="background:none; border:none; cursor:pointer; color:#71717a; font-size:1.2rem; padding:0.2rem;">
+        <i class="bi bi-x-lg"></i>
+      </button>
+    </div>
+
+    <%# Contexto do turno (campos comuns) %>
+    <div style="padding:1rem 1.5rem; background:#fafafa; border-bottom:1px solid #f4f4f5; display:flex; flex-direction:column; gap:0.75rem;">
+
+      <%# Substituindo %>
+      <div>
+        <label class="form-label" style="font-size:0.78rem; margin-bottom:0.3rem;">
+          <i class="bi bi-person-x" style="color:#dc2626;"></i> Substituindo
+        </label>
+        <select id="sub-replacing-user" class="form-control form-select" style="font-size:0.85rem;" onchange="subPreencherTurno(this)">
+          <% absent_members_modal.each do |atm| %>
+            <% sh = @shifts_today[atm.user_id] %>
+            <option value="<%= atm.user_id %>"
+                    data-shift-date="<%= sh&.date&.iso8601.to_s %>"
+                    data-shift-start="<%= sh&.start_time&.strftime('%H:%M').to_s %>"
+                    data-shift-end="<%= sh&.end_time&.strftime('%H:%M').to_s %>">
+              <%= atm.user.name %><%= sh ? " · #{sh.start_time.strftime('%H:%M')}–#{sh.end_time.strftime('%H:%M')}" : "" %>
+            </option>
+          <% end %>
+        </select>
+      </div>
+
+      <%# Dia + Horário %>
+      <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:0.5rem; align-items:end;">
+        <div>
+          <label class="form-label" style="font-size:0.78rem; margin-bottom:0.3rem;">
+            <i class="bi bi-calendar3"></i> Dia
+          </label>
+          <select id="sub-shift-date" class="form-control form-select" style="font-size:0.82rem;">
+            <% event_dates_modal.each do |iso, label| %>
+              <option value="<%= iso %>"><%= label %></option>
+            <% end %>
+          </select>
+        </div>
+        <div>
+          <label class="form-label" style="font-size:0.78rem; margin-bottom:0.3rem;">
+            <i class="bi bi-clock"></i> Entrada
+          </label>
+          <input type="time" id="sub-shift-start" class="form-control" style="font-size:0.85rem;">
+        </div>
+        <div>
+          <label class="form-label" style="font-size:0.78rem; margin-bottom:0.3rem;">
+            <i class="bi bi-clock-history"></i> Saída
+          </label>
+          <input type="time" id="sub-shift-end" class="form-control" style="font-size:0.85rem;">
+        </div>
+      </div>
+
+      <%# Função %>
+      <div>
+        <label class="form-label" style="font-size:0.78rem; margin-bottom:0.3rem;">
+          <i class="bi bi-briefcase"></i> Função no evento
+        </label>
+        <select id="sub-funcao" class="form-control form-select" style="font-size:0.85rem;">
+          <option value="">— Sem função —</option>
+          <% @event_functions.each do |ef| %>
+            <option value="<%= ef.id %>"><%= ef.name %> · R$<%= format('%.2f', ef.hourly_rate) %>/h</option>
+          <% end %>
+        </select>
+      </div>
+    </div>
+
+    <%# Tabs: buscar vs novo %>
+    <div style="display:flex; gap:4px; border-bottom:1px solid #e4e4e7; padding:0 0.5rem; flex-shrink:0;">
+      <button id="tab-buscar" onclick="trocarAbaSubstituto('buscar')"
+              style="flex:1; padding:0.6rem 0.75rem; font-size:0.82rem; font-weight:600; border:1px solid #e4e4e7; border-bottom:1px solid #ffffff; border-radius:6px 6px 0 0; background:#ffffff; cursor:pointer; color:#18181b; margin-bottom:-1px; box-shadow:inset 0 2px 0 #18181b; position:relative; z-index:1;">
+        <i class="bi bi-search"></i> Buscar existente
+      </button>
+      <button id="tab-novo" onclick="trocarAbaSubstituto('novo')"
+              style="flex:1; padding:0.6rem 0.75rem; font-size:0.82rem; font-weight:400; border:1px solid transparent; border-bottom:none; border-radius:6px 6px 0 0; background:transparent; cursor:pointer; color:#71717a; margin-bottom:-1px;">
+        <i class="bi bi-person-plus-fill"></i> Cadastrar novo
+      </button>
+    </div>
+
+    <div style="padding:1rem 1.5rem; overflow-y:auto; flex:1;">
+      <div id="sub-feedback" style="display:none; margin-bottom:1rem; padding:0.75rem 1rem; border-radius:8px; font-size:0.85rem; font-weight:500;"></div>
+
+      <%# Aba buscar %>
+      <div id="aba-buscar">
+        <div style="margin-bottom:1rem;">
+          <label class="form-label">Colaborador substituto</label>
+          <input type="text" id="sub-busca" placeholder="Buscar por nome ou telefone..."
+                 class="form-control" autocomplete="off" oninput="subBuscarUsuarios(this.value)">
+          <div id="sub-busca-resultados" style="display:none; border:1px solid #e4e4e7; border-radius:8px; margin-top:4px; background:#fff; max-height:180px; overflow-y:auto; box-shadow:0 4px 12px rgba(0,0,0,0.08);"></div>
+        </div>
+        <div id="sub-usuario-selecionado" style="display:none; padding:0.75rem; background:#f5f3ff; border:1px solid #ddd6fe; border-radius:8px; margin-bottom:1rem;">
+          <div style="display:flex; align-items:center; justify-content:space-between;">
+            <div>
+              <div id="sub-sel-nome" style="font-size:0.88rem; font-weight:600; color:#18181b;"></div>
+              <div id="sub-sel-tel" style="font-size:0.75rem; color:#71717a;"></div>
+            </div>
+            <button onclick="subLimparSelecao()" style="background:none; border:none; cursor:pointer; color:#71717a;"><i class="bi bi-x"></i></button>
+          </div>
+        </div>
+        <button onclick="subAdicionarExistente()" class="btn-primary" style="width:100%;">
+          <i class="bi bi-person-check"></i> Confirmar substituto
+        </button>
+      </div>
+
+      <%# Aba novo %>
+      <div id="aba-novo" style="display:none;">
+        <div style="margin-bottom:1rem;">
+          <label class="form-label">Nome completo <span style="color:#ef4444;">*</span></label>
+          <input type="text" id="sub-nome" class="form-control" placeholder="Ex: João da Silva">
+        </div>
+        <div style="margin-bottom:1.25rem;">
+          <label class="form-label">Telefone</label>
+          <input type="text" id="sub-telefone" class="form-control" placeholder="Ex: 31 99999-9999">
+        </div>
+        <button onclick="subCadastrarNovo()" class="btn-primary" style="width:100%;">
+          <i class="bi bi-person-plus-fill"></i> Cadastrar e confirmar
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+  var currentTeamId  = null;
+  var selectedUserId = null;
+  var searchTimeout  = null;
+
+  // Pré-preenche dia/horário ao selecionar quem está sendo substituído
+  window.subPreencherTurno = function(sel) {
+    var opt = sel.options[sel.selectedIndex];
+    var d   = opt.getAttribute('data-shift-date')  || '';
+    var s   = opt.getAttribute('data-shift-start') || '';
+    var e   = opt.getAttribute('data-shift-end')   || '';
+    if (d) document.getElementById('sub-shift-date').value  = d;
+    if (s) document.getElementById('sub-shift-start').value = s;
+    if (e) document.getElementById('sub-shift-end').value   = e;
+  };
+
+  window.abrirModalSubstituto = function(teamId, teamName, replacedUserId, replacedName, shiftDate, shiftStart, shiftEnd) {
+    currentTeamId  = teamId;
+    selectedUserId = null;
+    document.getElementById('sub-team-name').textContent = teamName;
+    document.getElementById('sub-feedback').style.display = 'none';
+    document.getElementById('sub-busca').value = '';
+    document.getElementById('sub-busca-resultados').style.display = 'none';
+    document.getElementById('sub-usuario-selecionado').style.display = 'none';
+    document.getElementById('sub-busca').style.display = 'block';
+
+    // Pré-selecionar quem está sendo substituído
+    var sel = document.getElementById('sub-replacing-user');
+    if (sel && replacedUserId) {
+      for (var i = 0; i < sel.options.length; i++) {
+        if (sel.options[i].value == replacedUserId) { sel.selectedIndex = i; break; }
+      }
+    }
+
+    // Pré-preencher turno
+    if (shiftDate)  document.getElementById('sub-shift-date').value  = shiftDate;
+    if (shiftStart) document.getElementById('sub-shift-start').value = shiftStart;
+    if (shiftEnd)   document.getElementById('sub-shift-end').value   = shiftEnd;
+
+    trocarAbaSubstituto('buscar');
+    document.getElementById('substituto-modal').style.display = 'flex';
+  };
+
+  window.fecharModalSubstituto = function() {
+    document.getElementById('substituto-modal').style.display = 'none';
+    currentTeamId = null;
+  };
+
+  window.trocarAbaSubstituto = function(aba) {
+    ['buscar', 'novo'].forEach(function(a) {
+      var el  = document.getElementById('aba-' + a);
+      var tab = document.getElementById('tab-' + a);
+      if (!el || !tab) return;
+      var active = a === aba;
+      el.style.display       = active ? 'block' : 'none';
+      tab.style.border       = active ? '1px solid #e4e4e7' : '1px solid transparent';
+      tab.style.borderBottom = active ? '1px solid #ffffff' : 'none';
+      tab.style.background   = active ? '#ffffff' : 'transparent';
+      tab.style.color        = active ? '#18181b' : '#71717a';
+      tab.style.fontWeight   = active ? '600' : '400';
+      tab.style.boxShadow    = active ? 'inset 0 2px 0 #18181b' : 'none';
+      tab.style.zIndex       = active ? '1' : '0';
+    });
+    document.getElementById('sub-feedback').style.display = 'none';
+  };
+
+  window.subBuscarUsuarios = function(q) {
+    clearTimeout(searchTimeout);
+    var res = document.getElementById('sub-busca-resultados');
+    if (q.length < 1) { res.style.display = 'none'; return; }
+    searchTimeout = setTimeout(function() {
+      fetch('<%= search_available_teams_path %>?q=' + encodeURIComponent(q) + '&team_id=' + currentTeamId, {
+        headers: { 'X-CSRF-Token': document.querySelector('meta[name=csrf-token]').content }
+      })
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (data.length === 0) {
+          res.innerHTML = '<div style="padding:0.75rem 1rem; font-size:0.82rem; color:#a1a1aa;">Nenhum resultado</div>';
+        } else {
+          res.innerHTML = data.map(function(u) {
+            return '<div onclick="subSelecionarUsuario(' + u.id + ',\'' + u.name.replace(/\'/g, "\\'") + '\',\'' + (u.phone||'').replace(/\'/g, "\\'") + '\')" ' +
+              'style="padding:0.65rem 1rem; cursor:pointer; font-size:0.85rem; border-bottom:1px solid #f4f4f5;" ' +
+              'onmouseover="this.style.background=\'#f5f3ff\'" onmouseout="this.style.background=\'#fff\'">' +
+              '<span style="font-weight:600;">' + u.name + '</span>' +
+              (u.phone ? '<span style="color:#71717a; margin-left:0.5rem; font-size:0.78rem;">' + u.phone + '</span>' : '') +
+              '</div>';
+          }).join('');
+        }
+        res.style.display = 'block';
+      });
+    }, 250);
+  };
+
+  window.subSelecionarUsuario = function(id, nome, telefone) {
+    selectedUserId = id;
+    document.getElementById('sub-sel-nome').textContent = nome;
+    document.getElementById('sub-sel-tel').textContent  = telefone || '';
+    document.getElementById('sub-usuario-selecionado').style.display = 'block';
+    document.getElementById('sub-busca-resultados').style.display   = 'none';
+    document.getElementById('sub-busca').style.display = 'none';
+  };
+
+  window.subLimparSelecao = function() {
+    selectedUserId = null;
+    document.getElementById('sub-usuario-selecionado').style.display = 'none';
+    document.getElementById('sub-busca').style.display = 'block';
+    document.getElementById('sub-busca').value = '';
+  };
+
+  function subPayload(extra) {
+    return Object.assign({
+      replaced_user_id:  document.getElementById('sub-replacing-user').value,
+      shift_date:        document.getElementById('sub-shift-date').value,
+      shift_start_time:  document.getElementById('sub-shift-start').value,
+      shift_end_time:    document.getElementById('sub-shift-end').value,
+      event_function_id: document.getElementById('sub-funcao').value
+    }, extra);
+  }
+
+  function subFeedback(msg, ok) {
+    var el = document.getElementById('sub-feedback');
+    el.textContent      = msg;
+    el.style.background = ok ? '#f0fdf4' : '#fef2f2';
+    el.style.color      = ok ? '#15803d' : '#dc2626';
+    el.style.border     = '1px solid ' + (ok ? '#86efac' : '#fca5a5');
+    el.style.display    = 'block';
+  }
+
+  function subPostar(body) {
+    return fetch('/teams/' + currentTeamId + '/quick_add_member', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRF-Token': document.querySelector('meta[name=csrf-token]').content
+      },
+      body: JSON.stringify(body)
+    }).then(function(r) { return r.json(); });
+  }
+
+  window.subAdicionarExistente = function() {
+    if (!selectedUserId) { subFeedback('Selecione um colaborador substituto.', false); return; }
+    subPostar(subPayload({ user_id: selectedUserId }))
+    .then(function(data) {
+      if (data.status === 'ok') {
+        subFeedback(data.message, data.warning ? false : true);
+        subLimparSelecao();
+      } else {
+        subFeedback((data.errors || ['Erro desconhecido']).join(', '), false);
+      }
+    });
+  };
+
+  window.subCadastrarNovo = function() {
+    var nome = document.getElementById('sub-nome').value.trim();
+    if (!nome) { subFeedback('Informe o nome do colaborador.', false); return; }
+    subPostar(subPayload({
+      name:  nome,
+      phone: document.getElementById('sub-telefone').value.trim()
+    }))
+    .then(function(data) {
+      if (data.status === 'ok') {
+        subFeedback(data.message + ' Credencial: ' + data.membership.credential_code, data.warning ? false : true);
+        document.getElementById('sub-nome').value = '';
+        document.getElementById('sub-telefone').value = '';
+      } else {
+        subFeedback((data.errors || ['Erro desconhecido']).join(', '), false);
+      }
+    });
+  };
+
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') fecharModalSubstituto();
+  });
+})();
+</script>
+<% end %>

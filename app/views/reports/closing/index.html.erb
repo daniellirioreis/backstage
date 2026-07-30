@@ -253,7 +253,8 @@
         <%= render partial: "reports/closing/manual_table",
                    locals: { rows: group[:rows], form_id: "manual-save-form-#{group[:date_str]}",
                               date_str: group[:date_str], finalized: finalized,
-                              payment_by_user_date: @payment_by_user_date, sector_id: @sector_id } %>
+                              payment_by_user_date: @payment_by_user_date, sector_id: @sector_id,
+                              substitute_map: @substitute_map } %>
       <% end %>
       <div style="margin-bottom:1.5rem;"></div>
     <% else %>
@@ -457,7 +458,17 @@ function calcManualHoras(uid, rate) {
               <span style="display:block;flex-shrink:0;width:8px;height:8px;border-radius:50%;background:<%= dot_color %>;"
                     title="<%= row[:status] == :present ? 'Presente' : row[:status] == :absent ? 'Ausente' : 'Não escalado' %>"></span>
               <div>
-                <div style="font-size:0.85rem;font-weight:600;color:#18181b;"><%= row[:user].name %></div>
+                <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;">
+                  <span style="font-size:0.85rem;font-weight:600;color:#18181b;"><%= row[:user].name %></span>
+                  <% if (sub_info = @substitute_map&.[](row[:user].id)) %>
+                    <span style="font-size:0.62rem;font-weight:700;background:#fdf4ff;border:1px solid #e9d5ff;color:#7c3aed;border-radius:4px;padding:1px 5px;letter-spacing:0.03em;">Substituto</span>
+                  <% end %>
+                </div>
+                <% if sub_info&.dig(:replaced_user_name) %>
+                  <div style="font-size:0.68rem;color:#7c3aed;margin-top:1px;">
+                    <i class="bi bi-arrow-left-right" style="font-size:0.6rem;"></i> substituindo <strong><%= sub_info[:replaced_user_name] %></strong>
+                  </div>
+                <% end %>
                 <div style="font-size:0.72rem;color:#a1a1aa;"><%= row[:user].cpf.to_s.gsub(/(\d{3})(\d{3})(\d{3})(\d{2})/, '\1.\2.\3-\4') %></div>
               </div>
             </div>
@@ -653,7 +664,17 @@ function calcManualHoras(uid, rate) {
         <% payment = @payment_by_user_date[[row[:user].id, @selected_date]] %>
         <tr id="payment-row-<%= row[:user].id %>" data-name="<%= row[:user].name.downcase %>">
           <td>
-            <div style="font-size:0.85rem;font-weight:600;color:#18181b;"><%= row[:user].name %></div>
+            <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;">
+              <span style="font-size:0.85rem;font-weight:600;color:#18181b;"><%= row[:user].name %></span>
+              <% if (sub_info2 = @substitute_map&.[](row[:user].id)) %>
+                <span style="font-size:0.62rem;font-weight:700;background:#fdf4ff;border:1px solid #e9d5ff;color:#7c3aed;border-radius:4px;padding:1px 5px;letter-spacing:0.03em;">Substituto</span>
+              <% end %>
+            </div>
+            <% if sub_info2&.dig(:replaced_user_name) %>
+              <div style="font-size:0.68rem;color:#7c3aed;margin-top:1px;">
+                <i class="bi bi-arrow-left-right" style="font-size:0.6rem;"></i> substituindo <strong><%= sub_info2[:replaced_user_name] %></strong>
+              </div>
+            <% end %>
             <div style="font-size:0.72rem;color:#a1a1aa;"><%= row[:user].formatted_cpf %></div>
           </td>
           <td>
