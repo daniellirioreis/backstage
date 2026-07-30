@@ -18,7 +18,7 @@
   filter_tabs = [
     [nil,      "Todos",     @status_counts.values.sum],
     ["active", "Ativos",    @status_counts["active"].to_i],
-    ["draft",  "Rascunho",  @status_counts["draft"].to_i],
+    ["draft",  "Planejamento",  @status_counts["draft"].to_i],
     ["closed", "Encerrados",@status_counts["closed"].to_i],
   ]
   other_filters = { q: @q.presence, location: @location_filter.presence, date_from: @date_from, date_to: @date_to }.compact

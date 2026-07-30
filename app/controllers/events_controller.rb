@@ -684,11 +684,11 @@ class EventsController < ApplicationController
       if checkin_users.any?
         names = checkin_users.first(5).join(", ")
         suffix = checkin_users.size > 5 ? " e mais #{checkin_users.size - 5}." : "."
-        redirect_to @event, alert: "Não é possível voltar para Rascunho: já existem check-ins registrados. Colaboradores: #{names}#{suffix}"
+        redirect_to @event, alert: "Não é possível voltar para Planejamento: já existem check-ins registrados. Colaboradores: #{names}#{suffix}"
         return
       end
       @event.update!(status: "draft")
-      redirect_to @event, notice: "Evento voltou para Rascunho."
+      redirect_to @event, notice: "Evento voltou para Planejamento."
     when "closed"
       @event.update!(status: "active")
       redirect_to @event, notice: "Evento reaberto como Ativo."

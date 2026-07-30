@@ -201,15 +201,15 @@ class ApplicationController < ActionController::Base
       record_class = record.is_a?(Class) ? record : record.class
       case record_class
       when ->(c) { c <= Shift }
-        return "Escalas só podem ser alteradas quando o evento está em Rascunho."
+        return "Escalas só podem ser alteradas quando o evento está em Planejamento."
       when ->(c) { c <= Sector }
-        return "Setores só podem ser alterados quando o evento está em Rascunho."
+        return "Setores só podem ser alterados quando o evento está em Planejamento."
       when ->(c) { c <= Team }
-        return "Equipes só podem ser alteradas quando o evento está em Rascunho."
+        return "Equipes só podem ser alteradas quando o evento está em Planejamento."
       when ->(c) { c <= EventFunction }
-        return "Funções do evento só podem ser alteradas quando o evento está em Rascunho."
+        return "Funções do evento só podem ser alteradas quando o evento está em Planejamento."
       else
-        return "Edição de eventos só é permitida quando o status é Rascunho." if event_status&.in?(%w[active closed])
+        return "Edição de eventos só é permitida quando o status é Planejamento." if event_status&.in?(%w[active closed])
       end
     when "scan", "checkout"
       return "Check-in e Check-out só estão disponíveis com o evento Ativo." \
