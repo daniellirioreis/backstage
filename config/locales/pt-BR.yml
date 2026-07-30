@@ -115,7 +115,7 @@ pt-BR:
     saved: "Configuração da credencial salva!"
 
   event_statuses:
-    draft: "Rascunho"
+    draft: "Planejamento"
     active: "Em Andamento"
     closed: "Encerrado"
 

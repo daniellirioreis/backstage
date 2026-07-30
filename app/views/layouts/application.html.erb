@@ -133,7 +133,7 @@
 
             <%# ── Planejamento ────────────────────────────────────────────────── %>
             <% if policy(Event).index? %>
-              <% plan_step = event_status.nil? ? :current : :done %>
+              <% plan_step = event_status.in?(%w[active closed]) ? :done : :current %>
               <div class="<%= section_class.(plan_step) %>">
                 <span class="<%= step_class.(plan_step) %>">
                   <%= plan_step == :done ? '<i class="bi bi-check" style="font-size:0.55rem;"></i>'.html_safe : "1" %>
