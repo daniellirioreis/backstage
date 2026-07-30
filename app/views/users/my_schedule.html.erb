@@ -7,8 +7,8 @@
   </div>
   <% if @shifts_by_event.any? %>
     <div id="sched-tab-toggle" style="display:inline-flex;border:0.5px solid #e4e4e7;border-radius:8px;overflow:hidden;">
-      <button class="sched-tab-btn active" onclick="schedTab('lista',this)" style="border:none;background:transparent;padding:5px 12px;font-size:0.82rem;cursor:pointer;color:#71717a;font-family:inherit;transition:all .1s;"><i class="bi bi-list-ul"></i> Lista</button>
-      <button class="sched-tab-btn" onclick="schedTab('cal',this)" style="border:none;background:transparent;padding:5px 12px;font-size:0.82rem;cursor:pointer;color:#71717a;font-family:inherit;transition:all .1s;"><i class="bi bi-calendar3"></i> Calendário</button>
+      <button class="sched-tab-btn" onclick="schedTab('lista',this)" style="border:none;background:transparent;padding:5px 12px;font-size:0.82rem;cursor:pointer;color:#71717a;font-family:inherit;transition:all .1s;"><i class="bi bi-list-ul"></i> Lista</button>
+      <button class="sched-tab-btn active" onclick="schedTab('cal',this)" style="border:none;background:transparent;padding:5px 12px;font-size:0.82rem;cursor:pointer;color:#71717a;font-family:inherit;transition:all .1s;"><i class="bi bi-calendar3"></i> Calendário</button>
     </div>
   <% end %>
 </div>
@@ -47,7 +47,7 @@
   <% end %>
 </div>
 
-<div id="view-lista">
+<div id="view-lista" style="display:none;">
 
 <%# ── Mini-dashboard ─────────────────────────────────────────────────────── %>
 <% if @shifts_by_event.any? %>
@@ -293,7 +293,7 @@
     CALENDÁRIO
 ══════════════════════════════════════════════════════════════════════════ %>
 <% if @shifts_by_event.any? %>
-<div id="view-cal" style="display:none;">
+<div id="view-cal">
 
   <%# CSS do calendário %>
   <style>
@@ -316,7 +316,7 @@
   <script>
     const CAL_SHIFTS = <%= raw @cal_shifts_json %>;
     const CAL_EVENTS = <%= raw @cal_events_json %>;
-    const CRED_URLS  = { <%= @shifts_by_event.keys.map { |ev| "#{ev.id}:'#{credential_user_path(@user, format: :pdf, event_id: ev.id)}'" }.join(",") %> };
+    const CRED_URLS  = { <%= raw @shifts_by_event.keys.map { |ev| "#{ev.id}:'#{credential_user_path(@user, format: :pdf, event_id: ev.id)}'" }.join(",") %> };
     const TODAY_D = <%= Date.today.day %>, TODAY_M = <%= Date.today.month - 1 %>, TODAY_Y = <%= Date.today.year %>;
 
     const EV_COLORS = [
@@ -497,9 +497,9 @@
       document.getElementById("view-cal").style.display   = tab==="cal"   ? "" : "none";
     }
 
-    document.addEventListener("DOMContentLoaded", function() {
-      if(document.getElementById("cal-grid")) renderCal();
-    });
+    function initCal() { if(document.getElementById("cal-grid")) renderCal(); }
+    document.addEventListener("DOMContentLoaded", initCal);
+    document.addEventListener("turbo:load", initCal);
   </script>
 
   <%# ── Stats cards ─────────────────────────────────────────────────────── %>
