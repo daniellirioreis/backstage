@@ -81,151 +81,157 @@
                 <% end %>
               <% end %>
             <% end %>
-          <% elsif show_home || show_my_schedule %>
-            <div class="sidebar-section">Geral</div>
-            <% if show_home %>
-              <%= link_to root_path, class: "sidebar-link #{current_page?(root_path) ? 'active' : ''}" do %>
-                <i class="bi bi-grid-1x2"></i> <%= t("nav.home") %>
+          <% else %>
+            <%# ── Geral ──────────────────────────────────────────────────────── %>
+            <% if show_home || show_my_schedule || Team.exists?(coordinator_id: current_user.id) %>
+              <div class="sidebar-section">Geral</div>
+              <% if show_home %>
+                <%= link_to root_path, class: "sidebar-link #{current_page?(root_path) ? 'active' : ''}" do %>
+                  <i class="bi bi-grid-1x2"></i> <%= t("nav.home") %>
+                <% end %>
+              <% end %>
+              <% if show_my_schedule %>
+                <%= link_to my_schedule_user_path(current_user), class: "sidebar-link #{controller_name == 'users' && action_name == 'my_schedule' ? 'active' : ''}" do %>
+                  <i class="bi bi-calendar-week"></i> <%= t("permission_actions.my_schedule") %>
+                <% end %>
+              <% end %>
+              <% if Team.exists?(coordinator_id: current_user.id) %>
+                <%= link_to coordinator_teams_path, class: "sidebar-link #{controller_name == 'teams' && action_name == 'coordinator' ? 'active' : ''}" do %>
+                  <i class="bi bi-grid-1x2"></i> Minhas Equipes
+                <% end %>
               <% end %>
             <% end %>
-            <% if show_my_schedule %>
-              <%= link_to my_schedule_user_path(current_user), class: "sidebar-link #{controller_name == 'users' && action_name == 'my_schedule' ? 'active' : ''}" do %>
-                <i class="bi bi-calendar-week"></i> <%= t("permission_actions.my_schedule") %>
+
+            <%# ── Planejamento ────────────────────────────────────────────────── %>
+            <% if policy(Event).index? %>
+              <div class="sidebar-section">Planejamento</div>
+              <%= link_to events_path, class: "sidebar-link #{controller_name == 'events' && controller_path != 'events/setup' ? 'active' : ''}" do %>
+                <i class="bi bi-calendar-event"></i> <%= Event.model_name.human(count: 2) %>
+              <% end %>
+              <% if current_event && policy(current_event).update? %>
+                <%= link_to sectors_event_setup_path(current_event),
+                      class: "sidebar-link #{controller_path == 'events/setup' ? 'active' : ''}" do %>
+                  <i class="bi bi-sliders"></i> Configurar evento
+                <% end %>
+              <% end %>
+              <% if policy(User).index? %>
+                <%= link_to users_path, class: "sidebar-link #{controller_name == 'users' ? 'active' : ''}" do %>
+                  <i class="bi bi-people"></i> <%= User.model_name.human(count: 2) %>
+                <% end %>
               <% end %>
             <% end %>
-            <% if Team.exists?(coordinator_id: current_user.id) %>
-              <%= link_to coordinator_teams_path, class: "sidebar-link #{controller_name == 'teams' && action_name == 'coordinator' ? 'active' : ''}" do %>
-                <i class="bi bi-grid-1x2"></i> Minhas Equipes
+
+            <%# ── Execução ────────────────────────────────────────────────────── %>
+            <% show_exec = policy(Shift).index? || policy(:attendance).scan? || policy(:attendance).index? || policy(Vehicle).index? %>
+            <% if show_exec %>
+              <div class="sidebar-section">Execução</div>
+              <% if policy(Shift).index? %>
+                <%= link_to timeline_shifts_path, class: "sidebar-link #{controller_name == 'shifts' && action_name == 'timeline' ? 'active' : ''}" do %>
+                  <i class="bi bi-calendar-range"></i> Timeline
+                <% end %>
+              <% end %>
+              <% if policy(:attendance).scan? %>
+                <%= link_to scan_attendances_path, class: "sidebar-link #{controller_name == 'attendances' && action_name == 'scan' ? 'active' : ''}" do %>
+                  <i class="bi bi-qr-code-scan"></i> Check-in
+                <% end %>
+              <% end %>
+              <% if policy(:attendance).index? %>
+                <%= link_to attendances_path, class: "sidebar-link #{controller_name == 'attendances' && action_name != 'scan' ? 'active' : ''}" do %>
+                  <i class="bi bi-person-check"></i> Presenças
+                <% end %>
+              <% end %>
+              <% if policy(Vehicle).index? %>
+                <%= link_to vehicles_path, class: "sidebar-link #{controller_name == 'vehicles' ? 'active' : ''}" do %>
+                  <i class="bi bi-car-front"></i> <%= Vehicle.model_name.human(count: 2) %>
+                <% end %>
               <% end %>
             <% end %>
-          <% end %>
 
-          <% if policy(Event).index? %>
-            <div class="sidebar-section">Evento</div>
-            <%= link_to events_path, class: "sidebar-link #{controller_name == 'events' && controller_path != 'events/setup' ? 'active' : ''}" do %>
-              <i class="bi bi-calendar-event"></i> <%= Event.model_name.human(count: 2) %>
-            <% end %>
-            <% if current_event && policy(current_event).update? %>
-              <%= link_to sectors_event_setup_path(current_event),
-                    class: "sidebar-link #{controller_path == 'events/setup' ? 'active' : ''}" do %>
-                <i class="bi bi-sliders"></i> Configurar evento
+            <%# ── Fechamento ──────────────────────────────────────────────────── %>
+            <% show_att = policy(:report).attendance_report?
+               show_abs = policy(:report).absences_report?
+               show_hrs = policy(:report).hours_worked_report?
+               show_sec = policy(:report).sector_summary_report?
+               show_closing = policy(:report).closing? %>
+            <% if show_closing || show_att || show_abs || show_hrs || show_sec %>
+              <div class="sidebar-section">Fechamento</div>
+              <% if show_closing %>
+                <% event_closed = current_event&.closed? %>
+                <%= link_to reports_closing_path,
+                      class: "sidebar-link #{controller_path == 'reports/closing' ? 'active' : ''} #{event_closed ? '' : 'sidebar-link--locked'}",
+                      title: event_closed ? nil : "Disponível apenas após encerrar o evento" do %>
+                  <i class="bi bi-receipt"></i> <%= t("nav.closing") %>
+                  <% unless event_closed %>
+                    <i class="bi bi-lock-fill" style="font-size:0.65rem; margin-left:auto; opacity:0.45;"></i>
+                  <% end %>
+                <% end %>
+              <% end %>
+              <% if show_att %>
+                <%= link_to reports_attendance_path, class: "sidebar-link #{controller_path == 'reports/attendance' ? 'active' : ''}" do %>
+                  <i class="bi bi-person-check"></i> <%= t("nav.report_attendance") %>
+                <% end %>
+              <% end %>
+              <% if show_abs %>
+                <%= link_to reports_absences_path, class: "sidebar-link #{controller_path == 'reports/absences' ? 'active' : ''}" do %>
+                  <i class="bi bi-person-x"></i> <%= t("nav.report_absences") %>
+                <% end %>
+              <% end %>
+              <% if show_hrs %>
+                <%= link_to reports_hours_worked_path, class: "sidebar-link #{controller_path == 'reports/hours_worked' ? 'active' : ''}" do %>
+                  <i class="bi bi-clock-history"></i> <%= t("nav.report_hours_worked") %>
+                <% end %>
+              <% end %>
+              <% if show_sec %>
+                <%= link_to reports_sector_summary_path, class: "sidebar-link #{controller_path == 'reports/sector_summary' ? 'active' : ''}" do %>
+                  <i class="bi bi-diagram-3"></i> <%= t("nav.report_sector_summary") %>
+                <% end %>
               <% end %>
             <% end %>
-          <% end %>
 
-          <% if policy(Shift).index? %>
-            <div class="sidebar-section">Operações</div>
-            <%= link_to timeline_shifts_path, class: "sidebar-link #{controller_name == 'shifts' && action_name == 'timeline' ? 'active' : ''}" do %>
-              <i class="bi bi-calendar-range"></i> Timeline
-            <% end %>
-          <% end %>
-
-          <% if policy(:attendance).scan? %>
-            <%= link_to scan_attendances_path, class: "sidebar-link #{controller_name == 'attendances' && action_name == 'scan' ? 'active' : ''}" do %>
-              <i class="bi bi-qr-code-scan"></i> Check-in
-            <% end %>
-          <% end %>
-
-          <% if policy(:attendance).index? %>
-            <%= link_to attendances_path, class: "sidebar-link #{controller_name == 'attendances' && action_name != 'scan' ? 'active' : ''}" do %>
-              <i class="bi bi-person-check"></i> Presenças
-            <% end %>
-          <% end %>
-
-          <% if policy(Vehicle).index? %>
-            <%= link_to vehicles_path, class: "sidebar-link #{controller_name == 'vehicles' ? 'active' : ''}" do %>
-              <i class="bi bi-car-front"></i> <%= Vehicle.model_name.human(count: 2) %>
-            <% end %>
-          <% end %>
-
-          <% if policy(:report).closing? %>
-            <% event_closed = current_event&.closed? %>
-            <%= link_to reports_closing_path,
-                  class: "sidebar-link #{controller_path == 'reports/closing' ? 'active' : ''} #{event_closed ? '' : 'sidebar-link--locked'}",
-                  title: event_closed ? nil : "Disponível apenas após encerrar o evento" do %>
-              <i class="bi bi-receipt"></i> <%= t("nav.closing") %>
-              <% unless event_closed %>
-                <i class="bi bi-lock-fill" style="font-size:0.65rem; margin-left:auto; opacity:0.45;"></i>
+            <%# ── Administração ───────────────────────────────────────────────── %>
+            <% _sub_company  = current_user.companies.first %>
+            <% _company_role = _sub_company ? current_user.company_role_for(_sub_company) : nil %>
+            <% show_admin = policy(EventFunction.new).index? || current_user.admin? ||
+                            policy(Role).index? || policy(Company).index? ||
+                            policy(:invitation).index? ||
+                            (!current_user.admin? && %w[owner manager].include?(_company_role)) %>
+            <% if show_admin %>
+              <div class="sidebar-section">Administração</div>
+              <% if policy(EventFunction.new).index? %>
+                <%= link_to event_functions_path, class: "sidebar-link #{controller_name == 'event_functions' ? 'active' : ''}" do %>
+                  <i class="bi bi-briefcase"></i> Funções
+                <% end %>
               <% end %>
-            <% end %>
-          <% end %>
-
-          <%# Relatórios operacionais %>
-          <% show_att = policy(:report).attendance_report?
-             show_abs = policy(:report).absences_report?
-             show_hrs = policy(:report).hours_worked_report?
-             show_sec = policy(:report).sector_summary_report? %>
-          <% if show_att || show_abs || show_hrs || show_sec %>
-            <div class="sidebar-section"><%= t("nav.reports") %></div>
-            <% if show_att %>
-              <%= link_to reports_attendance_path, class: "sidebar-link #{controller_path == 'reports/attendance' ? 'active' : ''}" do %>
-                <i class="bi bi-person-check"></i> <%= t("nav.report_attendance") %>
+              <% if current_user.admin? %>
+                <%= link_to plans_path, class: "sidebar-link #{controller_name == 'plans' ? 'active' : ''}" do %>
+                  <i class="bi bi-box"></i> Planos
+                <% end %>
               <% end %>
-            <% end %>
-            <% if show_abs %>
-              <%= link_to reports_absences_path, class: "sidebar-link #{controller_path == 'reports/absences' ? 'active' : ''}" do %>
-                <i class="bi bi-person-x"></i> <%= t("nav.report_absences") %>
+              <% if !current_user.admin? && %w[owner manager].include?(_company_role) %>
+                <%= link_to subscription_path, class: "sidebar-link #{controller_name == 'subscriptions' ? 'active' : ''}" do %>
+                  <i class="bi bi-credit-card"></i> Assinatura
+                  <% if _sub_company&.subscription_status == "overdue" %>
+                    <span style="margin-left:auto;background:#fef2f2;border:1px solid #fca5a5;color:#dc2626;font-size:0.65rem;font-weight:800;border-radius:99px;padding:1px 7px;">ATRASO</span>
+                  <% elsif _sub_company&.subscription_status == "pending" %>
+                    <span style="margin-left:auto;background:#fff7ed;border:1px solid #fed7aa;color:#b45309;font-size:0.65rem;font-weight:800;border-radius:99px;padding:1px 7px;">PEND.</span>
+                  <% end %>
+                <% end %>
               <% end %>
-            <% end %>
-            <% if show_hrs %>
-              <%= link_to reports_hours_worked_path, class: "sidebar-link #{controller_path == 'reports/hours_worked' ? 'active' : ''}" do %>
-                <i class="bi bi-clock-history"></i> <%= t("nav.report_hours_worked") %>
+              <% if policy(Role).index? %>
+                <%= link_to roles_path, class: "sidebar-link #{controller_name == 'roles' ? 'active' : ''}" do %>
+                  <i class="bi bi-shield-check"></i> <%= Role.model_name.human(count: 2) %>
+                <% end %>
               <% end %>
-            <% end %>
-            <% if show_sec %>
-              <%= link_to reports_sector_summary_path, class: "sidebar-link #{controller_path == 'reports/sector_summary' ? 'active' : ''}" do %>
-                <i class="bi bi-diagram-3"></i> <%= t("nav.report_sector_summary") %>
+              <% if policy(Company).index? %>
+                <%= link_to companies_path, class: "sidebar-link #{controller_name == 'companies' ? 'active' : ''}" do %>
+                  <i class="bi bi-building"></i> <%= Company.model_name.human(count: 2) %>
+                <% end %>
               <% end %>
-            <% end %>
-          <% end %>
-
-          <% if policy(User).index? || current_user.admin? || policy(EventFunction.new).index? %>
-            <div class="sidebar-section">Administração</div>
-          <% end %>
-          <% if policy(EventFunction.new).index? %>
-            <%= link_to event_functions_path, class: "sidebar-link #{controller_name == 'event_functions' ? 'active' : ''}" do %>
-              <i class="bi bi-briefcase"></i> Funções
-            <% end %>
-          <% end %>
-
-          <% if policy(User).index? %>
-            <%= link_to users_path, class: "sidebar-link #{controller_name == 'users' ? 'active' : ''}" do %>
-              <i class="bi bi-person"></i> <%= User.model_name.human(count: 2) %>
-            <% end %>
-          <% end %>
-
-          <% if current_user.admin? %>
-            <%= link_to plans_path, class: "sidebar-link #{controller_name == 'plans' ? 'active' : ''}" do %>
-              <i class="bi bi-box"></i> Planos
-            <% end %>
-          <% end %>
-          <% _sub_company = current_user.companies.first %>
-          <% _company_role = _sub_company ? current_user.company_role_for(_sub_company) : nil %>
-          <% if !current_user.admin? && %w[owner manager].include?(_company_role) %>
-            <%= link_to subscription_path, class: "sidebar-link #{controller_name == 'subscriptions' ? 'active' : ''}" do %>
-              <i class="bi bi-credit-card"></i> Assinatura
-              <% if _sub_company&.subscription_status == "overdue" %>
-                <span style="margin-left:auto;background:#fef2f2;border:1px solid #fca5a5;color:#dc2626;font-size:0.65rem;font-weight:800;border-radius:99px;padding:1px 7px;">ATRASO</span>
-              <% elsif _sub_company&.subscription_status == "pending" %>
-                <span style="margin-left:auto;background:#fff7ed;border:1px solid #fed7aa;color:#b45309;font-size:0.65rem;font-weight:800;border-radius:99px;padding:1px 7px;">PEND.</span>
+              <% if policy(:invitation).index? %>
+                <%= link_to invitations_path, class: "sidebar-link #{controller_name == 'invitations' ? 'active' : ''}" do %>
+                  <i class="bi bi-envelope"></i> Convites
+                <% end %>
               <% end %>
-            <% end %>
-          <% end %>
-          <% if policy(Role).index? %>
-            <%= link_to roles_path, class: "sidebar-link #{controller_name == 'roles' ? 'active' : ''}" do %>
-              <i class="bi bi-shield-check"></i> <%= Role.model_name.human(count: 2) %>
-            <% end %>
-          <% end %>
-
-          <% if policy(Company).index? %>
-            <%= link_to companies_path, class: "sidebar-link #{controller_name == 'companies' ? 'active' : ''}" do %>
-              <i class="bi bi-building"></i> <%= Company.model_name.human(count: 2) %>
-            <% end %>
-          <% end %>
-
-          <% if policy(:invitation).index? %>
-            <%= link_to invitations_path, class: "sidebar-link #{controller_name == 'invitations' ? 'active' : ''}" do %>
-              <i class="bi bi-envelope"></i> Convites
             <% end %>
           <% end %>
         </nav>
