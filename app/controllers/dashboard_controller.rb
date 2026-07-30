@@ -185,5 +185,98 @@ class DashboardController < ApplicationController
     else
       @collab_ref_by_event_type = {}
     end
+
+    # ── Visão Geral — dados extras ─────────────────────────────────────────────
+    @total_sectors       = event_ids.any? ? Sector.where(event_id: event_ids).count : 0
+    @closed_events_count = closed_event_ids.size
+
+    # Taxa histórica de presença (média entre eventos encerrados)
+    if closed_event_ids.any?
+      members_by_ev  = TeamMembership.joins(team: :sector)
+                                      .where(sectors: { event_id: closed_event_ids })
+                                      .group("sectors.event_id")
+                                      .distinct.count(:user_id)
+      checkins_by_ev = Attendance.joins(:event)
+                                  .where(event_id: closed_event_ids)
+                                  .group(:event_id)
+                                  .distinct.count(:user_id)
+      rates = closed_event_ids.filter_map do |eid|
+        m = members_by_ev[eid].to_i
+        c = checkins_by_ev[eid].to_i
+        m > 0 ? (c.to_f / m * 100) : nil
+      end
+      @historical_attendance_rate = rates.any? ? (rates.sum / rates.size).round : 0
+    else
+      @historical_attendance_rate = 0
+    end
+
+    # Evento em destaque (evento corrente da sessão)
+    @featured_event = current_event
+    if @featured_event
+      feat_id = @featured_event.id
+      @feat_sectors     = Sector.where(event_id: feat_id).count
+      @feat_teams       = Team.joins(:sector).where(sectors: { event_id: feat_id }).count
+      @feat_members     = TeamMembership.joins(team: :sector)
+                                         .where(sectors: { event_id: feat_id })
+                                         .distinct.count(:user_id)
+      @feat_substitutes = TeamMembership.joins(team: :sector)
+                                         .where(sectors: { event_id: feat_id }, substitute: true)
+                                         .distinct.count(:user_id)
+      @feat_checkins_today = Attendance.where(event_id: feat_id, checked_in_date: Date.today)
+                                        .distinct.count(:user_id)
+      @feat_credentials    = TeamMembership.joins(team: :sector)
+                                            .where(sectors: { event_id: feat_id })
+                                            .where.not(credential_code: [nil, ""])
+                                            .distinct.count(:user_id)
+      @feat_has_shifts     = Shift.joins(:sector).where(sectors: { event_id: feat_id }).exists?
+      @feat_presence_pct   = @feat_members > 0 ? (@feat_checkins_today.to_f / @feat_members * 100).round : 0
+    end
+
+    # Alertas — eventos sem equipes ou sem escalas (ativos/rascunho)
+    active_draft_ids = Event.where(company_id: company_ids, status: %w[active draft]).pluck(:id)
+    if active_draft_ids.any?
+      with_teams_ids  = Team.joins(:sector).where(sectors: { event_id: active_draft_ids })
+                            .distinct.pluck("sectors.event_id").to_set
+      with_shifts_ids = Shift.joins(:sector).where(sectors: { event_id: active_draft_ids })
+                             .distinct.pluck("sectors.event_id").to_set
+      without_teams_ids  = active_draft_ids.reject { |id| with_teams_ids.include?(id) }
+      # Alerta de escala apenas para eventos que já têm equipe mas não têm escala
+      without_shifts_ids = active_draft_ids.reject { |id| with_shifts_ids.include?(id) || !with_teams_ids.include?(id) }
+      @events_without_teams  = Event.where(id: without_teams_ids).order(:start_date).limit(3)
+      @events_without_shifts = Event.where(id: without_shifts_ids).order(:start_date).limit(3)
+    else
+      @events_without_teams  = Event.none
+      @events_without_shifts = Event.none
+    end
+
+    # Check-outs faltando ontem (evento corrente)
+    @missing_checkouts_count = if current_event
+      Attendance.where(event_id: current_event.id,
+                       checked_in_date: Date.today - 1,
+                       checked_out_at: nil).count
+    else
+      0
+    end
+
+    # Próximos eventos com dados extras (membros, setores, equipes, escalas)
+    if @upcoming_events.any?
+      up_ids        = @upcoming_events.map(&:id)
+      up_sectors    = Sector.where(event_id: up_ids).group(:event_id).count
+      up_members    = TeamMembership.joins(team: :sector).where(sectors: { event_id: up_ids })
+                                    .group("sectors.event_id").distinct.count(:user_id)
+      up_has_teams  = Team.joins(:sector).where(sectors: { event_id: up_ids })
+                          .distinct.pluck("sectors.event_id").to_set
+      up_has_shifts = Shift.joins(:sector).where(sectors: { event_id: up_ids })
+                           .distinct.pluck("sectors.event_id").to_set
+      @upcoming_events_data = @upcoming_events.map do |ev|
+        { event: ev,
+          sectors:    up_sectors[ev.id].to_i,
+          members:    up_members[ev.id].to_i,
+          has_teams:  up_has_teams.include?(ev.id),
+          has_shifts: up_has_shifts.include?(ev.id) }
+      end
+    else
+      @upcoming_events_data = []
+    end
   end
 end
