@@ -120,7 +120,7 @@
     }
 
     function renderCal() {
-      document.getElementById("cal-month-label").textContent = MONTHS_PT[calMonth]+" "+calYear;
+      syncSelects();
       renderStats();
 
       const grid = document.getElementById("cal-grid");
@@ -238,10 +238,42 @@
       dp.innerHTML = html;
     }
 
+    function buildSelects() {
+      const mSel = document.getElementById("cal-select-month");
+      const ySel = document.getElementById("cal-select-year");
+      if(!mSel || !ySel) return;
+
+      mSel.innerHTML = MONTHS_PT.map((m,i) =>
+        `<option value="${i}"${i===calMonth?" selected":""}>${m}</option>`
+      ).join("");
+
+      const years = [...new Set(CAL_SHIFTS.map(s=>s.y))].sort();
+      if(!years.includes(TODAY_Y)) years.push(TODAY_Y);
+      years.sort();
+      ySel.innerHTML = years.map(y =>
+        `<option value="${y}"${y===calYear?" selected":""}>${y}</option>`
+      ).join("");
+    }
+
+    function syncSelects() {
+      const mSel = document.getElementById("cal-select-month");
+      const ySel = document.getElementById("cal-select-year");
+      if(mSel) mSel.value = calMonth;
+      if(ySel) ySel.value = calYear;
+    }
+
+    function calGoTo() {
+      const mSel = document.getElementById("cal-select-month");
+      const ySel = document.getElementById("cal-select-year");
+      calMonth = parseInt(mSel.value);
+      calYear  = parseInt(ySel.value);
+      renderCal();
+    }
+
     function calPrev() { calMonth--; if(calMonth<0){calMonth=11;calYear--;} renderCal(); }
     function calNext() { calMonth++; if(calMonth>11){calMonth=0;calYear++;} renderCal(); }
 
-    function initCal() { if(document.getElementById("cal-grid")) renderCal(); }
+    function initCal() { if(document.getElementById("cal-grid")) { buildSelects(); renderCal(); } }
     document.addEventListener("DOMContentLoaded", initCal);
     document.addEventListener("turbo:load", initCal);
   </script>
@@ -269,10 +301,11 @@
   <div style="display:grid;grid-template-columns:1fr 220px;gap:12px;align-items:start;">
     <div>
       <%# Navegação do mês %>
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
-        <button onclick="calPrev()" style="border:0.5px solid #e4e4e7;background:#fff;border-radius:7px;width:30px;height:30px;cursor:pointer;font-size:15px;color:#18181b;line-height:1;">‹</button>
-        <span id="cal-month-label" style="font-size:14px;font-weight:600;color:#18181b;"></span>
-        <button onclick="calNext()" style="border:0.5px solid #e4e4e7;background:#fff;border-radius:7px;width:30px;height:30px;cursor:pointer;font-size:15px;color:#18181b;line-height:1;">›</button>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+        <button onclick="calPrev()" style="border:0.5px solid #e4e4e7;background:#fff;border-radius:7px;width:30px;height:30px;cursor:pointer;font-size:15px;color:#18181b;line-height:1;flex-shrink:0;">‹</button>
+        <select id="cal-select-month" onchange="calGoTo()" style="flex:1;border:0.5px solid #e4e4e7;background:#fff;border-radius:7px;height:30px;font-size:13px;font-weight:600;color:#18181b;padding:0 6px;cursor:pointer;"></select>
+        <select id="cal-select-year"  onchange="calGoTo()" style="width:76px;border:0.5px solid #e4e4e7;background:#fff;border-radius:7px;height:30px;font-size:13px;font-weight:600;color:#18181b;padding:0 6px;cursor:pointer;"></select>
+        <button onclick="calNext()" style="border:0.5px solid #e4e4e7;background:#fff;border-radius:7px;width:30px;height:30px;cursor:pointer;font-size:15px;color:#18181b;line-height:1;flex-shrink:0;">›</button>
       </div>
       <%# Cabeçalho dos dias %>
       <div style="display:grid;grid-template-columns:repeat(7,minmax(0,1fr));margin-bottom:3px;">
