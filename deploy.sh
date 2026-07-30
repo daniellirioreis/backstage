@@ -21,7 +21,11 @@ if [ "$ENV" = "staging" ]; then
   echo "🔀 Publicando em HOMOLOGAÇÃO..."
 
   # Garante que staging existe
-  git checkout staging 2>/dev/null || git checkout -b staging
+  if git show-ref --verify --quiet refs/heads/staging; then
+    git checkout staging
+  else
+    git checkout -b staging
+  fi
 
   # Traz as alterações da branch atual
   git merge "$CURRENT_BRANCH" --no-edit
