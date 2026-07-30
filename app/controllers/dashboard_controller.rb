@@ -23,7 +23,8 @@ class DashboardController < ApplicationController
       current_user.company_users.pluck(:company_id)
     end
 
-    event_ids = Event.where(company_id: company_ids).pluck(:id)
+    event_ids        = Event.where(company_id: company_ids).pluck(:id)
+    closed_event_ids = Event.where(company_id: company_ids, status: :closed).pluck(:id)
 
     # ── Métricas simples ─────────────────────────────────────────────────────
     @total_events  = event_ids.size
@@ -63,7 +64,7 @@ class DashboardController < ApplicationController
     @cost_by_month       = Hash.new(0.0)
     cost_by_function_raw = Hash.new { |h, k| h[k] = { total: 0.0, event_ids: Set.new } }
 
-    if event_ids.any?
+    if closed_event_ids.any?
       cost_rows = ActiveRecord::Base.connection.execute(<<~SQL)
         SELECT
           sectors.event_id,
@@ -87,7 +88,7 @@ class DashboardController < ApplicationController
           AND team_memberships.team_id = shifts.team_id
         INNER JOIN event_functions
           ON event_functions.id = team_memberships.event_function_id
-        WHERE sectors.event_id IN (#{event_ids.map(&:to_i).join(',')})
+        WHERE sectors.event_id IN (#{closed_event_ids.map(&:to_i).join(',')})
           AND shifts.team_id IS NOT NULL
           AND event_functions.hourly_rate > 0
         GROUP BY
@@ -143,23 +144,23 @@ class DashboardController < ApplicationController
       @top_collaborators = []
     end
 
-    # Contagem de eventos por tipo (para calcular média)
-    @events_by_type = Event.where(id: event_ids)
+    # Contagem de eventos por tipo (para calcular média) — apenas encerrados
+    @events_by_type = Event.where(id: closed_event_ids)
                            .where.not(event_type: [nil, ""])
                            .group(:event_type)
                            .count
 
-    # Contagem de setores por tipo (para calcular média)
-    @sectors_by_type = Sector.where(event_id: event_ids)
+    # Contagem de setores por tipo (para calcular média) — apenas encerrados
+    @sectors_by_type = Sector.where(event_id: closed_event_ids)
                               .where.not(sector_type: nil)
                               .group(:sector_type)
                               .count
 
-    # Referência de colaboradores por tipo de evento (média, min, máx)
-    if event_ids.any?
+    # Referência de colaboradores por tipo de evento (média, min, máx) — apenas encerrados
+    if closed_event_ids.any?
       raw_collab = TeamMembership
                      .joins(team: { sector: :event })
-                     .where(sectors: { event_id: event_ids })
+                     .where(sectors: { event_id: closed_event_ids })
                      .where.not("events.event_type" => [nil, ""])
                      .distinct
                      .pluck("events.event_type", "sectors.event_id", "team_memberships.user_id")
