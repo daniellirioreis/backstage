@@ -482,7 +482,48 @@
           <td style="text-align:center;padding:0.5rem 0.75rem;">
             <% finalized = current_event.closing_finalized_at? %>
             <% if row[:status] == :absent && !payment %>
-              <span style="font-size:0.72rem;color:#a1a1aa;">Ausente — sem pagamento</span>
+              <% if finalized %>
+                <span style="font-size:0.72rem;color:#a1a1aa;">Ausente</span>
+              <% else %>
+                <% abs_uid = "abs#{row[:user].id}" %>
+                <div style="display:flex;flex-direction:column;gap:6px;align-items:stretch;">
+                  <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;">
+                    <span style="display:inline-flex;align-items:center;gap:0.3rem;background:#fff5f5;border:1px solid #fecaca;border-radius:6px;padding:3px 8px;font-size:0.72rem;font-weight:700;color:#b91c1c;white-space:nowrap;">
+                      <i class="bi bi-x-circle"></i> Ausente
+                    </span>
+                    <button type="button"
+                      onclick="var p=document.getElementById('waive-<%= abs_uid %>');p.style.display=p.style.display==='none'?'block':'none';"
+                      style="font-size:0.7rem;font-weight:600;color:#71717a;background:#fff;border:1px solid #e4e4e7;border-radius:5px;padding:4px 10px;cursor:pointer;display:inline-flex;align-items:center;gap:3px;white-space:nowrap;">
+                      <i class="bi bi-slash-circle"></i> Dispensar
+                    </button>
+                  </div>
+                  <div id="waive-<%= abs_uid %>" style="display:none;background:#fafafa;border:1px solid #e4e4e7;border-radius:7px;padding:8px;">
+                    <%= form_with url: reports_payments_path, method: :post, scope: :payment, data: { turbo: false } do |f| %>
+                      <%= f.hidden_field :user_id,       value: row[:user].id %>
+                      <%= f.hidden_field :date,          value: @selected_date %>
+                      <%= f.hidden_field :amount,        value: "0.00" %>
+                      <%= f.hidden_field :basis,         value: "cross" %>
+                      <%= f.hidden_field :function_name, value: row[:function_name] %>
+                      <%= f.hidden_field :waived,        value: "1" %>
+                      <div style="display:flex;flex-direction:column;gap:5px;">
+                        <%= f.select :waived_reason,
+                            [["Ausência", "absence"], ["Desistência", "resignation"], ["Outro motivo", "other"]],
+                            { prompt: "Selecione o motivo..." },
+                            style: "font-size:0.72rem;border:1px solid #e4e4e7;border-radius:5px;padding:4px 6px;color:#18181b;width:100%;background:#fff;" %>
+                        <div style="display:flex;gap:4px;">
+                          <%= f.submit "Confirmar dispensa",
+                              style: "flex:1;font-size:0.72rem;background:#fff;color:#71717a;border:1px solid #d4d4d8;border-radius:5px;padding:5px 0;cursor:pointer;font-weight:700;" %>
+                          <button type="button"
+                            onclick="document.getElementById('waive-<%= abs_uid %>').style.display='none';"
+                            style="font-size:0.72rem;color:#a1a1aa;background:#fff;border:1px solid #e4e4e7;border-radius:5px;padding:5px 8px;cursor:pointer;">
+                            ✕
+                          </button>
+                        </div>
+                      </div>
+                    <% end %>
+                  </div>
+                </div>
+              <% end %>
             <% else %>
               <%= render partial: "reports/closing/payment_cell",
                          locals: { payment: payment, row: row, uid: row[:user].id,
