@@ -43,3 +43,4 @@ stress_test.py
 index.html
 logo.svg
 .github_deploy_token
+.render_config
