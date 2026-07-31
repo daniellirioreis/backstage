@@ -215,7 +215,7 @@ class EventsController < ApplicationController
         sorted = user_pmts.sort_by { |p| p.date || Date.new(0) }
         {
           user:      paid_users_lookup[uid],
-          estimated: sorted.sum { |p| p.date ? shift_value_by_user_date[uid][p.date] : 0.0 },
+          estimated: shift_value_by_user[uid].to_f,
           paid:      sorted.sum(&:amount).to_f,
           payments:  sorted.map { |p|
                        est = p.date ? shift_value_by_user_date[uid][p.date] : 0.0
