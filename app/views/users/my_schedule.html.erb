@@ -214,7 +214,9 @@
       } else if(ev0.pa===2) {
         payHtml=`<span style="display:inline-flex;align-items:center;gap:5px;background:#f4f4f5;border:0.5px solid #e4e4e7;color:#71717a;border-radius:6px;padding:3px 9px;font-size:11.5px;font-weight:500;"><i class="bi bi-dash-circle" style="font-size:11px;"></i>Dispensado</span>`;
       } else {
+        const evTotalMin = CAL_SHIFTS.filter(s=>s.ei===ev0.id).reduce((a,s)=>a+s.dm,0);
         payHtml=`<span style="display:inline-flex;align-items:center;gap:5px;background:#fef3c7;border:0.5px solid #fcd34d;color:#92400e;border-radius:6px;padding:3px 9px;font-size:11.5px;font-weight:500;"><i class="bi bi-hourglass-split" style="font-size:11px;"></i>Pendente</span>`;
+        payHtml+=`<div style="font-size:10.5px;color:#a1a1aa;margin-top:5px;">${fmtDur(evTotalMin)} trabalhadas no evento</div>`;
       }
       html+=`<div style="padding:10px 14px;border-bottom:0.5px solid #f9f9f9;">
         <div style="font-size:9.5px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:#a1a1aa;margin-bottom:6px;">Pagamento</div>${payHtml}
