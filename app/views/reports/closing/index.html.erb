@@ -549,7 +549,8 @@
 
 <%# Tabela detalhada %>
 <div class="content-card" style="padding:0;overflow:hidden;">
-  <table class="data-table" style="width:100%;">
+  <div style="overflow-x:auto;">
+  <table class="data-table" style="width:100%;min-width:900px;">
     <thead>
       <tr>
         <th>Colaborador</th>
@@ -695,6 +696,7 @@
       </tr>
     </tfoot>
   </table>
+  </div>
 </div>
 
 <% end %>
