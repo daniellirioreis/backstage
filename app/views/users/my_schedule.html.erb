@@ -218,7 +218,7 @@
       const ev0=evById(shifts[0].ei);
       let payHtml;
       if(ev0.pa===1) {
-        payHtml=`<span style="display:inline-flex;align-items:center;gap:5px;background:#f0fdf4;border:0.5px solid #86efac;color:#15803d;border-radius:6px;padding:3px 9px;font-size:11.5px;font-weight:500;"><i class="bi bi-check-circle-fill" style="font-size:11px;"></i>Pago · ${fmtBRL(ev0.am)}</span>`;
+        payHtml=`<span style="display:inline-flex;align-items:center;gap:5px;background:#f0fdf4;border:0.5px solid #86efac;color:#15803d;border-radius:6px;padding:3px 9px;font-size:11.5px;font-weight:500;"><i class="bi bi-check-circle-fill" style="font-size:11px;"></i>Pago — total do evento: ${fmtBRL(ev0.am)}</span>`;
         if(ev0.mt||ev0.pat||ev0.pb) payHtml+=`<div style="font-size:10.5px;color:#a1a1aa;margin-top:5px;">${[ev0.mt,ev0.pat,ev0.pb?"por "+ev0.pb:""].filter(Boolean).join(" · ")}</div>`;
         if(ev0.bsl) payHtml+=`<div style="font-size:10.5px;color:#a1a1aa;margin-top:3px;">Base: <strong style="color:#52525b;">${ev0.bsl}</strong></div>`;
       } else if(ev0.pa===2) {
