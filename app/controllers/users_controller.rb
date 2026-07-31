@@ -121,7 +121,8 @@ class UsersController < ApplicationController
     event_ids = @shifts_by_event.keys.map(&:id)
     payments  = Payment.where(user_id: @user.id, event_id: event_ids)
                        .includes(:paid_by)
-    @payments_by_event = payments.index_by(&:event_id)
+    @payments_by_event      = payments.index_by(&:event_id)
+    payments_by_event_date  = payments.index_by { |p| [p.event_id, p.date.to_s] }
 
     today = Date.today
     all_shifts = shifts.to_a
@@ -156,18 +157,27 @@ class UsersController < ApplicationController
       end
       rate  = rates_by_team[s.team_id].to_f
       value = (dm / 60.0 * rate).round(2)
+      pmt   = payments_by_event_date[[s.sector.event.id, s.date.to_s]]
+      pat_fmt = (pmt && !pmt.waived? && pmt.paid_at) \
+        ? I18n.l(pmt.paid_at.to_date, format: "%d/%m") : ""
       {
-        d:  s.date.day,
-        m:  s.date.month - 1,
-        y:  s.date.year,
-        st: s.start_time.strftime("%H:%M"),
-        et: s.end_time.strftime("%H:%M"),
-        ov: s.overnight?,
-        dm: dm,
-        ei: s.sector.event.id,
-        tn: s.team&.name.to_s,
-        hr: rate,
-        vl: value
+        d:   s.date.day,
+        m:   s.date.month - 1,
+        y:   s.date.year,
+        st:  s.start_time.strftime("%H:%M"),
+        et:  s.end_time.strftime("%H:%M"),
+        ov:  s.overnight?,
+        dm:  dm,
+        ei:  s.sector.event.id,
+        tn:  s.team&.name.to_s,
+        hr:  rate,
+        vl:  value,
+        pa:  pmt.nil? ? 0 : (pmt.waived? ? 2 : 1),
+        am:  pmt&.amount&.to_f,
+        mt:  pmt&.payment_method.to_s,
+        pb:  pmt&.paid_by&.name&.split&.first.to_s,
+        pat: pat_fmt,
+        bsl: pmt&.basis_label.to_s
       }
     end.to_json
 

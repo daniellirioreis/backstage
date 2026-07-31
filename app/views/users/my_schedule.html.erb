@@ -216,17 +216,19 @@
       }
 
       const ev0=evById(shifts[0].ei);
+      // pagamento do dia: usa o primeiro turno do dia (todos os turnos do mesmo dia/evento têm o mesmo pagamento)
+      const s0=shifts[0];
       let payHtml;
-      if(ev0.pa===1) {
-        payHtml=`<span style="display:inline-flex;align-items:center;gap:5px;background:#f0fdf4;border:0.5px solid #86efac;color:#15803d;border-radius:6px;padding:3px 9px;font-size:11.5px;font-weight:500;"><i class="bi bi-check-circle-fill" style="font-size:11px;"></i>Pago — total do evento: ${fmtBRL(ev0.am)}</span>`;
-        if(ev0.mt||ev0.pat||ev0.pb) payHtml+=`<div style="font-size:10.5px;color:#a1a1aa;margin-top:5px;">${[ev0.mt,ev0.pat,ev0.pb?"por "+ev0.pb:""].filter(Boolean).join(" · ")}</div>`;
-        if(ev0.bsl) payHtml+=`<div style="font-size:10.5px;color:#a1a1aa;margin-top:3px;">Base: <strong style="color:#52525b;">${ev0.bsl}</strong></div>`;
-      } else if(ev0.pa===2) {
-        payHtml=`<span style="display:inline-flex;align-items:center;gap:5px;background:#f4f4f5;border:0.5px solid #e4e4e7;color:#71717a;border-radius:6px;padding:3px 9px;font-size:11.5px;font-weight:500;"><i class="bi bi-dash-circle" style="font-size:11px;"></i>Dispensado</span>`;
+      if(s0.pa===1) {
+        payHtml=`<span style="display:inline-flex;align-items:center;gap:5px;background:#f0fdf4;border:0.5px solid #86efac;color:#15803d;border-radius:6px;padding:3px 9px;font-size:11.5px;font-weight:500;"><i class="bi bi-check-circle-fill" style="font-size:11px;"></i>Pago · ${fmtBRL(s0.am)}</span>`;
+        if(s0.mt||s0.pat||s0.pb) payHtml+=`<div style="font-size:10.5px;color:#a1a1aa;margin-top:5px;">${[s0.mt,s0.pat,s0.pb?"por "+s0.pb:""].filter(Boolean).join(" · ")}</div>`;
+        if(s0.bsl) payHtml+=`<div style="font-size:10.5px;color:#a1a1aa;margin-top:3px;">Base: <strong style="color:#52525b;">${s0.bsl}</strong></div>`;
+      } else if(s0.pa===2) {
+        payHtml=`<span style="display:inline-flex;align-items:center;gap:5px;background:#f4f4f5;border:0.5px solid #e4e4e7;color:#71717a;border-radius:6px;padding:3px 9px;font-size:11.5px;font-weight:500;"><i class="bi bi-dash-circle" style="font-size:11px;"></i>Dispensado neste dia</span>`;
       } else {
-        const evTotalVal = CAL_SHIFTS.filter(s=>s.ei===ev0.id).reduce((a,s)=>a+s.vl,0);
+        const dayVal = shifts.reduce((a,s)=>a+s.vl,0);
         payHtml=`<span style="display:inline-flex;align-items:center;gap:5px;background:#fef3c7;border:0.5px solid #fcd34d;color:#92400e;border-radius:6px;padding:3px 9px;font-size:11.5px;font-weight:500;"><i class="bi bi-hourglass-split" style="font-size:11px;"></i>Pendente</span>`;
-        if(evTotalVal>0) payHtml+=`<div style="font-size:10.5px;color:#a1a1aa;margin-top:5px;">Valor a receber no evento: <strong style="color:#92400e;">${fmtBRL(evTotalVal)}</strong></div>`;
+        if(dayVal>0) payHtml+=`<div style="font-size:10.5px;color:#a1a1aa;margin-top:5px;">Estimativa do dia: <strong style="color:#92400e;">${fmtBRL(dayVal)}</strong></div>`;
       }
       const dayAttendances = CAL_ATTENDANCES.filter(a=>a.d===day&&a.m===calMonth&&a.y===calYear&&a.ei===ev0.id);
       const evAttendances  = CAL_ATTENDANCES.filter(a=>a.ei===ev0.id);
