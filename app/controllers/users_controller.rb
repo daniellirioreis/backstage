@@ -203,17 +203,17 @@ class UsersController < ApplicationController
       ev_dates = ev_shifts.map(&:date).uniq
       ev_pmts  = ev_dates.map { |d| @payments_by_event_date[[event.id, d.to_s]] }.compact
 
-      # pa: 0=pendente, 1=todos pagos, 2=todos dispensados, 3=parcial
-      ev_pa = if ev_pmts.empty?
-        0
-      elsif ev_pmts.size < ev_dates.size
-        3  # parcial — alguns dias sem pagamento
-      elsif ev_pmts.all?(&:waived?)
-        2
-      elsif ev_pmts.none?(&:waived?)
+      # pa: 0=pendente, 1=pago (todos cobertos c/ ao menos 1 pago), 2=dispensado, 3=parcial
+      ev_has_paid    = ev_pmts.any? { |p| !p.waived? }
+      ev_all_covered = ev_pmts.size == ev_dates.size && ev_dates.any?
+      ev_pa = if ev_all_covered && ev_has_paid
         1
+      elsif ev_pmts.all?(&:waived?) && ev_all_covered
+        2
+      elsif ev_pmts.any?
+        3  # parcial — alguns dias sem cobertura
       else
-        3  # mistura de pago e dispensado
+        0
       end
 
       {

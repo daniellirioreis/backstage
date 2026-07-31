@@ -398,7 +398,8 @@
             <span style="font-weight:500;color:#18181b;"><%= event.name %></span>
             <span style="color:#a1a1aa;">·</span>
             <span><%= l(event.start_date, format: :short) %> → <%= l(event.end_date, format: :short) %></span>
-            <% if leg_all_paid %>
+            <% leg_has_paid = leg_pmts.any? { |p| !p.waived? } %>
+            <% if leg_all_covered && leg_has_paid %>
               <span style="display:inline-flex;align-items:center;gap:3px;background:#dcfce7;border:0.5px solid #86efac;color:#15803d;border-radius:4px;padding:1px 6px;font-size:10px;font-weight:600;">
                 <i class="bi bi-check-circle-fill" style="font-size:9px;"></i> Pago
               </span>
@@ -406,7 +407,7 @@
               <span style="display:inline-flex;align-items:center;gap:3px;background:#f4f4f5;border:0.5px solid #e4e4e7;color:#71717a;border-radius:4px;padding:1px 6px;font-size:10px;font-weight:600;">
                 <i class="bi bi-dash-circle" style="font-size:9px;"></i> Dispensado
               </span>
-            <% elsif leg_pmts.any? && !leg_all_covered %>
+            <% elsif leg_pmts.any? %>
               <span style="display:inline-flex;align-items:center;gap:3px;background:#eff6ff;border:0.5px solid #bfdbfe;color:#1d4ed8;border-radius:4px;padding:1px 6px;font-size:10px;font-weight:600;">
                 <i class="bi bi-pie-chart-fill" style="font-size:9px;"></i> Parcial
               </span>
