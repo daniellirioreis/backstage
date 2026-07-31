@@ -96,7 +96,8 @@ class UsersController < ApplicationController
                template: "users/credential_pdf",
                layout: "credential_pdf",
                formats: [:html],
-               page_width: "80mm", page_height: "123.5mm",
+               page_size: nil,
+               page_width: "80", page_height: "123.5",
                margin: { top: 0, bottom: 0, left: 0, right: 0 },
                disposition: "attachment"
       end
