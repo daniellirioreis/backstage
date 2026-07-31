@@ -271,7 +271,7 @@
       const credUrl = CRED_URLS[ev0.id]||"";
       const mapUrl  = ev0.loc ? "https://maps.google.com/?q="+encodeURIComponent(ev0.loc) : "";
       html+=`<div style="padding:10px 14px;display:flex;gap:7px;flex-wrap:wrap;">
-        ${credUrl?`<a href="${credUrl}" target="_blank" style="display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:500;color:#18181b;background:#f4f4f5;border:0.5px solid #e4e4e7;border-radius:7px;padding:6px 12px;text-decoration:none;flex:1;justify-content:center;"><i class="bi bi-person-badge" style="font-size:13px;"></i>Credencial PDF</a>`:""}
+        ${credUrl?`<a href="${credUrl}" data-turbo="false" style="display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:500;color:#18181b;background:#f4f4f5;border:0.5px solid #e4e4e7;border-radius:7px;padding:6px 12px;text-decoration:none;flex:1;justify-content:center;"><i class="bi bi-person-badge" style="font-size:13px;"></i>Credencial PDF</a>`:""}
         ${mapUrl?`<a href="${mapUrl}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:500;color:#1d4ed8;background:#eff6ff;border:0.5px solid #bfdbfe;border-radius:7px;padding:6px 12px;text-decoration:none;flex:1;justify-content:center;"><i class="bi bi-map" style="font-size:13px;"></i>Como chegar</a>`:""}
       </div>`;
 
