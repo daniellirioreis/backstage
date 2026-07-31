@@ -1,3 +1,19 @@
+<style>
+  @media (max-width: 640px) {
+    .users-table th:nth-child(2),
+    .users-table td:nth-child(2),
+    .users-table th:nth-child(3),
+    .users-table td:nth-child(3),
+    .users-table th:nth-child(4),
+    .users-table td:nth-child(4),
+    .users-table th:nth-child(6),
+    .users-table td:nth-child(6) { display: none; }
+    .users-table .td-actions { white-space: nowrap; }
+    .users-table .td-actions .btn-secondary,
+    .users-table .td-actions .btn-danger { padding: 0.3rem 0.5rem; font-size: 0.8rem; }
+  }
+</style>
+
 <div class="page-header">
   <div>
     <h1 style="margin: 0;"><%= User.model_name.human(count: 2) %></h1>
@@ -72,7 +88,7 @@
           action_policy: policy(:invitation).create? %>
   </div>
 <% else %>
-<table class="data-table">
+<table class="data-table users-table">
   <thead>
     <tr>
       <th><%= User.human_attribute_name(:name) %></th>
