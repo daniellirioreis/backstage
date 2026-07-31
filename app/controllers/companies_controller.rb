@@ -27,8 +27,12 @@ class CompaniesController < ApplicationController
     if params[:q].present?
       scope = scope.where("users.name ILIKE ? OR users.email ILIKE ?", "%#{params[:q]}%", "%#{params[:q]}%")
     end
+    if params[:role].present? && CompanyUser::ROLES.include?(params[:role])
+      scope = scope.where(role: params[:role])
+    end
     @company_users = scope.paginate(page: params[:page], per_page: 10)
     @search_query  = params[:q].to_s
+    @role_filter   = params[:role].to_s
     @available_users = User.order(:name) - @company.users
     @plans = Plan.order(:name) if policy(@company).set_plan?
   end

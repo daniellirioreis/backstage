@@ -107,15 +107,23 @@
       <div style="font-size:0.72rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#71717a;">
         Usuários (<%= @company.company_users.count %>)
       </div>
-      <%= form_with url: company_path(@company, tab: "usuarios"), method: :get, local: true, style: "display:flex; gap:0.4rem; align-items:center;" do |f| %>
+      <%= form_with url: company_path(@company, tab: "usuarios"), method: :get, local: true, style: "display:flex; gap:0.4rem; align-items:center; flex-wrap:wrap;" do |f| %>
         <%= hidden_field_tag :tab, "usuarios" %>
         <input type="text" name="q" value="<%= @search_query %>"
                placeholder="Buscar por nome ou e-mail..."
                class="form-control"
-               style="font-size:0.82rem; padding:0.35rem 0.65rem; width:240px; height:32px;">
-        <% if @search_query.present? %>
+               style="font-size:0.82rem; padding:0.35rem 0.65rem; width:200px; height:32px;">
+        <select name="role" class="form-control form-select"
+                style="font-size:0.82rem; padding:0.35rem 0.65rem; width:180px; height:32px;">
+          <option value="">Todos os perfis</option>
+          <% CompanyUser::ROLES.each do |r| %>
+            <option value="<%= r %>" <%= @role_filter == r ? "selected" : "" %>><%= I18n.t("company_user.roles.#{r}") %></option>
+          <% end %>
+        </select>
+        <button type="submit" class="btn-primary" style="padding:0.3rem 0.75rem; font-size:0.8rem; height:32px;">Filtrar</button>
+        <% if @search_query.present? || @role_filter.present? %>
           <%= link_to company_path(@company, tab: "usuarios"), class: "btn-secondary", style: "padding:0.3rem 0.6rem; font-size:0.78rem; height:32px; display:inline-flex; align-items:center;" do %>
-            <i class="bi bi-x"></i>
+            <i class="bi bi-x"></i> Limpar
           <% end %>
         <% end %>
       <% end %>
