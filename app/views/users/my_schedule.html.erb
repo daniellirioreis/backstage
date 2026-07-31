@@ -75,6 +75,7 @@
     const DAYS_LONG  = ["domingo","segunda-feira","terça-feira","quarta-feira","quinta-feira","sexta-feira","sábado"];
 
     let calYear = TODAY_Y, calMonth = TODAY_M;
+    let filterEventId = null;
 
     function ec(ci) { return EV_COLORS[(ci||0) % EV_COLORS.length]; }
     function evById(id) { return CAL_EVENTS.find(e => e.id === id) || {}; }
@@ -146,7 +147,7 @@
         cell.appendChild(dn);
 
         if(!isOther) {
-          const ds = CAL_SHIFTS.filter(s=>s.d===day&&s.m===calMonth&&s.y===calYear);
+          const ds = CAL_SHIFTS.filter(s=>s.d===day&&s.m===calMonth&&s.y===calYear&&(!filterEventId||s.ei===filterEventId));
           if(ds.length > 0) {
             const c = ec(evById(ds[0].ei).ci);
             cell.style.background = c.bg;
@@ -266,6 +267,17 @@
       renderCal();
     }
 
+    function filterEvent(id) {
+      filterEventId = (filterEventId === id) ? null : id;
+      document.querySelectorAll("[data-leg-id]").forEach(el => {
+        const active = !filterEventId || el.dataset.legId === String(filterEventId);
+        el.style.opacity  = active ? "1" : "0.3";
+        el.style.outline  = el.dataset.legId === String(filterEventId) ? "1.5px solid #6366f1" : "none";
+        el.style.borderRadius = "6px";
+      });
+      renderCal();
+    }
+
     function calPrev() { calMonth--; if(calMonth<0){calMonth=11;calYear--;} renderCal(); }
     function calNext() { calMonth++; if(calMonth>11){calMonth=0;calYear++;} renderCal(); }
 
@@ -324,7 +336,7 @@
         <% @shifts_by_event.keys.sort_by(&:start_date).each do |event| %>
           <% c = ev_colors[ev_index_map[event.id] % ev_colors.size] %>
           <% leg_payment = @payments_by_event[event.id] %>
-          <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:#71717a;">
+          <div data-leg-id="<%= event.id %>" onclick="filterEvent(<%= event.id %>)" style="display:flex;align-items:center;gap:5px;font-size:11px;color:#71717a;cursor:pointer;padding:3px 5px;transition:opacity .15s;">
             <div style="width:11px;height:11px;border-radius:3px;background:<%= c[:bg] %>;border-left:2.5px solid <%= c[:brd] %>;flex-shrink:0;"></div>
             <span style="font-weight:500;color:#18181b;"><%= event.name %></span>
             <span style="color:#a1a1aa;">·</span>
