@@ -211,15 +211,21 @@ class EventsController < ApplicationController
       paid_payments     = payments.where(waived: false).includes(:user)
       paid_by_user      = paid_payments.group_by(&:user_id)
       paid_users_lookup = paid_payments.map(&:user).index_by(&:id)
+      waived_payments   = payments.where(waived: true)
+      waived_by_user    = waived_payments.group_by(&:user_id)
       @paid_users_data  = paid_by_user.map do |uid, user_pmts|
-        sorted = user_pmts.sort_by { |p| p.date || Date.new(0) }
+        paid_sorted   = user_pmts.sort_by { |p| p.date || Date.new(0) }
+        waived_sorted = (waived_by_user[uid] || []).sort_by { |p| p.date || Date.new(0) }
+        all_sorted    = (paid_sorted + waived_sorted).sort_by { |p| p.date || Date.new(0) }
         {
           user:      paid_users_lookup[uid],
           estimated: shift_value_by_user[uid].to_f,
-          paid:      sorted.sum(&:amount).to_f,
-          payments:  sorted.map { |p|
+          paid:      paid_sorted.sum(&:amount).to_f,
+          payments:  all_sorted.map { |p|
                        est = p.date ? shift_value_by_user_date[uid][p.date] : 0.0
-                       { date: p.date, amount: p.amount.to_f, estimated: est, basis: p.basis, notes: p.notes }
+                       { date: p.date, amount: p.amount.to_f, estimated: est,
+                         basis: p.basis, notes: p.notes,
+                         waived: p.waived?, waived_reason: p.waived_reason_label }
                      }
         }
       end.sort_by { |d| d[:user].name }

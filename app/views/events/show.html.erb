@@ -865,10 +865,38 @@
                     <% if d[:payments].size > 0 %>
                       <div style="border-top:1px solid #bbf7d0; padding:4px 10px 6px; display:flex; flex-direction:column; gap:3px;">
                         <% d[:payments].each do |p| %>
+                          <% basis_label = { "shifts" => "Escala", "attendance" => "Check-in/out", "cross" => "Cruzamento", "manual" => "Manual" }[p[:basis]] || p[:basis] %>
+                          <% if p[:waived] %>
+                            <div style="display:flex; align-items:center; justify-content:space-between; opacity:0.75;">
+                              <div style="display:flex; align-items:center; gap:5px; flex:1;">
+                                <span style="font-size:0.68rem; color:#52525b; white-space:nowrap;">
+                                  <%= p[:date] ? l(p[:date], format: :short) : "—" %>
+                                </span>
+                                <span style="font-size:0.65rem; font-weight:600; color:#71717a; background:#f4f4f5; border:1px solid #e4e4e7; border-radius:99px; padding:1px 6px; white-space:nowrap;">
+                                  <i class="bi bi-slash-circle"></i> Dispensado
+                                </span>
+                                <% if p[:waived_reason].present? %>
+                                  <span style="font-size:0.65rem; color:#a1a1aa;"><%= p[:waived_reason] %></span>
+                                <% end %>
+                              </div>
+                              <div style="display:flex; align-items:center; gap:16px;">
+                                <div style="text-align:right; min-width:80px;">
+                                  <% if p[:estimated] > 0 %>
+                                    <span style="font-size:0.72rem; color:#a1a1aa;">R$ <%= "%.2f" % p[:estimated] %></span>
+                                  <% else %>
+                                    <span style="font-size:0.72rem; color:#d4d4d8;">—</span>
+                                  <% end %>
+                                </div>
+                                <div style="text-align:right; min-width:80px;">
+                                  <span style="font-size:0.72rem; color:#a1a1aa;">—</span>
+                                </div>
+                                <div style="text-align:right; min-width:70px;">
+                                  <span style="font-size:0.72rem; color:#a1a1aa;">—</span>
+                                </div>
+                              </div>
+                            </div>
+                          <% else %>
                           <% day_diff = p[:amount] - p[:estimated] %>
-                          <%
-                            basis_label = { "shifts" => "Escala", "attendance" => "Check-in/out", "cross" => "Cruzamento", "manual" => "Manual" }[p[:basis]] || p[:basis]
-                          %>
                           <div style="display:flex; align-items:center; justify-content:space-between;">
                             <div style="display:flex; align-items:center; gap:5px; flex:1;">
                               <span style="font-size:0.68rem; color:#52525b; white-space:nowrap;">
@@ -908,6 +936,7 @@
                               </div>
                             </div>
                           </div>
+                          <% end %>
                         <% end %>
                       </div>
                     <% end %>
