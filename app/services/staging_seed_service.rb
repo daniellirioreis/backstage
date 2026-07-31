@@ -30,8 +30,7 @@ class StagingSeedService
 
     # Setor
     sector = event.sectors.find_or_create_by!(name: "Portaria Demo") do |s|
-      s.sector_type       = "security"
-      s.planned_headcount = users.size
+      s.sector_type = "security"
     end
 
     # Equipe
