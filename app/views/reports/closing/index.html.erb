@@ -267,96 +267,6 @@
     <% end %>
 <% end %>
 
-<script>
-var _autoSavePath = '<%= reports_closing_auto_save_manual_row_path %>';
-
-function pcToggle(uid, panel) {
-  var pay   = document.getElementById('pc-pay-'   + uid);
-  var waive = document.getElementById('pc-waive-' + uid);
-  if (!pay || !waive) return;
-  if (panel === 'pay') {
-    pay.style.display   = pay.style.display   === 'none' ? 'block' : 'none';
-    waive.style.display = 'none';
-  } else {
-    waive.style.display = waive.style.display === 'none' ? 'block' : 'none';
-    pay.style.display   = 'none';
-  }
-}
-
-function autoSaveManualRow(userId, dateStr, uid, rate) {
-  var startEl  = document.getElementById('entry_' + uid + '_start');
-  var endEl    = document.getElementById('entry_' + uid + '_end');
-  var statusEl = document.getElementById('save_status_' + uid);
-  if (!startEl || !endEl || !startEl.value || !endEl.value) return;
-
-  calcManualHoras(uid, rate);
-  if (statusEl) { statusEl.textContent = '⏳'; statusEl.style.color = '#71717a'; }
-
-  var token = document.querySelector('meta[name="csrf-token"]');
-  var fd = new FormData();
-  fd.append('user_id',    userId);
-  fd.append('date',       dateStr);
-  fd.append('started_at', startEl.value);
-  fd.append('ended_at',   endEl.value);
-  fd.append('authenticity_token', token ? token.content : '');
-
-  fetch(_autoSavePath, { method: 'POST', body: fd })
-    .then(function(r) { return r.json(); })
-    .then(function(data) {
-      if (data.ok) {
-        if (statusEl) { statusEl.textContent = '✓'; statusEl.style.color = '#16a34a'; }
-
-        // Atualiza badge Origem → Manual
-        var origEl = document.getElementById('origem_' + uid);
-        if (origEl && !origEl.querySelector('.bi-qr-code-scan')) {
-          origEl.innerHTML = '<span style="display:inline-flex;align-items:center;gap:4px;background:#fef9c3;border:1px solid #fde68a;border-radius:99px;padding:2px 8px;font-size:0.7rem;font-weight:700;color:#92400e;"><i class="bi bi-pencil"></i> Manual</span>';
-        }
-
-        // Substitui o payment cell com HTML atualizado do servidor (mostra botão Pagar)
-        var cellEl = document.getElementById('payment-cell-' + uid);
-        if (cellEl && data.payment_html) {
-          cellEl.innerHTML = data.payment_html;
-        }
-
-        setTimeout(function() { if (statusEl) statusEl.textContent = ''; }, 2500);
-      } else {
-        if (statusEl) { statusEl.textContent = '✗ ' + (data.error || 'Erro'); statusEl.style.color = '#dc2626'; }
-      }
-    })
-    .catch(function() {
-      if (statusEl) { statusEl.textContent = '✗ Erro'; statusEl.style.color = '#dc2626'; }
-    });
-}
-
-function calcManualHoras(uid, rate) {
-  const startEl   = document.getElementById('entry_' + uid + '_start');
-  const endEl     = document.getElementById('entry_' + uid + '_end');
-  const hoursEl   = document.getElementById('hours_' + uid);
-  const valueEl   = document.getElementById('value_' + uid);
-  const amountEl  = document.getElementById('pay_amount_' + uid);
-  const hoursHidEl = document.getElementById('pay_hours_' + uid);
-  if (!startEl || !endEl || !hoursEl || !valueEl) return;
-  const start = startEl.value, end = endEl.value;
-  if (!start || !end) {
-    hoursEl.textContent = '—';
-    valueEl.textContent = '—';
-    if (amountEl)   amountEl.value   = '0.00';
-    if (hoursHidEl) hoursHidEl.value = '0.00';
-    return;
-  }
-  const [sh, sm] = start.split(':').map(Number);
-  const [eh, em] = end.split(':').map(Number);
-  let startMin = sh * 60 + sm, endMin = eh * 60 + em;
-  if (endMin <= startMin) endMin += 1440;
-  const hours = (endMin - startMin) / 60;
-  const value = hours * rate;
-  hoursEl.textContent = hours.toFixed(2) + 'h';
-  valueEl.textContent = 'R$ ' + value.toFixed(2).replace('.', ',');
-  if (amountEl)   amountEl.value   = value.toFixed(2);
-  if (hoursHidEl) hoursHidEl.value = hours.toFixed(2);
-}
-</script>
-
 <% elsif @rows.empty? %>
   <div class="content-card" style="text-align:center;padding:3rem;color:#a1a1aa;">
     <i class="bi bi-clipboard-x" style="font-size:2rem;display:block;margin-bottom:0.75rem;"></i>
@@ -852,6 +762,94 @@ function calcManualHoras(uid, rate) {
     </div>
   </div>
 <% end %>
+
+<script>
+var _autoSavePath = '<%= reports_closing_auto_save_manual_row_path %>';
+
+function pcToggle(uid, panel) {
+  var pay   = document.getElementById('pc-pay-'   + uid);
+  var waive = document.getElementById('pc-waive-' + uid);
+  if (!pay || !waive) return;
+  if (panel === 'pay') {
+    pay.style.display   = pay.style.display   === 'none' ? 'block' : 'none';
+    waive.style.display = 'none';
+  } else {
+    waive.style.display = waive.style.display === 'none' ? 'block' : 'none';
+    pay.style.display   = 'none';
+  }
+}
+
+function autoSaveManualRow(userId, dateStr, uid, rate) {
+  var startEl  = document.getElementById('entry_' + uid + '_start');
+  var endEl    = document.getElementById('entry_' + uid + '_end');
+  var statusEl = document.getElementById('save_status_' + uid);
+  if (!startEl || !endEl || !startEl.value || !endEl.value) return;
+
+  calcManualHoras(uid, rate);
+  if (statusEl) { statusEl.textContent = '⏳'; statusEl.style.color = '#71717a'; }
+
+  var token = document.querySelector('meta[name="csrf-token"]');
+  var fd = new FormData();
+  fd.append('user_id',    userId);
+  fd.append('date',       dateStr);
+  fd.append('started_at', startEl.value);
+  fd.append('ended_at',   endEl.value);
+  fd.append('authenticity_token', token ? token.content : '');
+
+  fetch(_autoSavePath, { method: 'POST', body: fd })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (data.ok) {
+        if (statusEl) { statusEl.textContent = '✓'; statusEl.style.color = '#16a34a'; }
+
+        var origEl = document.getElementById('origem_' + uid);
+        if (origEl && !origEl.querySelector('.bi-qr-code-scan')) {
+          origEl.innerHTML = '<span style="display:inline-flex;align-items:center;gap:4px;background:#fef9c3;border:1px solid #fde68a;border-radius:99px;padding:2px 8px;font-size:0.7rem;font-weight:700;color:#92400e;"><i class="bi bi-pencil"></i> Manual</span>';
+        }
+
+        var cellEl = document.getElementById('payment-cell-' + uid);
+        if (cellEl && data.payment_html) {
+          cellEl.innerHTML = data.payment_html;
+        }
+
+        setTimeout(function() { if (statusEl) statusEl.textContent = ''; }, 2500);
+      } else {
+        if (statusEl) { statusEl.textContent = '✗ ' + (data.error || 'Erro'); statusEl.style.color = '#dc2626'; }
+      }
+    })
+    .catch(function() {
+      if (statusEl) { statusEl.textContent = '✗ Erro'; statusEl.style.color = '#dc2626'; }
+    });
+}
+
+function calcManualHoras(uid, rate) {
+  const startEl    = document.getElementById('entry_' + uid + '_start');
+  const endEl      = document.getElementById('entry_' + uid + '_end');
+  const hoursEl    = document.getElementById('hours_' + uid);
+  const valueEl    = document.getElementById('value_' + uid);
+  const amountEl   = document.getElementById('pay_amount_' + uid);
+  const hoursHidEl = document.getElementById('pay_hours_' + uid);
+  if (!startEl || !endEl || !hoursEl || !valueEl) return;
+  const start = startEl.value, end = endEl.value;
+  if (!start || !end) {
+    hoursEl.textContent = '—';
+    valueEl.textContent = '—';
+    if (amountEl)   amountEl.value   = '0.00';
+    if (hoursHidEl) hoursHidEl.value = '0.00';
+    return;
+  }
+  const [sh, sm] = start.split(':').map(Number);
+  const [eh, em] = end.split(':').map(Number);
+  let startMin = sh * 60 + sm, endMin = eh * 60 + em;
+  if (endMin <= startMin) endMin += 1440;
+  const hours = (endMin - startMin) / 60;
+  const value = hours * rate;
+  hoursEl.textContent = hours.toFixed(2) + 'h';
+  valueEl.textContent = 'R$ ' + value.toFixed(2).replace('.', ',');
+  if (amountEl)   amountEl.value   = value.toFixed(2);
+  if (hoursHidEl) hoursHidEl.value = hours.toFixed(2);
+}
+</script>
 
 <style>
 @keyframes flashNextRow {
