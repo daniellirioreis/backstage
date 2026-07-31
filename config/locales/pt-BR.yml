@@ -165,6 +165,13 @@ pt-BR:
       manager: "Gerente"
       operator: "Operador"
       collaborator: "Colaborador"
+      production_director: "Diretor de Produção"
+      executive_producer: "Produtor Executivo"
+      producer: "Produtor"
+      event_analyst: "Analista de Eventos"
+      event_coordinator: "Coordenador de Eventos"
+      operations_coordinator: "Coordenador de Operações"
+      sector_coordinator: "Coordenador de Setor"
 
   event_type_groups:
     shows: "Shows e Cultura"
