@@ -125,9 +125,7 @@
           <% if policy(user).my_schedule? %>
             <%= link_to my_schedule_user_path(user), class: "btn-secondary", title: t("permission_actions.my_schedule") do %><i class="bi bi-calendar-week"></i><% end %>
           <% end %>
-          <% if policy(user).show? %>
-            <%= link_to credential_user_path(user, format: :pdf), class: "btn-secondary", title: "Baixar credencial" do %><i class="bi bi-person-badge"></i><% end %>
-          <% end %>
+
           <% if policy(user).edit? %>
             <%= link_to edit_user_path(user), class: "btn-secondary" do %><i class="bi bi-pencil"></i><% end %>
           <% end %>
