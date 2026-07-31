@@ -271,10 +271,16 @@
       filterEventId = (filterEventId === id) ? null : id;
       document.querySelectorAll("[data-leg-id]").forEach(el => {
         const active = !filterEventId || el.dataset.legId === String(filterEventId);
-        el.style.opacity  = active ? "1" : "0.3";
-        el.style.outline  = el.dataset.legId === String(filterEventId) ? "1.5px solid #6366f1" : "none";
+        el.style.opacity     = active ? "1" : "0.3";
+        el.style.outline     = el.dataset.legId === String(filterEventId) ? "1.5px solid #6366f1" : "none";
         el.style.borderRadius = "6px";
       });
+      if(filterEventId) {
+        const evShifts = CAL_SHIFTS
+          .filter(s => s.ei === filterEventId)
+          .sort((a,b) => new Date(a.y,a.m,a.d) - new Date(b.y,b.m,b.d));
+        if(evShifts.length) { calYear = evShifts[0].y; calMonth = evShifts[0].m; }
+      }
       renderCal();
     }
 
