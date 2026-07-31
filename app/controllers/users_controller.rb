@@ -201,7 +201,8 @@ class UsersController < ApplicationController
         am:  payment&.amount&.to_f,
         mt:  payment&.payment_method.to_s,
         pb:  payment&.paid_by&.name&.split&.first.to_s,
-        pat: paid_at_fmt
+        pat: paid_at_fmt,
+        bsl: payment&.basis_label.to_s
       }
     end.to_json
   end
