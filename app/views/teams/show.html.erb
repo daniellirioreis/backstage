@@ -94,7 +94,7 @@ end %>
           <th style="width: 48px;"></th>
           <th><%= User.human_attribute_name(:name) %></th>
           <th>Função no Evento</th>
-          <th>Credencial</th>
+          <th class="col-mobile-hide">Credencial</th>
         </tr>
       </thead>
       <tbody>
@@ -123,7 +123,7 @@ end %>
                 <span style="font-size:0.75rem;color:#a1a1aa;">—</span>
               <% end %>
             </td>
-            <td>
+            <td class="col-mobile-hide">
               <% if tm.credential_code.present? %>
                 <span style="font-family: monospace; font-size: 0.82rem; font-weight: 700; background: #f4f4f5; padding: 2px 8px; border-radius: 4px; color: #18181b;">
                   <%= tm.full_credential_code %>

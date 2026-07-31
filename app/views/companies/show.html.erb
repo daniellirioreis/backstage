@@ -128,7 +128,7 @@
             <tr>
               <th style="width:44px;"></th>
               <th>Nome</th>
-              <th>E-mail</th>
+              <th class="col-mobile-hide">E-mail</th>
               <th>Perfil na empresa</th>
               <% if policy(@company).update? %><th style="width:40px;"></th><% end %>
             </tr>
@@ -146,7 +146,7 @@
                   </div>
                 </td>
                 <td style="font-weight:500;"><%= eu.user.name %></td>
-                <td style="color:#71717a; font-size:0.82rem;"><%= eu.user.email %></td>
+                <td class="col-mobile-hide" style="color:#71717a; font-size:0.82rem;"><%= eu.user.email %></td>
                 <td>
                   <% if policy(@company).update? %>
                     <%= form_with url: update_user_role_company_path(@company), method: :patch, data: { turbo: false } do |f| %>

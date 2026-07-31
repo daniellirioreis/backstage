@@ -28,7 +28,7 @@
     <tr>
       <th><%= Vehicle.human_attribute_name(:license_plate) %></th>
       <th><%= Vehicle.human_attribute_name(:model) %></th>
-      <th><%= Vehicle.human_attribute_name(:color) %></th>
+      <th class="col-mobile-hide"><%= Vehicle.human_attribute_name(:color) %></th>
       <th></th>
     </tr>
   </thead>
@@ -37,7 +37,7 @@
       <tr>
         <td style="font-family: monospace; font-weight: 600; letter-spacing: 0.05em;"><%= vehicle.license_plate.upcase %></td>
         <td><%= vehicle.model %></td>
-        <td style="color: #71717a;"><%= vehicle.color %></td>
+        <td class="col-mobile-hide" style="color: #71717a;"><%= vehicle.color %></td>
         <td class="td-actions">
           <% if policy(vehicle).edit? %>
             <%= link_to edit_vehicle_path(vehicle), class: "btn-secondary" do %><i class="bi bi-pencil"></i><% end %>
