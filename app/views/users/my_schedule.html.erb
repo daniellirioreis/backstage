@@ -280,6 +280,8 @@
           .filter(s => s.ei === filterEventId)
           .sort((a,b) => new Date(a.y,a.m,a.d) - new Date(b.y,b.m,b.d));
         if(evShifts.length) { calYear = evShifts[0].y; calMonth = evShifts[0].m; }
+      } else {
+        calYear = TODAY_Y; calMonth = TODAY_M;
       }
       renderCal();
     }
