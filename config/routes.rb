@@ -1,6 +1,9 @@
 Rails.application.routes.draw do
   get "up" => "rails/health#show", as: :rails_health_check
 
+  # Seed temporário para demo (protegido por token + ENV)
+  get "/_seed/coordinator", to: "staging_seed#coordinator"
+
   devise_for :users,
              path: "",
              path_names: {
