@@ -170,6 +170,24 @@ class UsersController < ApplicationController
       }
     end.to_json
 
+    # Presenças reais do colaborador (check-in/check-out)
+    event_ids_cal = @shifts_by_event.keys.map(&:id)
+    attendances   = Attendance.where(user_id: @user.id, event_id: event_ids_cal)
+    @cal_attendances_json = attendances.map do |a|
+      dur = if a.checked_in_at && a.checked_out_at
+        ((a.checked_out_at - a.checked_in_at) / 60).round
+      end
+      {
+        d:  a.checked_in_date.day,
+        m:  a.checked_in_date.month - 1,
+        y:  a.checked_in_date.year,
+        ei: a.event_id,
+        ci: a.checked_in_at&.strftime("%H:%M"),
+        co: a.checked_out_at&.strftime("%H:%M"),
+        dm: dur
+      }
+    end.to_json
+
     @cal_events_json = @shifts_by_event.keys.each_with_index.map do |event, idx|
       payment = @payments_by_event[event.id]
       paid_at_fmt = (payment && !payment.waived? && payment.paid_at) \

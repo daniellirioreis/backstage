@@ -59,7 +59,8 @@
   <%# Dados para o JS %>
   <script>
     const CAL_SHIFTS = <%= raw @cal_shifts_json %>;
-    const CAL_EVENTS = <%= raw @cal_events_json %>;
+    const CAL_EVENTS       = <%= raw @cal_events_json %>;
+    const CAL_ATTENDANCES  = <%= raw @cal_attendances_json %>;
     const CRED_URLS  = { <%= raw @shifts_by_event.keys.map { |ev| "#{ev.id}:'#{credential_user_path(@user, format: :pdf, event_id: ev.id)}'" }.join(",") %> };
     const TODAY_D = <%= Date.today.day %>, TODAY_M = <%= Date.today.month - 1 %>, TODAY_Y = <%= Date.today.year %>;
 
@@ -226,23 +227,32 @@
         payHtml=`<span style="display:inline-flex;align-items:center;gap:5px;background:#fef3c7;border:0.5px solid #fcd34d;color:#92400e;border-radius:6px;padding:3px 9px;font-size:11.5px;font-weight:500;"><i class="bi bi-hourglass-split" style="font-size:11px;"></i>Pendente</span>`;
         if(evTotalVal>0) payHtml+=`<div style="font-size:10.5px;color:#a1a1aa;margin-top:5px;">Valor a receber no evento: <strong style="color:#92400e;">${fmtBRL(evTotalVal)}</strong></div>`;
       }
-      const evTotalMin = CAL_SHIFTS.filter(s=>s.ei===ev0.id).reduce((a,s)=>a+s.dm,0);
-      const dayTotalMin = shifts.reduce((a,s)=>a+s.dm,0);
-      html+=`<div style="padding:10px 14px;border-bottom:0.5px solid #f9f9f9;">
-        <div style="font-size:9.5px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:#a1a1aa;margin-bottom:6px;">Horas trabalhadas</div>
-        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
-          <div style="display:flex;align-items:center;gap:5px;font-size:12px;color:#71717a;">
-            <i class="bi bi-calendar3" style="font-size:11px;color:#a1a1aa;"></i>
-            <span>Neste dia:</span>
-            <strong style="color:#18181b;">${fmtDur(dayTotalMin)}</strong>
+      const dayAttendances = CAL_ATTENDANCES.filter(a=>a.d===day&&a.m===calMonth&&a.y===calYear&&a.ei===ev0.id);
+      const evAttendances  = CAL_ATTENDANCES.filter(a=>a.ei===ev0.id);
+      const evTotalRealMin = evAttendances.reduce((acc,a)=>acc+(a.dm||0),0);
+      if(dayAttendances.length>0) {
+        const att = dayAttendances[0];
+        html+=`<div style="padding:10px 14px;border-bottom:0.5px solid #f9f9f9;">
+          <div style="font-size:9.5px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:#a1a1aa;margin-bottom:8px;">Presença registrada</div>
+          <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:#71717a;margin-bottom:5px;">
+            <i class="bi bi-box-arrow-in-right" style="font-size:12px;color:#22c55e;"></i>
+            <span>Entrada:</span>
+            <strong style="color:#18181b;">${att.ci||"—"}</strong>
           </div>
-          <div style="display:flex;align-items:center;gap:5px;font-size:12px;color:#71717a;">
-            <i class="bi bi-collection" style="font-size:11px;color:#a1a1aa;"></i>
-            <span>No evento:</span>
-            <strong style="color:#18181b;">${fmtDur(evTotalMin)}</strong>
+          <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:#71717a;margin-bottom:5px;">
+            <i class="bi bi-box-arrow-right" style="font-size:12px;color:#ef4444;"></i>
+            <span>Saída:</span>
+            <strong style="color:#18181b;">${att.co||"—"}</strong>
+            ${!att.co?'<span style="font-size:10px;color:#f97316;">Sem saída</span>':""}
           </div>
-        </div>
-      </div>`;
+          ${att.dm?`<div style="display:flex;align-items:center;gap:6px;font-size:12px;color:#71717a;">
+            <i class="bi bi-clock-history" style="font-size:12px;color:#a1a1aa;"></i>
+            <span>Total neste dia:</span>
+            <strong style="color:#18181b;">${fmtDur(att.dm)}</strong>
+          </div>`:""}
+          ${evTotalRealMin>0?`<div style="font-size:10.5px;color:#a1a1aa;margin-top:6px;">Total no evento: <strong style="color:#52525b;">${fmtDur(evTotalRealMin)}</strong></div>`:""}
+        </div>`;
+      }
       html+=`<div style="padding:10px 14px;border-bottom:0.5px solid #f9f9f9;">
         <div style="font-size:9.5px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:#a1a1aa;margin-bottom:6px;">Pagamento</div>${payHtml}
       </div>`;
