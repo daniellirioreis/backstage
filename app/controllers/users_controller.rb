@@ -140,12 +140,21 @@ class UsersController < ApplicationController
     @days_until_next = @next_shift ? (@next_shift.date - today).to_i : nil
 
     # ── Calendário — serialização JSON ──────────────────────────────────────
+    # Taxa horária por equipe (TeamMembership → EventFunction)
+    rates_by_team = TeamMembership
+      .joins(:event_function)
+      .where(user_id: @user.id)
+      .pluck(:team_id, "event_functions.hourly_rate")
+      .to_h
+
     @cal_shifts_json = all_shifts.map do |s|
       dm = if s.overnight?
         1440 - (s.start_time.hour * 60 + s.start_time.min) + (s.end_time.hour * 60 + s.end_time.min)
       else
         (s.end_time.hour * 60 + s.end_time.min) - (s.start_time.hour * 60 + s.start_time.min)
       end
+      rate  = rates_by_team[s.team_id].to_f
+      value = (dm / 60.0 * rate).round(2)
       {
         d:  s.date.day,
         m:  s.date.month - 1,
@@ -155,7 +164,9 @@ class UsersController < ApplicationController
         ov: s.overnight?,
         dm: dm,
         ei: s.sector.event.id,
-        tn: s.team&.name.to_s
+        tn: s.team&.name.to_s,
+        hr: rate,
+        vl: value
       }
     end.to_json
 

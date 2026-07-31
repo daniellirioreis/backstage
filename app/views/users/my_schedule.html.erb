@@ -193,6 +193,7 @@
         <div style="font-size:13.5px;font-weight:600;color:#18181b;">${shifts.length} turno${shifts.length>1?"s":""} agendado${shifts.length>1?"s":""}</div>
       </div>`;
 
+      const dayTotal = shifts.reduce((a,s)=>a+s.vl,0);
       shifts.forEach(s => {
         const ev=evById(s.ei), c=ec(ev.ci);
         html+=`<div style="padding:10px 14px;border-bottom:0.5px solid #f9f9f9;">
@@ -202,9 +203,16 @@
             <strong style="color:#18181b;">${s.st} → ${s.et}</strong>${s.ov?'<span style="font-size:10px;color:#a1a1aa;margin-left:2px;">+1 dia</span>':""}
             <span style="margin-left:auto;background:#f4f4f5;border-radius:5px;padding:1px 7px;font-size:11px;">${fmtDur(s.dm)}</span>
           </div>
-          ${s.tn?`<div style="display:flex;align-items:center;gap:6px;font-size:12px;color:#71717a;"><i class="bi bi-people" style="font-size:12px;color:#a1a1aa;"></i>${s.tn}</div>`:""}
+          ${s.tn?`<div style="display:flex;align-items:center;gap:6px;font-size:12px;color:#71717a;margin-bottom:4px;"><i class="bi bi-people" style="font-size:12px;color:#a1a1aa;"></i>${s.tn}</div>`:""}
+          ${s.vl>0?`<div style="display:flex;align-items:center;gap:6px;font-size:12px;color:#71717a;"><i class="bi bi-cash" style="font-size:12px;color:#a1a1aa;"></i><span style="color:#18181b;font-weight:600;">${fmtBRL(s.vl)}</span><span style="font-size:10.5px;color:#a1a1aa;">(R$ ${s.hr.toFixed(2).replace(".",",")} /h)</span></div>`:""}
         </div>`;
       });
+      if(dayTotal>0 && shifts.length>1) {
+        html+=`<div style="padding:8px 14px;border-bottom:0.5px solid #f9f9f9;display:flex;align-items:center;justify-content:space-between;">
+          <span style="font-size:11px;color:#a1a1aa;">Total do dia</span>
+          <span style="font-size:13px;font-weight:700;color:#18181b;">${fmtBRL(dayTotal)}</span>
+        </div>`;
+      }
 
       const ev0=evById(shifts[0].ei);
       let payHtml;
@@ -214,9 +222,9 @@
       } else if(ev0.pa===2) {
         payHtml=`<span style="display:inline-flex;align-items:center;gap:5px;background:#f4f4f5;border:0.5px solid #e4e4e7;color:#71717a;border-radius:6px;padding:3px 9px;font-size:11.5px;font-weight:500;"><i class="bi bi-dash-circle" style="font-size:11px;"></i>Dispensado</span>`;
       } else {
-        const evTotalMin = CAL_SHIFTS.filter(s=>s.ei===ev0.id).reduce((a,s)=>a+s.dm,0);
+        const evTotalVal = CAL_SHIFTS.filter(s=>s.ei===ev0.id).reduce((a,s)=>a+s.vl,0);
         payHtml=`<span style="display:inline-flex;align-items:center;gap:5px;background:#fef3c7;border:0.5px solid #fcd34d;color:#92400e;border-radius:6px;padding:3px 9px;font-size:11.5px;font-weight:500;"><i class="bi bi-hourglass-split" style="font-size:11px;"></i>Pendente</span>`;
-        payHtml+=`<div style="font-size:10.5px;color:#a1a1aa;margin-top:5px;">${fmtDur(evTotalMin)} trabalhadas no evento</div>`;
+        if(evTotalVal>0) payHtml+=`<div style="font-size:10.5px;color:#a1a1aa;margin-top:5px;">Valor a receber no evento: <strong style="color:#92400e;">${fmtBRL(evTotalVal)}</strong></div>`;
       }
       html+=`<div style="padding:10px 14px;border-bottom:0.5px solid #f9f9f9;">
         <div style="font-size:9.5px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:#a1a1aa;margin-bottom:6px;">Pagamento</div>${payHtml}
