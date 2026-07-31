@@ -63,7 +63,7 @@
       #cal-detail { margin-top: 12px; }
       .cal-day { min-height: 52px; padding: 4px; }
       .shift-pill { display: none; }
-      .cal-day.has-shift::after { content:""; display:block; width:6px; height:6px; border-radius:50%; background:#6366f1; margin:2px auto 0; }
+      .cal-day.has-shift::after { content:""; display:block; width:6px; height:6px; border-radius:50%; background:currentColor; margin:2px auto 0; }
       .cal-nav { flex-wrap: wrap; gap: 6px !important; }
       #cal-select-month { font-size: 12px !important; }
       #cal-select-year  { width: 62px !important; font-size: 12px !important; }
@@ -164,9 +164,17 @@
         if(!isOther) {
           const ds = CAL_SHIFTS.filter(s=>s.d===day&&s.m===calMonth&&s.y===calYear&&(!filterEventId||s.ei===filterEventId));
           if(ds.length > 0) {
-            const c = ec(evById(ds[0].ei).ci);
-            cell.style.background = c.bg;
-            cell.style.borderColor = c.brd;
+            // Cor da célula baseada no status de pagamento do dia
+            const pa = ds[0].pa; // 0=pendente, 1=pago, 2=dispensado
+            const PAY_COLORS = {
+              0: { bg:"#fef3c7", brd:"#f59e0b", dot:"#f59e0b" }, // pendente — âmbar
+              1: { bg:"#dcfce7", brd:"#22c55e", dot:"#16a34a" }, // pago — verde
+              2: { bg:"#f4f4f5", brd:"#d4d4d8", dot:"#a1a1aa" }, // dispensado — cinza
+            };
+            const pc = PAY_COLORS[pa] || PAY_COLORS[0];
+            cell.style.background = pc.bg;
+            cell.style.borderColor = pc.brd;
+            cell.style.color = pc.dot;
             cell.classList.add("has-shift");
           }
           ds.slice(0,2).forEach(s => {
