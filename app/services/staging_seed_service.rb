@@ -17,6 +17,7 @@ class StagingSeedService
     event.assign_attributes(
       company:    company,
       status:     "active",
+      event_type: "festival",
       start_date: Date.today,
       end_date:   Date.today + 1.day,
       location:   "Praça da Liberdade, BH"
