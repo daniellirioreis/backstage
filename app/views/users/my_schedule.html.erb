@@ -230,11 +230,11 @@
       const dayAttendances = CAL_ATTENDANCES.filter(a=>a.d===day&&a.m===calMonth&&a.y===calYear&&a.ei===ev0.id);
       const evAttendances  = CAL_ATTENDANCES.filter(a=>a.ei===ev0.id);
       const evTotalRealMin = evAttendances.reduce((acc,a)=>acc+(a.dm||0),0);
+      html+=`<div style="padding:10px 14px;border-bottom:0.5px solid #f9f9f9;">
+        <div style="font-size:9.5px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:#a1a1aa;margin-bottom:8px;">Presença registrada</div>`;
       if(dayAttendances.length>0) {
         const att = dayAttendances[0];
-        html+=`<div style="padding:10px 14px;border-bottom:0.5px solid #f9f9f9;">
-          <div style="font-size:9.5px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:#a1a1aa;margin-bottom:8px;">Presença registrada</div>
-          <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:#71717a;margin-bottom:5px;">
+        html+=`<div style="display:flex;align-items:center;gap:6px;font-size:12px;color:#71717a;margin-bottom:5px;">
             <i class="bi bi-box-arrow-in-right" style="font-size:12px;color:#22c55e;"></i>
             <span>Entrada:</span>
             <strong style="color:#18181b;">${att.ci||"—"}</strong>
@@ -243,16 +243,21 @@
             <i class="bi bi-box-arrow-right" style="font-size:12px;color:#ef4444;"></i>
             <span>Saída:</span>
             <strong style="color:#18181b;">${att.co||"—"}</strong>
-            ${!att.co?'<span style="font-size:10px;color:#f97316;">Sem saída</span>':""}
+            ${!att.co?'<span style="font-size:10px;color:#f97316;margin-left:2px;">Sem saída</span>':""}
           </div>
           ${att.dm?`<div style="display:flex;align-items:center;gap:6px;font-size:12px;color:#71717a;">
             <i class="bi bi-clock-history" style="font-size:12px;color:#a1a1aa;"></i>
             <span>Total neste dia:</span>
             <strong style="color:#18181b;">${fmtDur(att.dm)}</strong>
           </div>`:""}
-          ${evTotalRealMin>0?`<div style="font-size:10.5px;color:#a1a1aa;margin-top:6px;">Total no evento: <strong style="color:#52525b;">${fmtDur(evTotalRealMin)}</strong></div>`:""}
+          ${evTotalRealMin>0?`<div style="font-size:10.5px;color:#a1a1aa;margin-top:6px;">Total no evento: <strong style="color:#52525b;">${fmtDur(evTotalRealMin)}</strong></div>`:""}`;
+      } else {
+        html+=`<div style="display:flex;align-items:center;gap:6px;font-size:12px;color:#a1a1aa;">
+          <i class="bi bi-slash-circle" style="font-size:12px;"></i>
+          Nenhuma presença registrada neste dia
         </div>`;
       }
+      html+=`</div>`;
       html+=`<div style="padding:10px 14px;border-bottom:0.5px solid #f9f9f9;">
         <div style="font-size:9.5px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:#a1a1aa;margin-bottom:6px;">Pagamento</div>${payHtml}
       </div>`;
