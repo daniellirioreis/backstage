@@ -122,7 +122,7 @@ class UsersController < ApplicationController
     payments  = Payment.where(user_id: @user.id, event_id: event_ids)
                        .includes(:paid_by)
     @payments_by_event      = payments.index_by(&:event_id)
-    payments_by_event_date  = payments.index_by { |p| [p.event_id, p.date.to_s] }
+    @payments_by_event_date = payments.index_by { |p| [p.event_id, p.date.to_s] }
 
     today = Date.today
     all_shifts = shifts.to_a
@@ -157,7 +157,7 @@ class UsersController < ApplicationController
       end
       rate  = rates_by_team[s.team_id].to_f
       value = (dm / 60.0 * rate).round(2)
-      pmt   = payments_by_event_date[[s.sector.event.id, s.date.to_s]]
+      pmt   = @payments_by_event_date[[s.sector.event.id, s.date.to_s]]
       pat_fmt = (pmt && !pmt.waived? && pmt.paid_at) \
         ? I18n.l(pmt.paid_at.to_date, format: "%d/%m") : ""
       {
@@ -199,21 +199,29 @@ class UsersController < ApplicationController
       }
     end.to_json
 
-    @cal_events_json = @shifts_by_event.keys.each_with_index.map do |event, idx|
-      payment = @payments_by_event[event.id]
-      paid_at_fmt = (payment && !payment.waived? && payment.paid_at) \
-        ? I18n.l(payment.paid_at.to_date, format: "%d/%m") : ""
+    @cal_events_json = @shifts_by_event.each_with_index.map do |(event, ev_shifts), idx|
+      ev_dates = ev_shifts.map(&:date).uniq
+      ev_pmts  = ev_dates.map { |d| @payments_by_event_date[[event.id, d.to_s]] }.compact
+
+      # pa: 0=pendente, 1=todos pagos, 2=todos dispensados, 3=parcial
+      ev_pa = if ev_pmts.empty?
+        0
+      elsif ev_pmts.size < ev_dates.size
+        3  # parcial — alguns dias sem pagamento
+      elsif ev_pmts.all?(&:waived?)
+        2
+      elsif ev_pmts.none?(&:waived?)
+        1
+      else
+        3  # mistura de pago e dispensado
+      end
+
       {
         id:  event.id,
         nm:  event.name,
         loc: event.location.to_s,
         ci:  idx % 5,
-        pa:  payment.nil? ? 0 : (payment.waived? ? 2 : 1),
-        am:  payment&.amount&.to_f,
-        mt:  payment&.payment_method.to_s,
-        pb:  payment&.paid_by&.name&.split&.first.to_s,
-        pat: paid_at_fmt,
-        bsl: payment&.basis_label.to_s
+        pa:  ev_pa
       }
     end.to_json
   end

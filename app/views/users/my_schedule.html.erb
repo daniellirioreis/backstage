@@ -102,7 +102,7 @@
       }
 
       const paidN = CAL_EVENTS.filter(e=>e.pa===1).length;
-      const pendN = CAL_EVENTS.filter(e=>e.pa===0).length;
+      const pendN = CAL_EVENTS.filter(e=>e.pa===0||e.pa===3).length;
 
       document.getElementById("stat-next").textContent = nextLabel;
       document.getElementById("stat-next-sub").textContent = nextSub;
@@ -386,25 +386,33 @@
       ] %>
       <% ev_index_map = @shifts_by_event.keys.each_with_index.to_h { |ev, i| [ev.id, i] } %>
       <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px;padding-top:8px;border-top:0.5px solid #f4f4f5;">
-        <% @shifts_by_event.keys.sort_by(&:start_date).each do |event| %>
+        <% @shifts_by_event.sort_by { |ev, _| ev.start_date }.each do |event, ev_shifts| %>
           <% c = ev_colors[ev_index_map[event.id] % ev_colors.size] %>
-          <% leg_payment = @payments_by_event[event.id] %>
+          <% leg_dates = ev_shifts.map(&:date).uniq %>
+          <% leg_pmts  = leg_dates.map { |d| @payments_by_event_date[[event.id, d.to_s]] }.compact %>
+          <% leg_all_covered = leg_pmts.size == leg_dates.size && leg_dates.size > 0 %>
+          <% leg_all_waived  = leg_all_covered && leg_pmts.all?(&:waived?) %>
+          <% leg_all_paid    = leg_all_covered && leg_pmts.none?(&:waived?) %>
           <div data-leg-id="<%= event.id %>" onclick="filterEvent(<%= event.id %>)" style="display:flex;align-items:center;gap:5px;font-size:11px;color:#71717a;cursor:pointer;padding:3px 5px;transition:opacity .15s;">
             <div style="width:11px;height:11px;border-radius:3px;background:<%= c[:bg] %>;border-left:2.5px solid <%= c[:brd] %>;flex-shrink:0;"></div>
             <span style="font-weight:500;color:#18181b;"><%= event.name %></span>
             <span style="color:#a1a1aa;">·</span>
             <span><%= l(event.start_date, format: :short) %> → <%= l(event.end_date, format: :short) %></span>
-            <% if leg_payment.nil? %>
-              <span style="display:inline-flex;align-items:center;gap:3px;background:#fef3c7;border:0.5px solid #fcd34d;color:#92400e;border-radius:4px;padding:1px 6px;font-size:10px;font-weight:600;">
-                <i class="bi bi-hourglass-split" style="font-size:9px;"></i> Pendente
+            <% if leg_all_paid %>
+              <span style="display:inline-flex;align-items:center;gap:3px;background:#dcfce7;border:0.5px solid #86efac;color:#15803d;border-radius:4px;padding:1px 6px;font-size:10px;font-weight:600;">
+                <i class="bi bi-check-circle-fill" style="font-size:9px;"></i> Pago
               </span>
-            <% elsif leg_payment.waived? %>
+            <% elsif leg_all_waived %>
               <span style="display:inline-flex;align-items:center;gap:3px;background:#f4f4f5;border:0.5px solid #e4e4e7;color:#71717a;border-radius:4px;padding:1px 6px;font-size:10px;font-weight:600;">
                 <i class="bi bi-dash-circle" style="font-size:9px;"></i> Dispensado
               </span>
+            <% elsif leg_pmts.any? && !leg_all_covered %>
+              <span style="display:inline-flex;align-items:center;gap:3px;background:#eff6ff;border:0.5px solid #bfdbfe;color:#1d4ed8;border-radius:4px;padding:1px 6px;font-size:10px;font-weight:600;">
+                <i class="bi bi-pie-chart-fill" style="font-size:9px;"></i> Parcial
+              </span>
             <% else %>
-              <span style="display:inline-flex;align-items:center;gap:3px;background:#dcfce7;border:0.5px solid #86efac;color:#15803d;border-radius:4px;padding:1px 6px;font-size:10px;font-weight:600;">
-                <i class="bi bi-check-circle-fill" style="font-size:9px;"></i> Pago
+              <span style="display:inline-flex;align-items:center;gap:3px;background:#fef3c7;border:0.5px solid #fcd34d;color:#92400e;border-radius:4px;padding:1px 6px;font-size:10px;font-weight:600;">
+                <i class="bi bi-hourglass-split" style="font-size:9px;"></i> Pendente
               </span>
             <% end %>
           </div>
