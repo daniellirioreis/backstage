@@ -1,6 +1,8 @@
 class StagingSeedController < ApplicationController
   skip_before_action :authenticate_user!
-  skip_after_action  :verify_authorized
+  skip_before_action :check_onboarding!
+  skip_before_action :require_current_event!
+  skip_before_action :check_company_plan!
 
   SEED_TOKEN = "demo-coord-2026".freeze
 
