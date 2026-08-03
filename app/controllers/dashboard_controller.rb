@@ -258,6 +258,14 @@ class DashboardController < ApplicationController
       0
     end
 
+    # Calendário — todos os eventos num janela de 4 meses atrás até 8 meses à frente
+    @calendar_events = Event.where(company_id: company_ids)
+                            .where("end_date >= ? AND start_date <= ?",
+                                   4.months.ago.to_date, 8.months.from_now.to_date)
+                            .order(:start_date)
+                            .includes(:responsible_user)
+                            .select(:id, :name, :start_date, :end_date, :status, :responsible_user_id)
+
     # Próximos eventos com dados extras (membros, setores, equipes, escalas)
     if @upcoming_events.any?
       up_ids        = @upcoming_events.map(&:id)

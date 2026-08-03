@@ -39,6 +39,11 @@
           style="display:flex;align-items:center;gap:0.4rem;padding:0.5rem 1rem;border:1px solid #e4e4e7;border-bottom:1px solid #ffffff;border-radius:6px 6px 0 0;background:#ffffff;cursor:pointer;font-size:0.85rem;font-weight:600;color:#18181b;margin-bottom:-1px;box-shadow:inset 0 2px 0 #18181b;position:relative;z-index:1;transition:all 0.15s;">
     <i class="bi bi-grid-1x2" style="font-size:0.85rem;"></i> Visão Geral
   </button>
+  <button id="tab-btn-calendario"
+          onclick="switchTab('calendario')"
+          style="display:flex;align-items:center;gap:0.4rem;padding:0.5rem 1rem;border:1px solid transparent;border-bottom:none;border-radius:6px 6px 0 0;background:transparent;cursor:pointer;font-size:0.85rem;font-weight:400;color:#71717a;margin-bottom:-1px;transition:all 0.15s;">
+    <i class="bi bi-calendar3" style="font-size:0.85rem;"></i> Calendário
+  </button>
   <button id="tab-btn-financeiro"
           onclick="switchTab('financeiro')"
           style="display:flex;align-items:center;gap:0.4rem;padding:0.5rem 1rem;border:1px solid transparent;border-bottom:none;border-radius:6px 6px 0 0;background:transparent;cursor:pointer;font-size:0.85rem;font-weight:400;color:#71717a;margin-bottom:-1px;transition:all 0.15s;">
@@ -637,10 +642,195 @@
 
 </div><%# /tab-colaboradores %>
 
+<%# ══════════════════════════════════════════════════════════════════════════
+    PAINEL 4 — CALENDÁRIO
+══════════════════════════════════════════════════════════════════════════ %>
+<div id="tab-calendario" style="display:none;">
+
+  <%# Dados dos eventos injetados como JSON -%>
+  <script>
+    var calendarEvents = <%= raw(@calendar_events.map { |e|
+      { id: e.id,
+        name: e.name,
+        start: e.start_date.to_s,
+        end:   e.end_date.to_s,
+        status: e.status,
+        url:   event_path(e),
+        responsible: e.responsible_user&.name&.split&.first }
+    }.to_json) %>;
+  </script>
+
+  <%# Estilos do calendário -%>
+  <style>
+    .cal-grid {
+      display: grid;
+      grid-template-columns: repeat(7, minmax(0, 1fr));
+      gap: 2px;
+    }
+    .cal-day-header {
+      text-align: center;
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: #71717a;
+      padding: 4px 0 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .cal-cell {
+      min-height: 80px;
+      background: #ffffff;
+      border: 1px solid #f0f0f0;
+      border-radius: 6px;
+      padding: 4px 5px 5px;
+      vertical-align: top;
+      overflow: hidden;
+    }
+    .cal-cell.cal-empty {
+      background: #fafafa;
+    }
+    .cal-cell.cal-today {
+      border-color: #3b82f6;
+      background: #eff6ff;
+    }
+    .cal-day-num {
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: #52525b;
+      margin-bottom: 3px;
+    }
+    .cal-day-num.today-num {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 22px;
+      height: 22px;
+      background: #3b82f6;
+      color: #fff;
+      border-radius: 50%;
+      font-size: 0.73rem;
+    }
+    .cal-pill {
+      display: block;
+      font-size: 0.66rem;
+      font-weight: 600;
+      border-radius: 4px;
+      padding: 2px 5px;
+      margin-top: 2px;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+      text-decoration: none;
+      max-width: 100%;
+    }
+    .cal-pill:hover { opacity: 0.8; }
+    .cal-pill-draft  { background: #fef9c3; color: #854d0e; }
+    .cal-pill-active { background: #dcfce7; color: #166534; }
+    .cal-pill-closed { background: #f4f4f5; color: #52525b; }
+  </style>
+
+  <%# Cabeçalho do mês com navegação -%>
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
+    <div style="display:flex;align-items:center;gap:0.5rem;">
+      <button onclick="calNav(-1)" style="background:#f4f4f5;border:none;border-radius:6px;width:32px;height:32px;cursor:pointer;font-size:1rem;display:flex;align-items:center;justify-content:center;">‹</button>
+      <h3 id="cal-header" style="margin:0;font-size:1rem;font-weight:700;min-width:180px;text-align:center;"></h3>
+      <button onclick="calNav(+1)" style="background:#f4f4f5;border:none;border-radius:6px;width:32px;height:32px;cursor:pointer;font-size:1rem;display:flex;align-items:center;justify-content:center;">›</button>
+    </div>
+    <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
+      <span style="font-size:0.72rem;background:#dcfce7;color:#166534;font-weight:600;border-radius:4px;padding:2px 8px;"><i class="bi bi-circle-fill" style="font-size:0.5rem;margin-right:3px;"></i>Ativo</span>
+      <span style="font-size:0.72rem;background:#fef9c3;color:#854d0e;font-weight:600;border-radius:4px;padding:2px 8px;"><i class="bi bi-circle-fill" style="font-size:0.5rem;margin-right:3px;"></i>Planejamento</span>
+      <span style="font-size:0.72rem;background:#f4f4f5;color:#52525b;font-weight:600;border-radius:4px;padding:2px 8px;"><i class="bi bi-circle-fill" style="font-size:0.5rem;margin-right:3px;"></i>Encerrado</span>
+    </div>
+  </div>
+
+  <%# Grade do calendário -%>
+  <div class="content-card" style="padding:0.75rem;">
+    <div class="cal-grid" id="cal-day-headers">
+      <% %w[Dom Seg Ter Qua Qui Sex Sáb].each do |d| %>
+        <div class="cal-day-header"><%= d %></div>
+      <% end %>
+    </div>
+    <div class="cal-grid" id="cal-grid" style="margin-top:2px;"></div>
+  </div>
+
+  <script>
+    var calYear  = new Date().getFullYear();
+    var calMonth = new Date().getMonth(); // 0-based
+
+    var PT_MONTHS = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho',
+                     'Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+
+    function calPad(n) { return String(n).padStart(2, '0'); }
+
+    function renderCalendar(year, month) {
+      document.getElementById('cal-header').textContent = PT_MONTHS[month] + ' ' + year;
+
+      var daysInMonth = new Date(year, month + 1, 0).getDate();
+      var firstDow    = new Date(year, month, 1).getDay(); // 0=Sun
+
+      var todayObj = new Date();
+      var todayStr = todayObj.getFullYear() + '-' + calPad(todayObj.getMonth() + 1) + '-' + calPad(todayObj.getDate());
+
+      // Filter events that overlap this month
+      var mStart = year + '-' + calPad(month + 1) + '-01';
+      var mEnd   = year + '-' + calPad(month + 1) + '-' + calPad(daysInMonth);
+
+      var monthEvents = (calendarEvents || []).filter(function(ev) {
+        return ev.start <= mEnd && ev.end >= mStart;
+      });
+
+      var grid = document.getElementById('cal-grid');
+      var html = '';
+
+      // Empty cells before the 1st
+      for (var i = 0; i < firstDow; i++) {
+        html += '<div class="cal-cell cal-empty"></div>';
+      }
+
+      for (var d = 1; d <= daysInMonth; d++) {
+        var dateStr  = year + '-' + calPad(month + 1) + '-' + calPad(d);
+        var isToday  = dateStr === todayStr;
+        var dayEvents = monthEvents.filter(function(ev) {
+          return ev.start <= dateStr && ev.end >= dateStr;
+        });
+
+        html += '<div class="cal-cell' + (isToday ? ' cal-today' : '') + '">';
+        html += '<div class="cal-day-num' + (isToday ? ' today-num' : '') + '">' + d + '</div>';
+
+        dayEvents.forEach(function(ev) {
+          var cls = ev.status === 'active' ? 'cal-pill-active'
+                  : ev.status === 'draft'  ? 'cal-pill-draft'
+                  :                          'cal-pill-closed';
+          // Escape strings to prevent XSS
+          var safeName = ev.name.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+          var resp     = ev.responsible ? ev.responsible.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') : null;
+          var pillContent = '<span style="display:block;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;">' + safeName + '</span>';
+          if (resp) pillContent += '<span style="display:block;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font-weight:400;font-size:0.62rem;margin-top:1px;"><i class="bi bi-person" style="font-size:0.6rem;"></i> ' + resp + '</span>';
+          html += '<a href="' + ev.url + '" class="cal-pill ' + cls + '" style="white-space:normal;" title="' + safeName + (resp ? ' · ' + resp : '') + '">' + pillContent + '</a>';
+        });
+
+        html += '</div>';
+      }
+
+      grid.innerHTML = html;
+    }
+
+    function calNav(delta) {
+      calMonth += delta;
+      if (calMonth < 0)  { calMonth = 11; calYear--; }
+      if (calMonth > 11) { calMonth = 0;  calYear++; }
+      renderCalendar(calYear, calMonth);
+    }
+
+    // Renderiza imediatamente (script está no final do body, DOM já existe)
+    renderCalendar(calYear, calMonth);
+  </script>
+
+</div><%# /tab-calendario %>
+
 <%# ── Tab switcher JS ─────────────────────────────────────────────────────── %>
 <script>
   function switchTab(name) {
-    ['visao-geral', 'financeiro', 'colaboradores'].forEach(function(tab) {
+    ['visao-geral', 'financeiro', 'colaboradores', 'calendario'].forEach(function(tab) {
       var panel = document.getElementById('tab-' + tab);
       var btn   = document.getElementById('tab-btn-' + tab);
       if (!panel || !btn) return;
@@ -656,6 +846,14 @@
       btn.style.zIndex      = isActive ? '1' : '0';
     });
 
+    // Ao abrir o calendário, sempre reseta para o mês atual
+    if (name === 'calendario' && typeof renderCalendar === 'function') {
+      var now = new Date();
+      calYear  = now.getFullYear();
+      calMonth = now.getMonth();
+      renderCalendar(calYear, calMonth);
+    }
+
     // Persiste a aba ativa no sessionStorage
     try { sessionStorage.setItem('dash_tab', name); } catch(e) {}
   }
@@ -664,6 +862,6 @@
   (function() {
     var saved;
     try { saved = sessionStorage.getItem('dash_tab'); } catch(e) {}
-    switchTab(saved && ['visao-geral','financeiro','colaboradores'].includes(saved) ? saved : 'visao-geral');
+    switchTab(saved && ['visao-geral','financeiro','colaboradores','calendario'].includes(saved) ? saved : 'visao-geral');
   })();
 </script>

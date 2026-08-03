@@ -89,6 +89,51 @@
                   {}, class: "form-select form-control" %>
             </div>
           <% end %>
+
+          <%# ── Responsável pelo evento ── %>
+          <div style="grid-column:span 2;">
+            <div class="form-label" style="margin-bottom:0.4rem;">Responsável pelo evento</div>
+            <div data-controller="autocomplete-single"
+                 data-autocomplete-single-url-value="<%= search_users_path %>"
+                 data-autocomplete-single-param-value="event[responsible_user_id]"
+                 data-autocomplete-single-existing-value="<%= event.responsible_user ? { id: event.responsible_user.id, name: event.responsible_user.name, cpf: event.responsible_user.cpf.gsub(/(\d{3})(\d{3})(\d{3})(\d{2})/, '\1.\2.\3-\4') }.to_json : '{}' %>"
+                 style="position:relative;">
+
+              <%# Chips de sugestão por perfil da empresa %>
+              <% suggested = @suggested_responsibles.presence || [] %>
+              <% if suggested.any? %>
+                <div style="display:flex;flex-wrap:wrap;gap:0.35rem;margin-bottom:0.5rem;">
+                  <% suggested.each do |u| %>
+                    <button type="button"
+                            data-action="click->autocomplete-single#suggestFromChip"
+                            data-user-id="<%= u[:id] %>"
+                            data-user-name="<%= u[:name] %>"
+                            data-user-cpf="<%= u[:cpf] %>"
+                            data-user-initials="<%= u[:initials] %>"
+                            style="display:inline-flex;align-items:center;gap:0.28rem;padding:0.18rem 0.55rem;border:1px solid #d4d4d8;border-radius:20px;background:#f4f4f5;cursor:pointer;font-size:0.73rem;color:#52525b;transition:background .12s,color .12s;"
+                            onmouseover="this.style.background='#e4e4e7';this.style.color='#18181b';"
+                            onmouseout="this.style.background='#f4f4f5';this.style.color='#52525b';">
+                      <i class="bi bi-person-badge" style="font-size:0.7rem;"></i> <%= u[:name] %>
+                    </button>
+                  <% end %>
+                </div>
+              <% end %>
+
+              <div data-autocomplete-single-target="selected"></div>
+              <input type="text"
+                     data-autocomplete-single-target="input"
+                     data-action="input->autocomplete-single#search"
+                     class="form-control"
+                     placeholder="Buscar por nome ou CPF..."
+                     autocomplete="off">
+              <div data-autocomplete-single-target="dropdown" class="autocomplete-dropdown" style="display:none;"></div>
+              <input type="hidden"
+                     data-autocomplete-single-target="hidden"
+                     name="event[responsible_user_id]"
+                     value="<%= event.responsible_user_id %>">
+            </div>
+            <small style="color:#71717a;font-size:0.72rem;">Pessoa da empresa responsável por este evento</small>
+          </div>
         </div>
 
         <%# ── Dias do evento (inline) ── %>

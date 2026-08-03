@@ -189,11 +189,13 @@
   let lastCode = null;
   let canvas, ctx;
   let activeStream = null;
-  let currentMode  = "in";
+  // Persiste o modo no sessionStorage para não resetar em navegações Turbo
+  let currentMode = sessionStorage.getItem("scan_mode") || "in";
 
   // ── Toggle de modo ─────────────────────────────────────────────
   window.setMode = function(mode) {
     currentMode = mode;
+    sessionStorage.setItem("scan_mode", mode);
     const isIn = mode === "in";
 
     document.getElementById("btn-mode-in").className  = "mode-btn" + (isIn ? " active-in"  : "");
@@ -218,6 +220,9 @@
       activeStream = null;
     }
   };
+
+  // Aplica o modo persistido ao carregar
+  setMode(currentMode);
 
   navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
     .then(stream => {
@@ -284,12 +289,14 @@
       const isOk   = data.status === "ok";
       const isDupe = ["already_checked_in", "already_checked_out"].includes(data.status);
       const isErr  = ["not_found", "not_checked_in"].includes(data.status);
-      const isWarn = ["no_shift_today", "out_of_schedule"].includes(data.status);
+      // Validação de escala só bloqueia no check-in; no checkout vira aviso amarelo
+      const isSchedBlock = ["no_shift_today", "out_of_schedule"].includes(data.status) && currentMode === "in";
+      const isSchedWarn  = ["no_shift_today", "out_of_schedule"].includes(data.status) && currentMode === "out";
 
       if (isOk) total++;
       counter.textContent = total + (total === 1 ? " registro" : " registros");
 
-      const type = isErr || isWarn ? "error" : isDupe ? "dupe" : (currentMode === "out" ? "ok-out" : "ok");
+      const type = isErr || isSchedBlock ? "error" : isSchedWarn || isDupe ? "dupe" : (currentMode === "out" ? "ok-out" : "ok");
 
       showFeedback(type, data.avatar_initials || "?", data.user_name || "—", data.team_name || "", data.message, data.avatar_url || null);
       addRecent(type, data.user_name, data.team_name, data.checked_in_at || data.checked_out_at);

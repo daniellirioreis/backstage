@@ -16,6 +16,101 @@
   </div>
 </div>
 
+
+<%# Filtros — sempre visíveis para permitir seleção de data %>
+<div class="content-card" style="margin-bottom:1rem; padding:0.75rem 1rem; display:flex; flex-direction:column; gap:0.6rem;">
+  <%# Filtro data %>
+  <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
+    <span style="font-size:0.78rem; font-weight:600; color:#71717a; white-space:nowrap; width:52px;">
+      <i class="bi bi-calendar3"></i> Dia:
+    </span>
+    <% if @event_days.any? %>
+      <% @event_days.each do |ed| %>
+        <% active_day = @selected_date == ed.date %>
+        <%= link_to attendances_path(date: ed.date, sector_id: params[:sector_id], inside: params[:inside], q: params[:q]),
+            style: "font-size:0.78rem; padding:0.25rem 0.65rem; border-radius:6px; border:1px solid #{active_day ? '#7c3aed' : '#e4e4e7'}; background:#{active_day ? '#7c3aed' : 'transparent'}; color:#{active_day ? '#fff' : '#3f3f46'}; text-decoration:none; white-space:nowrap;" do %>
+          <%= I18n.l(ed.date, format: :short) %>
+          <% if ed.date == Date.today %><span style="font-size:0.65rem; opacity:0.8;"> hoje</span><% end %>
+        <% end %>
+      <% end %>
+    <% else %>
+      <%= form_with url: attendances_path, method: :get, data: { turbo: false }, style: "margin:0; display:flex; gap:0.4rem; align-items:center;" do |f| %>
+        <%= f.hidden_field :sector_id, value: params[:sector_id] %>
+        <%= f.hidden_field :inside,    value: params[:inside] %>
+        <%= f.hidden_field :q,         value: params[:q] %>
+        <%= f.date_field :date, value: @selected_date,
+            style: "font-size:0.78rem; border:1px solid #e4e4e7; border-radius:6px; padding:0.25rem 0.65rem; color:#18181b; cursor:pointer;",
+            onchange: "this.form.submit()" %>
+      <% end %>
+    <% end %>
+  </div>
+
+  <% if @selected_date %>
+  <%# Filtro status %>
+  <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
+    <span style="font-size:0.78rem; font-weight:600; color:#71717a; white-space:nowrap; width:52px;">
+      <i class="bi bi-door-open"></i> Status:
+    </span>
+    <% current_filter = params[:inside] %>
+    <%= link_to "Todos", attendances_path(date: @selected_date, sector_id: params[:sector_id], q: params[:q]),
+        style: "font-size:0.78rem; padding:0.25rem 0.65rem; border-radius:6px; border:1px solid #{current_filter.blank? ? '#18181b' : '#e4e4e7'}; background:#{current_filter.blank? ? '#18181b' : 'transparent'}; color:#{current_filter.blank? ? '#fff' : '#3f3f46'}; text-decoration:none; white-space:nowrap;" %>
+    <%= link_to "Em atividade", attendances_path(date: @selected_date, sector_id: params[:sector_id], inside: "1", q: params[:q]),
+        style: "font-size:0.78rem; padding:0.25rem 0.65rem; border-radius:6px; border:1px solid #{current_filter == '1' ? '#0ea5e9' : '#e4e4e7'}; background:#{current_filter == '1' ? '#0ea5e9' : 'transparent'}; color:#{current_filter == '1' ? '#fff' : '#3f3f46'}; text-decoration:none; white-space:nowrap;" %>
+    <%= link_to "Aguardando Check-in", attendances_path(date: @selected_date, sector_id: params[:sector_id], inside: "pending", q: params[:q]),
+        style: "font-size:0.78rem; padding:0.25rem 0.65rem; border-radius:6px; border:1px solid #{current_filter == 'pending' ? '#f59e0b' : '#e4e4e7'}; background:#{current_filter == 'pending' ? '#f59e0b' : 'transparent'}; color:#{current_filter == 'pending' ? '#fff' : '#3f3f46'}; text-decoration:none; white-space:nowrap;" %>
+    <%= link_to "Checkout Realizado", attendances_path(date: @selected_date, sector_id: params[:sector_id], inside: "done", q: params[:q]),
+        style: "font-size:0.78rem; padding:0.25rem 0.65rem; border-radius:6px; border:1px solid #{current_filter == 'done' ? '#c2410c' : '#e4e4e7'}; background:#{current_filter == 'done' ? '#c2410c' : 'transparent'}; color:#{current_filter == 'done' ? '#fff' : '#3f3f46'}; text-decoration:none; white-space:nowrap;" %>
+  </div>
+
+  <%# Filtro setor %>
+  <% if @sectors.any? %>
+    <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
+      <span style="font-size:0.78rem; font-weight:600; color:#71717a; white-space:nowrap; width:52px;">
+        <i class="bi bi-grid-3x3-gap"></i> Setor:
+      </span>
+      <%= link_to "Todos", attendances_path(date: @selected_date, inside: params[:inside], q: params[:q]),
+          style: "font-size:0.78rem; padding:0.25rem 0.65rem; border-radius:6px; border:1px solid #{params[:sector_id].blank? ? '#18181b' : '#e4e4e7'}; background:#{params[:sector_id].blank? ? '#18181b' : 'transparent'}; color:#{params[:sector_id].blank? ? '#fff' : '#3f3f46'}; text-decoration:none; white-space:nowrap;" %>
+      <% @sectors.each do |sector| %>
+        <% active_sector = params[:sector_id].to_s == sector.id.to_s %>
+        <%= link_to sector.name, attendances_path(date: @selected_date, sector_id: sector.id, inside: params[:inside], q: params[:q]),
+            style: "font-size:0.78rem; padding:0.25rem 0.65rem; border-radius:6px; border:1px solid #{active_sector ? '#18181b' : '#e4e4e7'}; background:#{active_sector ? '#18181b' : 'transparent'}; color:#{active_sector ? '#fff' : '#3f3f46'}; text-decoration:none; white-space:nowrap;" %>
+      <% end %>
+    </div>
+  <% end %>
+
+  <%# Filtro colaborador %>
+  <div style="display:flex; align-items:center; gap:0.5rem;">
+    <span style="font-size:0.78rem; font-weight:600; color:#71717a; white-space:nowrap; width:52px;">
+      <i class="bi bi-person"></i> Nome:
+    </span>
+    <%= form_with url: attendances_path, method: :get, data: { turbo: false }, style: "margin:0; display:flex; gap:0.4rem; flex:1;" do |f| %>
+      <%= f.hidden_field :date,      value: @selected_date %>
+      <%= f.hidden_field :sector_id, value: params[:sector_id] %>
+      <%= f.hidden_field :inside,    value: params[:inside] %>
+      <%= f.text_field :q, value: params[:q], placeholder: "Buscar colaborador...",
+          style: "font-size:0.78rem; border:1px solid #e4e4e7; border-radius:6px; padding:0.25rem 0.65rem; color:#18181b; flex:1; max-width:260px;",
+          autocomplete: "off" %>
+      <% if params[:q].present? %>
+        <%= link_to attendances_path(date: @selected_date, sector_id: params[:sector_id], inside: params[:inside]),
+            style: "font-size:0.78rem; padding:0.25rem 0.65rem; border-radius:6px; border:1px solid #e4e4e7; color:#71717a; text-decoration:none; display:inline-flex; align-items:center; gap:3px;" do %>
+          <i class="bi bi-x"></i> Limpar
+        <% end %>
+      <% end %>
+    <% end %>
+  </div>
+  <% end %><%# /if @selected_date %>
+</div>
+
+<%# ── Sem dia selecionado ─────────────────────────────────────────────────── %>
+<% unless @selected_date %>
+  <div class="content-card" style="text-align:center; padding:3rem 2rem; color:#71717a;">
+    <i class="bi bi-calendar3" style="font-size:2.5rem; display:block; margin-bottom:0.75rem; color:#a1a1aa;"></i>
+    <div style="font-size:1rem; font-weight:600; color:#3f3f46; margin-bottom:0.35rem;">Selecione um dia</div>
+    <div style="font-size:0.82rem;">Escolha uma data acima para ver os check-ins e checkouts do dia.</div>
+  </div>
+<% end %>
+
+<% if @selected_date %>
 <%# Estatísticas %>
 <% inside_now = @attendances.reject(&:checked_out_at) %>
 <% finished   = @attendances.select(&:checked_out_at) %>
@@ -84,79 +179,6 @@
     </div>
   </div>
 <% end %>
-
-<%# Filtros %>
-<div class="content-card" style="margin-bottom:1rem; padding:0.75rem 1rem; display:flex; flex-direction:column; gap:0.6rem;">
-  <%# Filtro data %>
-  <% if @event_days.size > 1 %>
-    <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
-      <span style="font-size:0.78rem; font-weight:600; color:#71717a; white-space:nowrap; width:52px;">
-        <i class="bi bi-calendar3"></i> Dia:
-      </span>
-      <% @event_days.each do |ed| %>
-        <% active_day = @selected_date == ed.date %>
-        <%= link_to attendances_path(date: ed.date, sector_id: params[:sector_id], inside: params[:inside], q: params[:q]),
-            style: "font-size:0.78rem; padding:0.25rem 0.65rem; border-radius:6px; border:1px solid #{active_day ? '#7c3aed' : '#e4e4e7'}; background:#{active_day ? '#7c3aed' : 'transparent'}; color:#{active_day ? '#fff' : '#3f3f46'}; text-decoration:none; white-space:nowrap;" do %>
-          <%= I18n.l(ed.date, format: :short) %>
-          <% if ed.date == Date.today %><span style="font-size:0.65rem; opacity:0.8;"> hoje</span><% end %>
-        <% end %>
-      <% end %>
-    </div>
-  <% end %>
-
-  <%# Filtro status %>
-  <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
-    <span style="font-size:0.78rem; font-weight:600; color:#71717a; white-space:nowrap; width:52px;">
-      <i class="bi bi-door-open"></i> Status:
-    </span>
-    <% current_filter = params[:inside] %>
-    <%= link_to "Todos", attendances_path(date: @selected_date, sector_id: params[:sector_id], q: params[:q]),
-        style: "font-size:0.78rem; padding:0.25rem 0.65rem; border-radius:6px; border:1px solid #{current_filter.blank? ? '#18181b' : '#e4e4e7'}; background:#{current_filter.blank? ? '#18181b' : 'transparent'}; color:#{current_filter.blank? ? '#fff' : '#3f3f46'}; text-decoration:none; white-space:nowrap;" %>
-    <%= link_to "Em atividade", attendances_path(date: @selected_date, sector_id: params[:sector_id], inside: "1", q: params[:q]),
-        style: "font-size:0.78rem; padding:0.25rem 0.65rem; border-radius:6px; border:1px solid #{current_filter == '1' ? '#0ea5e9' : '#e4e4e7'}; background:#{current_filter == '1' ? '#0ea5e9' : 'transparent'}; color:#{current_filter == '1' ? '#fff' : '#3f3f46'}; text-decoration:none; white-space:nowrap;" %>
-    <%= link_to "Aguardando Check-in", attendances_path(date: @selected_date, sector_id: params[:sector_id], inside: "pending", q: params[:q]),
-        style: "font-size:0.78rem; padding:0.25rem 0.65rem; border-radius:6px; border:1px solid #{current_filter == 'pending' ? '#f59e0b' : '#e4e4e7'}; background:#{current_filter == 'pending' ? '#f59e0b' : 'transparent'}; color:#{current_filter == 'pending' ? '#fff' : '#3f3f46'}; text-decoration:none; white-space:nowrap;" %>
-    <%= link_to "Checkout Realizado", attendances_path(date: @selected_date, sector_id: params[:sector_id], inside: "done", q: params[:q]),
-        style: "font-size:0.78rem; padding:0.25rem 0.65rem; border-radius:6px; border:1px solid #{current_filter == 'done' ? '#c2410c' : '#e4e4e7'}; background:#{current_filter == 'done' ? '#c2410c' : 'transparent'}; color:#{current_filter == 'done' ? '#fff' : '#3f3f46'}; text-decoration:none; white-space:nowrap;" %>
-  </div>
-
-  <%# Filtro setor %>
-  <% if @sectors.any? %>
-    <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
-      <span style="font-size:0.78rem; font-weight:600; color:#71717a; white-space:nowrap; width:52px;">
-        <i class="bi bi-grid-3x3-gap"></i> Setor:
-      </span>
-      <%= link_to "Todos", attendances_path(date: @selected_date, inside: params[:inside], q: params[:q]),
-          style: "font-size:0.78rem; padding:0.25rem 0.65rem; border-radius:6px; border:1px solid #{params[:sector_id].blank? ? '#18181b' : '#e4e4e7'}; background:#{params[:sector_id].blank? ? '#18181b' : 'transparent'}; color:#{params[:sector_id].blank? ? '#fff' : '#3f3f46'}; text-decoration:none; white-space:nowrap;" %>
-      <% @sectors.each do |sector| %>
-        <% active_sector = params[:sector_id].to_s == sector.id.to_s %>
-        <%= link_to sector.name, attendances_path(date: @selected_date, sector_id: sector.id, inside: params[:inside], q: params[:q]),
-            style: "font-size:0.78rem; padding:0.25rem 0.65rem; border-radius:6px; border:1px solid #{active_sector ? '#18181b' : '#e4e4e7'}; background:#{active_sector ? '#18181b' : 'transparent'}; color:#{active_sector ? '#fff' : '#3f3f46'}; text-decoration:none; white-space:nowrap;" %>
-      <% end %>
-    </div>
-  <% end %>
-
-  <%# Filtro colaborador %>
-  <div style="display:flex; align-items:center; gap:0.5rem;">
-    <span style="font-size:0.78rem; font-weight:600; color:#71717a; white-space:nowrap; width:52px;">
-      <i class="bi bi-person"></i> Nome:
-    </span>
-    <%= form_with url: attendances_path, method: :get, data: { turbo: false }, style: "margin:0; display:flex; gap:0.4rem; flex:1;" do |f| %>
-      <%= f.hidden_field :date,      value: @selected_date %>
-      <%= f.hidden_field :sector_id, value: params[:sector_id] %>
-      <%= f.hidden_field :inside,    value: params[:inside] %>
-      <%= f.text_field :q, value: params[:q], placeholder: "Buscar colaborador...",
-          style: "font-size:0.78rem; border:1px solid #e4e4e7; border-radius:6px; padding:0.25rem 0.65rem; color:#18181b; flex:1; max-width:260px;",
-          autocomplete: "off" %>
-      <% if params[:q].present? %>
-        <%= link_to attendances_path(date: @selected_date, sector_id: params[:sector_id], inside: params[:inside]),
-            style: "font-size:0.78rem; padding:0.25rem 0.65rem; border-radius:6px; border:1px solid #e4e4e7; color:#71717a; text-decoration:none; display:inline-flex; align-items:center; gap:3px;" do %>
-          <i class="bi bi-x"></i> Limpar
-        <% end %>
-      <% end %>
-    <% end %>
-  </div>
-</div>
 
 <%# ── Seção: Aguardando Check-in ──────────────────────────────────────────── %>
 <% show_pending = params[:inside].blank? || params[:inside] == "pending" %>
@@ -316,11 +338,19 @@
                 <i class="bi bi-clock" style="color:#7c3aed; font-size:0.7rem;"></i>
                 <span style="font-size:0.75rem; font-weight:600; color:#7c3aed;"><%= dur_h %>h<%= dur_m > 0 ? " #{dur_m}min" : "" %></span>
               </div>
-            <% elsif expected_end %>
-              <div style="display:inline-flex; align-items:center; gap:0.35rem; background:#eff6ff; border:1px solid #bfdbfe; border-radius:6px; padding:3px 10px;" title="Previsão de saída pela escala">
-                <i class="bi bi-clock-history" style="color:#2563eb; font-size:0.7rem;"></i>
-                <span style="font-size:0.72rem; font-weight:600; color:#2563eb;">saída prev. <%= expected_end.strftime("%H:%M") %></span>
+            <% else %>
+              <%# Timer ao vivo para quem está em atividade %>
+              <div style="display:inline-flex; align-items:center; gap:0.35rem; background:#f5f3ff; border:1px solid #ddd6fe; border-radius:6px; padding:3px 10px;">
+                <i class="bi bi-stopwatch" style="color:#7c3aed; font-size:0.7rem;"></i>
+                <span class="live-timer" data-since="<%= att.checked_in_at.utc.iso8601 %>"
+                      style="font-size:0.75rem; font-weight:600; color:#7c3aed; font-variant-numeric:tabular-nums;">—</span>
               </div>
+              <% if expected_end %>
+                <div style="display:inline-flex; align-items:center; gap:0.35rem; background:#eff6ff; border:1px solid #bfdbfe; border-radius:6px; padding:3px 10px;" title="Previsão de saída pela escala">
+                  <i class="bi bi-clock-history" style="color:#2563eb; font-size:0.7rem;"></i>
+                  <span style="font-size:0.72rem; font-weight:600; color:#2563eb;">saída prev. <%= expected_end.strftime("%H:%M") %></span>
+                </div>
+              <% end %>
             <% end %>
             <% if att.checked_in_by %>
               <div style="font-size:0.65rem; color:#a1a1aa;">por <%= att.checked_in_by.name.split.first %></div>
@@ -332,7 +362,7 @@
             <%# Checkout inline para quem está dentro agora %>
             <% if is_inside && policy(att).checkout? %>
               <%= button_to manual_checkout_attendance_path(att), method: :patch,
-                  params: { sector_id: params[:sector_id], inside: params[:inside], q: params[:q] },
+                  params: { date: @selected_date, sector_id: params[:sector_id], inside: params[:inside], q: params[:q] },
                   form: { data: { turbo_confirm: "Registrar checkout de #{att.user.name}?" } },
                   style: "background:#0ea5e9; border:none; border-radius:7px; padding:0.3rem 0.7rem; cursor:pointer; color:#fff; font-size:0.72rem; font-weight:600; white-space:nowrap;" do %>
                 <i class="bi bi-box-arrow-right"></i> Checkout
@@ -341,6 +371,7 @@
             <% if policy(att).destroy? %>
               <% if att.checked_out_at %>
                 <%= button_to cancel_checkout_attendance_path(att), method: :delete,
+                    params: { date: @selected_date, sector_id: params[:sector_id], inside: params[:inside], q: params[:q] },
                     form: { data: { turbo_confirm: "Cancelar checkout de #{att.user.name}?" } },
                     style: "background:#fff7ed; border:1px solid #fed7aa; border-radius:7px; padding:0.3rem 0.55rem; cursor:pointer; color:#c2410c; font-size:0.72rem; font-weight:600; white-space:nowrap;" do %>
                   <i class="bi bi-x"></i> Cancelar checkout
@@ -352,6 +383,7 @@
                 </span>
               <% else %>
                 <%= button_to attendance_path(att), method: :delete,
+                    params: { date: @selected_date, sector_id: params[:sector_id], inside: params[:inside], q: params[:q] },
                     form: { data: { turbo_confirm: "Cancelar check-in de #{att.user.name}?" } },
                     style: "background:#fef2f2; border:1px solid #fecaca; border-radius:7px; padding:0.3rem 0.55rem; cursor:pointer; color:#dc2626; font-size:0.72rem; font-weight:600; white-space:nowrap;" do %>
                   <i class="bi bi-box-arrow-in-right"></i> Cancelar check-in
@@ -365,3 +397,26 @@
     </div>
   <% end %>
 <% end %>
+<% end %><%# /if @selected_date %>
+
+<script>
+(function() {
+  function formatElapsed(sinceIso) {
+    var since = new Date(sinceIso);
+    var mins  = Math.floor((Date.now() - since.getTime()) / 60000);
+    if (mins < 0) mins = 0;
+    var h = Math.floor(mins / 60);
+    var m = mins % 60;
+    return h > 0 ? h + "h " + (m > 0 ? m + "min" : "") : m + "min";
+  }
+
+  function tick() {
+    document.querySelectorAll(".live-timer").forEach(function(el) {
+      el.textContent = formatElapsed(el.dataset.since);
+    });
+  }
+
+  tick();
+  setInterval(tick, 30000);
+})();
+</script>

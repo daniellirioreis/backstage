@@ -14,7 +14,8 @@ class AttendancesController < ApplicationController
     authorize :attendance, :scan?
     code = params[:code].to_s.strip.upcase
 
-    membership = TeamMembership.includes(user: { avatar_attachment: :blob }).find_by(credential_code: code)
+    # Busca primeiro por credencial diária (por dia), fallback no código legado
+    membership = resolve_membership_from_code(code, Date.today)
 
     unless membership
       return render json: { status: :not_found, message: "Credencial não encontrada (#{code})" }, status: :unprocessable_entity
@@ -32,8 +33,8 @@ class AttendancesController < ApplicationController
     shifts_today = Shift.joins(:sector)
                         .where(sectors: { event_id: @event.id }, user_id: user.id)
                         .where(
-                          "(shifts.date <= :today AND (shifts.end_date IS NULL OR shifts.end_date >= :today))" \
-                          " OR (shifts.end_time < shifts.start_time AND shifts.date <= :yesterday AND (shifts.end_date IS NULL OR shifts.end_date >= :yesterday))",
+                          "(shifts.date <= :today AND COALESCE(shifts.end_date, shifts.date) >= :today)" \
+                          " OR (shifts.end_time < shifts.start_time AND shifts.date <= :yesterday AND COALESCE(shifts.end_date, shifts.date) >= :yesterday)",
                           today: today, yesterday: yesterday
                         )
 
@@ -104,7 +105,8 @@ class AttendancesController < ApplicationController
     authorize :attendance, :checkout?
     code = params[:code].to_s.strip.upcase
 
-    membership = TeamMembership.includes(user: { avatar_attachment: :blob }).find_by(credential_code: code)
+    # Busca primeiro por credencial diária (por dia), fallback no código legado
+    membership = resolve_membership_from_code(code, Date.today)
 
     unless membership
       return render json: { status: :not_found, message: "Credencial não encontrada (#{code})" }, status: :unprocessable_entity
@@ -115,7 +117,11 @@ class AttendancesController < ApplicationController
     avatar_url = user.avatar.attached? ? url_for(user.avatar) : nil
     initials   = user.name.split.map(&:first).first(2).join.upcase
 
-    attendance = Attendance.find_by(user: user, event: @event, checked_in_date: Date.today)
+    # Busca presença aberta de hoje ou ontem (cobre eventos noturnos que passam da meia-noite)
+    attendance = Attendance.where(user: user, event: @event, checked_out_at: nil)
+                           .where(checked_in_date: [Date.today, Date.yesterday])
+                           .order(checked_in_at: :desc)
+                           .first
 
     unless attendance
       return render json: {
@@ -158,14 +164,17 @@ class AttendancesController < ApplicationController
     render json: { status: :error, message: "#{e.class}: #{e.message}" }, status: :unprocessable_entity
   end
 
+
   def manual_checkout
     attendance = Attendance.find(params[:id])
     authorize attendance, :checkout?
+    date = params[:date].presence || attendance.checked_in_date
     if attendance.checked_out_at.present?
-      redirect_to attendances_path, alert: "#{attendance.user.name} já possui checkout registrado."
+      redirect_to attendances_path(date: date, sector_id: params[:sector_id], inside: params[:inside], q: params[:q]),
+        alert: "#{attendance.user.name} já possui checkout registrado."
     else
       attendance.update!(checked_out_at: Time.current, checked_out_by_id: current_user.id)
-      redirect_to attendances_path(sector_id: params[:sector_id], inside: params[:inside], q: params[:q]),
+      redirect_to attendances_path(date: date, sector_id: params[:sector_id], inside: params[:inside], q: params[:q]),
         notice: "Checkout de #{attendance.user.name} registrado."
     end
   end
@@ -173,27 +182,42 @@ class AttendancesController < ApplicationController
   def cancel_checkout
     attendance = Attendance.find(params[:id])
     authorize attendance, :destroy?
+    date = params[:date].presence || attendance.checked_in_date
     attendance.update!(checked_out_at: nil, checked_out_by_id: nil)
-    redirect_to attendances_path, notice: "Checkout de #{attendance.user.name} cancelado."
+    redirect_to attendances_path(date: date, sector_id: params[:sector_id], inside: params[:inside], q: params[:q]),
+      notice: "Checkout de #{attendance.user.name} cancelado."
   end
 
   def destroy
     attendance = Attendance.find(params[:id])
     authorize attendance
+    date = params[:date].presence || attendance.checked_in_date
     attendance.destroy
-    redirect_to attendances_path, notice: "Check-in de #{attendance.user.name} cancelado."
+    redirect_to attendances_path(date: date, sector_id: params[:sector_id], inside: params[:inside], q: params[:q]),
+      notice: "Check-in de #{attendance.user.name} cancelado."
   end
 
   def index
     authorize :attendance, :index?
 
     # ── Filtro de data ─────────────────────────────────────────────────────────
-    @event_days = EventDay.where(event: @event).order(:date)
-    @selected_date = if params[:date].present?
-                       Date.parse(params[:date]) rescue Date.today
-                     else
-                       Date.today
-                     end
+    @event_days    = EventDay.where(event: @event).order(:date)
+    @selected_date = params[:date].present? ? (Date.parse(params[:date]) rescue nil) : nil
+    @sectors       = Sector.where(event_id: @event.id).order(:name)
+
+    # Sem data selecionada: não carrega nada, a view mostra instrução
+    unless @selected_date
+      @attendances         = Attendance.none
+      @not_checked_in      = []
+      @credential_codes    = {}
+      @substitute_user_ids = Set.new
+      @replaced_user_name  = {}
+      @total_collaborators = 0
+      @total_substitutes   = 0
+      @shifts_today_by_user = {}
+      @expected_end_by_user = {}
+      return
+    end
 
     scope = Attendance.where(event: @event, checked_in_date: @selected_date)
                       .includes(:user, :checked_in_by, team: :sector)
@@ -236,12 +260,10 @@ class AttendancesController < ApplicationController
     @total_collaborators = membership_scope.distinct.count(:user_id)
     @total_substitutes   = membership_scope.where(substitute: true).distinct.count(:user_id)
 
-    @sectors = Sector.where(event_id: @event.id).order(:name)
-
     # Colaboradores escalados no dia selecionado mas sem check-in (respeita filtro de setor)
     shifts_today = Shift.joins(:sector)
                         .where(sectors: { event_id: @event.id })
-                        .where("shifts.date <= :day AND (shifts.end_date IS NULL OR shifts.end_date >= :day)", day: @selected_date)
+                        .where("shifts.date <= :day AND COALESCE(shifts.end_date, shifts.date) >= :day", day: @selected_date)
                         .includes(:user, team: :sector)
     shifts_today = shifts_today.where(sectors: { id: params[:sector_id] }) if params[:sector_id].present?
 
@@ -297,6 +319,18 @@ class AttendancesController < ApplicationController
   end
 
   private
+
+  # Resolve TeamMembership a partir de um código de credencial.
+  # Primeiro tenta DailyCredential (código por dia); se não encontrar,
+  # cai no código legado direto em TeamMembership (retrocompatibilidade).
+  def resolve_membership_from_code(code, date)
+    daily_cred = DailyCredential
+      .includes(team_membership: { user: { avatar_attachment: :blob } })
+      .find_by(credential_code: code, date: date)
+
+    daily_cred&.team_membership ||
+      TeamMembership.includes(user: { avatar_attachment: :blob }).find_by(credential_code: code)
+  end
 
   def set_event
     @event = current_event

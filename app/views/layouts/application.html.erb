@@ -81,6 +81,12 @@
                 <% end %>
               <% end %>
             <% end %>
+            <% if show_my_schedule %>
+              <div class="sidebar-section">Minha escala</div>
+              <%= link_to my_schedule_user_path(current_user), class: "sidebar-link #{controller_name == 'users' && action_name == 'my_schedule' ? 'active' : ''}" do %>
+                <i class="bi bi-calendar-week"></i> <%= t("permission_actions.my_schedule") %>
+              <% end %>
+            <% end %>
           <% else %>
             <%# ── Geral ──────────────────────────────────────────────────────── %>
             <% if show_home || show_my_schedule || Team.exists?(coordinator_id: current_user.id) || policy(Event).index? %>

@@ -81,6 +81,11 @@ class Events::SetupController < ApplicationController
     render :sectors, status: :unprocessable_entity
   end
 
+  COORDINATOR_ROLES = %w[
+    event_coordinator operations_coordinator sector_coordinator
+    production_director executive_producer producer event_analyst
+  ].freeze
+
   def teams
     authorize @event, :edit?
     @sectors         = @event.sectors
@@ -88,6 +93,8 @@ class Events::SetupController < ApplicationController
                              .order(:created_at)
     @event_functions = @event.event_functions.order(:name)
     @roles           = Role.order(:name)
+
+    @suggested_coordinators = load_suggested_coordinators
 
     if @sectors.empty?
       redirect_to sectors_event_setup_path(@event),
@@ -348,23 +355,41 @@ class Events::SetupController < ApplicationController
     end
 
     if params[:commit] == "save_and_stay"
-      redirect_to teams_event_setup_path(@event, sector_id: params[:active_sector_id]), notice: "Equipe salva!"
+      url = teams_event_setup_path(@event, sector_id: params[:active_sector_id])
+      respond_to do |format|
+        format.json { render json: { redirect_url: url } }
+        format.html { redirect_to url, notice: "Equipe salva!" }
+      end
     else
       incomplete = teams_step_incomplete(@event)
       if incomplete.any?
-        redirect_to teams_event_setup_path(@event),
-          alert: "Preencha os dados obrigatórios em todas as equipes antes de continuar: #{incomplete.join(', ')}."
+        msg = "Preencha os dados obrigatórios em todas as equipes antes de continuar: #{incomplete.join(', ')}."
+        respond_to do |format|
+          format.json { render json: { error: msg }, status: :unprocessable_entity }
+          format.html { redirect_to teams_event_setup_path(@event), alert: msg }
+        end
       else
-        redirect_to schedules_event_setup_path(@event), notice: "Equipes salvas! Agora configure as escalas."
+        url = schedules_event_setup_path(@event)
+        respond_to do |format|
+          format.json { render json: { redirect_url: url } }
+          format.html { redirect_to url, notice: "Equipes salvas! Agora configure as escalas." }
+        end
       end
     end
   rescue ActiveRecord::RecordInvalid => e
-    @sectors         = @event.sectors
-                             .includes({ teams: { team_memberships: :user } }, sector_functions: :event_function)
-                             .order(:created_at)
-    @event_functions = @event.event_functions.order(:name)
-    flash.now[:alert] = e.message
-    render :teams, status: :unprocessable_entity
+    respond_to do |format|
+      format.json { render json: { error: e.message }, status: :unprocessable_entity }
+      format.html do
+        @sectors         = @event.sectors
+                                 .includes({ teams: { team_memberships: :user } }, sector_functions: :event_function)
+                                 .order(:created_at)
+        @event_functions = @event.event_functions.order(:name)
+        @roles           = Role.order(:name)
+        @suggested_coordinators = load_suggested_coordinators
+        flash.now[:alert] = e.message
+        render :teams, status: :unprocessable_entity
+      end
+    end
   end
 
   private
@@ -372,6 +397,21 @@ class Events::SetupController < ApplicationController
   # After destroy_all + recreate or after create (where sync_coordinator_membership
   # runs before the member loop), the coordinator's membership may be missing or
   # have :member role. This ensures exactly one :coordinator membership exists.
+  def load_suggested_coordinators
+    return [] unless @event.company
+    @event.company.company_users
+      .where(role: COORDINATOR_ROLES)
+      .includes(:user)
+      .map { |cu|
+        {
+          id:         cu.user.id,
+          name:       cu.user.name,
+          initials:   cu.user.name.split.map(&:first).first(2).join.upcase,
+          role_label: cu.role_label
+        }
+      }
+  end
+
   def ensure_coordinator_membership(team)
     return if team.coordinator_id.blank?
 

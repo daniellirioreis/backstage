@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_07_30_000001) do
+ActiveRecord::Schema[7.1].define(version: 2026_07_31_000002) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -115,6 +115,17 @@ ActiveRecord::Schema[7.1].define(version: 2026_07_30_000001) do
     t.index ["user_id"], name: "index_company_users_on_user_id"
   end
 
+  create_table "daily_credentials", force: :cascade do |t|
+    t.bigint "team_membership_id", null: false
+    t.date "date", null: false
+    t.string "credential_code", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["credential_code"], name: "index_daily_credentials_on_credential_code", unique: true
+    t.index ["team_membership_id", "date"], name: "index_daily_credentials_on_team_membership_id_and_date", unique: true
+    t.index ["team_membership_id"], name: "index_daily_credentials_on_team_membership_id"
+  end
+
   create_table "event_days", force: :cascade do |t|
     t.bigint "event_id", null: false
     t.date "date", null: false
@@ -151,8 +162,10 @@ ActiveRecord::Schema[7.1].define(version: 2026_07_30_000001) do
     t.string "event_type"
     t.decimal "latitude", precision: 10, scale: 7
     t.decimal "longitude", precision: 10, scale: 7
+    t.bigint "responsible_user_id"
     t.index ["closing_finalized_by_id"], name: "index_events_on_closing_finalized_by_id"
     t.index ["company_id"], name: "index_events_on_company_id"
+    t.index ["responsible_user_id"], name: "index_events_on_responsible_user_id"
   end
 
   create_table "payments", force: :cascade do |t|
@@ -319,9 +332,11 @@ ActiveRecord::Schema[7.1].define(version: 2026_07_30_000001) do
   add_foreign_key "companies", "plans"
   add_foreign_key "company_users", "companies"
   add_foreign_key "company_users", "users"
+  add_foreign_key "daily_credentials", "team_memberships"
   add_foreign_key "event_days", "events"
   add_foreign_key "event_functions", "events"
   add_foreign_key "events", "companies"
+  add_foreign_key "events", "users", column: "responsible_user_id"
   add_foreign_key "payments", "events"
   add_foreign_key "payments", "users"
   add_foreign_key "payments", "users", column: "paid_by_id"

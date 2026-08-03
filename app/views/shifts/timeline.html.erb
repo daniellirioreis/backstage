@@ -17,14 +17,6 @@
         <i class="bi bi-person-lines-fill"></i> Colaboradores
       <% end %>
     </div>
-    <% if policy(Shift).print? %>
-      <%= link_to print_shifts_path, class:"btn-secondary" do %>
-        <i class="bi bi-printer"></i> Imprimir
-      <% end %>
-    <% end %>
-    <%= link_to new_shift_path, class:"btn-primary" do %>
-      <i class="bi bi-plus"></i> Nova Escala
-    <% end %>
   </div>
 </div>
 

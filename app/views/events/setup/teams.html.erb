@@ -342,8 +342,9 @@
 <script>
 (function () {
   var teamIdx  = Date.now();
-  var SEARCH_URL = "<%= search_users_path %>";
-  var FN_LIST    = <%= raw(@event_functions.map { |ef| { id: ef.id, label: "#{ef.name} · R$#{format('%.2f', ef.hourly_rate)}/h" } }.to_json) %>;
+  var SEARCH_URL        = "<%= search_users_path %>";
+  var FN_LIST           = <%= raw(@event_functions.map { |ef| { id: ef.id, label: "#{ef.name} · R$#{format('%.2f', ef.hourly_rate)}/h" } }.to_json) %>;
+  var COORD_SUGGESTIONS = <%= raw(@suggested_coordinators.to_json) %>;
 
   // ── Troca de aba de setor ────────────────────────────────────────────────
   window.switchSectorTeamTab = function (btn) {
@@ -525,10 +526,48 @@
     });
   }
 
+  // ── Sugestões de coordenador por perfil da empresa ───────────────────────
+  function renderCoordSuggestions(coordWrapper) {
+    if (!COORD_SUGGESTIONS.length) return;
+    var existing = coordWrapper.parentNode.querySelector(".coord-suggestions");
+    if (existing) existing.remove();
+    var container = document.createElement("div");
+    container.className = "coord-suggestions";
+    container.style.cssText = "display:flex;flex-wrap:wrap;gap:0.35rem;margin-bottom:0.5rem;";
+    COORD_SUGGESTIONS.forEach(function (u) {
+      var chip = document.createElement("button");
+      chip.type = "button";
+      chip.title = u.role_label;
+      chip.style.cssText = "display:inline-flex;align-items:center;gap:0.28rem;padding:0.18rem 0.55rem;border:1px solid #d4d4d8;border-radius:20px;background:#f4f4f5;cursor:pointer;font-size:0.73rem;color:#52525b;transition:background .12s,color .12s,border-color .12s;";
+      chip.innerHTML = '<i class="bi bi-person-badge" style="font-size:0.7rem;"></i> ' + u.name;
+      chip.addEventListener("mouseover", function () {
+        this.style.background   = "#e4e4e7";
+        this.style.color        = "#18181b";
+        this.style.borderColor  = "#a1a1aa";
+      });
+      chip.addEventListener("mouseout", function () {
+        this.style.background   = "#f4f4f5";
+        this.style.color        = "#52525b";
+        this.style.borderColor  = "#d4d4d8";
+      });
+      chip.addEventListener("click", function () {
+        var input  = coordWrapper.querySelector(".user-ac-input");
+        var hidden = coordWrapper.querySelector(".user-ac-hidden");
+        if (input)  input.value  = u.name;
+        if (hidden) hidden.value = String(u.id);
+      });
+      container.appendChild(chip);
+    });
+    coordWrapper.parentNode.insertBefore(container, coordWrapper);
+  }
+
   // ── Inicializa autocompletes de um painel de equipe ──────────────────────
   function initTeamCard(panel) {
     panel.querySelectorAll(".user-ac-wrapper").forEach(function (uw) {
-      if (!uw.closest(".member-row")) initUserAc(uw);
+      if (!uw.closest(".member-row")) {
+        initUserAc(uw);
+        renderCoordSuggestions(uw);
+      }
     });
     panel.querySelectorAll(".member-row").forEach(function (row) {
       var uw = row.querySelector(".user-ac-wrapper");
@@ -686,15 +725,50 @@
   // ── Inicializa autocompletes dos painéis existentes ──────────────────────
   document.querySelectorAll(".existing-team").forEach(function (panel) {
     initTeamCard(panel);
+    // renderCoordSuggestions is called inside initTeamCard for the coordinator wrapper
   });
 
-  // ── Validação no submit ───────────────────────────────────────────────────
+  // ── Validação + submit via AJAX (preserva seleções em caso de erro) ────────
   var teamsForm = document.getElementById("teams-form");
   if (teamsForm) {
+    var lastSubmitBtn = null;
+    var lastCommit    = "";
+    teamsForm.querySelectorAll('button[type="submit"], input[type="submit"]').forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        lastSubmitBtn = this;
+        lastCommit    = this.value || "";
+      });
+    });
+
+    // Exibe erro inline no card do setor ativo (ou do primeiro com erro)
+    function showTeamsError(msg, anchorPanel) {
+      var prev = document.getElementById("teams-form-error");
+      if (prev) prev.remove();
+      var errDiv = document.createElement("div");
+      errDiv.id = "teams-form-error";
+      errDiv.style.cssText = "background:#fff1f2;border:1px solid #fca5a5;border-radius:8px;padding:0.65rem 1rem;margin-bottom:1rem;font-size:0.82rem;color:#dc2626;";
+      errDiv.innerHTML = '<i class="bi bi-exclamation-circle-fill"></i> ' + msg;
+      var sector = anchorPanel
+        ? anchorPanel.closest(".sector-team-panel")
+        : null;
+      if (!sector) {
+        document.querySelectorAll(".sector-team-panel").forEach(function (p) {
+          if (!sector && p.style.display !== "none") sector = p;
+        });
+      }
+      if (!sector) sector = document.querySelector(".sector-team-panel");
+      if (sector) {
+        var cc = sector.querySelector(".content-card");
+        if (cc) cc.insertBefore(errDiv, cc.firstChild);
+      }
+    }
+
     teamsForm.addEventListener("submit", function (e) {
-      var errors          = [];
-      var firstErrPanel   = null;
-      var firstErrSector  = null;
+      e.preventDefault(); // Sempre intercepta — nunca submit nativo
+
+      var errors         = [];
+      var firstErrPanel  = null;
+      var firstErrSector = null;
 
       // Limpa highlights anteriores
       document.querySelectorAll(".fn-ac-input.fn-required-err").forEach(function (el) {
@@ -760,8 +834,6 @@
       });
 
       if (errors.length > 0) {
-        e.preventDefault();
-
         // Navega para o primeiro painel com erro
         if (firstErrSector) {
           var sb = document.querySelector('.sector-team-tab[data-panel="' + firstErrSector.id + '"]');
@@ -771,21 +843,40 @@
           var tb = document.querySelector('.team-tab-btn[data-panel="' + firstErrPanel.id + '"]');
           if (tb) switchTeamTab(tb);
         }
-
-        // Remove erro anterior e mostra novo
-        var prev = document.getElementById("teams-form-error");
-        if (prev) prev.remove();
-        var errDiv = document.createElement("div");
-        errDiv.id = "teams-form-error";
-        errDiv.style.cssText = "background:#fff1f2;border:1px solid #fca5a5;border-radius:8px;padding:0.65rem 1rem;margin-bottom:1rem;font-size:0.82rem;color:#dc2626;";
-        errDiv.innerHTML = '<i class="bi bi-exclamation-circle-fill"></i> ' + errors.join('<br>');
-
-        var activeCard = (firstErrSector || document.querySelector(".sector-team-panel"));
-        if (activeCard) {
-          var cc = activeCard.querySelector(".content-card");
-          if (cc) cc.insertBefore(errDiv, cc.firstChild);
-        }
+        showTeamsError(errors.join('<br>'), firstErrPanel);
+        return;
       }
+
+      // ── Sem erros locais: envia via AJAX ────────────────────────────────
+      var formData = new FormData(teamsForm);
+      formData.set("commit", lastCommit);
+
+      var csrf = document.querySelector('meta[name="csrf-token"]');
+      if (lastSubmitBtn) { lastSubmitBtn.disabled = true; lastSubmitBtn.style.opacity = "0.6"; }
+
+      fetch(teamsForm.action, {
+        method:  "POST",
+        headers: {
+          "Accept":       "application/json",
+          "X-CSRF-Token": csrf ? csrf.content : ""
+        },
+        body: formData
+      })
+      .then(function (r) {
+        return r.json().then(function (d) { return { ok: r.ok, data: d }; });
+      })
+      .then(function (res) {
+        if (res.ok && res.data.redirect_url) {
+          window.location.href = res.data.redirect_url;
+        } else {
+          if (lastSubmitBtn) { lastSubmitBtn.disabled = false; lastSubmitBtn.style.opacity = ""; }
+          showTeamsError(res.data.error || "Erro inesperado. Tente novamente.");
+        }
+      })
+      .catch(function () {
+        if (lastSubmitBtn) { lastSubmitBtn.disabled = false; lastSubmitBtn.style.opacity = ""; }
+        showTeamsError("Erro de conexão. Tente novamente.");
+      });
     });
   }
 })();

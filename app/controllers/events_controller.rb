@@ -56,7 +56,7 @@ class EventsController < ApplicationController
         @ev_checkouts_today = Attendance.where(event: current_event, checked_in_date: today).where.not(checked_out_at: nil).count
         @ev_expected_today  = Shift.joins(:sector)
                                    .where(sectors: { event_id: current_event.id })
-                                   .where("shifts.date <= :d AND (shifts.end_date IS NULL OR shifts.end_date >= :d)", d: today)
+                                   .where("shifts.date <= :d AND COALESCE(shifts.end_date, shifts.date) >= :d", d: today)
                                    .select(:user_id).distinct.count
       elsif current_event.closed?
         @ev_total_checkins = Attendance.where(event: current_event).count
@@ -612,6 +612,7 @@ class EventsController < ApplicationController
     authorize Event
     @event = Event.new
     @event.event_functions.build
+    @suggested_responsibles = load_suggested_responsibles
   end
 
   def create
@@ -638,6 +639,7 @@ class EventsController < ApplicationController
   def edit
     authorize @event
     @event.event_functions.build if @event.event_functions.empty?
+    @suggested_responsibles = load_suggested_responsibles
   end
 
   def update
@@ -780,9 +782,28 @@ class EventsController < ApplicationController
     @event = Event.find(params[:id])
   end
 
+  RESPONSIBLE_ROLES = %w[
+    event_coordinator operations_coordinator sector_coordinator
+    production_director executive_producer producer event_analyst
+  ].freeze
+
+  def load_suggested_responsibles
+    company = @event&.company || current_user.companies.first
+    return [] unless company
+    company.company_users
+           .where(role: RESPONSIBLE_ROLES)
+           .includes(:user)
+           .map { |cu|
+             { id:       cu.user.id,
+               name:     cu.user.name,
+               initials: cu.user.name.split.map(&:first).first(2).join.upcase,
+               cpf:      cu.user.cpf.gsub(/(\d{3})(\d{3})(\d{3})(\d{2})/, '\1.\2.\3-\4') }
+           }
+  end
+
   def event_params
     params.require(:event).permit(
-      :name, :code, :location, :start_date, :end_date, :status, :event_type, :company_id,
+      :name, :code, :location, :start_date, :end_date, :status, :event_type, :company_id, :responsible_user_id,
       event_functions_attributes: [:id, :name, :hourly_rate, :_destroy],
       event_days_attributes: [:id, :date, :hours, :_destroy]
     )

@@ -29,6 +29,16 @@ export default class extends Controller {
     }, 220)
   }
 
+  suggestFromChip(event) {
+    const btn = event.currentTarget
+    this.#render({
+      id:       btn.dataset.userId,
+      name:     btn.dataset.userName,
+      cpf:      btn.dataset.userCpf || "—",
+      initials: btn.dataset.userInitials || ""
+    })
+  }
+
   pick(event) {
     const item = event.currentTarget
     this.#render({

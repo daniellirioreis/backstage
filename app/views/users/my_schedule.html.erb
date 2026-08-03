@@ -75,7 +75,8 @@
     const CAL_SHIFTS = <%= raw @cal_shifts_json %>;
     const CAL_EVENTS       = <%= raw @cal_events_json %>;
     const CAL_ATTENDANCES  = <%= raw @cal_attendances_json %>;
-    const CRED_URLS  = { <%= raw @shifts_by_event.keys.map { |ev| "#{ev.id}:'#{credential_user_path(@user, format: :pdf, event_id: ev.id)}'" }.join(",") %> };
+    // URL template com {date} — substituído dinamicamente quando o usuário clica no dia
+    const CRED_URLS  = { <%= raw @shifts_by_event.keys.map { |ev| "#{ev.id}:'#{credential_user_path(@user, format: :pdf, event_id: ev.id, date: '{date}')}'" }.join(",") %> };
     const TODAY_D = <%= Date.today.day %>, TODAY_M = <%= Date.today.month - 1 %>, TODAY_Y = <%= Date.today.year %>;
 
     const EV_COLORS = [
@@ -293,7 +294,10 @@
         <div style="display:flex;align-items:center;gap:6px;"><i class="bi bi-geo-alt" style="font-size:12px;color:#a1a1aa;flex-shrink:0;"></i><span style="font-size:11.5px;color:#71717a;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${ev0.loc}</span></div>
       </div>`;
 
-      const credUrl = CRED_URLS[ev0.id]||"";
+      // Monta URL da credencial com a data do dia selecionado
+      const selDate = `${calYear}-${String(calMonth+1).padStart(2,"0")}-${String(day).padStart(2,"0")}`;
+      const credUrlRaw = CRED_URLS[ev0.id]||"";
+      const credUrl = credUrlRaw ? credUrlRaw.replace("%7Bdate%7D", selDate).replace("{date}", selDate) : "";
       const mapUrl  = ev0.loc ? "https://maps.google.com/?q="+encodeURIComponent(ev0.loc) : "";
       html+=`<div style="padding:10px 14px;display:flex;gap:7px;flex-wrap:wrap;">
         ${credUrl?`<a href="${credUrl}" data-turbo="false" style="display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:500;color:#18181b;background:#f4f4f5;border:0.5px solid #e4e4e7;border-radius:7px;padding:6px 12px;text-decoration:none;flex:1;justify-content:center;"><i class="bi bi-person-badge" style="font-size:13px;"></i>Credencial PDF</a>`:""}

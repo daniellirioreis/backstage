@@ -77,11 +77,24 @@ class UsersController < ApplicationController
                  .first
     @badge_config = @event&.badge_config || BadgeConfig.defaults
 
-    membership       = TeamMembership.includes(:event_function).find_by(team: @team, user: @user)
+    membership       = TeamMembership.includes(:event_function, :daily_credentials).find_by(team: @team, user: @user)
     @is_coordinator  = membership&.coordinator?
-    @credential_code    = membership&.full_credential_code
-    @credential_qr_code = membership&.credential_code
-    @function_name      = membership&.event_function&.name
+    @function_name   = membership&.event_function&.name
+
+    # Credencial por dia: se vier o param date, busca DailyCredential daquele dia
+    @credential_date = params[:date].present? ? (Date.parse(params[:date]) rescue nil) : nil
+    daily_cred = @credential_date && membership&.daily_credentials&.find { |dc| dc.date == @credential_date }
+
+    if daily_cred
+      @credential_code    = daily_cred.credential_code
+      @credential_qr_code = daily_cred.credential_code
+    else
+      # Fallback: código legado do membership (ou primeiro daily_credential ordenado)
+      first_daily = membership&.daily_credentials&.min_by(&:date)
+      @credential_code    = first_daily&.credential_code || membership&.full_credential_code
+      @credential_qr_code = first_daily&.credential_code || membership&.credential_code
+      @credential_date    = first_daily&.date
+    end
 
     respond_to do |format|
       format.html { render layout: "credential" }

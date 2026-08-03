@@ -257,7 +257,7 @@ class ShiftsController < ApplicationController
     end
 
     if failures.any?
-      error_msg = failures.map { |e| "#{e[:name]}: #{e[:messages].join(', ')}" }.join(" | ")
+      @in_frame    = request.headers["Turbo-Frame"].present? || params[:wizard] == "1"
       @team_members = TeamMembership.where(team_id: @selected_team.id).includes(:event_function, user: { avatar_attachment: :blob }).joins(:user).order("users.name")
       existing = Shift.where(team_id: @selected_team.id).order(:date)
       @existing_shifts = {}
@@ -278,6 +278,12 @@ class ShiftsController < ApplicationController
       msg = "Escala de \"#{@selected_team.name}\" salva — #{parts.join(', ')}."
       if params[:modal] == "1"
         render html: "<script>window.parent.closeShiftModal(); window.parent.location.href='#{teams_path}?notice=#{CGI.escape(msg)}';</script>".html_safe, layout: false
+      elsif params[:wizard] == "1" && request.headers["Turbo-Frame"].present?
+        # Form submetido dentro do turbo-frame (modo wizard sem _top):
+        # usa Turbo.visit no frame response para navegar a página inteira.
+        @wizard_nav_url  = schedules_event_setup_path(@event, tab: @selected_team.id)
+        @in_frame        = true
+        render :edit_team
       elsif params[:wizard] == "1"
         redirect_to schedules_event_setup_path(@event, tab: @selected_team.id), notice: msg
       else
@@ -355,8 +361,9 @@ class ShiftsController < ApplicationController
           next
         end
         # Pula se já existe turno idêntico em outra equipe do mesmo evento
-        # (coordenadores em múltiplas equipes não devem ter horas duplicadas no fechamento)
         next if duplicate_shift_in_event?(event_id, user_id, date_str, times["start_time"], times["end_time"])
+        # Opção 2: coordenador em múltiplas equipes reutiliza turno já registrado neste evento/dia
+        next if coordinator_reusing_event_shift?(team, user_id, event_id, date_str)
 
         shift = Shift.new(
           user_id:    user_id,
@@ -388,6 +395,7 @@ class ShiftsController < ApplicationController
         skipped << User.find_by(id: user_id)&.name; next
       end
       next if duplicate_shift_in_event?(event_id, user_id, date, data["start_time"], data["end_time"])
+      next if coordinator_reusing_event_shift?(team, user_id, event_id, date)
 
       shift = Shift.new(user_id: user_id, sector_id: team.sector_id, team_id: team.id,
                         date: date, end_date: end_date,
@@ -428,6 +436,23 @@ class ShiftsController < ApplicationController
     Shift.joins(:sector)
          .where(sectors: { event_id: event_id })
          .where(user_id: user_id, date: date, start_time: start_time, end_time: end_time)
+         .exists?
+  end
+
+  # Opção 2 — conflito de coordenador em múltiplas equipes:
+  # Se o usuário for coordenador desta equipe E já tiver qualquer turno registrado
+  # no mesmo evento para esta data, pula a criação (reutiliza o turno existente).
+  # No fechamento, o coordenador aparece uma única vez com as horas da equipe principal.
+  def coordinator_reusing_event_shift?(team, user_id, event_id, date)
+    return false if event_id.blank?
+    is_coord = team.coordinator_id == user_id.to_i ||
+               TeamMembership.exists?(team_id: team.id, user_id: user_id, role: :coordinator)
+    return false unless is_coord
+
+    Shift.joins(:sector)
+         .where(sectors: { event_id: event_id })
+         .where(user_id: user_id, date: date)
+         .where.not(team_id: team.id)
          .exists?
   end
 end

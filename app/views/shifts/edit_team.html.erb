@@ -2,6 +2,17 @@
 
 <%= turbo_frame_tag "shift-frame-#{uid}" do %>
 
+<%# ── Sucesso no wizard: navega a página inteira via Turbo sem sair do frame ── %>
+<% if @wizard_nav_url %>
+  <script>
+    (function() {
+      var url = "<%= j(@wizard_nav_url) %>";
+      if (window.Turbo) { Turbo.visit(url); }
+      else { window.location.href = url; }
+    })();
+  </script>
+<% else %>
+
 <%# ── Cabeçalho — oculto quando embutido em frame ── %>
 <% unless @in_frame %>
   <div class="page-header">
@@ -93,7 +104,7 @@
 <% if show_table %>
   <%= form_with url: update_team_shifts_path, method: :patch,
                 id: "save-form-#{uid}",
-                data: { turbo_frame: "_top" } do |f| %>
+                data: params[:wizard].present? ? {} : { turbo_frame: "_top" } do |f| %>
     <input type="hidden" name="team_id" value="<%= uid %>">
     <%= hidden_field_tag :modal,  params[:modal]  if params[:modal].present? %>
     <%= hidden_field_tag :wizard, params[:wizard] if params[:wizard].present? %>
@@ -344,5 +355,7 @@
     <% end %>
   </div>
 <% end %>
+
+<% end %><%# /else @wizard_nav_url %>
 
 <% end %><%# /turbo_frame_tag %>
