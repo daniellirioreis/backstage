@@ -157,14 +157,28 @@
                   </div>
                 </div>
 
-                <div style="margin-bottom:1rem;">
-                  <label class="form-label" style="font-size:0.78rem;">Coordenador</label>
-                  <div style="position:relative;" class="user-ac-wrapper">
-                    <input type="text" class="form-control user-ac-input" value="<%= team.coordinator&.name %>"
-                           placeholder="Buscar por nome ou CPF..." autocomplete="off" style="font-size:0.85rem;">
-                    <div class="user-ac-dropdown" style="display:none;position:absolute;z-index:200;width:100%;background:#fff;border:1px solid #e4e4e7;border-radius:6px;box-shadow:0 4px 12px rgba(0,0,0,0.08);max-height:200px;overflow-y:auto;top:100%;left:0;margin-top:2px;"></div>
-                    <input type="hidden" name="teams[<%= team.id %>][coordinator_id]" value="<%= team.coordinator_id %>" class="user-ac-hidden">
+                <div style="display:grid;grid-template-columns:<%= @event_functions.any? ? '1fr 220px' : '1fr' %>;gap:0.75rem;margin-bottom:1rem;align-items:end;">
+                  <div>
+                    <label class="form-label" style="font-size:0.78rem;">Coordenador</label>
+                    <div style="position:relative;" class="user-ac-wrapper">
+                      <input type="text" class="form-control user-ac-input" value="<%= team.coordinator&.name %>"
+                             placeholder="Buscar por nome ou CPF..." autocomplete="off" style="font-size:0.85rem;">
+                      <div class="user-ac-dropdown" style="display:none;position:absolute;z-index:200;width:100%;background:#fff;border:1px solid #e4e4e7;border-radius:6px;box-shadow:0 4px 12px rgba(0,0,0,0.08);max-height:200px;overflow-y:auto;top:100%;left:0;margin-top:2px;"></div>
+                      <input type="hidden" name="teams[<%= team.id %>][coordinator_id]" value="<%= team.coordinator_id %>" class="user-ac-hidden">
+                    </div>
                   </div>
+                  <% if @event_functions.any? %>
+                    <div>
+                      <label class="form-label" style="font-size:0.78rem;">Função do coordenador</label>
+                      <% coord_tm = team.team_memberships.find(&:coordinator?) %>
+                      <% coord_ef = fn_map[coord_tm&.event_function_id] %>
+                      <div style="position:relative;" class="fn-ac-wrapper coord-fn-wrapper">
+                        <input type="text" class="form-control fn-ac-input" value="<%= coord_ef ? "#{coord_ef.name} · R$#{format('%.2f', coord_ef.hourly_rate)}/h" : '' %>" placeholder="Função para pagamento..." autocomplete="off" style="font-size:0.82rem;">
+                        <div class="fn-ac-dropdown" style="display:none;position:absolute;z-index:201;width:100%;background:#fff;border:1px solid #e4e4e7;border-radius:6px;box-shadow:0 4px 12px rgba(0,0,0,0.08);max-height:180px;overflow-y:auto;top:100%;left:0;margin-top:2px;"></div>
+                        <input type="hidden" class="fn-ac-hidden" name="teams[<%= team.id %>][coordinator_event_function_id]" value="<%= coord_tm&.event_function_id %>">
+                      </div>
+                    </div>
+                  <% end %>
                 </div>
 
                 <div style="font-size:0.78rem;font-weight:600;color:#52525b;margin-bottom:0.5rem;"><i class="bi bi-people"></i> Colaboradores</div>
@@ -261,13 +275,25 @@
                     <input type="text" name="teams[__TEAM_IDX__][radio_channel]" class="form-control" placeholder="ex: Canal 3">
                   </div>
                 </div>
-                <div style="margin-bottom:1rem;">
-                  <label class="form-label" style="font-size:0.78rem;">Coordenador</label>
-                  <div style="position:relative;" class="user-ac-wrapper">
-                    <input type="text" class="form-control user-ac-input" placeholder="Buscar por nome ou CPF..." autocomplete="off" style="font-size:0.85rem;">
-                    <div class="user-ac-dropdown" style="display:none;position:absolute;z-index:200;width:100%;background:#fff;border:1px solid #e4e4e7;border-radius:6px;box-shadow:0 4px 12px rgba(0,0,0,0.08);max-height:200px;overflow-y:auto;top:100%;left:0;margin-top:2px;"></div>
-                    <input type="hidden" name="teams[__TEAM_IDX__][coordinator_id]" class="user-ac-hidden">
+                <div style="display:grid;grid-template-columns:<%= @event_functions.any? ? '1fr 220px' : '1fr' %>;gap:0.75rem;margin-bottom:1rem;align-items:end;">
+                  <div>
+                    <label class="form-label" style="font-size:0.78rem;">Coordenador</label>
+                    <div style="position:relative;" class="user-ac-wrapper">
+                      <input type="text" class="form-control user-ac-input" placeholder="Buscar por nome ou CPF..." autocomplete="off" style="font-size:0.85rem;">
+                      <div class="user-ac-dropdown" style="display:none;position:absolute;z-index:200;width:100%;background:#fff;border:1px solid #e4e4e7;border-radius:6px;box-shadow:0 4px 12px rgba(0,0,0,0.08);max-height:200px;overflow-y:auto;top:100%;left:0;margin-top:2px;"></div>
+                      <input type="hidden" name="teams[__TEAM_IDX__][coordinator_id]" class="user-ac-hidden">
+                    </div>
                   </div>
+                  <% if @event_functions.any? %>
+                    <div>
+                      <label class="form-label" style="font-size:0.78rem;">Função do coordenador</label>
+                      <div style="position:relative;" class="fn-ac-wrapper coord-fn-wrapper">
+                        <input type="text" class="form-control fn-ac-input" placeholder="Função para pagamento..." autocomplete="off" style="font-size:0.82rem;">
+                        <div class="fn-ac-dropdown" style="display:none;position:absolute;z-index:201;width:100%;background:#fff;border:1px solid #e4e4e7;border-radius:6px;box-shadow:0 4px 12px rgba(0,0,0,0.08);max-height:180px;overflow-y:auto;top:100%;left:0;margin-top:2px;"></div>
+                        <input type="hidden" class="fn-ac-hidden" name="teams[__TEAM_IDX__][coordinator_event_function_id]">
+                      </div>
+                    </div>
+                  <% end %>
                 </div>
                 <div style="font-size:0.78rem;font-weight:600;color:#52525b;margin-bottom:0.5rem;"><i class="bi bi-people"></i> Colaboradores</div>
                 <div class="team-members-table<%= @event_functions.any? ? ' team-members-fn' : '' %>" style="border:1px solid #e4e4e7;border-radius:8px;margin-bottom:0.6rem;">
@@ -568,6 +594,10 @@
         initUserAc(uw);
         renderCoordSuggestions(uw);
       }
+    });
+    // Função do coordenador (fora de member-row)
+    panel.querySelectorAll(".coord-fn-wrapper").forEach(function (fw) {
+      initFnAc(fw);
     });
     panel.querySelectorAll(".member-row").forEach(function (row) {
       var uw = row.querySelector(".user-ac-wrapper");

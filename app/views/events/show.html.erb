@@ -737,6 +737,36 @@
               </td>
             </tr>
           <% end %>
+          <% if @coordinator_cost.to_f > 0 %>
+            <%
+              coord_hours_fmt = @coordinator_hours == @coordinator_hours.to_i ? "#{@coordinator_hours.to_i}h" : "#{'%.1f' % @coordinator_hours}h"
+            %>
+            <tr style="border-bottom:1px solid #f4f4f5; background:#fafafa;">
+              <td style="padding:10px 20px; vertical-align:middle;">
+                <div style="font-size:0.85rem; font-weight:600; color:#52525b;">
+                  <i class="bi bi-person-badge" style="font-size:0.75rem; margin-right:3px;"></i> Coordenação
+                </div>
+                <div style="font-size:0.7rem; color:#a1a1aa; margin-top:1px;">custo de gestão · <%= @coordinator_people.size %> coordenador<%= @coordinator_people.size == 1 ? '' : 'es' %></div>
+              </td>
+              <td style="padding:10px 12px; vertical-align:middle;">
+                <span style="display:inline-flex; align-items:center; gap:4px; font-size:0.75rem; font-weight:700; padding:2px 8px; border-radius:6px; background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe; white-space:nowrap;">
+                  <i class="bi bi-person-badge" style="font-size:0.65rem;"></i> <%= @coordinator_people.size %>
+                </span>
+              </td>
+              <td style="padding:10px 12px; vertical-align:middle; font-size:0.8rem; font-weight:600; color:#52525b;">
+                <%= coord_hours_fmt %>
+              </td>
+              <td style="padding:10px 20px; vertical-align:middle; text-align:right; white-space:nowrap;">
+                <div style="font-size:0.85rem; font-weight:800; color:#1d4ed8;"><%= number_to_currency(@coordinator_cost, unit: "R$", separator: ",", delimiter: ".", precision: 2) %></div>
+              </td>
+              <td style="padding:10px 20px; vertical-align:middle; text-align:right;">
+                <div style="font-size:0.78rem; color:#a1a1aa;">–</div>
+              </td>
+              <td style="padding:10px 20px; vertical-align:middle; text-align:right;">
+                <div style="font-size:0.78rem; color:#a1a1aa;">–</div>
+              </td>
+            </tr>
+          <% end %>
         </tbody>
       </table>
       </div>

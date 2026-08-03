@@ -302,7 +302,7 @@ class Events::SetupController < ApplicationController
           )
         end
         # destroy_all wipes the coordinator's :coordinator membership; re-ensure it
-        ensure_coordinator_membership(team)
+        ensure_coordinator_membership(team, t[:coordinator_event_function_id].presence)
         saved_teams << team
 
       else
@@ -329,7 +329,7 @@ class Events::SetupController < ApplicationController
         end
         # sync_coordinator_membership fires on create, but the member loop may have
         # added the coordinator again as :member — ensure correct role and no duplicates
-        ensure_coordinator_membership(team)
+        ensure_coordinator_membership(team, t[:coordinator_event_function_id].presence)
         saved_teams << team
       end
     end
@@ -412,7 +412,7 @@ class Events::SetupController < ApplicationController
       }
   end
 
-  def ensure_coordinator_membership(team)
+  def ensure_coordinator_membership(team, coordinator_event_function_id = nil)
     return if team.coordinator_id.blank?
 
     # Remove duplicates (can happen on new team: sync creates one, loop creates another)
@@ -425,6 +425,7 @@ class Events::SetupController < ApplicationController
     # Create or upgrade the remaining membership to :coordinator
     tm = team.team_memberships.find_or_initialize_by(user_id: team.coordinator_id)
     tm.role = :coordinator
+    tm.event_function_id = coordinator_event_function_id
     tm.save!
   end
 
